@@ -1,0 +1,178 @@
+
+:root {
+  font-family: Arial;
+  font-weight: 400;
+
+  color: #000000;
+  background-color: #F5F5F5;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  --btn-bg: #64A07A;
+  --bg-profil:#f2f2f2;
+}
+
+*{
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: Arial;
+  font-size: 1.111vw;
+  font-style: normal;
+  font-weight: 400;
+  -webkit-animation: bugfix infinite 1s;
+  line-height: 1.2;
+  scroll-behavior: smooth;
+  margin: 0;
+  padding: 0;
+}
+body {
+  font-style: normal;
+  font-weight: normal;
+  -webkit-animation: bugfix infinite 1s;
+  line-height: 1.2;
+  margin: 0;
+  padding: 0;
+}
+
+input,
+textarea {
+  -webkit-animation: bugfix infinite 1s;
+  line-height: inherit;
+  margin: 0;
+  padding: 0;
+  border: none;
+  color: inherit;
+}
+
+a {
+  color: unset;
+}
+a,
+a:hover {
+  text-decoration: none;
+}
+button,
+input,
+a,
+textarea {
+  outline: none;
+  cursor: pointer;
+  font: inherit;
+}
+button:focus,
+input:focus,
+a:focus,
+textarea:focus {
+  outline: none;
+}
+button:active,
+input:active,
+a:active,
+textarea:active {
+  outline: none;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font: inherit;
+  margin: 0;
+  padding: 0;
+}
+p {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+button,
+a {
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 400;
+  text-align: inherit;
+  padding: 0;
+  border-radius: 1.25rem;
+}
+
+li {
+  list-style: none;
+}
+
+.container {
+  width: 84.5rem;
+  margin: 0 auto;
+}
+
+section{
+  margin-bottom: 1.313rem;
+}
+
+h1 {
+  font-size: 2em;
+}
+
+h2 {
+  font-size: 1.4em;
+}
+
+h3 {
+  font-size: 1.25em;
+}
+
+h4 {
+  font-size: 1em;
+}
+
+.text13{
+  font-size: 0.813em;
+}
+
+@media (min-width: 1920px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+.btn-primary {
+  background: var(--btn-bg);
+  color: white;
+  border: none;
+  padding: 1.188rem 1.5rem;
+  border-radius: 1.25rem;
+  cursor: pointer;
+  /* background: linear-gradient(90deg, rgba(108, 192, 139, 0.9) 0%, rgba(51, 90, 65, 0.9) 100%); */
+  box-shadow: 0px 0.2rem 0.2rem 0px #00000040;
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+.btn-primary img{
+  width: 1.25rem;
+  height: 1.25rem;
+}
+.btn{
+  transition: opacity .3s, box-shadow .3s;
+}
+.btn:hover,.btn:focus,.btn:active{
+  opacity: 70%;
+  box-shadow:none;
+}
