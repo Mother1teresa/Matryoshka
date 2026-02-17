@@ -287,7 +287,7 @@ onBeforeUnmount(() => {
 .logo::after {
   position: absolute;
   content: "";
-  background-image: url("@/assets/img/logo-h.svg");
+  background-image: url('/src/assets/img/logo-h.svg');
   width: 4.75rem;
   height: 5.5rem;
   top: -2.3rem;
