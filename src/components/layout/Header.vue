@@ -282,7 +282,7 @@ onBeforeUnmount(() => {
   z-index: 1;
   display: flex;
   font-family: Arial;
-  letter-spacing: 3%;
+  letter-spacing: 1px;
 }
 .logo::after {
   position: absolute;
