@@ -1,7 +1,6 @@
 <template>
   <header class="header">
     <div class="container">
-
       <!-- 🔔 уведомление -->
       <transition name="slide">
         <div v-if="showNotification" class="notification">
@@ -25,7 +24,6 @@
         </div>
 
         <div class="header__right">
-
           <!-- НЕ авторизован -->
           <template v-if="!auth.isAuthenticated">
             <div class="header__right-false">
@@ -60,15 +58,13 @@
               <!-- профиль -->
               <div class="profile-wrapper">
                 <div class="profile" @click.stop="toggleProfileMenu">
-
                   <div class="profile-block">
-                    <img
-                      :src="auth.user?.avatar"
-                      class="avatar"/>
+                    <img :src="auth.user?.avatar" class="avatar" />
                     <img
                       src="/src/assets/img/arrow-profil.svg"
                       class="arr-profil"
-                      :class="{ rotate: showProfileMenu }"/>
+                      :class="{ rotate: showProfileMenu }"
+                    />
                   </div>
                   <span>
                     {{ auth.user?.name }}
@@ -77,12 +73,8 @@
 
                 <!-- dropdown -->
                 <transition name="fade">
-                  <div
-                    v-if="showProfileMenu"
-                    class="profile-menu">
-                    <div class="rating">
-                      4,8 ★★★★★
-                    </div>
+                  <div v-if="showProfileMenu" class="profile-menu">
+                    <div class="rating">4,8 ★★★★★</div>
                     <ul>
                       <li>Мои ролики</li>
                       <li>Мои объявления</li>
@@ -91,11 +83,7 @@
                       <li>Избранное</li>
                       <li>Сообщения</li>
                       <li>Уведомления</li>
-                      <li
-                        class="logout"
-                        @click="askLogout">
-                        Выйти
-                      </li>
+                      <li class="logout" @click="askLogout">Выйти</li>
                     </ul>
                   </div>
                 </transition>
@@ -109,14 +97,9 @@
         <div class="search-input__box">
           <div class="search-img">
             <img src="/src/assets/img/Icon-search.svg" />
-            <input
-              type="text"
-              placeholder="Поиск"
-              class="search-input"/>
+            <input type="text" placeholder="Поиск" class="search-input" />
           </div>
-          <button class="btn-search btn">
-            Найти
-          </button>
+          <button class="btn-search btn">Найти</button>
         </div>
 
         <button class="btn-category btn">
@@ -131,20 +114,10 @@
   <transition name="fade">
     <div v-if="showLogoutConfirm" class="logout-modal">
       <div class="logout-box">
-        <p>
-          Вы точно хотите выйти?
-        </p>
+        <p>Вы точно хотите выйти?</p>
         <div class="logout-actions">
-          <button
-            class="btn-search btn"
-            @click="confirmLogout">
-            Да
-          </button>
-          <button
-            class="btn-light btn"
-            @click="cancelLogout">
-            Нет
-          </button>
+          <button class="btn-search btn" @click="confirmLogout">Да</button>
+          <button class="btn-light btn" @click="cancelLogout">Нет</button>
         </div>
       </div>
     </div>
@@ -152,88 +125,66 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from "vue"
-import { useAuthStore } from "/src/stores/authStore.js"
+import { ref, onMounted, onBeforeUnmount } from "vue";
+import { useAuthStore } from "/src/stores/authStore.js";
 
-const auth = useAuthStore()
-const showNotification = ref(false)
-const notificationText = ref("")
-const showProfileMenu = ref(false)
-const showLogoutConfirm = ref(false)
+const auth = useAuthStore();
+const showNotification = ref(false);
+const notificationText = ref("");
+const showProfileMenu = ref(false);
+const showLogoutConfirm = ref(false);
 
-function fakeLogin()
-{
+function fakeLogin() {
   auth.login({
     name: "Сергей",
-    avatar: "https://i.pravatar.cc/80"
-  })
+    avatar: "https://i.pravatar.cc/80",
+  });
 
-  notificationText.value = "Вы успешно зарегестрировались!"
-  showNotification.value = true
-  setTimeout(() =>
-  {
-    showNotification.value = false
-  }, 3000)
+  notificationText.value = "Вы успешно зарегестрировались!";
+  showNotification.value = true;
+  setTimeout(() => {
+    showNotification.value = false;
+  }, 3000);
 }
 
-function toggleProfileMenu()
-{
-  showProfileMenu.value =!showProfileMenu.value
+function toggleProfileMenu() {
+  showProfileMenu.value = !showProfileMenu.value;
 }
 
-function askLogout()
-{
-  showLogoutConfirm.value = true
+function askLogout() {
+  showLogoutConfirm.value = true;
 }
 
-function confirmLogout()
-{
-  auth.logout()
-  showProfileMenu.value = false
-  showLogoutConfirm.value = false
-  notificationText.value =
-    "Вы вышли из аккаунта"
+function confirmLogout() {
+  auth.logout();
+  showProfileMenu.value = false;
+  showLogoutConfirm.value = false;
+  notificationText.value = "Вы вышли из аккаунта";
 
-  showNotification.value = true
-  setTimeout(() =>
-  {
-    showNotification.value = false
-  }, 3000)
+  showNotification.value = true;
+  setTimeout(() => {
+    showNotification.value = false;
+  }, 3000);
 }
 
-function cancelLogout()
-{
-  showLogoutConfirm.value = false
+function cancelLogout() {
+  showLogoutConfirm.value = false;
 }
 
-function handleClickOutside(e)
-{
-  const profile =
-    document.querySelector(".profile-wrapper")
-  if (
-    profile &&
-    !profile.contains(e.target)
-  )
-  {
-    showProfileMenu.value = false
+function handleClickOutside(e) {
+  const profile = document.querySelector(".profile-wrapper");
+  if (profile && !profile.contains(e.target)) {
+    showProfileMenu.value = false;
   }
 }
 
-onMounted(() =>
-{
-  document.addEventListener(
-    "click",
-    handleClickOutside
-  )
-})
+onMounted(() => {
+  document.addEventListener("click", handleClickOutside);
+});
 
-onBeforeUnmount(() =>
-{
-  document.removeEventListener(
-    "click",
-    handleClickOutside
-  )
-})
+onBeforeUnmount(() => {
+  document.removeEventListener("click", handleClickOutside);
+});
 </script>
 
 <style scoped>
@@ -319,23 +270,24 @@ onBeforeUnmount(() =>
   text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
   z-index: 1;
   font-size: 2rem;
-  font-weight: bold;
-  color: #5c9d7a;
   box-shadow: 0px 0.2rem 0.2rem 0px #00000040;
   background: var(--btn-bg);
   color: white;
-  font-weight: 400;
+  font-weight: 300;
   /* width: 11.5rem; */
   height: 3.125rem;
-  padding: 0.375rem 0.75rem;
+  padding: 0.175rem 0.75rem 0.375rem 0.75rem;
   border-radius: 1.25rem;
   position: relative;
   z-index: 1;
+  display: flex;
+  font-family: Arial;
+  letter-spacing: 3%;
 }
 .logo::after {
   position: absolute;
   content: "";
-  background-image: url(src/assets/img/logo-h.svg);
+  background-image: url("@/assets/img/logo-h.svg");
   width: 4.75rem;
   height: 5.5rem;
   top: -2.3rem;
