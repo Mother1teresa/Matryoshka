@@ -9,7 +9,7 @@ export const useProductStore = defineStore("product", () => {
     title: "Коробки 600*400*300 мм К-51 оптом",
     price: 79,
     city: "г.Краснодар",
-    image: "/src/assets/img/product/img-prod.jpg",
+    image: "./src/assets/img/product/img-prod.jpg",
     isLiked: false
   },
   {
@@ -17,7 +17,7 @@ export const useProductStore = defineStore("product", () => {
     title: "Коробки 600*400*300 мм К-51 оптом",
     price: 79,
     city: "г.Краснодар",
-    image: "/src/assets/img/product/img-prod.jpg",
+    image: "./src/assets/img/product/img-prod.jpg",
     isLiked: false
   },
   {
@@ -25,7 +25,7 @@ export const useProductStore = defineStore("product", () => {
     title: "Коробки 600*400*300 мм К-51 оптом",
     price: 79,
     city: "г.Краснодар",
-    image: "/src/assets/img/product/img-prod.jpg",
+    image: "./src/assets/img/product/img-prod.jpg",
     isLiked: false
   },
   {
@@ -33,7 +33,7 @@ export const useProductStore = defineStore("product", () => {
     title: "Коробки 600*400*300 мм К-51 оптом",
     price: 79,
     city: "г.Краснодар",
-    image: "/src/assets/img/product/img-prod.jpg",
+    image: "./src/assets/img/product/img-prod.jpg",
     isLiked: false
   },
   {
@@ -41,7 +41,7 @@ export const useProductStore = defineStore("product", () => {
     title: "Коробки 600*400*300 мм К-51 оптом",
     price: 79,
     city: "г.Краснодар",
-    image: "/src/assets/img/product/img-prod.jpg",
+    image: "./src/assets/img/product/img-prod.jpg",
     isLiked: false
   },
   {
@@ -49,7 +49,7 @@ export const useProductStore = defineStore("product", () => {
     title: "Коробки 600*400*300 мм К-51 оптом",
     price: 79,
     city: "г.Краснодар",
-    image: "/src/assets/img/product/img-prod.jpg",
+    image: "./src/assets/img/product/img-prod.jpg",
     isLiked: false
   },
   {
@@ -57,7 +57,7 @@ export const useProductStore = defineStore("product", () => {
     title: "Коробки 600*400*300 мм К-51 оптом",
     price: 79,
     city: "г.Краснодар",
-    image: "/src/assets/img/product/img-prod.jpg",
+    image: "./src/assets/img/product/img-prod.jpg",
     isLiked: false
   },
   {
@@ -65,23 +65,19 @@ export const useProductStore = defineStore("product", () => {
     title: "Коробки 600*400*300 мм К-51 оптом",
     price: 79,
     city: "г.Краснодар",
-    image: "/src/assets/img/product/img-prod.jpg",
+    image: "./src/assets/img/product/img-prod.jpg",
     isLiked: false
   },
 ])
 
   const toggleLike = (id) => {
-
     const product = products.value.find(p => p.id === id)
-
     if (product) {
       product.isLiked = !product.isLiked
     }
-
   }
 
   const resetLikes = () => {
-
     products.value.forEach(product => {
       product.isLiked = false
     })
@@ -91,5 +87,4 @@ export const useProductStore = defineStore("product", () => {
     toggleLike,
     resetLikes
   }
-
 })
