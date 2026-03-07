@@ -5,6 +5,16 @@ const routes = [
   {
     path: '/',
     component: Home
+  },
+  {
+    path: '/:type(rabota|nedvizhimost|uslugi|transport|biznes|animals|price|travel)/:section?/:subcategory?',
+    name: 'catalog',
+    component: () => import('/src/pages/CatalogPage.vue')
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    component: () => import('../components/common/NotFound.vue') // Или ваш компонент
   }
 ]
 

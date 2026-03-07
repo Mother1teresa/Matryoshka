@@ -4,9 +4,9 @@
         <MiniVideoSection />
         <CategorySection />
         <ProductSection />
+        <NotFound />
     </main>
     <Footer />
-    <AuthModal />
 </template>
 
 <script setup>
@@ -15,8 +15,7 @@ import Footer from '../components/layout/Footer.vue';
 import MiniVideoSection from '../components/video/MiniVideoSection.vue';
 import CategorySection from '../components/category/CategorySection.vue';
 import ProductSection from '../components/product/ProductSection.vue';
-import AuthModal from '../components/modals/AuthModal.vue';
-
+import NotFound from '../components/common/NotFound.vue';
 
 </script>
 

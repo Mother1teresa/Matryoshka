@@ -9,9 +9,9 @@
       </transition>
 
       <div class="header__top">
-        <div class="logo">
+        <a href="/" class="logo">
           <span>Матрёшка</span>
-        </div>
+        </a>
         <div class="header__center">
           <a href="#" class="btn-primary btn">
             <img src="/src/assets/img/icon-primary.svg" />
@@ -27,7 +27,7 @@
           <!-- НЕ авторизован -->
           <template v-if="!auth.isAuthenticated">
             <div class="header__right-false">
-              <button class="btn-light btn-login" @click="fakeLogin">
+              <button class="btn-light btn-login" @click="modal.openLogin">
                 Войти
               </button>
               <button class="btn-light">
@@ -76,13 +76,13 @@
                   <div v-if="showProfileMenu" class="profile-menu">
                     <div class="rating">4,8 ★★★★★</div>
                     <ul>
-                      <li>Мои ролики</li>
-                      <li>Мои объявления</li>
-                      <li>Создать объявление</li>
-                      <li>Заказы</li>
-                      <li>Избранное</li>
-                      <li>Сообщения</li>
-                      <li>Уведомления</li>
+                      <li><a href="">Мои ролики</a></li>
+                      <li><a href="">Мои объявления</a></li>
+                      <li><a href="">Создать объявление</a></li>
+                      <li><a href="">Заказы</a></li>
+                      <li><a href="">Избранное</a></li>
+                      <li><a href="">Сообщения</a></li>
+                      <li><a href="">Уведомления</a></li>
                       <li class="logout" @click="askLogout">Выйти</li>
                     </ul>
                   </div>
@@ -102,7 +102,7 @@
           <button class="btn-search btn">Найти</button>
         </div>
 
-        <button class="btn-category btn">
+        <button class="btn-category btn" @click="menu.open()">
           <img src="/src/assets/img/header-catalog.svg" />
           Категории
         </button>
@@ -122,30 +122,24 @@
       </div>
     </div>
   </transition>
+  
 </template>
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from "vue";
 import { useAuthStore } from "/src/stores/authStore.js";
+import { useModalStore } from "/src/stores/modal.js";
+import { useMenuStore } from "/src/stores/menu.js"
 
+const modal = useModalStore();
+const menu = useMenuStore();
 const auth = useAuthStore();
+
 const showNotification = ref(false);
 const notificationText = ref("");
 const showProfileMenu = ref(false);
 const showLogoutConfirm = ref(false);
 
-function fakeLogin() {
-  auth.login({
-    name: "Сергей",
-    avatar: "https://i.pravatar.cc/80",
-  });
-
-  notificationText.value = "Вы успешно зарегестрировались!";
-  showNotification.value = true;
-  setTimeout(() => {
-    showNotification.value = false;
-  }, 3000);
-}
 
 function toggleProfileMenu() {
   showProfileMenu.value = !showProfileMenu.value;
@@ -180,6 +174,16 @@ function handleClickOutside(e) {
 
 onMounted(() => {
   document.addEventListener("click", handleClickOutside);
+  window.addEventListener("notify", (e) => {
+
+    notificationText.value = e.detail
+    showNotification.value = true
+
+    setTimeout(() => {
+      showNotification.value = false
+    }, 3000)
+
+  })
 });
 
 onBeforeUnmount(() => {
@@ -200,15 +204,16 @@ onBeforeUnmount(() => {
 
 .notification {
   position: absolute;
-  top: 3.75rem;
+  top: 3.45rem;
   left: 50%;
   transform: translateX(-50%);
   background: white;
-  padding: 1.5rem 1.875rem;
+  padding: 1.2rem 1.5rem;
   border-radius: 2.125rem;
   box-shadow: 0px 0.2rem 0.2rem 0px #00000040;
   font-weight: 400;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
+  z-index: 6;
 }
 
 /* Анимация */
@@ -322,8 +327,8 @@ onBeforeUnmount(() => {
   height: 3.17rem;
 }
 .search-input__box img {
-  width: 2rem;
-  height: 2rem;
+  width: 1.5rem;
+  height: 1.5rem;
   object-fit: fill;
 }
 
@@ -463,7 +468,7 @@ onBeforeUnmount(() => {
   background: var(--bg-profil);
   border-radius: 0.938rem;
   box-shadow: 0 4px 4px rgba(0, 0, 0, 0.15);
-  padding: 0.938rem;
+  padding: 0.938rem 0;
   z-index: 10;
   /* font-size: 1.25rem; */
 }
@@ -475,13 +480,14 @@ onBeforeUnmount(() => {
 }
 
 .profile-menu li {
-  padding: 0.625rem 0;
+  padding: 0.625rem 0.938rem;
   cursor: pointer;
   border-radius: 0.5rem;
 }
 
 .profile-menu li:hover {
-  background: #f5f5f5;
+  background: #e7e7e7;
+  border-radius: 0;
 }
 
 .logout {

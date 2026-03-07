@@ -1,21 +1,20 @@
-
 :root {
   font-family: Arial;
   font-weight: 400;
 
   color: #000000;
-  background-color: #F5F5F5;
+  background-color: #f5f5f5;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  --btn-bg: #64A07A;
-  --bg-profil:#f2f2f2;
+  --btn-bg: #64a07a;
+  --bg-profil: #f2f2f2;
 }
 
-*{
+* {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -122,7 +121,7 @@ li {
   margin: 0 auto;
 }
 
-section{
+section {
   margin-bottom: 1.313rem;
 }
 
@@ -142,10 +141,16 @@ h4 {
   font-size: 1em;
 }
 
-.text13{
+.text13 {
   font-size: 0.813em;
 }
-
+@media (max-width: 48em) {
+  html {
+    font-size: calc(1rem);
+    font-size: 4.27vw;
+    -webkit-text-size-adjust: none;
+  }
+}
 @media (min-width: 1920px) {
   html {
     font-size: 16px;
@@ -165,14 +170,63 @@ h4 {
   align-items: center;
   gap: 0.875rem;
 }
-.btn-primary img{
+.btn-primary img {
   width: 1.25rem;
   height: 1.25rem;
 }
-.btn{
-  transition: opacity .3s, box-shadow .3s;
+.btn {
+  transition:
+    opacity 0.3s,
+    box-shadow 0.3s;
 }
-.btn:hover,.btn:focus,.btn:active{
+.btn:hover,
+.btn:focus,
+.btn:active {
   opacity: 70%;
-  box-shadow:none;
+  box-shadow: none;
+}
+.auth-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 5;
+}
+.overflow-mod{
+  overflow: hidden;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: #64A07A;
+  border-radius: 10px;
+  transition: all .3s;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #105965;
+}
+.category {
+  width: fit-content;
+  padding: 0.625rem 1rem;
+  padding-right: 1.75rem;
+  color: var(--btn-bg);
+  font-weight: 500;
+  font-size: 1.25rem;
+  box-shadow: 0px 0.2rem 0.2rem 0px #00000040;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border-radius: 0.938rem;
+  background-color: white;
+  transition:
+    opacity 0.3s,
+    box-shadow 0.3s;
+}
+.category:hover,.tab-btn:hover {
+  opacity: 70%;
+  box-shadow: none;
 }

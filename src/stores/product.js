@@ -10,7 +10,8 @@ export const useProductStore = defineStore("product", () => {
     price: 79,
     city: "г.Краснодар",
     image: imgProd,
-    isLiked: false
+    isLiked: false,
+    category: "tovary"
   },
   {
     id: 2,
@@ -18,7 +19,8 @@ export const useProductStore = defineStore("product", () => {
     price: 79,
     city: "г.Краснодар",
     image: imgProd,
-    isLiked: false
+    isLiked: false,
+    category: "tovary"
   },
   {
     id: 3,
@@ -26,7 +28,8 @@ export const useProductStore = defineStore("product", () => {
     price: 79,
     city: "г.Краснодар",
     image: imgProd,
-    isLiked: false
+    isLiked: false,
+    category: "tovary"
   },
   {
     id: 4,
@@ -34,7 +37,8 @@ export const useProductStore = defineStore("product", () => {
     price: 79,
     city: "г.Краснодар",
     image: imgProd,
-    isLiked: false
+    isLiked: false,
+    category: "tovary"
   },
   {
     id: 5,
@@ -42,7 +46,8 @@ export const useProductStore = defineStore("product", () => {
     price: 79,
     city: "г.Краснодар",
     image: imgProd,
-    isLiked: false
+    isLiked: false,
+    category: "tovary"
   },
   {
     id: 6,
@@ -50,7 +55,8 @@ export const useProductStore = defineStore("product", () => {
     price: 79,
     city: "г.Краснодар",
     image: imgProd,
-    isLiked: false
+    isLiked: false,
+    category: "biznes"
   },
   {
     id: 7,
@@ -58,15 +64,74 @@ export const useProductStore = defineStore("product", () => {
     price: 79,
     city: "г.Краснодар",
     image: imgProd,
-    isLiked: false
+    isLiked: false,
+    category: "tovary",
+    description:"B cтабильную компaнию требуются агент-менеджeры для oбщения c клиeнтaми. Работа c тёплoй и xoлoднoй базой, консультации и прoдажи финанcoвых пpoдуктoв. Условия:"
   },
   {
     id: 8,
-    title: "Коробки 600*400*300 мм К-51 оптом",
-    price: 79,
+    title: "Тур в Турцию",
+    price: 75000,
     city: "г.Краснодар",
     image: imgProd,
-    isLiked: false
+    isLiked: false,
+    category: "travel",
+    description:"B cтабильную компaнию требуются агент-менеджeры для oбщения c клиeнтaми. Работа c тёплoй и xoлoднoй базой, консультации и прoдажи финанcoвых пpoдуктoв. Условия:"
+  },
+  {
+    id: 9,
+    title: "Квартира 2к",
+    price: 5000000,
+    city: "г.Краснодар",
+    image: imgProd,
+    isLiked: false,
+    category: "nedvizhimost"
+  },
+  {
+    id: 10,
+    title: "Автомобиль BMW",
+    price: 1200000,
+    city: "г.Краснодар",
+    image: imgProd,
+    category: "transport"
+  },
+  {
+    id: 11,
+    title: "Щенок хаски",
+    price: 30000,
+    city: "г.Краснодар",
+    image: imgProd,
+    category: "animals"
+  },
+  {
+    id: 12,
+    title: "Мытья окон",
+    price: 1200,
+    city: "г.Краснодар",
+    image: imgProd,
+    category: "uslugi",
+    description:"B cтабильную компaнию требуются агент-менеджeры для oбщения c клиeнтaми. Работа c тёплoй и xoлoднoй базой, консультации и прoдажи финанcoвых пpoдуктoв. Условия:"
+  },
+  {
+    id: 13,
+    title:"Агент менеджер", 
+    salary:"70 000 - 90 000",
+    price:"70 000 - 90 000", 
+    city:"Краснодар",
+    image: imgProd,
+    category: "rabota",
+    type:"vacancy",
+    description:"B cтабильную компaнию требуются агент-менеджeры для oбщения c клиeнтaми. Работа c тёплoй и xoлoднoй базой, консультации и прoдажи финанcoвых пpoдуктoв. Условия:"
+  },
+  {
+    id: 14,
+    name:"Анна", 
+    title:"Менеджер", 
+    city:"Краснодар",
+    image: imgProd,
+    category: "rabota",
+    type:"resume",
+    description:"B cтабильную компaнию требуются агент-менеджeры для oбщения c клиeнтaми. Работа c тёплoй и xoлoднoй базой, консультации и прoдажи финанcoвых пpoдуктoв. Условия:"
   },
 ])
 

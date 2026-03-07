@@ -1,26 +1,19 @@
 <template>
   <div class="product-card">
-
     <a href="">
       <img :src="product.image" alt="" class="product-img" />
     </a>
-
     <div class="product-card__content">
-
       <a href="" class="text13 title">
         {{ product.title }}
       </a>
-
       <div class="price">
         {{ product.price }} р
       </div>
-
       <div class="product-content__bottom">
-
         <div class="text13">
           {{ product.city }}
         </div>
-
         <img
           class="card-like"
           :src="product.isLiked ? heartFilled : heart"
@@ -38,8 +31,8 @@ import heartFilled from "/src/assets/img/icons/heart-filled.svg"
 import { useAuthStore } from "/src/stores/authStore.js"
 import { useModalStore } from "/src/stores/modal.js"
 
-const authStore = useAuthStore()
-const modalStore = useModalStore()
+const auth = useAuthStore()
+const modal = useModalStore()
 
 const props = defineProps({
   product: {
@@ -49,12 +42,11 @@ const props = defineProps({
 })
 
 const emit = defineEmits(["toggle-like"])
-
 const onLikeClick = () => {
-  if (!authStore.isAuthenticated) {
-    modalStore.openAuthModal()
-    return
-  }
+    if (!auth.isAuthenticated) {
+      modal.openLogin()
+      return
+    }
   emit("toggle-like", props.product.id)
 }
 </script>
