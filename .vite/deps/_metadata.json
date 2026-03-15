@@ -1,31 +1,46 @@
 {
-  "hash": "db88acc4",
+  "hash": "a6d76ea5",
   "configHash": "0a574fd0",
-  "lockfileHash": "a1ef03da",
-  "browserHash": "d72d4592",
+  "lockfileHash": "b9e2d4c0",
+  "browserHash": "ea78d1dd",
   "optimized": {
     "vue": {
       "src": "../../node_modules/vue/dist/vue.runtime.esm-bundler.js",
       "file": "vue.js",
-      "fileHash": "2eb03e7b",
+      "fileHash": "565b1864",
+      "needsInterop": false
+    },
+    "vue-yandex-maps": {
+      "src": "../../node_modules/vue-yandex-maps/dist/vue-yandex-maps.js",
+      "file": "vue-yandex-maps.js",
+      "fileHash": "2b7013a7",
       "needsInterop": false
     },
     "pinia": {
       "src": "../../node_modules/pinia/dist/pinia.mjs",
       "file": "pinia.js",
-      "fileHash": "21d51571",
+      "fileHash": "23634019",
       "needsInterop": false
+    },
+    "vue-the-mask": {
+      "src": "../../node_modules/vue-the-mask/dist/vue-the-mask.js",
+      "file": "vue-the-mask.js",
+      "fileHash": "7dc7c333",
+      "needsInterop": true
     },
     "vue-router": {
       "src": "../../node_modules/vue-router/dist/vue-router.mjs",
       "file": "vue-router.js",
-      "fileHash": "680c3a1e",
+      "fileHash": "db979825",
       "needsInterop": false
     }
   },
   "chunks": {
     "chunk-ZETSIBQN": {
       "file": "chunk-ZETSIBQN.js"
+    },
+    "chunk-BUSYA2B4": {
+      "file": "chunk-BUSYA2B4.js"
     }
   }
 }

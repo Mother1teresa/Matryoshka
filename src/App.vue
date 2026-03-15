@@ -1,17 +1,9 @@
-<script setup>
-import Header from './components/layout/Header.vue';
-import Footer from './components/layout/Footer.vue';
-import RegionModal from "./components/layout/RegionModal.vue"
-import MegaMenu from "./components/layout/MegaMenu.vue";
-import AuthModal from "./modals/AuthModal.vue";
-</script>
-
 <template>
   <!-- Мобильная заглушка -->
   <div class="mobile-block">
     <div class="mobile-card">
       <div class="icon">
-        <img src="/src/assets/img/zagluh/icon-zagluhka.svg" alt="" />
+        <img :src="zagluhIcon" alt="" />
       </div>
       <div class="zagluh-title">У нас для вас прекрасная новость!</div>
       <p>
@@ -33,6 +25,15 @@ import AuthModal from "./modals/AuthModal.vue";
     <Footer />
   </div>
 </template>
+
+<script setup>
+import Header from './components/layout/Header.vue';
+import Footer from './components/layout/Footer.vue';
+import RegionModal from "./components/layout/RegionModal.vue"
+import MegaMenu from "./components/layout/MegaMenu.vue";
+import AuthModal from "./modals/AuthModal.vue";
+import zagluhIcon from '/src/assets/img/zagluh/icon-zagluhka.svg'
+</script>
 
 <style scoped>
 .mobile-block {
