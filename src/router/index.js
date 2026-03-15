@@ -19,6 +19,6 @@ const routes = [
 ]
 
 export const router = createRouter({
-  history: createWebHistory('/Matryoshka/'),
+  history: createWebHistory('/'),
   routes
 })
