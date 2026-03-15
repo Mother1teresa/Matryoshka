@@ -120,7 +120,8 @@ export const useProductStore = defineStore("product", () => {
     city:"Краснодар",
     image: imgProd,
     category: "rabota",
-    type:"vacancy",
+    type:"jobs",
+    subcategory: "office",
     description:"B cтабильную компaнию требуются агент-менеджeры для oбщения c клиeнтaми. Работа c тёплoй и xoлoднoй базой, консультации и прoдажи финанcoвых пpoдуктoв. Условия:"
   },
   {
@@ -131,6 +132,7 @@ export const useProductStore = defineStore("product", () => {
     image: imgProd,
     category: "rabota",
     type:"resume",
+    subcategory: "resume-management",
     description:"B cтабильную компaнию требуются агент-менеджeры для oбщения c клиeнтaми. Работа c тёплoй и xoлoднoй базой, консультации и прoдажи финанcoвых пpoдуктoв. Условия:"
   },
 ])

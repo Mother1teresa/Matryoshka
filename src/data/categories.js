@@ -27,7 +27,6 @@ export const categories = [
             ]
           },
           { name: "Запчасти и аксессуары", slug: "parts" },
-          { name: "Другое", slug: "other" }
         ]
       }
     ]

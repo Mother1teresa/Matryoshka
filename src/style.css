@@ -26,7 +26,7 @@
 
 html {
   font-family: Arial;
-  font-size: 1.111vw;
+  font-size: .8rem;
   font-style: normal;
   font-weight: 400;
   -webkit-animation: bugfix infinite 1s;
@@ -196,6 +196,7 @@ h4 {
 }
 .overflow-mod{
   overflow: hidden;
+  padding-right: 6px;
 }
 
 ::-webkit-scrollbar {
@@ -229,4 +230,9 @@ h4 {
 .category:hover,.tab-btn:hover {
   opacity: 70%;
   box-shadow: none;
+}
+.ymaps-2-1-79-map-copyrights-promo{
+  z-index: -5 !important;
+  display: none !important;
+  opacity: 0 !important;
 }

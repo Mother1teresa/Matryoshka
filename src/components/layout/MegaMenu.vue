@@ -7,7 +7,6 @@ import { categories } from "/src/data/categories.js"
 const route = useRoute();
 const menu = useMenuStore()
 const activeCategory = ref(categories[0])
-
 const setActive = (cat) => {
   activeCategory.value = cat
 }
@@ -47,7 +46,13 @@ watch(route, () => {
         <router-link
           v-for="link in section.links"
           :key="link.slug"
-          :to="`/${activeCategory.slug}/${link.slug}`"
+          :to="{ name: 'catalog', 
+                 params: { 
+                    type: activeCategory.slug, 
+                    section: section.slug || section.title_slug || link.slug, // зависит от вашей структуры данных
+                    subcategory: link.slug 
+                 } 
+               }"
           @click="menu.close()"
           class="section-link"
         >
@@ -155,10 +160,6 @@ watch(route, () => {
 /* hover link */
 .section-link:hover {
   color: #64A07A;
-}
-
-.overflow-mod {
-  overflow: hidden;
 }
 
 .mega-left__icon {

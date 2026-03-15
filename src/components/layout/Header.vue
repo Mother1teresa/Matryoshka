@@ -9,9 +9,9 @@
       </transition>
 
       <div class="header__top">
-        <a href="/" class="logo">
+        <router-link to="/" class="logo">
           <span>Матрёшка</span>
-        </a>
+        </router-link>
         <div class="header__center">
           <a href="#" class="btn-primary btn">
             <img src="/src/assets/img/icon-primary.svg" />
@@ -30,9 +30,9 @@
               <button class="btn-light btn-login" @click="modal.openLogin">
                 Войти
               </button>
-              <button class="btn-light">
+              <button class="btn-light" @click="region.open()">
                 <img src="/src/assets/img/location_on.svg" />
-                Регион
+                {{ region.selectedRegion || "Регион"  }}
               </button>
             </div>
           </template>
@@ -49,9 +49,9 @@
                     <img src="/src/assets/img/mes.svg" />
                   </a>
                 </div>
-                <button class="btn-light">
+                <button class="btn-light" @click="region.open()">
                   <img src="/src/assets/img/location_on.svg" />
-                  Регион
+                  {{ region.selectedRegion || "Регион"  }}
                 </button>
               </div>
 
@@ -122,7 +122,6 @@
       </div>
     </div>
   </transition>
-  
 </template>
 
 <script setup>
@@ -130,25 +129,24 @@ import { ref, onMounted, onBeforeUnmount } from "vue";
 import { useAuthStore } from "/src/stores/authStore.js";
 import { useModalStore } from "/src/stores/modal.js";
 import { useMenuStore } from "/src/stores/menu.js"
+import { useRegionModalStore } from "/src/stores/regionModal.js"
 
 const modal = useModalStore();
 const menu = useMenuStore();
 const auth = useAuthStore();
+const region = useRegionModalStore();
 
 const showNotification = ref(false);
 const notificationText = ref("");
 const showProfileMenu = ref(false);
 const showLogoutConfirm = ref(false);
 
-
 function toggleProfileMenu() {
   showProfileMenu.value = !showProfileMenu.value;
 }
-
 function askLogout() {
   showLogoutConfirm.value = true;
 }
-
 function confirmLogout() {
   auth.logout();
   showProfileMenu.value = false;
@@ -160,7 +158,6 @@ function confirmLogout() {
     showNotification.value = false;
   }, 3000);
 }
-
 function cancelLogout() {
   showLogoutConfirm.value = false;
 }
@@ -171,7 +168,6 @@ function handleClickOutside(e) {
     showProfileMenu.value = false;
   }
 }
-
 onMounted(() => {
   document.addEventListener("click", handleClickOutside);
   window.addEventListener("notify", (e) => {
@@ -201,7 +197,6 @@ onBeforeUnmount(() => {
 }
 
 /* -------- Плашка -------- */
-
 .notification {
   position: absolute;
   top: 3.45rem;
@@ -300,6 +295,7 @@ onBeforeUnmount(() => {
   z-index: 0;
   background-repeat: no-repeat;
   background-position: center;
+  background-size: 100%;
 }
 
 .search-input {

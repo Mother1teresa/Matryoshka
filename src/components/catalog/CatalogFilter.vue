@@ -16,7 +16,6 @@ const dealType = ref(route.query.dealType || 'buy');
 const typeParam = computed(() => route.params.type);
 const sectionParam = computed(() => route.params.section); 
 
-
 const currentCategoryData = computed(() => 
   categories.find(c => c.slug === typeParam.value)
 );
@@ -103,12 +102,17 @@ const form = ref({
   passengersFrom: '', passengersTo: '',
   hullMaterial: '',
 });
-
 // 4. СВЯЗКА MULTISELECT (Объекты) + FORM (Строки slug/value)
 const selectedSubcategory = computed({
-  get: () => currentSubLinks.value.find(opt => opt.slug === form.value.subcategory) || null,
-  set: (val) => { form.value.subcategory = val ? val.slug : ''; }
+  get: () => {
+    const currentSlug = route.params.subcategory || form.value.subcategory;
+    return currentSubLinks.value.find(opt => opt.slug === currentSlug) || null;
+  },
+  set: (val) => {
+    form.value.subcategory = val ? val.slug : '';
+  }
 });
+
 const selectedExperience = computed({
   get: () => experienceOptions.find(opt => opt.value === form.value.experience) || null,
   set: (val) => { form.value.experience = val ? val.value : ''; }
@@ -123,12 +127,30 @@ watch(dealType, () => applyFilters());
 watch(form, () => applyFilters(), { deep: true });
 
 function applyFilters() {
-  const queryData = { ...route.query, dealType: props.type === 'realty' ? dealType.value : undefined, ...form.value };
+  const filters = { ...form.value };
+  const sub = filters.subcategory; 
+  delete filters.subcategory; 
+  const subParam = (sub === route.params.section) ? undefined : (sub || undefined);
+
   const cleanQuery = Object.fromEntries(
-    Object.entries(queryData).filter(([_, v]) => v !== '' && v !== null && v !== undefined)
+    Object.entries({ 
+      ...route.query, 
+      dealType: props.type === 'realty' ? dealType.value : undefined, 
+      ...filters 
+    }).filter(([key, v]) => 
+      v !== '' && v !== null && v !== undefined && key !== 'subcategory'
+    )
   );
-  router.push({ query: cleanQuery });
+  router.push({
+    name: 'catalog',
+    params: { 
+      ...route.params, 
+      subcategory: subParam
+    },
+    query: cleanQuery
+  });
 }
+
 const toggleTag = (field, value) => {
   const index = form.value[field].indexOf(value);
   if (index > -1) {
@@ -138,6 +160,53 @@ const toggleTag = (field, value) => {
   }
 };
 const subcategory = computed(() => route.params.subcategory);
+watch(
+  () => route.params.subcategory,
+  (newSub) => {
+    if (newSub) {
+      form.value.subcategory = newSub;
+    }
+  },
+  { immediate: true }
+);
+watch(
+  () => route.params.section,
+  () => {
+    if (!route.params.subcategory) {
+      form.value.subcategory = '';
+    }
+  }
+);
+const resetForm = () => {
+  Object.keys(form.value).forEach(key => {
+    if (Array.isArray(form.value[key])) {
+      form.value[key] = [];
+    } else {
+      form.value[key] = '';
+    }
+  });
+};
+watch(sectionParam, (newVal, oldVal) => {
+  if (newVal !== oldVal) {
+    let targetSub = route.params.subcategory;
+    if (newVal === 'water' && !targetSub) {
+      targetSub = 'yachts';
+    }
+    resetForm();  
+    if (targetSub) {
+      form.value.subcategory = targetSub;
+    }
+    router.replace({
+      name: 'catalog',
+      params: { 
+        ...route.params, 
+        section: newVal,
+        subcategory: targetSub || undefined 
+      },
+      query: {} 
+    });
+  }
+});
 </script>
 
 <template>

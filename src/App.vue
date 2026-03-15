@@ -1,4 +1,7 @@
 <script setup>
+import Header from './components/layout/Header.vue';
+import Footer from './components/layout/Footer.vue';
+import RegionModal from "./components/layout/RegionModal.vue"
 import MegaMenu from "./components/layout/MegaMenu.vue";
 import AuthModal from "./modals/AuthModal.vue";
 </script>
@@ -22,9 +25,12 @@ import AuthModal from "./modals/AuthModal.vue";
 
   <!-- Основной сайт -->
   <div class="desktop-content">
+    <Header />
     <router-view />
     <MegaMenu />
     <AuthModal />
+    <RegionModal/>
+    <Footer />
   </div>
 </template>
 

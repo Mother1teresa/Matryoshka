@@ -3,8 +3,7 @@ import { computed, watchEffect, onMounted  } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { categories } from "/src/data/categories.js";
 import { useMenuStore } from "/src/stores/menu.js";
-import Header from "../components/layout/Header.vue";
-import Footer from "../components/layout/Footer.vue";
+
 import ProductsGrid from "/src/components/catalog/ProductsGrid.vue";
 import HorizontalList from "/src/components/catalog/HorizontalList.vue";
 import CatalogFilter from "/src/components/catalog/CatalogFilter.vue";
@@ -48,10 +47,21 @@ const breadcrumbSectionName = computed(
   () => activeTabItem.value?.title || activeTabItem.value?.name,
 );
 const breadcrumbSubName = computed(() => {
-  if (!activeTabItem.value || !subcategory.value) return null;
-  const list = activeTabItem.value.links || activeTabItem.value.subLinks || [];
-  return list.find((item) => item.slug === subcategory.value)?.name;
+  const currentSubSlug = subcategory.value || route.query.subcategory;
+  if (!currentCategory.value || !currentSubSlug) return null;
+  for (const section of currentCategory.value.sections) {
+    const directLink = section.links?.find(l => l.slug === currentSubSlug);
+    if (directLink) return directLink.name;
+    if (section.links) {
+      for (const link of section.links) {
+        const deepLink = link.subLinks?.find(sl => sl.slug === currentSubSlug);
+        if (deepLink) return deepLink.name;
+      }
+    }
+  }
+  return null;
 });
+
 const filterType = computed(() => {
   if (type.value === "rabota") return "jobs";
   if (type.value === "nedvizhimost") return "realty";
@@ -91,12 +101,11 @@ onMounted(() => {
 });
 </script>
 <template>
-  <Header />
   <div class="container">
     <div class="breadcrumbs">
-      <a href="/">Главная</a> → {{ currentCategory?.name }}
+      <router-link to="/">Главная</router-link> → {{ currentCategory?.name }}
       <span v-if="breadcrumbSectionName"> → {{ breadcrumbSectionName }}</span>
-      <span v-if="breadcrumbSubName"> → {{ breadcrumbSubName }}</span>
+      <span v-if="breadcrumbSubName && breadcrumbSubName !== breadcrumbSectionName"> → {{ breadcrumbSubName }}</span>
     </div>
     <div class="catalog-title">
       <img :src="currentCategory?.icon" />
@@ -118,7 +127,6 @@ onMounted(() => {
     <CatalogFilter :type="pageConfig.filterType" />
     <component :is="pageConfig.component" :category="type" :subcategory="subcategory" :filters="route.query"/>
   </div>
-  <Footer />
 </template>
 
 <style scoped>
