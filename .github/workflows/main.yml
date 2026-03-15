@@ -45,7 +45,12 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update && sudo apt-get install -y sshpass
 
+      - name: Add server to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+
       - name: Deploy to production server via SCP
         run: |
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -r dist/* \
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -r dist/ \
           ${{ secrets.SSH_USERNAME }}@${{ secrets.SERVER_IP }}:/var/www/html/
