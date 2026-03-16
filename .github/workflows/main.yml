@@ -55,3 +55,4 @@ jobs:
         run: |
           kubectl set image deployment/frontend-deployment frontend=${{ secrets.DOCKER_USERNAME }}/frontend:latest
           kubectl rollout status deployment/frontend-deployment
+          
