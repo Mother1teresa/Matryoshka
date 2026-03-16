@@ -13,6 +13,12 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
+      - name: List files for debugging
+        run: |
+          echo "Current working directory: $(pwd)"
+          echo "Files in the current directory:"
+          ls -la
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
@@ -35,6 +41,7 @@ jobs:
 
       - name: Build Docker image
         run: |
+          set -x  # Подробный вывод команд
           docker build -t ${{ secrets.DOCKER_USERNAME }}/frontend:latest -f Dockerfile.frontend .
 
       - name: Push Docker image
@@ -55,4 +62,3 @@ jobs:
         run: |
           kubectl set image deployment/frontend-deployment frontend=${{ secrets.DOCKER_USERNAME }}/frontend:latest
           kubectl rollout status deployment/frontend-deployment
-          
