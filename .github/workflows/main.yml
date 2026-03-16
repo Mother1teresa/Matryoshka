@@ -48,6 +48,12 @@ jobs:
         run: |
           docker push ${{ secrets.DOCKER_USERNAME }}/frontend:latest
 
+      - name: Install k3s
+        run: |
+          # Устанавливаем k3s
+          curl -sfL https://get.k3s.io | sh -
+          sudo ln -s /usr/local/bin/k3s /usr/bin/k3s
+
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
         with:
@@ -60,5 +66,6 @@ jobs:
 
       - name: Deploy to Kubernetes
         run: |
+          # Убедись, что k3s kubectl используется после установки k3s
           k3s kubectl set image deployment/frontend-deployment frontend=${{ secrets.DOCKER_USERNAME }}/frontend:latest
           k3s kubectl rollout status deployment/frontend-deployment
