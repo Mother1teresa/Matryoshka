@@ -63,9 +63,13 @@ jobs:
         run: |
           echo "${{ secrets.KUBE_CONFIG }}" > kubeconfig
           export KUBECONFIG=kubeconfig
+          
+          # Убедимся, что k3s kubectl используется после установки k3s
+          export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+          k3s kubectl get nodes # Проверка подключения к кластеру
 
       - name: Deploy to Kubernetes
         run: |
-          # Убедись, что k3s kubectl используется после установки k3s
+          # Деплой новой версии фронтенда в Kubernetes через k3s kubectl
           k3s kubectl set image deployment/frontend-deployment frontend=${{ secrets.DOCKER_USERNAME }}/frontend:latest
           k3s kubectl rollout status deployment/frontend-deployment
