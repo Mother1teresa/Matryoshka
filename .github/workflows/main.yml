@@ -70,7 +70,7 @@ jobs:
       # Шаг 11: Применение конфигурации деплоймента (создание деплоймента)
       - name: Apply frontend deployment configuration
         run: |
-          sudo k3s kubectl apply -f /root/frontend-deployment.yml
+          sudo k3s kubectl apply -f frontend-deployment.yml
           sudo k3s kubectl get deployments
 
       # Шаг 12: Обновление образа в деплойменте
