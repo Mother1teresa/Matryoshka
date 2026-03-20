@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Шаг 1: Проверка исходного кода
       - name: Checkout repo
         uses: actions/checkout@v3
 
@@ -19,48 +20,59 @@ jobs:
           echo "Files in the current directory:"
           ls -la
 
+      # Шаг 2: Установка Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 20
 
+      # Шаг 3: Установка зависимостей
       - name: Install dependencies
         run: npm ci
 
+      # Шаг 4: Сборка фронтенда
       - name: Build frontend
         run: npm run build
 
+      # Шаг 5: Установка Docker
       - name: Set up Docker
         uses: docker/setup-buildx-action@v2
 
+      # Шаг 6: Логин в Docker Registry
       - name: Log in to Docker registry
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      # Шаг 7: Сборка Docker image
       - name: Build Docker image
         run: |
           set -x
           docker build -t ${{ secrets.DOCKER_USERNAME }}/frontend:latest -f Dockerfile.frontend .
 
+      # Шаг 8: Публикация Docker image в репозиторий
       - name: Push Docker image
         run: |
           set -x
           docker push ${{ secrets.DOCKER_USERNAME }}/frontend:latest
 
+      # Шаг 9: Настройка kubectl
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
         with:
           version: v1.30.0
 
+      # Шаг 10: Конфигурация kubeconfig
       - name: Configure kubeconfig
         run: |
           echo "${{ secrets.KUBE_CONFIG }}" > kubeconfig
           export KUBECONFIG=kubeconfig
-          sudo k3s kubectl get nodes
+          # Проверка подключения к кластеру Kubernetes
+          kubectl get nodes
 
+      # Шаг 11: Деплой на Kubernetes
       - name: Deploy to Kubernetes
         run: |
-          sudo k3s kubectl set image deployment/frontend-deployment frontend=${{ secrets.DOCKER_USERNAME }}/frontend:latest
-          sudo k3s kubectl rollout status deployment/frontend-deployment
+          kubectl set image deployment/frontend-deployment frontend=${{ secrets.DOCKER_USERNAME }}/frontend:latest
+          kubectl rollout status deployment/frontend-deployment
