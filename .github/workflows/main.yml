@@ -70,6 +70,6 @@ jobs:
 
       - name: Deploy to Kubernetes
         run: |
-          # Деплой новой версии фронтенда в Kubernetes через k3s kubectl
+          # Деплой новой версии фронтенда в Kubernetes через k3s kubectl.
           k3s kubectl set image deployment/frontend-deployment frontend=${{ secrets.DOCKER_USERNAME }}/frontend:latest
           k3s kubectl rollout status deployment/frontend-deployment
