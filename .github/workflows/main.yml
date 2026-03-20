@@ -49,11 +49,6 @@ jobs:
           set -x
           docker push ${{ secrets.DOCKER_USERNAME }}/frontend:latest
 
-      - name: Install k3s
-        run: |
-          curl -sfL https://get.k3s.io | sudo sh -s - --no-deploy traefik
-          export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
         with:
