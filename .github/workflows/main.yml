@@ -14,12 +14,6 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: List files for debugging
-        run: |
-          echo "Current working directory: $(pwd)"
-          echo "Files in the current directory:"
-          ls -la
-
       # Шаг 2: Установка Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -48,13 +42,11 @@ jobs:
       # Шаг 7: Сборка Docker image
       - name: Build Docker image
         run: |
-          set -x
           docker build -t ${{ secrets.DOCKER_USERNAME }}/frontend:latest -f Dockerfile.frontend .
 
       # Шаг 8: Публикация Docker image в репозиторий
       - name: Push Docker image
         run: |
-          set -x
           docker push ${{ secrets.DOCKER_USERNAME }}/frontend:latest
 
       # Шаг 9: Установка k3s
