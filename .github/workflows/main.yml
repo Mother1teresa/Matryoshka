@@ -64,23 +64,25 @@ jobs:
           sudo ln -s /usr/local/bin/k3s /usr/bin/k3s
           sudo systemctl enable k3s
           sudo systemctl start k3s
+          # Убедимся, что k3s запущен
+          sudo k3s kubectl get nodes
 
-      # Шаг 10: Настройка kubectl
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: v1.30.0
-
-      # Шаг 11: Конфигурация kubeconfig
-      - name: Configure kubeconfig
+      # Шаг 10: Настройка kubectl через k3s
+      - name: Set up kubectl using k3s
         run: |
           echo "${{ secrets.KUBE_CONFIG }}" > kubeconfig
           export KUBECONFIG=kubeconfig
-          # Проверка подключения к кластеру Kubernetes с помощью k3s
+          # Проверка подключения с помощью k3s kubectl
           sudo k3s kubectl get nodes
 
-      # Шаг 12: Деплой на Kubernetes через k3s
-      - name: Deploy to Kubernetes via k3s
+      # Шаг 11: Применение конфигурации деплоймента (создание деплоймента)
+      - name: Apply frontend deployment configuration
+        run: |
+          sudo k3s kubectl apply -f frontend-deployment.yml
+          sudo k3s kubectl get deployments
+
+      # Шаг 12: Обновление образа в деплойменте
+      - name: Update frontend deployment image
         run: |
           sudo k3s kubectl set image deployment/frontend-deployment frontend=${{ secrets.DOCKER_USERNAME }}/frontend:latest
           sudo k3s kubectl rollout status deployment/frontend-deployment
