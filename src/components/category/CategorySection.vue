@@ -18,7 +18,7 @@
           <img src="/src/assets/img/catalog/catalog4.svg" />
           Недвижимость
         </router-link>
-        <button class="category" @click="menu.open()"> Все категории </button>
+        <button class="category" @click="menu.open()">Все категории</button>
         <router-link to="/rabota" class="category">
           <img src="/src/assets/img/catalog/catalog5.svg" alt="" />
           Работа
@@ -41,8 +41,8 @@
 </template>
 
 <script setup>
-import { ref } from "vue"
-import { useMenuStore } from "/src/stores/menu.js"
+import { ref } from "vue";
+import { useMenuStore } from "/src/stores/menu.js";
 
 const menu = useMenuStore();
 </script>
@@ -52,11 +52,16 @@ const menu = useMenuStore();
   display: flex;
   flex-wrap: wrap;
   gap: 0.625rem;
-  width: 80%;
+  width: 84%;
 }
 
 .category img {
   height: 2.188rem;
   width: auto;
+}
+@media (max-width: 77rem) {
+  .categories {
+    width: 90%;
+  }
 }
 </style>

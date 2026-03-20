@@ -82,7 +82,7 @@ import zagluhIcon from '/src/assets/img/zagluh/icon-zagluhka.svg'
   width: 2.625rem;
   height: 1.688rem;
 }
-@media (max-width: 48em) {
+@media (max-width: 61.813rem) {
   .mobile-block {
     display: flex;
     padding: 0.938rem;

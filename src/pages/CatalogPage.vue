@@ -140,7 +140,7 @@ onMounted(() => {
 }
 .catalog-title {
   width: fit-content;
-  padding: 0.825rem 1rem;
+  padding: 0.625rem 1rem 0.825rem 1rem;
   padding-right: 1.75rem;
   color: var(--btn-bg);
   font-weight: 500;

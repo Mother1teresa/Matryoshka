@@ -995,10 +995,9 @@ watch(sectionParam, (newVal, oldVal) => {
 .f-input::-webkit-outer-spin-button,
 .f-input::-webkit-inner-spin-button {-webkit-appearance: none;margin: 0;}
 .f-input[type='number'] {-moz-appearance: textfield;}
-.expand-btn {text-align: center; background: white; border: none; border-radius: 10px; width: 2.5rem; height: 2.5rem; cursor: pointer; }
+.expand-btn {text-align: center; background: white; border: none; border-radius: 0.938rem; width: 2.5rem; height: 2.4rem; cursor: pointer; }
 .expand-btn img { width: 1rem; height: 1rem; display: inline-block; color: #000; transition: transform 0.3s;}
 .expand-btn img.rotate { transform: rotate(180deg); }
-.apply-btn { background: #FFD600; color: #000; border: none; padding: 10px 30px; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 15px; }
 
 :deep(.multiselect__option--highlight) { background: #64A07A !important; color: #fff !important; }
 :deep(.multiselect__option::after) { display: none !important; }
@@ -1055,7 +1054,7 @@ watch(sectionParam, (newVal, oldVal) => {
 .extra-group label { display: block; margin-bottom: 8px; font-size: 14px; }
 .chips { display: flex; gap: 0.6rem; }
 .chip {
-  padding: 0.75rem .95rem 0.75rem .95rem;
+  padding: 0.75rem .85rem;
   border-radius: 0.938rem;
   border: none;
   background: white;
@@ -1078,7 +1077,7 @@ watch(sectionParam, (newVal, oldVal) => {
 }
 .realty-chips .chip{
   border-radius: 0.938rem;
-  padding: 0.75rem 1.188rem 0.938rem 1.188rem;
+  padding: 0.838rem 1.188rem 0.838rem 1.188rem;
   text-align: center;
 }
 .filter-footer {
