@@ -25,10 +25,10 @@ jobs:
           node-version: 20
 
       - name: Install dependencies
-        run: npm ci
+        run: sudo npm ci
 
       - name: Build frontend
-        run: npm run build
+        run: sudo npm run build
 
       - name: Set up Docker
         uses: docker/setup-buildx-action@v2
@@ -41,17 +41,17 @@ jobs:
 
       - name: Build Docker image
         run: |
-          set -x  # Подробный вывод команд
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/frontend:latest -f Dockerfile.frontend .
+          set -x
+          sudo docker build -t ${{ secrets.DOCKER_USERNAME }}/frontend:latest -f Dockerfile.frontend .
 
       - name: Push Docker image
         run: |
-          set -x  # Подробный вывод команд
-          docker push ${{ secrets.DOCKER_USERNAME }}/frontend:latest
+          set -x
+          sudo docker push ${{ secrets.DOCKER_USERNAME }}/frontend:latest
 
       - name: Install k3s
         run: |
-          curl -sfL https://get.k3s.io | sh -s - --no-deploy traefik
+          curl -sfL https://get.k3s.io | sudo sh -s - --no-deploy traefik
           export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 
       - name: Set up kubectl
@@ -63,11 +63,9 @@ jobs:
         run: |
           echo "${{ secrets.KUBE_CONFIG }}" > kubeconfig
           export KUBECONFIG=kubeconfig
-          # Проверим подключение к кластеру с помощью kubectl
-          k3s kubectl get nodes # Проверка подключения к кластеру
+          sudo k3s kubectl get nodes
 
       - name: Deploy to Kubernetes
         run: |
-          # Деплой новой версии фронтенда в Kubernetes через k3s kubectl
-          k3s kubectl set image deployment/frontend-deployment frontend=${{ secrets.DOCKER_USERNAME }}/frontend:latest
-          k3s kubectl rollout status deployment/frontend-deployment
+          sudo k3s kubectl set image deployment/frontend-deployment frontend=${{ secrets.DOCKER_USERNAME }}/frontend:latest
+          sudo k3s kubectl rollout status deployment/frontend-deployment
