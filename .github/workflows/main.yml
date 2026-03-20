@@ -57,22 +57,30 @@ jobs:
           set -x
           docker push ${{ secrets.DOCKER_USERNAME }}/frontend:latest
 
-      # Шаг 9: Настройка kubectl
+      # Шаг 9: Установка k3s
+      - name: Install k3s
+        run: |
+          curl -sfL https://get.k3s.io | sh -
+          sudo ln -s /usr/local/bin/k3s /usr/bin/k3s
+          sudo systemctl enable k3s
+          sudo systemctl start k3s
+
+      # Шаг 10: Настройка kubectl
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
         with:
           version: v1.30.0
 
-      # Шаг 10: Конфигурация kubeconfig
+      # Шаг 11: Конфигурация kubeconfig
       - name: Configure kubeconfig
         run: |
           echo "${{ secrets.KUBE_CONFIG }}" > kubeconfig
           export KUBECONFIG=kubeconfig
-          # Проверка подключения к кластеру Kubernetes
-          kubectl get nodes
+          # Проверка подключения к кластеру Kubernetes с помощью k3s
+          sudo k3s kubectl get nodes
 
-      # Шаг 11: Деплой на Kubernetes
-      - name: Deploy to Kubernetes
+      # Шаг 12: Деплой на Kubernetes через k3s
+      - name: Deploy to Kubernetes via k3s
         run: |
-          kubectl set image deployment/frontend-deployment frontend=${{ secrets.DOCKER_USERNAME }}/frontend:latest
-          kubectl rollout status deployment/frontend-deployment
+          sudo k3s kubectl set image deployment/frontend-deployment frontend=${{ secrets.DOCKER_USERNAME }}/frontend:latest
+          sudo k3s kubectl rollout status deployment/frontend-deployment
