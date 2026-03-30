@@ -1,4 +1,5 @@
 <template>
+    <Header />
     <main class="home">
         <MiniVideoSection />
         <CategorySection />
@@ -7,6 +8,7 @@
 </template>
 
 <script setup>
+import Header from '../components/layout/Header.vue';
 import MiniVideoSection from '../components/video/MiniVideoSection.vue';
 import CategorySection from '../components/category/CategorySection.vue';
 import ProductSection from '../components/product/ProductSection.vue';

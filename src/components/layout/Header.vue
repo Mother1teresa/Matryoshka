@@ -54,35 +54,36 @@
                   {{ region.selectedRegion || "Регион"  }}
                 </button>
               </div>
-
               <!-- профиль -->
               <div class="profile-wrapper">
                 <div class="profile" @click.stop="toggleProfileMenu">
                   <div class="profile-block">
-                    <img :src="auth.user?.avatar" class="avatar" />
+                    <img :src="auth.userAvatar" class="avatar" />
                     <img
                       src="/src/assets/img/arrow-profil.svg"
                       class="arr-profil"
-                      :class="{ rotate: showProfileMenu }"
-                    />
+                      :class="{ rotate: showProfileMenu }"/>
                   </div>
                   <span>
                     {{ auth.user?.name }}
                   </span>
                 </div>
-
                 <!-- dropdown -->
                 <transition name="fade">
-                  <div v-if="showProfileMenu" class="profile-menu">
-                    <div class="rating">4,8 ★★★★★</div>
+                  <div v-if="showProfileMenu" class="profile-menu" @click="showProfileMenu = false">
+                    <div class="rating" v-if="auth.user?.id">{{ reviewStore.getRatingById(auth.user.id) }}
+                      <span>★★★★★</span></div>
                     <ul>
-                      <li><a href="">Мои ролики</a></li>
-                      <li><a href="">Мои объявления</a></li>
-                      <li><a href="">Создать объявление</a></li>
-                      <li><a href="">Заказы</a></li>
-                      <li><a href="">Избранное</a></li>
-                      <li><a href="">Сообщения</a></li>
-                      <li><a href="">Уведомления</a></li>
+                      <li><router-link to="/profile/info">Мои данные</router-link></li>
+                      <li><router-link to="/profile/videos">Мои ролики</router-link></li>
+                      <li><router-link to="/profile/ads">Мои объявления</router-link></li>
+                      <li><router-link to="/create-ad">Создать объявление</router-link></li>
+                      <li><router-link to="/profile/orders">Заказы</router-link></li>
+                      <li><router-link to="/profile/favorites">Избранное</router-link></li>
+                      <li><router-link to="/profile/referral">Приглашайте друзей</router-link></li>
+                      <li><router-link to="/profile/responses">Отклики</router-link></li>
+                      <li><router-link to="/profile/messages">Сообщения</router-link></li>
+                      <li><router-link to="/profile/notifications">Уведомления</router-link></li>
                       <li class="logout" @click="askLogout">Выйти</li>
                     </ul>
                   </div>
@@ -101,7 +102,6 @@
           </div>
           <button class="btn-search btn">Найти</button>
         </div>
-
         <button class="btn-category btn" @click="menu.open()">
           <img src="/src/assets/img/header-catalog.svg" />
           Категории
@@ -128,13 +128,15 @@
 import { ref, onMounted, onBeforeUnmount } from "vue";
 import { useAuthStore } from "/src/stores/authStore.js";
 import { useModalStore } from "/src/stores/modal.js";
-import { useMenuStore } from "/src/stores/menu.js"
-import { useRegionModalStore } from "/src/stores/regionModal.js"
+import { useMenuStore } from "/src/stores/menu.js";
+import { useRegionModalStore } from "/src/stores/regionModal.js";
+import { useReviewStore } from '/src/stores/reviews.js';
 
 const modal = useModalStore();
 const menu = useMenuStore();
 const auth = useAuthStore();
 const region = useRegionModalStore();
+const reviewStore = useReviewStore();
 
 const showNotification = ref(false);
 const notificationText = ref("");
@@ -171,7 +173,6 @@ function handleClickOutside(e) {
 onMounted(() => {
   document.addEventListener("click", handleClickOutside);
   window.addEventListener("notify", (e) => {
-
     notificationText.value = e.detail
     showNotification.value = true
 
@@ -180,6 +181,9 @@ onMounted(() => {
     }, 3000)
 
   })
+  if (auth.user?.id) {
+    reviewStore.fetchReviewsBySeller(auth.user.id);
+  }
 });
 
 onBeforeUnmount(() => {
@@ -260,44 +264,6 @@ onBeforeUnmount(() => {
 }
 
 /* -------- Элементы -------- */
-
-.logo {
-  position: relative;
-  margin-left: 2.813rem;
-  top: 1.5rem;
-}
-.logo span {
-  text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-  z-index: 1;
-  font-size: 2rem;
-  box-shadow: 0px 0.2rem 0.2rem 0px #00000040;
-  background: var(--btn-bg);
-  color: white;
-  font-weight: 300;
-  /* width: 11.5rem; */
-  height: 3.125rem;
-  padding: 0.175rem 0.75rem 0.375rem 0.75rem;
-  border-radius: 1.25rem;
-  position: relative;
-  z-index: 1;
-  display: flex;
-  font-family: Arial;
-  letter-spacing: 1px;
-}
-.logo::after {
-  position: absolute;
-  content: "";
-  background-image: url('/src/assets/img/logo-h.svg');
-  width: 4.75rem;
-  height: 5.5rem;
-  top: -2.3rem;
-  left: -2.813rem;
-  z-index: 0;
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: 100%;
-}
-
 .search-input {
   font-size: 1.25rem;
   border: none;

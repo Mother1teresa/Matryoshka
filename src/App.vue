@@ -17,8 +17,7 @@
 
   <!-- Основной сайт -->
   <div class="desktop-content">
-    <Header />
-    <router-view />
+    <router-view :key="$route.fullPath" />
     <MegaMenu />
     <AuthModal />
     <RegionModal/>
@@ -27,7 +26,6 @@
 </template>
 
 <script setup>
-import Header from './components/layout/Header.vue';
 import Footer from './components/layout/Footer.vue';
 import RegionModal from "./components/layout/RegionModal.vue"
 import MegaMenu from "./components/layout/MegaMenu.vue";

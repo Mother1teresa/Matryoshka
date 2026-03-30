@@ -7,12 +7,18 @@ import {router} from './router'
 import { createPinia } from "pinia"
 import VueTheMask from 'vue-the-mask'
 
+import { useAuthStore } from "./stores/authStore.js" 
+
 const app = createApp(App)
 const pinia = createPinia()
+app.use(pinia);
+
+const auth = useAuthStore();
+auth.loadAuth();
+
 app.use(createYmaps({
   apikey: 'ab3a562f-41f9-4eb0-94ab-b982e13c7742',
 }));
-app.use(pinia)
 app.use(router)
 app.use(VueTheMask);
 

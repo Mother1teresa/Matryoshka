@@ -1,7 +1,8 @@
 <template>
   <section>
     <div class="container">
-      <div class="products">
+      <div v-if="productStore.isLoading" class="block__loading">Загрузка...</div>
+      <div v-else class="products">
         <ProductCard
           v-for="product in productStore.products"
           :key="product.id"
@@ -16,14 +17,19 @@
 
 <script setup>
 import { onMounted, watch } from "vue"
-
+import { useRoute } from "vue-router"
 import ProductCard from "./ProductCard.vue"
-
 import { useProductStore } from "/src/stores/product.js"
 import { useAuthStore } from "/src/stores/authStore.js"
 
 const productStore = useProductStore()
 const authStore = useAuthStore()
+const route = useRoute()
+
+const loadData = () => {
+  const category = route.params.category 
+  productStore.fetchAdverts({ category: category })
+}
 
 // обработка лайка
 const handleToggleLike = (productId) => {
@@ -44,22 +50,25 @@ const saveLikes = () => {
 
 // загрузить лайки
 const loadLikes = () => {
-
   if (!authStore.isAuthenticated) return
   const saved = localStorage.getItem("products")
   if (!saved) return
   const savedProducts = JSON.parse(saved)
-  productStore.products.forEach(product => {
-
-    const savedProduct = savedProducts.find(
-      p => p.id === product.id
-    )
+  
+  // Обновляем лайки в основном массиве
+  productStore.allProducts.forEach(product => {
+    const savedProduct = savedProducts.find(p => p.id === product.id)
     if (savedProduct) {
       product.isLiked = savedProduct.isLiked
     }
   })
 }
-
+watch(
+  () => route.params.category,
+  () => {
+    loadData()
+  }
+)
 // следим за logout
 watch(
   () => authStore.isAuthenticated,
@@ -74,14 +83,13 @@ watch(
 )
 
 onMounted(() => {
+  loadData() // Загружаем товары при открытии страницы
   authStore.loadAuth()
   if (authStore.isAuthenticated) {
     loadLikes()
   }
 })
 </script>
-
-
 <style scoped>
 .products {
   background-color: #ececec;

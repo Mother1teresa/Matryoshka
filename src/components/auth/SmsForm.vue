@@ -42,19 +42,15 @@ import { api } from "/src/api/api.js"
 
 const modal = useModalStore()
 const auth = useAuthStore()
-
 const inputs = ref([])
 const code = ref(["","","","","",""])
 const showError = ref(false)
 const timer = ref(60)
 let interval = null
 
-/* ---------------- TITLE ---------------- */
-
 const title = computed(() => 
   modal.smsMode === "phone" ? "Введите код из СМС" : "Введите код из почты"
 )
-
 const subtitle = computed(() => {
   if (modal.smsMode === "phone" && modal.phone) {
     return "+7 ***** " + modal.phone.slice(-5)
@@ -63,13 +59,9 @@ const subtitle = computed(() => {
     const [name, domain] = modal.email.split("@")
     return name.slice(0, 2) + "***@" + domain
   }
-  return ""
-})
-
-/* ---------------- LOGIC ---------------- */
+return ""})
 
 const fullCode = computed(() => code.value.join(""))
-
 function handleInput(index) {
   if (code.value[index] && index < 5) {
     inputs.value[index + 1].focus()
@@ -78,13 +70,11 @@ function handleInput(index) {
     verifyCode()
   }
 }
-
 function handleBackspace(index){
   if(!code.value[index] && index > 0){
     inputs.value[index - 1].focus()
   }
 }
-
 async function verifyCode(){
   if(fullCode.value.length !== 6){
     showErrorState()
@@ -96,7 +86,6 @@ async function verifyCode(){
   //     phone: modal.phone,
   //     email: modal.smsMode === "email" ? modal.email : undefined
   //   })
-
   //   if (modal.smsMode === "phone") {
   //     notify("Телефон подтвержден")
   //     modal.openEmail() // Это форма ввода Email (EmailForm.vue)
@@ -109,7 +98,6 @@ async function verifyCode(){
   //       email: modal.email,
   //       password: modal.password
   //     })
-      
   //     notify("Регистрация завершена успешно!")
   //     modal.close()
   //   }
@@ -117,33 +105,31 @@ async function verifyCode(){
   try {
     // 1. Проверяем код (теперь это всегда код из Email)
     const payload = {
-      userId: modal.userId, // Тот самый UUID, который мы создали шагом ранее
+      userId: modal.email, 
       code: fullCode.value,
-      type: modal.smsMode         
+      type: modal.smsMode,
+      value: modal.email         
     };
 
-    console.log("Отправка на /checkCode:", payload);
-
+    console.log("Отправка на /check-code:", payload);
     await auth.verifyCodeAPI(payload);
-
     // Если код прошел, вызываем регистрацию
     const res = await auth.registerAPI({
       name: modal.name,
-      phone: modal.phone,
       email: modal.email,
+      phone: modal.phone,
       password: modal.password
     });
     if (res && res.user) {
-      auth.login({
-        id: res.user.id,
-        name: res.user.name,
-        avatar: res.user.avatar || "" // передаем пустую строку, если аватара нет
-      });
+      // auth.login({
+      //   id: res.user.id,
+      //   name: res.user.name,
+      //   avatar: res.user.avatar || "" 
+      // });
+      auth.login(res); 
     }
-    
     notify("Регистрация завершена успешно!")
-    modal.close() // Закрываем все окна
-
+    modal.close()
   }
   catch (e) {
     showErrorState()
@@ -152,7 +138,6 @@ async function verifyCode(){
      console.error("Ошибка при проверке:", e.response?.data);
   }
 }
-
 function showErrorState(){
   showError.value = true
   setTimeout(()=>{
@@ -162,8 +147,6 @@ function showErrorState(){
   },1000)
 }
 
-/* ---------------- TIMER ---------------- */
-
 function startTimer() {
   clearInterval(interval)
   timer.value = 60
@@ -172,13 +155,12 @@ function startTimer() {
     else clearInterval(interval)
   }, 1000)
 }
-
 async function resendCode() {
   try {
     if (modal.smsMode === "phone") {
-      await api.post("/sendsms", { phone: modal.phone })
+      await api.post("/auth/sendsms", { phone: modal.phone })
     } else {
-      await api.post("/sendmail", { email: modal.email })
+      await api.post("/auth/sendmail", { email: modal.email })
     }
     startTimer()
     notify("Код отправлен повторно")

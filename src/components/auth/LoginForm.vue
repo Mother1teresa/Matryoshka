@@ -82,12 +82,10 @@ async function submitLogin(){
     email: !email.value,
     password: !password.value
   }
-
   if(Object.values(errors.value).some(Boolean)){
     notify("Введите email или пароль")
     return
   }
-
   try{
     await auth.loginAPI({
     email: email.value,
@@ -97,7 +95,7 @@ async function submitLogin(){
     modal.close()
   }catch(e){
     console.error(e.response?.data)
-    notify("Неверный email или пароль")
+    notify("Неверный email или пароль");
   }
 }
 </script>

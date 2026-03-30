@@ -66,13 +66,12 @@ import { ref,computed  } from "vue";
 import { useAuthStore } from "/src/stores/authStore.js"
 import { useModalStore } from "/src/stores/modal.js";
 import { notify } from "../../utils/notify";
-import { api } from "/src/api/api.js"; 
 
 const modal = useModalStore();
 const auth = useAuthStore();
 
 const name = ref("");
-const phone = ref(""); // это телефон
+const phone = ref(""); 
 const password = ref("");
 const password2 = ref("");
 const errors = ref({

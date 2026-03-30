@@ -3,6 +3,7 @@
   <div class="auth-title">Осталось еще чуть-чуть!</div>
   <input
     v-model="email"
+    @input="errors.email = false" 
     type="email"
     placeholder="Введите свой адрес электронной почты"
     class="auth-input"
@@ -26,26 +27,25 @@ const email = ref("");
 const errors = ref({
   email: false
 })
-
 async function submit(){
   if (!email.value) return notify("Введите email")
-
   try{
-    const myGeneratedId = self.crypto.randomUUID();
-    modal.userId = myGeneratedId; 
-    await api.post("/sendmail", {
+    await api.post("/auth/sendmail", {
       email: email.value,
-      userId: myGeneratedId
-    })  
-      
-    modal.email = email.value 
-    modal.smsMode = "email"
-    modal.openSms() 
-    notify("Код отправлен на почту")
+    })   
+    modal.email = email.value;
+    modal.smsMode = "email";
+    
+    notify("Код отправлен на почту");
+    modal.openSms();
   }catch(e){
-    notify("Ошибка отправки")
-  }
-}
+    errors.value.email = true; // Теперь инпут подсветится красным
+    // Выводим только текст ошибки, если сервер его прислал
+    const errorMessage = e.response?.data?.message || "Ошибка сервера (500)";
+    notify(errorMessage);
+    console.error("Ошибка при отправке:", e.message);
+    notify("Ошибка отправки");
+}}
 </script>
 <style scoped>
 .auth-form {

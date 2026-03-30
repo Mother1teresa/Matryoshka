@@ -3,104 +3,42 @@ import { computed, watchEffect, onMounted  } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { categories } from "/src/data/categories.js";
 import { useMenuStore } from "/src/stores/menu.js";
-
 import ProductsGrid from "/src/components/catalog/ProductsGrid.vue";
 import HorizontalList from "/src/components/catalog/HorizontalList.vue";
 import CatalogFilter from "/src/components/catalog/CatalogFilter.vue";
+import Header from '../components/layout/Header.vue';
+
 const menu = useMenuStore();
 const route = useRoute();
 const router = useRouter();
 const type = computed(() => route.params.type);
 const sectionSlug = computed(() => route.params.section);
 const subcategory = computed(() => route.params.subcategory);
-const currentCategory = computed(() =>
-  categories.find((c) => c.slug === type.value),
-);
-const tabs = computed(() => {
-  if (!currentCategory.value) return [];
-  return currentCategory.value.sections.flatMap((s) =>
-    !s.title || s.title.trim() === ""
-      ? s.links || []
-      : [{ name: s.title, slug: s.slug }],
-  );
-});
-const subLinks = computed(() => {
-  if (!currentCategory.value) return [];
-  for (const section of currentCategory.value.sections) {
-    if (!section.title || section.title.trim() === "") {
-      const link = section.links?.find((l) => l.slug === sectionSlug.value);
-      if (link?.subLinks) return link.subLinks;
-    }
-  }
-  return [];
-});
+const currentCategory = computed(() =>categories.find((c) => c.slug === type.value),);
+const tabs = computed(() => {if (!currentCategory.value) return [];return currentCategory.value.sections.flatMap((s) =>!s.title || s.title.trim() === ""? s.links || []: [{ name: s.title, slug: s.slug }],);});
+const subLinks = computed(() => {if (!currentCategory.value) return [];for (const section of currentCategory.value.sections) {if (!section.title || section.title.trim() === "") {const link = section.links?.find((l) => l.slug === sectionSlug.value);if (link?.subLinks) return link.subLinks;}}return [];});
 const activeTabItem = computed(() => {
-  if (!currentCategory.value) return null;
-  return (
-    currentCategory.value.sections.find((s) => s.slug === sectionSlug.value) ||
-    currentCategory.value.sections
-      .flatMap((s) => s.links || [])
-      .find((l) => l.slug === sectionSlug.value)
-  );
-});
-const breadcrumbSectionName = computed(
-  () => activeTabItem.value?.title || activeTabItem.value?.name,
-);
-const breadcrumbSubName = computed(() => {
-  const currentSubSlug = subcategory.value || route.query.subcategory;
-  if (!currentCategory.value || !currentSubSlug) return null;
-  for (const section of currentCategory.value.sections) {
-    const directLink = section.links?.find(l => l.slug === currentSubSlug);
-    if (directLink) return directLink.name;
-    if (section.links) {
-      for (const link of section.links) {
-        const deepLink = link.subLinks?.find(sl => sl.slug === currentSubSlug);
-        if (deepLink) return deepLink.name;
-      }
-    }
-  }
-  return null;
-});
-
+if (!currentCategory.value) return null;return (currentCategory.value.sections.find((s) => s.slug === sectionSlug.value) ||currentCategory.value.sections.flatMap((s) => s.links || []).find((l) => l.slug === sectionSlug.value));});
+const breadcrumbSectionName = computed(() => activeTabItem.value?.title || activeTabItem.value?.name,);
+const breadcrumbSubName = computed(() => {const currentSubSlug = subcategory.value || route.query.subcategory;if (!currentCategory.value || !currentSubSlug) return null;for (const section of currentCategory.value.sections) {const directLink = section.links?.find(l => l.slug === currentSubSlug);if (directLink) return directLink.name;if (section.links) {for (const link of section.links) { const deepLink = link.subLinks?.find(sl => sl.slug === currentSubSlug);if (deepLink) return deepLink.name;}}}return null;});
 const filterType = computed(() => {
-  if (type.value === "rabota") return "jobs";
-  if (type.value === "nedvizhimost") return "realty";
-  if (type.value === "uslugi") return "uslugi";
-  if (type.value === "transport") return "transport";
-  if (type.value === "biznes") return "business"; 
-  if (type.value === "animals") return "animals"; 
-  return "price";
-});
+if (type.value === "rabota") return "jobs";
+if (type.value === "nedvizhimost") return "realty";
+if (type.value === "uslugi") return "uslugi";
+if (type.value === "transport") return "transport";
+if (type.value === "biznes") return "business"; 
+if (type.value === "animals") return "animals"; 
+return "price";});
 const pageConfig = computed(() => ({
   component: type.value === "tovary" ? ProductsGrid : HorizontalList,
   filterType: filterType.value,
 }));
-
-watchEffect(() => {
-  if (!currentCategory.value) return;
-  if (!sectionSlug.value && tabs.value.length > 0) {
-    router.replace({
-      name: "catalog",
-      params: { ...route.params, section: tabs.value[0].slug },
-    });
-    return;
-  }
-  // Если выбран раздел, но нет подкатегории, а subLinks есть — выбираем первую
-  if (sectionSlug.value && !subcategory.value && subLinks.value.length > 0) {
-    router.replace({
-      name: "catalog",
-      params: { ...route.params, subcategory: subLinks.value[0].slug },
-    });
-  }
-});
-onMounted(() => {
-  const exists = categories.find(c => c.slug === route.params.type);
-  if (!exists) {
-    router.replace({ name: 'NotFound' });
-  }
-});
+watchEffect(() => {if (route.path.includes('/p/')) return;if (!currentCategory.value) return;
+if (!sectionSlug.value && tabs.value.length > 0) {router.replace({ name: "catalog", params: { ...route.params, section: tabs.value[0].slug } });}if (sectionSlug.value && !route.params.subcategory && subLinks.value.length > 0) {router.replace({name: "catalog",params: { ...route.params, subcategory: subLinks.value[0].slug },query: route.query });}});
+onMounted(() => {const exists = categories.find(c => c.slug === route.params.type); if (!exists) {router.replace({ name: 'NotFound' });}});
 </script>
 <template>
+  <Header />
   <div class="container">
     <div class="breadcrumbs">
       <router-link to="/">Главная</router-link> → {{ currentCategory?.name }}
@@ -111,7 +49,7 @@ onMounted(() => {
       <img :src="currentCategory?.icon" />
       {{ currentCategory?.name }}
     </div>
-    <div class="catalog-tabs">
+    <div class="catalog-tabs" :class="currentCategory.extraClass">
       <div class="titcategories">
         <router-link v-for="tab in tabs" :key="tab.slug" :to="{ name: 'catalog', params: { type, section: tab.slug } }" class="tab-btn" :class="{ active: sectionSlug === tab.slug }">
           {{ tab.name }}
@@ -125,19 +63,11 @@ onMounted(() => {
       </div>
     </div>
     <CatalogFilter :type="pageConfig.filterType" />
-    <component :is="pageConfig.component" :category="type" :subcategory="subcategory" :filters="route.query"/>
+    <component :is="pageConfig.component" :category="type" :section="sectionSlug" :subcategory="subcategory" :filters="route.query"/>
   </div>
 </template>
 
 <style scoped>
-.breadcrumbs {
-  color: #8e8c8c;
-  font-size: 0.875rem;
-  margin-bottom: 1.063rem;
-  margin-top: 1.375rem;
-  display: inline-block;
-  align-items: center;
-}
 .catalog-title {
   width: fit-content;
   padding: 0.625rem 1rem 0.825rem 1rem;
@@ -201,5 +131,13 @@ onMounted(() => {
 .sub-btn.active {
   background: white;
   box-shadow: 0px 0.2rem 0.2rem 0px #00000040;
+}
+.grid-realty{
+  display: grid;
+}
+.grid-realty .subcategories{
+  display: flex; gap: 1.5rem;
+  margin-bottom: 4.063rem;
+  margin-left: 0;
 }
 </style>
