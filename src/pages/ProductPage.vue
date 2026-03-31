@@ -69,17 +69,17 @@
           <!-- Продавец -->
           <div class="seller-card">
             <div class="seller">
-              <router-link :to="{ name: 'SellerPage', params: { id: seller?.id } }">
+              <router-link :to="{ name: 'SellerPage', params: { id: product?.sellerId } }">
                 <img src="/src/assets/img/mask-avatar.png" class="avatar" />
               </router-link>
               <div class="seller-card__block">
-                <router-link :to="{ name: 'SellerPage', params: { id: seller?.id } }" class="name">
+                <router-link :to="{ name: 'SellerPage', params: { id: product?.sellerId } }" class="name">
                   {{ seller?.name }}
                 </router-link>
-                <div class="rating">{{ reviewStore.getRatingById(seller?.id) }} ★★★★★</div>
+                <div class="rating">{{ reviewStore.getRatingById(product?.sellerId) }} ★★★★★</div>
                 <div class="type">{{ seller?.type === 'company' ? 'Компания' : 'Частное лицо' }}</div>
                 <button class="btn subscribe" @click="onSubscribeClick" :class="{ 'is-active': subStore.isSubscribed(seller?.id) }">
-                  {{ subStore.isSubscribed(seller?.id) ? 'Отписаться' : 'Подписаться' }}
+                  {{ subStore.isSubscribed(product?.sellerId) ? 'Отписаться' : 'Подписаться' }}
                 </button></div></div>
             <div class="seller-card__btns">
               <button class="btn primary" @click="onShowNumberClick">
@@ -123,96 +123,111 @@ import "@fancyapps/ui/dist/fancybox/fancybox.css";
 
 import Header from '../components/layout/Header.vue';
 import NotFound from "../components/common/NotFound.vue";
-
 import { notify } from "../utils/notify";
 
 import { useFavoritesStore } from "/src/stores/favoritesStore";
 import { useSubscriptionStore } from "../stores/subscriptionStore.js"; 
-const favStore = useFavoritesStore();
-const subStore = useSubscriptionStore();
-
 import { useAuthStore } from "/src/stores/authStore.js";
 import { useModalStore } from "/src/stores/modal.js";
-// Иконки сердечек
+import { useReviewStore } from '/src/stores/reviews.js';
+import { useSellerStore } from "/src/stores/sellers.js";
+
+// Иконки
 import heart from "/src/assets/img/icons/heart.svg";
 import heartFilled from "/src/assets/img/icons/heart-filled.svg";
 
-import { useReviewStore } from '/src/stores/reviews.js';
+const route = useRoute()
+const auth = useAuthStore();
+const modal = useModalStore();
+const productStore = useProductStore()
+const favStore = useFavoritesStore();
+const subStore = useSubscriptionStore();
 const reviewStore = useReviewStore();
-import { useSellerStore } from "/src/stores/sellers.js";
 const sellerStore = useSellerStore();
+
+const isReady = ref(false);
+const isNumberShown = ref(false);
+const activeImage = ref("");
+
+// --- COMPUTED ---
+const product = computed(() => {
+  const routeId = route.params.id;
+  return productStore.products.find(p => String(p.id) === String(routeId));
+});
+
 const seller = computed(() => {
   if (!product.value) return null;
   return sellerStore.getSellerById(product.value.sellerId);
 });
-const auth = useAuthStore();
-const modal = useModalStore();
-const route = useRoute()
-const productStore  = useProductStore()
-const isSubscribed = ref(false); 
-const isNumberShown = ref(false);
 
-const product = computed(() => {
-  const routeId = route.params.id;
-  if (!routeId) return null;
-  return productStore.products.find(p => String(p.id) === String(routeId));});
-const isReady = ref(false);
-onMounted(async () => {
-  if (!product.value) { await productStore.fetchAdverts(); await sellerStore.ensureSellers();}
-  if (auth.user?.id) {reviewStore.fetchReviewsBySeller(auth.user.id);}
-  isReady.value = true;
-});
-const breadcrumbSectionName = computed(
-  () => activeTabItem.value?.title || activeTabItem.value?.name);
-const breadcrumbSubName = computed(() => {
-  const subSlug = product.value?.subcategory;
-  if (!currentCategory.value || !subSlug) return null;
-  for (const section of currentCategory.value.sections) {const directLink = section.links?.find(l => l.slug === subSlug);if (directLink) return directLink.name;if (section.links) {for (const link of section.links) {const deepLink = link.subLinks?.find(sl => sl.slug === subSlug);if (deepLink) return deepLink.name;}}}return null;});
-const activeImage = ref("")
-watch(product, (newVal) => {
-  if (newVal) {
-    activeImage.value = newVal.images?.length ? newVal.images[0] : newVal.image
-  }
-}, { immediate: true })
-const activeTabItem = computed(() => {
-  if (!currentCategory.value || !product.value) return null;
-  return (
-    currentCategory.value.sections.find((s) => s.slug === product.value.section) ||
-    currentCategory.value.sections
-      .flatMap((s) => s.links || [])
-      .find((l) => l.slug === product.value.section));});
-const fields = computed(() => {
-  const p = product.value;
-  if (!p || !p.attributes) return [];
-  return Object.keys(p.attributes).map(key => {
-    return {
-      key: key,
-      label: productLabels[key] || key, 
-      value: p.attributes[key]
-    };
-  }).filter(f => !f.key.includes('price')); 
-});
-const formatPrice = (price) => {
-  if (!price) return "Цена по запросу"
-  return price.toLocaleString("ru-RU")}
-onMounted(() => {Fancybox.bind("[data-fancybox='gallery']", {Hash: false,});});
-const previewImages = computed(() => {
-  return product.value?.images?.slice(0, 8) || [];
-});
 const currentCategory = computed(() => {
   if (!product.value) return null; 
   return categories.find((c) => c.slug === product.value.category);
 });
+
+const activeTabItem = computed(() => {
+  if (!currentCategory.value || !product.value) return null;
+  return (
+     currentCategory.value.sections.find((s) => s.slug === product.value.section) ||
+    currentCategory.value.sections.flatMap((s) => s.links || []).find((l) => l.slug === product.value.section)
+  );
+});
+
+const breadcrumbSectionName = computed(() => activeTabItem.value?.title || activeTabItem.value?.name);
+
+const breadcrumbSubName = computed(() => {
+  const subSlug = product.value?.subcategory;
+  if (!currentCategory.value || !subSlug) return null;
+  for (const section of currentCategory.value.sections) {
+    const directLink = section.links?.find(l => l.slug === subSlug);
+    if (directLink) return directLink.name;
+    if (section.links) {
+      for (const link of section.links) {
+        const deepLink = link.subLinks?.find(sl => sl.slug === subSlug);
+        if (deepLink) return deepLink.name;
+      }
+    }
+  }
+  return null;
+});
+
+const fields = computed(() => {
+  const p = product.value;
+  if (!p || !p.attributes) return [];
+  return Object.keys(p.attributes)
+    .map(key => ({ key, label: productLabels[key] || key, value: p.attributes[key] }))
+    .filter(f => !f.key.includes('price')); 
+});
+
+const previewImages = computed(() => product.value?.images?.slice(0, 8) || []);
+
+// --- METHODS ---
+const formatPrice = (price) => price ? price.toLocaleString("ru-RU") : "0";
+
 const openFullGallery = (index = 0) => {
   const allImages = product.value.images.map(src => ({ src, type: "image" }));
-  Fancybox.show(allImages, { startIndex: index });};
+  Fancybox.show(allImages, { startIndex: index });
+};
+
+const loadAllData = async () => {
+  if (productStore.products.length === 0) await productStore.fetchAdverts();
+  await sellerStore.ensureSellers();
+  
+  if (product.value?.sellerId) {
+    await reviewStore.fetchReviewsBySeller(product.value.sellerId);
+  }
+  isReady.value = true;
+};
 
 const checkAuthAndRun = (action, message = "Авторизуйтесь, чтобы продолжить") => {
-if (!auth.isAuthenticated) {
-  modal.openLogin();
-  notify(message);
-  return;}action();
+  if (!auth.isAuthenticated) {
+    modal.openLogin();
+    notify(message);
+    return;
+  }
+  action();
 };
+
 const onLikeClick = (item) => {
   if (!item) return;
   checkAuthAndRun(() => {
@@ -220,39 +235,47 @@ const onLikeClick = (item) => {
     notify(favStore.isFavorite(item.id) ? "Добавлено в избранное" : "Удалено из избранного");
   }, "Войдите, чтобы добавить в избранное");
 };
+
 const onSubscribeClick = () => {
   const sellerId = seller.value?.id;
   checkAuthAndRun(async () => {
     const isNowSubscribed = await subStore.toggle(sellerId);
-    notify(
-      isNowSubscribed
-        ? "Вы подписались на продавца"
-        : "Вы отписались от продавца"
-    );
+    notify(isNowSubscribed ? "Вы подписались на продавца" : "Вы отписались от продавца");
   });
 };
-const showCallModal = ref(false);
+
 const onShowNumberClick = () => {
-  checkAuthAndRun(() => {
-    isNumberShown.value = true;
-  }, "Войдите, чтобы увидеть номер телефона");
-};
-const handleCall = (phone) => {
-  // Стандартная команда браузеру на вызов
-  window.location.href = `tel:${phone}`;
-  showCallModal.value = false;
+  checkAuthAndRun(() => { isNumberShown.value = true; }, "Войдите, чтобы увидеть номер телефона");
 };
 const onWriteClick = (e) => {
   if (!auth.isAuthenticated) {
     e.preventDefault(); 
     modal.openLogin();
-    notify("Войдите, чтобы написать сообщение");}};
-watch(() => seller.value?.id, (newId) => {
-  if (newId) {
-    reviewStore.fetchReviewsBySeller(newId);
+    notify("Войдите, чтобы написать сообщение");
   }
+};
+const showCallModal = ref(false);
+const handleCall = (phone) => {
+  window.location.href = `tel:${phone}`;
+  showCallModal.value = false;
+};
+
+// --- WATCHERS & LIFECYCLE ---
+watch(() => route.params.id, (newId) => {
+  if (newId) loadAllData();
+}, { immediate: true });
+
+watch(product, (newVal) => {
+  if (newVal) {
+    activeImage.value = newVal.images?.length ? newVal.images[0] : newVal.image;
+  }
+}, { immediate: true });
+
+onMounted(() => {
+  Fancybox.bind("[data-fancybox='gallery']", { Hash: false });
 });
 </script>
+
 <style scoped>
 .product-layout {
   display: grid;

@@ -55,7 +55,7 @@
                 </button>
               </div>
               <!-- профиль -->
-              <div class="profile-wrapper">
+              <div class="profile-wrapper" ref="profileWrapper">
                 <div class="profile" @click.stop="toggleProfileMenu">
                   <div class="profile-block">
                     <img :src="auth.userAvatar" class="avatar" />
@@ -70,13 +70,13 @@
                 </div>
                 <!-- dropdown -->
                 <transition name="fade">
-                  <div v-if="showProfileMenu" class="profile-menu" @click="showProfileMenu = false">
+                  <div v-if="showProfileMenu" class="profile-menu">
                     <div class="rating" v-if="auth.user?.id">{{ reviewStore.getRatingById(auth.user.id) }}
                       <span>★★★★★</span></div>
-                    <ul>
-                      <li><router-link to="/profile/info">Мои данные</router-link></li>
+                    <ul @click="showProfileMenu = false">
+                      <li><router-link to="/profile/info" >Мои данные</router-link></li>
                       <li><router-link to="/profile/videos">Мои ролики</router-link></li>
-                      <li><router-link to="/profile/ads">Мои объявления</router-link></li>
+                      <li><router-link to="/profile/advertisements">Мои объявления</router-link></li>
                       <li><router-link to="/create-ad">Создать объявление</router-link></li>
                       <li><router-link to="/profile/orders">Заказы</router-link></li>
                       <li><router-link to="/profile/favorites">Избранное</router-link></li>
@@ -84,7 +84,7 @@
                       <li><router-link to="/profile/responses">Отклики</router-link></li>
                       <li><router-link to="/profile/messages">Сообщения</router-link></li>
                       <li><router-link to="/profile/notifications">Уведомления</router-link></li>
-                      <li class="logout" @click="askLogout">Выйти</li>
+                      <li class="logout" @click.stop="askLogout">Выйти</li>
                     </ul>
                   </div>
                 </transition>
@@ -125,7 +125,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from "vue";
+import { ref, onMounted, onBeforeUnmount, watch  } from "vue";
 import { useAuthStore } from "/src/stores/authStore.js";
 import { useModalStore } from "/src/stores/modal.js";
 import { useMenuStore } from "/src/stores/menu.js";
@@ -140,6 +140,7 @@ const reviewStore = useReviewStore();
 
 const showNotification = ref(false);
 const notificationText = ref("");
+const profileWrapper = ref(null);
 const showProfileMenu = ref(false);
 const showLogoutConfirm = ref(false);
 
@@ -164,31 +165,35 @@ function cancelLogout() {
   showLogoutConfirm.value = false;
 }
 
-function handleClickOutside(e) {
-  const profile = document.querySelector(".profile-wrapper");
-  if (profile && !profile.contains(e.target)) {
+function handleClickOutside(event) {
+  // Если меню открыто И клик был СНАРУЖИ блока profileWrapper
+  if (showProfileMenu.value && profileWrapper.value && !profileWrapper.value.contains(event.target)) {
     showProfileMenu.value = false;
   }
 }
+const handleNotify = (e) => {
+  notificationText.value = e.detail;
+  showNotification.value = true;
+  setTimeout(() => { showNotification.value = false }, 3000);
+};
 onMounted(() => {
   document.addEventListener("click", handleClickOutside);
-  window.addEventListener("notify", (e) => {
-    notificationText.value = e.detail
-    showNotification.value = true
-
-    setTimeout(() => {
-      showNotification.value = false
-    }, 3000)
-
-  })
-  if (auth.user?.id) {
-    reviewStore.fetchReviewsBySeller(auth.user.id);
-  }
+  window.addEventListener("notify", handleNotify);
 });
 
 onBeforeUnmount(() => {
   document.removeEventListener("click", handleClickOutside);
+  window.removeEventListener("notify", handleNotify);
 });
+watch(
+  () => auth.user?.id,
+  (newId) => {
+    if (newId) {
+      reviewStore.fetchReviewsBySeller(newId);
+    }
+  },
+  { immediate: true }
+);
 </script>
 
 <style scoped>

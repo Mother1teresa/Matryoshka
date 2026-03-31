@@ -1,5 +1,5 @@
 <template>
-  <Transition name="fade">
+  <Transition name="fade" >
     <div v-if="isOpen" class="modal-overlay" @click.self="$emit('close')">
       <div class="edit-modal">
         <!-- Кнопка закрытия -->
@@ -24,7 +24,7 @@
             </div>
             <div class="form-group">
               <label>Телефон</label>
-              <input v-model="form.phone" type="tel" placeholder="Ваш номер телефона"/>
+              <input v-model="form.phone" v-mask="'+7 (###) ###-##-##'" type="tel" placeholder="Ваш номер телефона"/>
             </div>
             <div class="form-group">
               <label>E-mail</label>
@@ -32,19 +32,11 @@
             </div>
             <div class="form-group">
               <label>Город</label>
-              <input v-model="form.city" type="text" placeholder="Ваш город" />
+              <input v-model="form.city" type="text" placeholder="Ваш город" class="local-prof"/>
             </div>
           </div>
-          <div class="type-toggle">
-            <button :class="{ active: !isCompany }" @click="form.type = 'person'">
-              Частное лицо
-            </button>
-            <button :class="{ active: isCompany }" @click="form.type = 'company'">
-              Компания
-            </button>
-          </div>
           <div v-if="isCompany" class="employee-section">
-            <label class="checkbox-container">
+            <label class="checkbox-container auth-forgot__check">
               <input type="checkbox" v-model="showEmployee" />
               <span class="checkmark"></span>
               Добавить сотрудника
@@ -65,13 +57,21 @@
                     placeholder="Выберите должность"
                     :searchable="false"
                     :allow-empty="false"
+                    :show-labels="false"
                     open-direction="bottom">
                   </multiselect>
                 </div>
               </div>
             </div>
           </div>
-
+          <div class="type-toggle">
+            <button :class="{ active: !isCompany }" @click="form.type = 'person'">
+              Частное лицо
+            </button>
+            <button :class="{ active: isCompany }" @click="form.type = 'company'">
+              Компания
+            </button>
+          </div>
           <!-- Описание -->
           <div class="about-field">
             <h3>{{ isCompany ? "О компании" : "Об исполнителе" }}</h3>
@@ -91,6 +91,9 @@ import { ref, reactive, computed, watch } from "vue";
 import { useAuthStore } from "/src/stores/authStore.js";
 import "vue-multiselect/dist/vue-multiselect.css";
 import Multiselect from "vue-multiselect";
+import { OverlayScrollbarsComponent } from "overlayscrollbars-vue";
+import "overlayscrollbars/overlayscrollbars.css";
+import { uploadToS3 } from "/src/utils/uploadService.js";
 import { api } from "/src/api/api.js";
 
 const props = defineProps({ isOpen: Boolean });
@@ -98,6 +101,7 @@ const emit = defineEmits(["close", "refresh"]);
 const auth = useAuthStore();
 const isSubmitting = ref(false);
 const showEmployee = ref(false);
+let cityTimeout = null;
 
 const roleOptions = [
   { name: "Менеджер по продажам", value: "manager" },
@@ -122,67 +126,67 @@ const form = reactive({
   employeeName: "",
   employeeRole: null,
 });
-
 const isCompany = computed(() => form.type === "company");
-
 watch(
   () => props.isOpen,
   (newVal) => {
     if (newVal && auth.user) {
-      const currentRole =
-        roleOptions.find((opt) => opt.value === auth.user.employeeRole) || null;
+      const currentRole = roleOptions.find((opt) => opt.value === auth.user.employeeRole) || null;
       Object.assign(form, {
         ...auth.user,
+        phone: auth.user.phone, 
         employeeRole: currentRole,
       });
       showEmployee.value = !!auth.user.employeeName;
-}},);
+    }
+  }
+);
 const handleSave = async () => {
   if (isSubmitting.value) return;
   isSubmitting.value = true;
-
-  // Подготавливаем объект данных согласно Swagger
-  const updateData = {
-    id: auth.user?.id, // ОБЯЗАТЕЛЬНОЕ ПОЛЕ по документации
-    name: form.name,
-    email: form.email,
-    phone: form.phone,
-    city: form.city,
-    description: form.description,
-    // Дополнительные поля, если бэкенд их поддерживает:
-    type: form.type,
-    employeeName: isCompany.value && showEmployee.value ? form.employeeName : "",
-    employeeRole: isCompany.value && showEmployee.value ? form.employeeRole?.value : ""
-  };
-
   try {
-    // 1. Если бэкенд ждет JSON (как в твоем скриншоте Swagger):
+    const updateData = {
+      id: auth.user?.id,
+      name: form.name,
+      email: form.email,
+      phone: form.phone.replace(/\D/g, ''),
+      city: form.city,
+      description: form.description,
+      type: form.type,
+      employeeName: isCompany.value && showEmployee.value ? form.employeeName : "",
+      employeeRole: isCompany.value && showEmployee.value ? form.employeeRole?.value : ""
+    };
     const response = await api.put("/profile/update", updateData);
 
-    // 2. Если нужно отправить файл аватара (отдельным запросом, т.к. PUT обычно для JSON)
     if (form.avatarFile) {
-      const imgData = new FormData();
-      imgData.append("avatar", form.avatarFile);
-      // Бэкенд разработчик просил повременить с аватаром, 
-      // но когда он сделает, запрос будет примерно таким:
-      // await api.post("/profile/upload-avatar", imgData);
-    }
-    // Обновляем данные в сторе
-    if (response.data.user) {
-      auth.login(response.data.user); // Используем метод login для обновления и сохранения в localStorage
+      await uploadToS3(form.avatarFile); 
+      form.avatarFile = null;
     }
 
+    if (response.data.user) {
+      auth.login(response.data.user);
+    }
+    
     emit("refresh"); 
     emit("close");
-    notify("Профиль успешно обновлен!");
+    // notify("Профиль успешно обновлен!");
   } catch (e) {
     console.error("Ошибка при сохранении:", e.response?.data || e.message);
-    const errorMsg = e.response?.data?.message || "Не удалось сохранить данные";
-    console.error(errorMsg);
   } finally {
     isSubmitting.value = false;
   }
 };
+
+watch(() => form.city, (val) => {
+  if (!val) return;
+  form.city = val.charAt(0).toUpperCase() + val.slice(1);
+  
+  clearTimeout(cityTimeout);
+  cityTimeout = setTimeout(async () => {
+    const validCity = await auth.validateAndFormatCity(val);
+    if (validCity) form.city = validCity;
+  }, 1000);
+});
 </script>
 
 <style scoped>
@@ -190,31 +194,41 @@ const handleSave = async () => {
   background: white;
   width: 100%;
   max-width: 41.625rem;
-  border-radius: 2.5rem 0 0 2.5rem ;
-  padding: 1.875rem 3.125rem 3.25rem 3.125rem;
+  border-radius: 2.5rem;
   position: relative;
   max-height: 90vh;
-  overflow-y: auto;
+  overflow: hidden; 
+  display: flex;
+  flex-direction: column;
 }
+.modal-body {
+  overflow-y: auto; 
+  scrollbar-width: thin;
+  scrollbar-color: #76a87e transparent;
+  padding: 1.875rem 3.125rem 3.25rem 3.125rem;
+  border-radius: 2.5rem;
+}
+
 .type-toggle {
   display: flex;
   background: #F4F4F4;
   border-radius: 0.625rem;
-  padding: 0.125rem;
+  padding: 0.325rem;
   width: 26rem;
-  height: 3.625rem;
+  height: 3.925rem;
   margin: 1.438rem auto 2.188rem auto;
 }
 .type-toggle button {
   flex: 1;
-  padding: 0.813rem 0;
+  padding: 0.833rem 0;
   width: 12.625rem;
   text-align: center;
   border: none;
   background: none;
-  border-radius: 0.625rem;
+  border-radius: 0.48rem;
   cursor: pointer;
   font-weight: 500;
+  font-size: 1.3rem;
   color: #616161;
 }
 .type-toggle button.active {
@@ -228,8 +242,8 @@ const handleSave = async () => {
 .close-x{
   font-size: 2.25rem;
   position: absolute;
-  top: 1rem;
-  right: 2rem;
+  top: 0.8rem;
+  right: 1.8rem;
 }
 .save-button {
   width: 8.438rem;
@@ -263,9 +277,10 @@ const handleSave = async () => {
 textarea {
   width: 100%;
   border: 1px solid #e0e0e0;
-  padding: 12px;
-  border-radius: 8px;
-  margin-bottom: 15px;
+  padding: 0.75rem;
+  border-radius: 0.625rem;
+  margin-bottom: 1.5rem;
+  font-size: 1.2rem;
 }
 /* Анимация появления */
 .fade-enter-active, .fade-leave-active {
@@ -303,7 +318,7 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.05); 
+  background: rgba(255, 255, 255, 0); 
   transition: background 0.3s ease;
   z-index: 2;
 }
@@ -314,10 +329,10 @@ textarea {
   transition: transform 0.3s ease;
 }
 .avatar-wrapper:hover .avatar-overlay {
-  background: rgba(0, 0, 0, 0.3); 
+  background: rgba(219, 219, 219, 0.415); 
 }
 .avatar-wrapper:hover .camera-icon {
-  transform: scale(1.1); 
+  transform: scale(1.05); 
 }
 .avatar-overlay.has-photo {
   background: rgba(61, 61, 61, 0.5);
@@ -347,7 +362,7 @@ textarea {
   text-align: center;
 }
 .about-field h3{
-  font-size: 2rem; 
+  font-size: 1.8rem; 
   text-align: center;
   margin-bottom: 0.75rem;
 }
@@ -372,8 +387,25 @@ textarea {
 input::placeholder{
   color: #adadad;
 }
-
 .employee-inputs{
   margin: 2.5rem 0;
+}
+.checkbox-container{
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+.checkbox-container input{
+  background-color: #64A07A;
+}
+.checkmark{
+  font-size: 0.938rem;
+  color: #8E8C8C;
+}
+.local-prof{
+  text-transform: capitalize; 
+}
+.local-prof::placeholder{
+  text-transform:none;
 }
 </style>

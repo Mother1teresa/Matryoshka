@@ -50,9 +50,7 @@ const toggleChip = (key, value) => {
                       :placeholder="field.label"
                       :searchable="false"
                       :show-labels="false"
-                      open-direction="bottom"
-                      label="label"
-                      track-by="value">
+                      open-direction="bottom">
                       <template #caret><div class="multiselect__caret"></div></template>
                     </multiselect>
                   </div>
@@ -102,31 +100,23 @@ const toggleChip = (key, value) => {
             </div>
         </div>
       </div><div class="filter-footer"><button class="apply-btn" @click="applyFilters">Показать</button></div>
-    </div></div></template>
+</div></div></template>
 <style scoped>
 .filter-title{
   font-size: 1.2rem;
 }
 .filter-card { background: #64A07A; padding: 1.563rem; border-radius: 1.875rem; color: white; position: relative; margin-bottom: .6rem;}
-.filter-main-row { display: flex; gap: 0.625rem; margin-top: 0.938rem; flex-wrap: wrap; justify-content: space-between;
+.filter-main-row { display: flex; gap: 0.625rem; margin-top: 0.938rem; flex-wrap: wrap; align-items: center; justify-content: space-between;
 flex-direction: column;}
-.transport-layout{
+.transport-layout,.moto-layout,.trucks-layout,.water-layout,.jetski-layout{
   display: flex; gap: 0.625rem; align-items: flex-end; justify-content: space-between;
 }
+/* Кастомная стрелка (ИСПРАВЛЕННЫЙ SVG) */
 .multiselect__caret {
   position: absolute; right: 12px; top: 50%; width: 12px; height: 12px; margin-top: -6px;
   background-image: url("/src/assets/img/arr-select.svg");
   background-repeat: no-repeat; background-size: contain; transition: transform 0.3s; z-index: 1; pointer-events: none;
 }
-
-.f-input {border: 1px solid #e8e8e8; -webkit-appearance: none; font-size: 1rem !important; padding: 0 1.875rem 0 0.938rem !important; height: 2.6rem !important; border-radius: 0.938rem; width: 11.438rem; outline: none; color: #000; }
-.f-input::placeholder{color: #A8A1A1;}
-.f-input::-webkit-outer-spin-button,
-.f-input::-webkit-inner-spin-button {-webkit-appearance: none;margin: 0;}
-.f-input[type='number'] {-moz-appearance: textfield;}
-.expand-btn {text-align: center; background: white; border: none; border-radius: 0.938rem; width: 2.5rem; height: 2.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-.expand-btn img { width: .9rem; height: .9rem; display: inline-block; color: #000; transition: transform 0.3s;}
-.expand-btn img.rotate { transform: rotate(180deg); }
 :deep(.multiselect--active) .multiselect{
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
@@ -144,9 +134,17 @@ flex-direction: column;}
   transition: all .1s; 
 }
 :deep(.multiselect){min-height: 2.6rem !important; height: 2.6rem !important;}
-
 :deep(.multiselect__placeholder) { color: #A8A1A1 !important; line-height: 40px !important; margin: 0 !important; padding: 0 !important; font-size: 1rem;}
-.multiselect-container { width: 13.5rem; position: relative; cursor: pointer; }
+.multiselect-container { width: 14.5rem; position: relative; cursor: pointer; }
+.f-input {border: 1px solid #e8e8e8; -webkit-appearance: none; font-size: 1rem !important; padding: 0 1.875rem 0 0.938rem !important; height: 2.6rem !important; border-radius: 0.938rem; width: 11.438rem; outline: none; color: #000; }
+.f-input::placeholder{color: #A8A1A1;}
+.f-input::-webkit-outer-spin-button,
+.f-input::-webkit-inner-spin-button {-webkit-appearance: none;margin: 0;}
+.f-input[type='number'] {-moz-appearance: textfield;}
+.expand-btn {text-align: center; background: white; border: none; border-radius: 0.938rem; width: 2.5rem; height: 2.4rem; cursor: pointer; }
+.expand-btn img { width: 1rem; height: 1rem; display: inline-block; color: #000; transition: transform 0.3s;}
+.expand-btn img.rotate { transform: rotate(180deg); }
+
 :deep(.multiselect__option--highlight) { background: #64A07A !important; color: #fff !important; }
 :deep(.multiselect__option::after) { display: none !important; }
 :deep(.multiselect__option){
@@ -167,7 +165,7 @@ flex-direction: column;}
   display: block;
   background: #fff;
   width: 100%;
-  max-height: 15rem;
+  max-height: 240px;
   overflow: auto;
   border: 1px solid #e8e8e8;
   border-top: none;
@@ -318,7 +316,6 @@ flex-direction: column;}
   background: none; 
   padding: 0;
 }
-
 .houses-types .deal-btn {
   background-color: white;
   border: none;
@@ -330,18 +327,63 @@ flex-direction: column;}
   transition: all 0.3s ease;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
-
 .houses-types .deal-btn.active {
   background-color: #fff;
   color: #000;
   box-shadow: 0 0 0 2px var(--btn-bg, #2d8a40); 
   font-weight: 600;
 }
-
-/* Специфический отступ для Таунхауса, если нужно точно как на макете */
 .houses-types .deal-btn:last-child {
   margin-top: 5px; 
 }
+.grid-realty-buy .transport-grid-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 2.5rem;
+  row-gap: 1.25rem; 
+  align-items: start;
+}
+
+.grid-realty-buy .extra-group.select {
+  grid-column: span 1;
+}
+
+.grid-realty-buy .extra-group:nth-child(3) .chips-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr; 
+  gap: 1rem;  
+}
+
+.grid-realty-buy .extra-group:nth-child(4) .chips-row {
+  display: grid;
+  grid-template-columns: 1fr; 
+  gap: 1rem;      
+}
+
+.grid-realty-buy .chip-item {
+  background: rgb(255, 255, 255); 
+  border: 0.0625rem solid rgba(255, 255, 255, 0.3); 
+  border-radius: 0.938rem;  
+  color: #4a6d54;
+  padding: 0.75rem 0.9375rem; 
+  font-size: 1rem;
+  text-align: center;
+  width: 100%; 
+  transition: all 0.2s;
+}
+
+.grid-realty-buy .chip-item.active {
+  background: #4a6d54;
+  color: white; 
+}
+
+.grid-realty-buy .field-label-top {
+  color: #fff;
+  font-weight: 500;
+  margin-bottom: 0.75rem;   /* 12px */
+  display: block;
+}
+
 /* Базовый стиль чипсов для коммерции */
 .commercial .chip-item {
   background: #fff;

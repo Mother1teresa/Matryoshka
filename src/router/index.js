@@ -27,8 +27,11 @@ const routes = [
     meta: { requiresAuth: true },
     children: [
       { path: '', redirect: 'info' },
-      { path: 'info', component: () => import('../views/profile/ProfileInfo.vue') }, // Мои данные
-      // { path: 'ads', component: () => import('../views/profile/ProfileAds.vue') },   // Мои объявления
+      { path: 'info', component: () => import('../views/profile/ProfileInfo.vue') },
+      { path: 'notifications', component: () => import('../views/profile/ProfilNotifications.vue') },  
+      { path: 'messages', component: () => import('../views/profile/ProfilMessages.vue') }, 
+      { path: 'reviews', component: () => import('../views/profile/ProfileReviews.vue') },
+      // { path: 'advertisements', component: () => import('../views/profile/Messages.vue') }, 
       // ... остальные страницы
     ]
   },

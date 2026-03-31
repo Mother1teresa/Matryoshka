@@ -9,7 +9,17 @@ export const useAuthStore = defineStore("auth", {
     user: null,
   }),
   getters: {
-    userAvatar: (state) => state.user?.avatar || maskAvatar
+    userAvatar: (state) => state.user?.avatar || maskAvatar,
+    formattedPhone: (state) => {
+      const phone = state.user?.phone;
+      if (!phone) return "Не указан";
+      const cleaned = ('' + phone).replace(/\D/g, '');
+      const match = cleaned.match(/^(\d|7|8)(\d{3})(\d{3})(\d{2})(\d{2})$/);
+      if (match) {
+        return `+7 (${match[2]}) ${match[3]} ${match[4]}-${match[5]}`;
+      }
+      return phone; 
+    }
   },
   actions: {
     saveToStorage() {
@@ -28,16 +38,20 @@ export const useAuthStore = defineStore("auth", {
       };
       this.saveToStorage();
     },
-
     async loginAPI({ email, password }) {
       try {
         const res = await api.post("/auth/login", { login:email, password })
-        if (res.data.user) {
-          this.login(res.data)
+        
+        // if (res.data.token) {
+        //   localStorage.setItem("token", res.data.token);
+        // }
+        if (res.data && res.data.user) {
+          this.login(res.data.user);
+          
           const favStore = useFavoritesStore();
           await favStore.fetchFavorites();
+          return true
         }
-        return true
       } catch (e) {
         console.error("Login error:",  e.response?.data || e)
         throw e
@@ -81,13 +95,39 @@ export const useAuthStore = defineStore("auth", {
     async sendSms(phone) {
       return await api.post("/auth/sendsms", { phone })
     },
-    logout() {
-      this.isAuthenticated = false
-      this.user = null
-      localStorage.removeItem("auth")
-      localStorage.removeItem("products")
+    async validateAndFormatCity(query) {
+      if (!query || query.length < 3) return null;
+      const url = `https://geocode-maps.yandex.ru/1.x/?apikey=ab3a562f-41f9-4eb0-94ab-b982e13c7742&format=json&geocode=${encodeURIComponent(query)}`;
+      
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        const feature = data?.response?.GeoObjectCollection?.featureMember?.[0]?.GeoObject;
+        return feature ? feature.name : null;
+      } catch (e) {
+        console.error("Ошибка геокодера:", e);
+        return null;
+      }
+    },
+    async logout() {
+      this.isAuthenticated = false;
+      this.user = null;
+      localStorage.removeItem("auth");
+      localStorage.removeItem("products");
+      localStorage.removeItem("token");
+      
       const favStore = useFavoritesStore();
       favStore.clear();
+      try {
+        await api.post("/auth/logout").catch(() => {});
+      } catch (e) {
+        // Игнорируем ошибки сети/401 при логауте
+      }
+
+      // 3. Редирект
+      if (window.location.pathname !== "/") {
+        window.location.href = "/";
+      }
     },
     loadAuth() {
       const saved = localStorage.getItem("auth");

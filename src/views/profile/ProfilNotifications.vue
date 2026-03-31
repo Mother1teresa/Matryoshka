@@ -11,6 +11,7 @@ const fetchNotifications = async () => {
     const response = await api.get('/notifications'); // эндпоинт по вашему API
     notifications.value = response.data.notifications;
   } catch (e) {
+    notify("Ошибка при загрузке уведомлений")
     console.error("Ошибка при загрузке уведомлений", e);
   } finally {
     isLoading.value = false;
@@ -20,9 +21,9 @@ const fetchNotifications = async () => {
 onMounted(fetchNotifications);
 </script>
 <template>
-  <div class="notifications-page">
+  <div class="general-container notifications-container">
     <h2 class="page-title">Уведомления</h2>
-    <div v-if="isLoading" class="loader">Загрузка...</div>
+    <div v-if="isLoading" class="loading-state">Загрузка...</div>
     <div v-else class="notifications-list">
       <div 
         v-for="item in notifications" 
@@ -56,26 +57,27 @@ onMounted(fetchNotifications);
   display: flex;
   flex-direction: column;
   gap: 15px;
+  overflow-y: auto;
+  border: 1px solid #D0D0D0;
+  background-color: #F5F5F5;
 }
 
 .notification-card {
   background: #fff;
-  border-radius: 12px;
-  padding: 16px;
-  display: flex;
-  justify-content: space-between;
-  border-bottom: 1px solid #eee; /* Линия как на скрине */
+  border-radius: 1.25rem;
+  padding: 0.75rem 1.25rem 1.25rem 1.25rem;
+  display: grid;
+  gap: 0.469rem;
 }
 
 .notification-title {
-  font-weight: 600;
-  margin-bottom: 5px;
-  color: #333;
+  font-weight: 400;
+  margin-bottom: 0.469rem;
 }
 
 .notification-text {
-  font-size: 14px;
-  color: #666;
+  font-size: 0.875rem;
+  color: #7C7C7C;
 }
 
 .notification-meta {

@@ -12,6 +12,7 @@ const fetchChats = async (isSilent = false) => {
     const response = await api.get('/chats');
     chats.value = response.data.chats;
   } catch (e) {
+    notify("Ошибка обновления чатов")
     console.error("Ошибка обновления чатов", e);
   } finally {
     isLoading.value = false;
@@ -35,7 +36,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="messages-container">
+  <div class="general-container messages-container">
     <h2 class="page-title">Сообщения</h2>
 
     <!-- Состояние загрузки -->
@@ -67,7 +68,7 @@ onUnmounted(() => {
             <img :src="chat.productImage" class="mini-product-thumb" />
           </div>
           <div class="status-time">
-            <img v-if="chat.lastMessage.isRead" src="/src/assets/img/icons/double-check.svg" class="status-icon" />
+            <!-- <img v-if="chat.lastMessage.isRead" src="/src/assets/img/icons/double-check.svg" class="status-icon" /> -->
             <span class="time">{{ chat.lastMessage.time }}</span>
           </div>
         </div>
@@ -79,7 +80,7 @@ onUnmounted(() => {
       <div class="empty-icon">✉️</div>
       <h3>У вас пока нет сообщений</h3>
       <p>Когда вы напишете продавцу или кто-то откликнется на ваше объявление, диалог появится здесь.</p>
-      <router-link to="/ads" class="go-to-ads-btn">Найти объявления</router-link>
+      <router-link to="/" class="btn go-to-ads-btn">Найти объявления</router-link>
     </div>
   </div>
 </template>
@@ -126,7 +127,7 @@ onUnmounted(() => {
 }
 
 .go-to-ads-btn {
-  background: #4ab971; /* Ваш зеленый цвет */
+  background: #64a07a; /* Ваш зеленый цвет */
   color: white;
   padding: 12px 24px;
   border-radius: 8px;

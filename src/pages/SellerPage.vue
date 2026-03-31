@@ -19,8 +19,8 @@
                   {{ seller?.type === "company" ? "Компания" : "Частное лицо" }}
                 </div>
                 <div class="rating-block">
-                  <div class="rating">{{ reviewStore.averageRating }} <span>★★★★★</span>
-                    <small> ( {{ reviewStore.reviews.length }} )</small>
+                  <div class="rating">{{ reviewStore.getRatingById(route.params.id)}} <span>★★★★★</span>
+                    <small> ( {{ reviewStore.getReviewsCountById(route.params.id) }} )</small>
                   </div>
                 </div>
               </div>
@@ -46,7 +46,7 @@
         </div>
       </div>
       <div class="seller-tabs">
-        <button :class="{ active: currentTab === 'ads' }" @click="currentTab = 'ads'">
+        <button :class="{ active: currentTab === 'announcements' }" @click="currentTab = 'announcements'">
           Объявления
         </button>
         <button :class="{ active: currentTab === 'video' }" @click="currentTab = 'video'">
@@ -57,7 +57,7 @@
         </button>
       </div>
       <div class="seller-content">
-        <div v-if="currentTab === 'ads'" class="products-grid-wrapper">
+        <div v-if="currentTab === 'announcements'" class="products-grid-wrapper">
           <div class="products">
             <ProductCard v-for="product in sellerProducts" :key="product.id" :product="product"/>
           </div>
@@ -86,6 +86,9 @@
                 <div class="user-details">
                   <div class="user-name">{{ review.author }}</div>
                   <div class="review-product">{{ review.productTitle }}</div>
+                  <div class="review-body">
+                    {{ review.text }}
+                  </div>
                 </div>
               </div>
               <div class="review-meta">
@@ -94,9 +97,7 @@
                 <div class="review-date">{{ review.date }}</div>
               </div>
             </div>
-            <div class="review-body">
-              {{ review.text }}
-            </div>
+            
             <!-- Ответ продавца -->
             <div v-if="review.reply" class="seller-reply">
               <img :src="seller?.avatar || '/src/assets/img/mask-avatar.png'" class="reply-avatar" />
@@ -109,77 +110,87 @@
   У этого продавца пока нет отзывов.
 </div></div></div></div></section></template>
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, watch, onUnmounted } from "vue";
 import { useRoute } from "vue-router";
 import { useProductStore } from "/src/stores/product.js";
 import { useAuthStore } from "/src/stores/authStore.js";
 import { useModalStore } from "/src/stores/modal.js";
 import { notify } from "/src/utils/notify";
 import { useReviewStore } from "/src/stores/reviews.js";
+import { useSubscriptionStore } from "../stores/subscriptionStore.js";
+import { useSellerStore } from "/src/stores/sellers.js";
 
 import Header from '../components/layout/Header.vue';
 import ProductCard from "/src/components/product/ProductCard.vue";
 
-import { useSubscriptionStore } from "../stores/subscriptionStore.js";
-const subStore = useSubscriptionStore();
-
+const route = useRoute();
 const auth = useAuthStore();
 const modal = useModalStore();
-const route = useRoute();
+const subStore = useSubscriptionStore();
 const productStore = useProductStore();
-const currentTab = ref("ads");
+const reviewStore = useReviewStore();
+const sellerStore = useSellerStore();
+
+const currentTab = ref("announcements");
 const isDescExpanded = ref(false);
 
-const reviewStore = useReviewStore();
+// Данные из сторов
 const sellerReviews = computed(() => reviewStore.reviews);
 
-import { useSellerStore } from "/src/stores/sellers.js";
-const sellerStore = useSellerStore();
 const seller = computed(() => {
-  return (
-    sellerStore.getSellerById(route.params.id) || {
-      name: "Загрузка...",
-      rating: 0,
-});});
-const checkAuthAndRun = (
-  action,
-  message = "Авторизуйтесь, чтобы продолжить",
-) => {
+  // Ищем продавца по ID из роута
+  return sellerStore.getSellerById(route.params.id) || { name: "Загрузка...", id: route.params.id };
+});
+
+const sellerProducts = computed(() => {
+  const targetId = String(route.params.id);
+  // Фильтруем все товары, которые есть в сторе
+  return productStore.products.filter(p => String(p.sellerId) === targetId);
+});
+const sellerVideos = ref([
+  { id: 1, title: "Дождевик чугунный", date: "17 дней назад", duration: "0:26", thumbnail: "/src/assets/img/video-plug.jpg" },
+]);
+const loadSellerData = async (sellerId) => {
+  if (!sellerId) return;
+  try {
+    await productStore.fetchAdverts(); 
+    await sellerStore.ensureSellers();
+    await reviewStore.fetchReviewsBySeller(sellerId);
+    
+  } catch (err) {
+    console.error("Ошибка при загрузке страницы продавца:", err);
+  }
+};
+watch(
+  () => route.params.id,
+  (newId) => {
+    if (newId) {
+      currentTab.value = "announcements";
+      loadSellerData(newId);
+    }
+  },
+  { immediate: true }
+);
+onUnmounted(() => {
+  reviewStore.reviews = [];
+});
+const checkAuthAndRun = (action, message = "Авторизуйтесь, чтобы продолжить") => {
   if (!auth.isAuthenticated) {
     modal.openLogin();
     notify(message);
     return;
-}action();};
+  }
+  action();
+};
 
-const sellerProducts = computed(() => {
-  return productStore.products.filter(
-    (p) => String(p.sellerId) === String(route.params.id),
-);});
-const sellerVideos = ref([
-  {
-    id: 1,
-    title: "Дождевик чугунный",
-    date: "17 дней назад",
-    duration: "0:26",
-    thumbnail: "/src/assets/img/video-plug.jpg",
-},]);
 const onSubscribeClick = () => {
   const sellerId = seller.value?.id;
   checkAuthAndRun(async () => {
     const isNowSubscribed = await subStore.toggle(sellerId);
-    notify(
-      isNowSubscribed
-        ? "Вы подписались на продавца"
-        : "Вы отписались от продавца",
-);});};
-onMounted(async () => {
-const sellerId = route.params.id;
-if (productStore.products.length === 0) {await productStore.fetchAdverts();}await sellerStore.ensureSellers();
-if (sellerId) {await reviewStore.fetchReviewsBySeller(sellerId);}
-if (auth.user?.id) {
-    reviewStore.fetchReviewsBySeller(auth.user.id);
-}
-});
+    notify(isNowSubscribed ? "Вы подписались" : "Вы отписались");
+  });
+};
+
 </script>
 
 <style scoped>
@@ -202,74 +213,13 @@ if (auth.user?.id) {
 .review-header {
   display: flex;
   justify-content: space-between;
-}
-.user-info {
-  display: flex;
-  gap: 1rem;
-}
-.user-avatar {
-  width: 3.5rem;
-  height: 3.5rem;
-  border-radius: 50%;
-  object-fit: cover;
-}
-.user-name {
-  font-weight: 600;
-  font-size: 1.25rem;
-  cursor: pointer;
-}
-.review-product {
-  color: #7c7c7c;
-  font-size: 1rem;
-}
-.review-meta {
-  text-align: right;
-}
-.deal-status {
-  font-size: 0.875rem;
-  color: #7c7c7c;
-  text-align: center;
-}
-.stars-row {
-  color: #64a07a;
-  font-size: 2.25rem;
-  margin: 0 0 0.25rem 0;
-}
-.review-date {
-  color: #7c7c7c;
-  font-size: 0.875rem;
-  text-align: center;
-}
-.review-body {
-  font-size: 1.125rem;
-  margin-bottom: 1rem;
-  width: 81%;
-  margin-left: 4.75rem;
+  align-items: flex-start;
 }
 /* Стили ответа продавца */
-.seller-reply {
-  background: #f9f9f9;
-  border-radius: 0.938rem;
-  padding: .5rem 1rem 1rem .6rem;
-  display: flex;
-  gap: 1rem;
-  margin-left: 4.75rem;
-  width: 63.013rem;
-  align-items: stretch;
-}
 .reply-content{
   margin-top: .3rem;
 }
-.reply-avatar {
-  width: 3.5rem;
-  height: 3.5rem;
-  border-radius: 50%;
-}
-.reply-label {
-  font-size: 0.875rem;
-  color: #7c7c7c;
-  margin-bottom: 0.25rem;
-}
+
 .reply-text {
   font-size: 1rem;
 }

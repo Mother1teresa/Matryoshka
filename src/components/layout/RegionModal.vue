@@ -48,7 +48,6 @@ watch(searchQuery, (value) => {
   }, 900);
 });
 
-
 // Поиск
 async function handleSearch(query) {
   const url = `https://geocode-maps.yandex.ru/1.x/?apikey=ab3a562f-41f9-4eb0-94ab-b982e13c7742&format=json&geocode=${encodeURIComponent(query)}`;
@@ -86,8 +85,6 @@ watch(
     if (open) {
       setTimeout(() => {
         initMap();
-
-        // если город уже выбран → сразу показываем его
         if (searchQuery.value.trim()) {
           handleSearch(searchQuery.value);
         }

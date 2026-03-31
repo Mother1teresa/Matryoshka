@@ -188,23 +188,7 @@ async function submitLogin(){
   font-size: 0.813rem;
   height: 2.875rem;
 }
-.auth-forgot__check {
-  display: flex;
-  gap: 0.25rem;
-}
-.auth-forgot__check input {
-  width: 0.938rem !important;
-  height: 0.938rem !important;
-  border-color: white !important;
-  border-radius: 0.313rem !important;
-  appearance: none;
-  -webkit-appearance: none;
-  background-color: white;
-}
-.auth-forgot__check input:checked {
-  background: #105965;
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
-}
+
 .form-noaccount__text{
   font-size: .9rem;
 }

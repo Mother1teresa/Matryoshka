@@ -11,15 +11,15 @@ export const api = axios.create({
 api.interceptors.response.use(
   response => response,
   error => {
-    if (error.response?.status === 401) {
-       console.error("Поймана 401 ошибка: Пользователь не авторизован");
-      // const auth = useAuthStore(); 
-      // auth.logout();               
+    if (error.response?.status === 401 && !error.config.url.includes("/auth/logout")) {
+      const auth = useAuthStore(); 
+      auth.logout();               
 
-      // if (window.location.pathname !== "/") {
-      //   window.location.href = "/";
-      // }
+      if (window.location.pathname !== "/") {
+        window.location.href = "/";
+      }
     }
     return Promise.reject(error);
   }
 );
+// мне перенаправлять на /refresh если ошибка 401, хм, у меня там сразу вылет из акк  

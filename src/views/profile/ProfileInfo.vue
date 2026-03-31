@@ -22,7 +22,7 @@
         </div>
         <div class="info-row">
           <span class="label">Телефон</span>
-          <span class="value">{{ auth.user?.phone }}</span>
+          <span class="value">{{ auth.formattedPhone }}</span>
         </div>
         <div class="info-row">
           <span class="label">E-mail</span>
@@ -53,7 +53,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useAuthStore } from '/src/stores/authStore.js'; 
 import { useReviewStore } from '/src/stores/reviews.js';
 import ProfileEditModal from '../ProfileEditModal.vue';
@@ -65,9 +65,6 @@ const isModalOpen = ref(false);
 const fetchUserData = async () => {
   try {
     await auth.fetchProfile();
-    if (auth.user && auth.user.id) {
-      await reviewStore.fetchReviewsBySeller(auth.user.id);
-    }
   } catch (e) {
     console.error("Не удалось загрузить данные профиля:", e);
   }
@@ -76,8 +73,25 @@ const fetchUserData = async () => {
 onMounted(() => {
   fetchUserData();
 });
+watch(
+  () => auth.user?.id,
+  (newId) => {
+    if (newId) {
+      reviewStore.fetchReviewsBySeller(newId);
+    }
+  },
+  { immediate: true }
+);
+watch(isModalOpen, (newVal) => {
+  if (newVal) {
+    document.body.classList.add("overflow-mod");
+  } else {
+    document.body.classList.remove("overflow-mod");
+  }
+});
 </script>
 <style scoped>
+
 .profile-container {
   max-width: 54rem;
   margin: 0 auto;
@@ -88,17 +102,10 @@ onMounted(() => {
   padding: 2.188rem 0 0;
 }
 
-.page-title {
-  text-align: center;
-  font-size: 2.25rem;
-  margin-bottom: 1.688rem;
-  font-weight: 500;
-}
-
 .profile-card {
   background: #fff;
   border-radius: 0.625rem;
-  padding: 1.25rem 4.813rem 4.25rem 4.813rem;
+  padding: 1.25rem 3.513rem 4.25rem 3.513rem;
   position: relative;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
   width: 33.063rem;
@@ -125,30 +132,10 @@ onMounted(() => {
   align-items: center;
   margin-bottom: 2.5rem;
 }
-
-.large-avatar {
-  width: 7.688rem;
-  height: 7.688rem;
-  border-radius: 50%;
-  object-fit: cover;
-  margin-bottom: 15px;
-}
-
-.rating-badge {
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  font-size: 2.25rem;
-}
-
 .stars {
   color: #64A07A;
   letter-spacing: 2px;
   font-size: 2.65rem;
-}
-.rating-num{
-  width: 2.938rem;
-  font-size: 2.25rem;
 }
 
 .user-type {
@@ -159,14 +146,14 @@ onMounted(() => {
 
 .user-info-list {
   display: grid;
-  gap: 2.5rem;
+  gap: 2rem;
   margin-bottom: 2.5rem;
 }
 
 .info-row {
   display: flex;
   justify-content: flex-start;
-  gap: 2.5rem;
+  gap: 1.5rem;
   font-size: 1.5rem; 
 }
 
@@ -178,6 +165,11 @@ onMounted(() => {
 
 .value {
   text-align: left;
+  word-break: break-all; 
+  overflow-wrap: break-word; 
+  display: inline-block; 
+  max-width: 100%;
+  width: 17.813rem;
 }
 
 .value.email {
