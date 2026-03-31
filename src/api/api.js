@@ -22,4 +22,3 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-// мне перенаправлять на /refresh если ошибка 401, хм, у меня там сразу вылет из акк  

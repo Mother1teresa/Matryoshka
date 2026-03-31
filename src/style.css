@@ -259,12 +259,6 @@ h4 {
   color: #8E8C8C;
   margin-bottom: 0.313rem;
 }
-/* const showCallModal = ref(false);
-const handleCall = (phone) => {
-  // Стандартная команда браузеру на вызов
-  window.location.href = `tel:${phone}`;
-  showCallModal.value = false;
-}; */
 .reply-avatar {
   width: 3.5rem;
   height: 3.5rem;
