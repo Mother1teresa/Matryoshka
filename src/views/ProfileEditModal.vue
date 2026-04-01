@@ -20,19 +20,19 @@
           <div class="form-grid">
             <div class="form-group">
               <label>{{ isCompany ? "Название" : "Имя" }}</label>
-              <input v-model="form.name" type="text" :placeholder=" isCompany ? 'Введите название компании' : 'Ваше имя'"/>
+              <input v-model="form.name" :class="{ 'error-field': errors.name }" type="text" :placeholder=" isCompany ? 'Введите название компании' : 'Ваше имя'"/>
             </div>
-            <div class="form-group">
-              <label>Телефон</label>
-              <input v-model="form.phone" v-mask="'+7 (###) ###-##-##'" type="tel" placeholder="Ваш номер телефона"/>
+            <div class="form-group readonly-field">
+              <label>Телефон <span>(нельзя изменить)</span></label>
+              <input v-model="form.phone" v-mask="'+7 (###) ###-##-##'" type="tel" readonly class="locked-input"/>
             </div>
-            <div class="form-group">
-              <label>E-mail</label>
-              <input v-model="form.email" type="email" placeholder="Ваш электронный адрес"/>
+            <div class="form-group readonly-field">
+              <label>E-mail <span>(нельзя изменить)</span></label>
+              <input v-model="form.email" type="email" readonly class="locked-input"/>
             </div>
             <div class="form-group">
               <label>Город</label>
-              <input v-model="form.city" type="text" placeholder="Ваш город" class="local-prof"/>
+              <input v-model="form.city" :class="{ 'error-field': errors.city  }" type="text" placeholder="Ваш город" class="local-prof"/>
             </div>
           </div>
           <div v-if="isCompany" class="employee-section">
@@ -44,11 +44,11 @@
             <div v-if="showEmployee" class="employee-inputs">
               <div class="form-group">
                 <label>Имя сотрудника</label>
-                <input  v-model="form.employeeName"  type="text"  placeholder="Введите имя"/>
+                <input  v-model="form.employeeName" :class="{ 'error-field': errors.employeeName }" type="text"  placeholder="Введите имя"/>
               </div>
               <div class="form-group">
                 <label>Должность</label>
-                <div class="multiselect-container">
+                <div class="multiselect-container" :class="{ 'error-field': errors.employeeRole }">
                   <multiselect
                     v-model="form.employeeRole"
                     :options="roleOptions"
@@ -59,6 +59,7 @@
                     :allow-empty="false"
                     :show-labels="false"
                     open-direction="bottom">
+                    <template #caret><div class="multiselect__caret"></div></template>
                   </multiselect>
                 </div>
               </div>
@@ -85,9 +86,8 @@
     </div>
   </Transition>
 </template>
-
 <script setup>
-import { ref, reactive, computed, watch } from "vue";
+import { ref, reactive, computed, watch, onBeforeUnmount  } from "vue";
 import { useAuthStore } from "/src/stores/authStore.js";
 import "vue-multiselect/dist/vue-multiselect.css";
 import Multiselect from "vue-multiselect";
@@ -101,7 +101,19 @@ const auth = useAuthStore();
 const isSubmitting = ref(false);
 const showEmployee = ref(false);
 let cityTimeout = null;
-
+const errors = reactive({});
+const validate = () => {
+  Object.keys(errors).forEach(key => delete errors[key]);
+  if (!form.name?.trim()) errors.name = true;
+  if (!form.city?.trim()) errors.city = true;
+  if (isCompany.value && showEmployee.value) {
+    if (!form.employeeName?.trim()) errors.employeeName = true;
+    if (!form.employeeRole) errors.employeeRole = true;
+  }
+  if (Object.keys(errors).length > 0) {
+    notify("Пожалуйста, заполните обязательные поля", "error");
+    return false;
+  }return true;};
 const roleOptions = [
   { name: "Менеджер по продажам", value: "manager" },
   { name: "Директор", value: "director" },
@@ -129,30 +141,21 @@ const isCompany = computed(() => form.type === "company");
 watch(
   () => props.isOpen,
   (newVal) => {
-    if (newVal && auth.user) {
+    if (newVal) {
+      Object.keys(errors).forEach(key => delete errors[key]);
+      if (auth.user) {
       const currentRole = roleOptions.find((opt) => opt.value === auth.user.employeeRole) || null;
-      Object.assign(form, {
-        ...auth.user,
-        phone: auth.user.phone, 
-        employeeRole: currentRole,
-      });
-      showEmployee.value = !!auth.user.employeeName;
-    }
-  }
-);
+      Object.assign(form, { ...auth.user,  phone: auth.user.phone,  employeeRole: currentRole,});showEmployee.value = !!auth.user.employeeName;}}});
 const handleSave = async () => {
   if (isSubmitting.value) return;
+  if (!validate()) return; 
   isSubmitting.value = true;
   try {
     let finalAvatarUrl = form.avatar;
-    // 1. Если выбран новый файл, сначала загружаем его в S3 и регистрируем в Media Service
     if (form.avatarFile) {
-      // Загружаем в S3 (предполагаем, что функция возвращает URL или ключ)
       const s3Response = await uploadToS3(form.avatarFile); 
-      // Если s3Response содержит URL, используем его, иначе оставляем старый
       finalAvatarUrl = s3Response?.url || finalAvatarUrl;
-
-      // 2. Регистрируем медиа-данные в новом сервисе (как просил бэк)
+      // Регистрируем медиа-данные 
       const mediaData = [{
         userId: String(auth.user?.id),
         filename: form.avatarFile.name,
@@ -167,11 +170,10 @@ const handleSave = async () => {
         await api.post("/media/upload", mediaData);
       } catch (mediaErr) {
         console.error("Media Service error:", mediaErr.response?.data || mediaErr.message);
-        // Не прерываем сохранение профиля, если медиа-сервис упал, но аватар в S3 уже есть
       }
       form.avatarFile = null;
     }
-    // 3. Обновляем данные профиля
+    // Обновляем данные профиля
     const updateData = {
       id: auth.user?.id,
       name: form.name,
@@ -181,36 +183,53 @@ const handleSave = async () => {
       description: form.description,
       type: form.type,
       avatar: finalAvatarUrl, // Передаем актуальную ссылку
-      employeeName: isCompany.value && showEmployee.value ? form.employeeName : "",
-      employeeRole: isCompany.value && showEmployee.value ? form.employeeRole?.value : ""
+      employeeName: (isCompany.value && showEmployee.value) ? form.employeeName : "",
+      employeeRole: (isCompany.value && showEmployee.value) ? form.employeeRole?.value : ""
     };
-
     const response = await api.put("/profile/update", updateData);
-
     if (response.data.user) {
       auth.login(response.data.user);
     }
-    
     emit("refresh"); 
     emit("close");
     notify("Профиль успешно обновлен!"); 
   } catch (e) {
     console.error("Ошибка при сохранении профиля:", e.response?.data || e.message);
+    notify(e.response?.data?.message || "Не удалось сохранить профиль", "error");
   } finally {
     isSubmitting.value = false;
   }
 };
 
-
 watch(() => form.city, (val) => {
   if (!val) return;
   form.city = val.charAt(0).toUpperCase() + val.slice(1);
-  
   clearTimeout(cityTimeout);
   cityTimeout = setTimeout(async () => {
     const validCity = await auth.validateAndFormatCity(val);
     if (validCity) form.city = validCity;
   }, 1000);
+});
+watch(showEmployee, (val) => {
+  if (!val) {
+    form.employeeName = "";
+    form.employeeRole = null;
+    delete errors.employeeName;
+    delete errors.employeeRole;
+  }
+});
+onBeforeUnmount(() => {
+  clearTimeout(cityTimeout);
+});
+watch(isCompany, (newVal) => {
+  if (!newVal) {
+    showEmployee.value = false;
+  }
+});watch(() => form.employeeRole, (val) => {
+  if (val) delete errors.employeeRole;
+});
+watch(() => form.name, (val) => {
+  if (val?.trim()) delete errors.name;
 });
 </script>
 
@@ -432,5 +451,92 @@ input::placeholder{
 }
 .local-prof::placeholder{
   text-transform:none;
+}
+.locked-input {
+  background-color: #f0f0f0 !important;
+  cursor: not-allowed;
+  color: #777;
+}
+.readonly-field label{
+  display: grid;
+}
+.readonly-field label span{
+  color: #999;
+  font-size: 0.5em;
+}
+.error-field {
+  border: 1px solid #ff4d4f !important;
+}
+/* Для мультиселекта специфично */
+.multiselect-container.error-field :deep(.multiselect__tags) {
+  border-color: #ff4d4f;
+}
+.multiselect__caret {
+  position: absolute; right: 12px; top: 50%; width: 12px; height: 12px; margin-top: -6px;
+  background-image: url("/src/assets/img/arr-select.svg");
+  background-repeat: no-repeat; background-size: contain; transition: transform 0.3s; z-index: 1; pointer-events: none;
+}
+:deep(.multiselect--active) .multiselect{
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+:deep(.multiselect--active) .multiselect__caret { transform: rotate(180deg); }
+:deep(.multiselect__select) { display: none !important; }
+/* Фикс текста */
+:deep(.multiselect__single) { 
+  color: #000 !important; font-size: 1rem !important; 
+  padding-left: 0 !important; margin-bottom: 0 !important; background: transparent !important; display: block !important;
+}
+:deep(.multiselect__tags) { 
+  min-height: 3rem !important; height: 3rem !important; background: #fff !important; padding: 0.75rem;
+  border-radius: 0.625rem; display: flex !important; align-items: center !important;
+  transition: all .1s; font-size: 1.2rem; border: 1px solid #e0e0e0;
+}
+/* :deep(.multiselect){min-height: auto !important; height: auto !important;} */
+:deep(.multiselect__placeholder) { color: #A8A1A1 !important; margin: 0 !important; padding: 0 !important; font-size: 1.2rem; }
+:deep(.multiselect__option--highlight) {background: #64A07A !important; color: #fff !important; font-weight: 600;}
+:deep(.multiselect__option::after) { display: none !important; }
+:deep(.multiselect__option){
+  display: grid;
+  align-items: center;
+  padding: 0.75rem;
+  /* min-height: 3.2rem; */
+  line-height: 16px;
+  text-decoration: none;
+  text-transform: none;
+  vertical-align: middle;
+  position: relative;
+  cursor: pointer;
+  white-space: normal;
+  font-size: 1rem;
+}
+:deep(.multiselect__content-wrapper) {
+  position: absolute;
+  display: block;
+  background: #fff;
+  width: 100%;
+  max-height: 240px;
+  overflow: auto;
+  border: 1px solid #e8e8e8;
+  border-top: none;
+  border-bottom-left-radius: 0.938rem;
+  border-bottom-right-radius: 0;
+  z-index: 50;
+  -webkit-overflow-scrolling: touch;
+}
+:deep(.multiselect__tag){
+  padding: 0.25rem 1.2rem 0.25rem 0.425rem;
+  border-radius: 0.313rem;
+  margin-right: 0.125rem;
+  background: #41b883;
+  margin-bottom: 0rem;
+  white-space: wrap;
+  overflow: hidden;
+  max-width: 100%;
+  text-overflow: ellipsis;
+  font-size: 0.875rem;
+}
+:deep(.multiselect__option--selected){
+  color: #64A07A;
 }
 </style>

@@ -145,10 +145,14 @@ flex-direction: column;}
 .expand-btn img { width: 1rem; height: 1rem; display: inline-block; color: #000; transition: transform 0.3s;}
 .expand-btn img.rotate { transform: rotate(180deg); }
 
-:deep(.multiselect__option--highlight) { background: #64A07A !important; color: #fff !important; }
+:deep(.multiselect__option--highlight) { background: #64A07A !important; color: #fff !important; font-weight: 600;}
 :deep(.multiselect__option::after) { display: none !important; }
+:deep(.multiselect__option--selected){
+  color: #64A07A;
+}
 :deep(.multiselect__option){
-  display: block;
+  display: grid;
+  align-items: center;
   padding: 0.75rem;
   /* min-height: 3.2rem; */
   line-height: 16px;
