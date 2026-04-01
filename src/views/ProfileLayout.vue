@@ -85,7 +85,7 @@ watch(
   position: relative;
   padding-bottom: 20.25rem;
   transition: width 0.3s ease;
-  overflow: hidden; 
+  /* overflow: hidden;  */
   white-space: nowrap;
 }
 .profile-sidebar.is-collapsed {
@@ -117,7 +117,7 @@ watch(
 }
 .user-foto {
   display: flex;
-  gap: 1.188rem;
+  gap: .9rem;
   align-items: center;
   margin-bottom: 0.813rem;
   padding-left: 1.875rem;
@@ -168,7 +168,8 @@ watch(
   transform: rotate(180deg); 
 }
 .user-name {
-  font-size: 1.5rem;
+  font-size: 1.2rem;
+  font-weight: 400;
   white-space: normal;
 }
 .logo {

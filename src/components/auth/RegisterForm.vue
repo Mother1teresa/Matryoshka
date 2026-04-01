@@ -1,7 +1,6 @@
 <template>
   <form class="auth-form" @submit.prevent="submitRegister">
     <div class="auth-title">Регистрация</div>
-
     <input v-model="name" placeholder="Имя" required class="auth-input" :class="{ 'auth-input__error': errors.name }"/>
     <input
       v-model="phone"
@@ -60,7 +59,6 @@
     </div>
   </form>
 </template>
-
 <script setup>
 import { ref,computed  } from "vue";
 import { useAuthStore } from "/src/stores/authStore.js"
@@ -122,11 +120,10 @@ async function submitRegister(){
   //   notify("Ошибка отправки SMS")
   // }
 
-
   modal.phone = cleanPhone.value
   modal.name = name.value
   modal.password = password.value
-  modal.openEmail() 
+  modal.openEmail();
   notify("Данные сохранены, введите Email")
 }
 </script>

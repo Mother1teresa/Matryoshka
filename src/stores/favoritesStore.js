@@ -16,7 +16,7 @@ export const useFavoritesStore = defineStore("favorites", {
       if (!auth.isAuthenticated) return;
       this.isLoading = true;
       try {
-        const res = await favoritesApi.getAll();
+        // const res = await favoritesApi.getAll();
         // Допустим, сервер возвращает массив объектов или массив ID
         this.favorites = res.data.map(item => item.id || item);
         this.saveToLocal();

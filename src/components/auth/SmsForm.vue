@@ -3,7 +3,6 @@
   <div class="sms-card">
     <div class="sms-title">{{ title }}</div>
     <p class="sms-subtitle">{{ subtitle }}</p>
-
     <!-- CODE INPUTS -->
     <div class="code-wrapper">
       <input
@@ -20,7 +19,6 @@
         @keydown.backspace="handleBackspace(index)"
       />
     </div>
-
     <p class="resend">
       <span v-if="timer > 0">
         повторить через {{ timer }} сек
@@ -32,7 +30,6 @@
   </div>
 </div>
 </template>
-
 <script setup>
 import { ref, computed, onMounted, nextTick  } from "vue"
 import { useModalStore } from "/src/stores/modal.js"
@@ -55,11 +52,16 @@ const subtitle = computed(() => {
   if (modal.smsMode === "phone" && modal.phone) {
     return "+7 ***** " + modal.phone.slice(-5)
   }
+  // Добавь проверку на существование modal.email
   if (modal.smsMode === "email" && modal.email) {
-    const [name, domain] = modal.email.split("@")
+    const parts = modal.email.split("@")
+    if (parts.length < 2) return modal.email
+    const [name, domain] = parts
     return name.slice(0, 2) + "***@" + domain
   }
-return ""})
+  return ""
+})
+
 
 const fullCode = computed(() => code.value.join(""))
 function handleInput(index) {

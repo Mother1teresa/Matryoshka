@@ -42,8 +42,10 @@ export const useReviewStore = defineStore('reviews', () => {
     reviews.value = [];
     isLoading.value = true;
     try {
+      // Пока API закомментировано, явно задаем data как null
+      let data = null; 
       // 1. Пытаемся получить реальные данные
-      const { data } = await reviewsApi.getBySellerId(sellerId);
+      // const { data } = await reviewsApi.getBySellerId(sellerId);
       
       // 2. Проверяем: если реальные отзывы есть, записываем только их
       if (data && data.length > 0) {

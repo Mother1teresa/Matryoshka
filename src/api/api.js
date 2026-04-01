@@ -1,5 +1,6 @@
 import axios from "axios"
-import { useAuthStore } from "/src/stores/authStore" 
+import { useAuthStore } from "/src/stores/authStore.js" 
+import { notify } from "/src/utils/notify.js";
 
 export const api = axios.create({
   baseURL: "/api",
@@ -9,15 +10,16 @@ export const api = axios.create({
   }
 })
 api.interceptors.response.use(
-  response => response,
-  error => {
-    if (error.response?.status === 401 && !error.config.url.includes("/auth/logout")) {
-      const auth = useAuthStore(); 
-      auth.logout();               
+  (response) => response,
+  (error) => {
+    // Получаем сообщение от бэкенда
+    const message = error.response?.data?.message;
+    const status = error.response?.status;
 
-      if (window.location.pathname !== "/") {
-        window.location.href = "/";
-      }
+    if (message === "SESSION_EXPIRED" || status === 401) {
+      const auth = useAuthStore();
+      auth.logout();
+      notify("Сессия истекла. Войдите заново.");
     }
     return Promise.reject(error);
   }

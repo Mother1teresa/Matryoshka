@@ -30,17 +30,15 @@ const errors = ref({
 async function submit(){
   if (!email.value) return notify("Введите email")
   try{
-    await api.post("/auth/sendmail", {
-      email: email.value,
-    })   
+    await api.post("/auth/sendmail", { email: email.value });
+
     modal.email = email.value;
     modal.smsMode = "email";
     
     notify("Код отправлен на почту");
     modal.openSms();
   }catch(e){
-    errors.value.email = true; // Теперь инпут подсветится красным
-    // Выводим только текст ошибки, если сервер его прислал
+    errors.value.email = true; 
     const errorMessage = e.response?.data?.message || "Ошибка сервера (500)";
     notify(errorMessage);
     console.error("Ошибка при отправке:", e.message);

@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import { api } from '/src/api/api.js';
+import { notify } from "/src/utils/notify";
 
 const chats = ref([]);
 const isLoading = ref(true);
@@ -9,7 +10,7 @@ let pollingTimer = null;
 const fetchChats = async (isSilent = false) => {
   if (!isSilent) isLoading.value = true;
   try {
-    const response = await api.get('/chats');
+    // const response = await api.get('/chats');
     chats.value = response.data.chats;
   } catch (e) {
     notify("Ошибка обновления чатов")

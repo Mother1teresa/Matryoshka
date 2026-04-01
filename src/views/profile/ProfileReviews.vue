@@ -7,8 +7,8 @@
         <div class="summary-card">
           <img :src="auth.userAvatar" class="large-avatar" />
           <div class="rating-badge">
-            <span class="rating-num">{{ reviewStore.averageRating || '0' }}</span>
-            <span class="stars">★★★★★</span>
+            <span class="rating-num">{{ reviewStore.getRatingById(auth.user?.id) }}</span>
+            <span class="stars">{{ reviewStore.renderStars(reviewStore.getRatingById(auth.user?.id)) }}</span>
           </div>
         </div>
       </div>
@@ -45,7 +45,6 @@
                     <div class="reply-text">{{ review.reply }}</div>
                 </div>
             </div>
-
             <!-- Если нажали "Ответить" — показываем поле ввода -->
             <div v-else-if="activeReplyFields[review.id]" class="reply-form-container">
                 <div class="seller-reply">

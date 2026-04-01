@@ -51,7 +51,6 @@
       @refresh="fetchUserData"
 />
 </template>
-
 <script setup>
 import { ref, onMounted, watch } from 'vue';
 import { useAuthStore } from '/src/stores/authStore.js'; 
@@ -64,6 +63,7 @@ const isModalOpen = ref(false);
 
 const fetchUserData = async () => {
   try {
+    auth.loadAuth(); 
     await auth.fetchProfile();
   } catch (e) {
     console.error("Не удалось загрузить данные профиля:", e);
@@ -91,7 +91,6 @@ watch(isModalOpen, (newVal) => {
 });
 </script>
 <style scoped>
-
 .profile-container {
   max-width: 54rem;
   margin: 0 auto;

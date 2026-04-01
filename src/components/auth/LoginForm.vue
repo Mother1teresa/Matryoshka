@@ -60,7 +60,6 @@
     </div>
   </form>
 </template>
-
 <script setup>
 import { ref } from "vue";
 import { useAuthStore } from "/src/stores/authStore.js";

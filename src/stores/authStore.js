@@ -78,17 +78,20 @@ export const useAuthStore = defineStore("auth", {
       }
     },
     async fetchProfile() {
+      if (!this.user?.id) {
+        this.loadAuth();
+      }
+      if (!this.user?.id) return;
       try {
-        if (!this.user?.id) {
-          this.loadAuth();
-        }
-        if (!this.user?.id) return;
         const res = await api.get(`/profile/${this.user.id}`);
         if (res.data && res.data.user) {
           this.user = { ...this.user, ...res.data.user };
           this.saveToStorage(); 
         }
       } catch (e) {
+        if (e.response?.status === 404) {
+          console.warn("Пользователь не найден в БД сервера, используем локальные данные.");
+        }
         console.error("Ошибка загрузки профиля:", e.response?.status);
       }
     },
@@ -118,15 +121,14 @@ export const useAuthStore = defineStore("auth", {
       
       const favStore = useFavoritesStore();
       favStore.clear();
-      try {
-        await api.post("/auth/logout").catch(() => {});
-      } catch (e) {
-        // Игнорируем ошибки сети/401 при логауте
-      }
+      
+      api.post("/auth/logout").catch(() => {});
 
       // 3. Редирект
       if (window.location.pathname !== "/") {
-        window.location.href = "/";
+        setTimeout(() => {
+            window.location.href = "/";
+        }, 50);
       }
     },
     loadAuth() {

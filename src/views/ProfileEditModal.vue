@@ -91,10 +91,9 @@ import { ref, reactive, computed, watch } from "vue";
 import { useAuthStore } from "/src/stores/authStore.js";
 import "vue-multiselect/dist/vue-multiselect.css";
 import Multiselect from "vue-multiselect";
-import { OverlayScrollbarsComponent } from "overlayscrollbars-vue";
-import "overlayscrollbars/overlayscrollbars.css";
 import { uploadToS3 } from "/src/utils/uploadService.js";
 import { api } from "/src/api/api.js";
+import { notify } from "/src/utils/notify";
 
 const props = defineProps({ isOpen: Boolean });
 const emit = defineEmits(["close", "refresh"]);
@@ -145,6 +144,34 @@ const handleSave = async () => {
   if (isSubmitting.value) return;
   isSubmitting.value = true;
   try {
+    let finalAvatarUrl = form.avatar;
+    // 1. Если выбран новый файл, сначала загружаем его в S3 и регистрируем в Media Service
+    if (form.avatarFile) {
+      // Загружаем в S3 (предполагаем, что функция возвращает URL или ключ)
+      const s3Response = await uploadToS3(form.avatarFile); 
+      // Если s3Response содержит URL, используем его, иначе оставляем старый
+      finalAvatarUrl = s3Response?.url || finalAvatarUrl;
+
+      // 2. Регистрируем медиа-данные в новом сервисе (как просил бэк)
+      const mediaData = [{
+        userId: String(auth.user?.id),
+        filename: form.avatarFile.name,
+        s3Key: s3Response?.key || "avatars/" + form.avatarFile.name,
+        url: finalAvatarUrl,
+        mimeType: form.avatarFile.type,
+        type: "avatar",
+        title: `Avatar ${form.name}`,
+        description: "User profile picture"
+      }];
+      try {
+        await api.post("/media/upload", mediaData);
+      } catch (mediaErr) {
+        console.error("Media Service error:", mediaErr.response?.data || mediaErr.message);
+        // Не прерываем сохранение профиля, если медиа-сервис упал, но аватар в S3 уже есть
+      }
+      form.avatarFile = null;
+    }
+    // 3. Обновляем данные профиля
     const updateData = {
       id: auth.user?.id,
       name: form.name,
@@ -153,15 +180,12 @@ const handleSave = async () => {
       city: form.city,
       description: form.description,
       type: form.type,
+      avatar: finalAvatarUrl, // Передаем актуальную ссылку
       employeeName: isCompany.value && showEmployee.value ? form.employeeName : "",
       employeeRole: isCompany.value && showEmployee.value ? form.employeeRole?.value : ""
     };
-    const response = await api.put("/profile/update", updateData);
 
-    if (form.avatarFile) {
-      await uploadToS3(form.avatarFile); 
-      form.avatarFile = null;
-    }
+    const response = await api.put("/profile/update", updateData);
 
     if (response.data.user) {
       auth.login(response.data.user);
@@ -169,13 +193,14 @@ const handleSave = async () => {
     
     emit("refresh"); 
     emit("close");
-    // notify("Профиль успешно обновлен!");
+    notify("Профиль успешно обновлен!"); 
   } catch (e) {
-    console.error("Ошибка при сохранении:", e.response?.data || e.message);
+    console.error("Ошибка при сохранении профиля:", e.response?.data || e.message);
   } finally {
     isSubmitting.value = false;
   }
 };
+
 
 watch(() => form.city, (val) => {
   if (!val) return;

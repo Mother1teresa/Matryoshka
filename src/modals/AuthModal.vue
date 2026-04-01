@@ -1,7 +1,6 @@
 <template>
   <transition name="fade">
     <div v-if="modal.isOpen" class="auth-modal" @click.self="modal.close()">
-
       <div class="auth-box">
 
         <LoginForm v-if="modal.type === 'login'" />
@@ -13,7 +12,6 @@
           <SmsForm />
         </div>
       </div>
-
     </div>
   </transition>
 </template>
