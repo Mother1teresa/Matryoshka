@@ -272,7 +272,6 @@ const onWriteClick = (e) => {
   color: #7c7c7c;
   font-size: 0.938rem;
   margin-top: 0.5rem;
-  /* Ограничение текста в 2-3 строки, если нужно */
   display: -webkit-box;
   -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
@@ -280,7 +279,7 @@ const onWriteClick = (e) => {
 }
 /* Тот самый "Офис" или "Седан" внизу */
 .card-footer-info {
-  margin-top: auto; /* Выталкивает текст в самый низ блока */
+  margin-top: auto;
   padding-top: 1rem;
   color: #b0b0b0;
   font-size: 0.875rem;

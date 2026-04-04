@@ -23,7 +23,7 @@ const fetchChats = async (isSilent = false) => {
 const startPolling = () => {
   pollingTimer = setInterval(() => {
     fetchChats(true); 
-  }, 10000); // 10 секунд — оптимально для нагрузки на сервер
+  }, 10000);
 };
 
 onMounted(() => {
@@ -39,15 +39,13 @@ onUnmounted(() => {
 <template>
   <div class="general-container messages-container">
     <h2 class="page-title">Сообщения</h2>
-
-    <!-- Состояние загрузки -->
     <div v-if="isLoading" class="loading-state">Загрузка чатов...</div>
 
     <!-- Список чатов -->
     <div v-else-if="chats.length > 0" class="chats-list">
       <div v-for="chat in chats" :key="chat.id" class="chat-card">
         <div class="chat-main-info">
-          <!-- Аватар с индикатором онлайн (как на фото) -->
+          <!-- Аватар с индикатором онлайн -->
           <div class="avatar-block">
             <img :src="chat.user.avatar || '/src/assets/img/mask-avatar.png'" class="user-avatar" />
             <span v-if="chat.user.isOnline" class="online-badge"></span>
@@ -76,7 +74,7 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- ПУСТОЕ СОСТОЯНИЕ (Empty State) -->
+    <!-- Пустое состояние -->
     <div v-else class="empty-messages">
       <div class="empty-icon">✉️</div>
       <h3>У вас пока нет сообщений</h3>
@@ -86,7 +84,6 @@ onUnmounted(() => {
   </div>
 </template>
 <style scoped>
-/* Стили карточки как на макете */
 .chat-card {
   display: flex;
   justify-content: space-between;
@@ -97,8 +94,6 @@ onUnmounted(() => {
   cursor: pointer;
 }
 .chat-card:hover { background: #fafafa; }
-
-/* Пустое состояние */
 .empty-messages {
   display: flex;
   flex-direction: column;
@@ -108,27 +103,23 @@ onUnmounted(() => {
   padding: 100px 20px;
   color: #888;
 }
-
 .empty-icon {
   font-size: 64px;
   margin-bottom: 20px;
   opacity: 0.5;
 }
-
 .empty-messages h3 {
   color: #333;
   margin-bottom: 10px;
 }
-
 .empty-messages p {
   max-width: 300px;
   font-size: 14px;
   line-height: 1.4;
   margin-bottom: 25px;
 }
-
 .go-to-ads-btn {
-  background: #64a07a; /* Ваш зеленый цвет */
+  background: #64a07a;
   color: white;
   padding: 12px 24px;
   border-radius: 8px;

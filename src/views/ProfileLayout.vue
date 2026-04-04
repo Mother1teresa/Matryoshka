@@ -38,7 +38,6 @@
         <router-link to="/profile/messages">Сообщения</router-link>
         <router-link to="/profile/notifications">Уведомления</router-link>
         <router-link to="/profile/reviews">Отзывы</router-link>
-
         <div class="nav-footer">
           <button class="edu-btn">Обучение</button>
         </div>
@@ -93,15 +92,14 @@ watch(
 }
 .hidden-content {
   opacity: 0;
-  pointer-events: none; /* Делает элементы "некликабельными" */
-  transition: opacity 0.2s ease; /* Плавное исчезновение */
+  pointer-events: none;
+  transition: opacity 0.2s ease; 
 }
 
-/* Когда сайдбар развернут */
 .profile-sidebar:not(.is-collapsed) .hidden-content {
   opacity: 1;
   pointer-events: auto;
-  transition: opacity 0.4s ease 0.1s; /* Задержка появления, чтобы ширина успела открыться */
+  transition: opacity 0.4s ease 0.1s; 
 }
 .profile-main {
   flex: 1;

@@ -2,7 +2,6 @@
   <Transition name="fade" >
     <div v-if="isOpen" class="modal-overlay" @click.self="$emit('close')">
       <div class="edit-modal">
-        <!-- Кнопка закрытия -->
         <button class="close-x" @click="$emit('close')">×</button>
         <div class="modal-body">
           <!-- Фото и ID -->
@@ -102,29 +101,8 @@ const isSubmitting = ref(false);
 const showEmployee = ref(false);
 let cityTimeout = null;
 const errors = reactive({});
-const validate = () => {
-  Object.keys(errors).forEach(key => delete errors[key]);
-  if (!form.name?.trim()) errors.name = true;
-  if (!form.city?.trim()) errors.city = true;
-  if (isCompany.value && showEmployee.value) {
-    if (!form.employeeName?.trim()) errors.employeeName = true;
-    if (!form.employeeRole) errors.employeeRole = true;
-  }
-  if (Object.keys(errors).length > 0) {
-    notify("Пожалуйста, заполните обязательные поля", "error");
-    return false;
-  }return true;};
-const roleOptions = [
-  { name: "Менеджер по продажам", value: "manager" },
-  { name: "Директор", value: "director" },
-  { name: "Сотрудник", value: "employee" },
-];
-const onFileChange = (e) => {
-  const file = e.target.files[0];
-  if (file) {
-    form.avatar = URL.createObjectURL(file);
-    form.avatarFile = file;
-}};
+const currentBlobUrl = ref(null);
+
 const form = reactive({
   name: "",
   phone: "",
@@ -137,25 +115,47 @@ const form = reactive({
   employeeName: "",
   employeeRole: null,
 });
+const roleOptions = [
+  { name: "Менеджер по продажам", value: "manager" },
+  { name: "Директор", value: "director" },
+  { name: "Сотрудник", value: "employee" },
+];
+const revokeBlob = () => {
+  if (currentBlobUrl.value) {
+    URL.revokeObjectURL(currentBlobUrl.value);
+    currentBlobUrl.value = null;
+  }
+};
+const onFileChange = (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    revokeBlob();
+    form.avatar = URL.createObjectURL(file);
+    form.avatarFile = file;
+}};
+const validate = () => {
+  Object.keys(errors).forEach(key => delete errors[key]);
+  if (!form.name?.trim()) errors.name = true;
+  if (!form.city?.trim()) errors.city = true;
+  if (isCompany.value && showEmployee.value) {
+    if (!form.employeeName?.trim()) errors.employeeName = true;
+    if (!form.employeeRole) errors.employeeRole = true;
+  }
+  if (Object.keys(errors).length > 0) {
+notify("Пожалуйста, заполните обязательные поля", "error");
+return false;}return true;};
 const isCompany = computed(() => form.type === "company");
-watch(
-  () => props.isOpen,
-  (newVal) => {
-    if (newVal) {
-      Object.keys(errors).forEach(key => delete errors[key]);
-      if (auth.user) {
-      const currentRole = roleOptions.find((opt) => opt.value === auth.user.employeeRole) || null;
-      Object.assign(form, { ...auth.user,  phone: auth.user.phone,  employeeRole: currentRole,});showEmployee.value = !!auth.user.employeeName;}}});
+
+watch(() => props.isOpen,(newVal) => {if (newVal && auth.user) {Object.keys(errors).forEach(key => delete errors[key]); const currentRole = roleOptions.find((opt) => opt.value === auth.user.employeeRole) || null; Object.assign(form, { ...auth.user, type: auth.user.type === 'COMPANY' ? 'company' : 'person', employeeRole: currentRole, avatarFile: null });form.avatar = auth.user.avatarUrl; showEmployee.value = !!auth.user.employeeName;} else if (!newVal) {revokeBlob();}});
 const handleSave = async () => {
   if (isSubmitting.value) return;
   if (!validate()) return; 
   isSubmitting.value = true;
   try {
-    let finalAvatarUrl = form.avatar;
+    let finalAvatarUrl = auth.user?.avatarUrl;
     if (form.avatarFile) {
       const s3Response = await uploadToS3(form.avatarFile); 
       finalAvatarUrl = s3Response?.url || finalAvatarUrl;
-      // Регистрируем медиа-данные 
       const mediaData = [{
         userId: String(auth.user?.id),
         filename: form.avatarFile.name,
@@ -163,26 +163,19 @@ const handleSave = async () => {
         url: finalAvatarUrl,
         mimeType: form.avatarFile.type,
         type: "avatar",
-        title: `Avatar ${form.name}`,
-        description: "User profile picture"
       }];
-      try {
-        await api.post("/media/upload", mediaData);
-      } catch (mediaErr) {
-        console.error("Media Service error:", mediaErr.response?.data || mediaErr.message);
-      }
+      await api.post("/media/upload", mediaData).catch(e => console.error("Media error", e));
       form.avatarFile = null;
     }
     // Обновляем данные профиля
     const updateData = {
-      id: auth.user?.id,
       name: form.name,
       email: form.email,
       phone: form.phone.replace(/\D/g, ''),
       city: form.city,
       description: form.description,
-      type: form.type,
-      avatar: finalAvatarUrl, // Передаем актуальную ссылку
+      type: form.type === 'company' ? 'COMPANY' : 'PRIVATE_PERSON', 
+      avatarUrl: finalAvatarUrl,  
       employeeName: (isCompany.value && showEmployee.value) ? form.employeeName : "",
       employeeRole: (isCompany.value && showEmployee.value) ? form.employeeRole?.value : ""
     };
@@ -196,6 +189,7 @@ const handleSave = async () => {
   } catch (e) {
     console.error("Ошибка при сохранении профиля:", e.response?.data || e.message);
     notify(e.response?.data?.message || "Не удалось сохранить профиль", "error");
+    if (e.response?.data?.code === "SESSION_EXPIRED") auth.logout();
   } finally {
     isSubmitting.value = false;
   }
@@ -500,7 +494,6 @@ input::placeholder{
   display: grid;
   align-items: center;
   padding: 0.75rem;
-  /* min-height: 3.2rem; */
   line-height: 16px;
   text-decoration: none;
   text-transform: none;

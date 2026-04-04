@@ -119,7 +119,11 @@ async function submitRegister(){
   //   console.error(e)
   //   notify("Ошибка отправки SMS")
   // }
-
+  modal.registrationData = {
+    name: name.value,
+    phone: cleanPhone.value,
+    password: password.value,
+  };
   modal.phone = cleanPhone.value
   modal.name = name.value
   modal.password = password.value

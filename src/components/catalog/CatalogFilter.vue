@@ -111,7 +111,7 @@ flex-direction: column;}
 .transport-layout,.moto-layout,.trucks-layout,.water-layout,.jetski-layout{
   display: flex; gap: 0.625rem; align-items: flex-end; justify-content: space-between;
 }
-/* Кастомная стрелка (ИСПРАВЛЕННЫЙ SVG) */
+/* Кастомная стрелка */
 .multiselect__caret {
   position: absolute; right: 12px; top: 50%; width: 12px; height: 12px; margin-top: -6px;
   background-image: url("/src/assets/img/arr-select.svg");

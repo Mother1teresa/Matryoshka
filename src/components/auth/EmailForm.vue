@@ -28,21 +28,23 @@ const errors = ref({
   email: false
 })
 async function submit(){
-  if (!email.value) return notify("Введите email")
+  if (!email.value || !email.value.includes('@')) {
+    errors.value.email = true;
+    return notify("Введите корректный email", "error");
+  }
   try{
     await api.post("/auth/sendmail", { email: email.value });
 
     modal.email = email.value;
     modal.smsMode = "email";
     
-    notify("Код отправлен на почту");
+    notify("Код подтверждения отправлен на почту");
     modal.openSms();
   }catch(e){
     errors.value.email = true; 
     const errorMessage = e.response?.data?.message || "Ошибка сервера (500)";
-    notify(errorMessage);
-    console.error("Ошибка при отправке:", e.message);
-    notify("Ошибка отправки");
+    notify(errorMessage, "error");
+    console.error("Ошибка при отправке:",e.response?.data || e.message);
 }}
 </script>
 <style scoped>

@@ -5,7 +5,6 @@
   <div class="auth-btn__box">
     <button type="submit" class="auth-btn">Отправить код</button>
   </div>
-
   <div class="auth-bottom">
     <span @click="modal.openLogin()">Назад</span>
   </div>

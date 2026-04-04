@@ -14,10 +14,12 @@ export const useReviewStore = defineStore('reviews', () => {
     const sum = reviews.value.reduce((acc, r) => acc + r.rating, 0)
     return (sum / reviews.value.length).toFixed(1)
   })
+
   const formatDate = (dateStr) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
   };
+  
   const getRatingById = (id) => {
     if (!id) return 0;
     // Если мы сейчас смотрим отзывы этого продавца и они реальные — считаем по ним

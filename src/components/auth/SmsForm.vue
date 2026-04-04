@@ -31,7 +31,7 @@
 </div>
 </template>
 <script setup>
-import { ref, computed, onMounted, nextTick  } from "vue"
+import { ref, computed, onMounted, nextTick, onUnmounted  } from "vue"
 import { useModalStore } from "/src/stores/modal.js"
 import { useAuthStore } from "/src/stores/authStore.js";
 import { notify } from "../../utils/notify";
@@ -52,7 +52,6 @@ const subtitle = computed(() => {
   if (modal.smsMode === "phone" && modal.phone) {
     return "+7 ***** " + modal.phone.slice(-5)
   }
-  // Добавь проверку на существование modal.email
   if (modal.smsMode === "email" && modal.email) {
     const parts = modal.email.split("@")
     if (parts.length < 2) return modal.email
@@ -61,7 +60,6 @@ const subtitle = computed(() => {
   }
   return ""
 })
-
 
 const fullCode = computed(() => code.value.join(""))
 function handleInput(index) {
@@ -105,7 +103,7 @@ async function verifyCode(){
   //   }
   // } 
   try {
-    // 1. Проверяем код (теперь это всегда код из Email)
+    // Проверяем код (теперь это всегда код из Email)
     const payload = {
       userId: modal.email, 
       code: fullCode.value,
@@ -123,21 +121,16 @@ async function verifyCode(){
       password: modal.password
     });
     if (res && res.user) {
-      // auth.login({
-      //   id: res.user.id,
-      //   name: res.user.name,
-      //   avatar: res.user.avatar || "" 
-      // });
-      auth.login(res); 
+      auth.login(res.user); 
+      notify("Регистрация завершена успешно!");
+      modal.close();
     }
-    notify("Регистрация завершена успешно!")
-    modal.close()
   }
   catch (e) {
     showErrorState()
     const errorMsg = e.response?.data?.message || "Неверный код"
     notify(errorMsg)
-     console.error("Ошибка при проверке:", e.response?.data);
+    console.error("Ошибка при проверке:", e.response?.data || e.message);
   }
 }
 function showErrorState(){
@@ -176,6 +169,9 @@ onMounted(() => {
     if (inputs.value[0]) inputs.value[0].focus()
   })
 })
+onUnmounted(() => {
+  clearInterval(interval);
+});
 </script>
 
 <style scoped>
@@ -188,7 +184,6 @@ onMounted(() => {
   align-items:center;
   border-radius: 2.125rem;
 }
-
 .sms-card{
   background:#ffffff;
   padding: 1.2rem 2rem;
@@ -196,7 +191,6 @@ onMounted(() => {
   box-shadow:0 4px 4px rgba(0, 0, 0, 0.221);
   text-align:center;
 }
-
 .sms-title{
   color: #404040;
   font-size: 1.45rem;
@@ -209,14 +203,12 @@ onMounted(() => {
   color:#9F9F9F;
   margin-bottom: 0.8rem;
 }
-
 .code-wrapper{
   display:flex;
   justify-content:center;
   gap:1.5rem;
   margin-bottom:1.25rem;
 }
-
 .code-input{
   width:2.4rem;
   height:3.6rem;
@@ -230,12 +222,10 @@ onMounted(() => {
 .code-input.error{
   outline:1px solid #EE3030;
 }
-
 .resend{
   font-size: 1rem;
   color:#333333;
 }
-
 .resend-link{
   cursor:pointer;
   color:#105965;

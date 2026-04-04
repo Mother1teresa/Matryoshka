@@ -75,7 +75,10 @@ const errors = ref({
   email: false,
   password: false
 })
-
+// watch([email, password], () => {
+//   errors.value.email = false;
+//   errors.value.password = false;
+// });
 async function submitLogin(){
   errors.value = {
     email: !email.value,
@@ -86,15 +89,21 @@ async function submitLogin(){
     return
   }
   try{
-    await auth.loginAPI({
-    email: email.value,
-    password: password.value
-  })
-    notify("Вы успешно вошли")
-    modal.close()
+    const success = await auth.loginAPI({
+      email: email.value,
+      password: password.value
+    });
+    if (success) {
+      notify("Вы успешно вошли в систему");
+      modal.close();
+      email.value = "";
+      password.value = "";
+    }
   }catch(e){
-    console.error(e.response?.data)
-    notify("Неверный email или пароль");
+    const serverMessage = e.response?.data?.message;
+    notify(serverMessage || "Неверный email или пароль");
+    errors.value.email = true;
+    errors.value.password = true;
   }
 }
 </script>

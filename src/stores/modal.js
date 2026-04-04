@@ -33,7 +33,7 @@ export const useModalStore = defineStore("modal", {
     openEmail(email) {
       if (email) this.email = email
       this.type = "email"
-      this.overlay = false   // СКРЫВАЕТ плашку с вводом кода (SmsForm)
+      this.overlay = false   // СКРЫВАЕТ плашку с вводом кода 
       this.isOpen = true
     },
     openForgot() { 

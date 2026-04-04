@@ -12,7 +12,7 @@
           <span class="stars">★★★★★</span>
         </div>
         <p class="user-type">
-          {{ auth.user?.type === 'company' ? 'Компания' : 'Частное лицо' }}
+          {{ auth.user?.type === 'COMPANY' ? 'Компания' : 'Частное лицо' }}
         </p>
       </div>
       <div class="user-info-list">
@@ -100,7 +100,6 @@ watch(isModalOpen, (newVal) => {
   justify-items: center;
   padding: 2.188rem 0 0;
 }
-
 .profile-card {
   background: #fff;
   border-radius: 0.625rem;
@@ -109,7 +108,6 @@ watch(isModalOpen, (newVal) => {
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
   width: 33.063rem;
 }
-
 .settings-btn {
   position: absolute;
   top: 0.625rem;
@@ -136,32 +134,27 @@ watch(isModalOpen, (newVal) => {
   letter-spacing: 2px;
   font-size: 2.65rem;
 }
-
 .user-type {
   font-size: 1.5rem;
   margin-top: 2.375rem;
   font-weight: 700;
 }
-
 .user-info-list {
   display: grid;
   gap: 2rem;
   margin-bottom: 2.5rem;
 }
-
 .info-row {
   display: flex;
   justify-content: flex-start;
   gap: 1.5rem;
   font-size: 1.5rem; 
 }
-
 .label {
   font-weight: 700;
   color: #000;
   width: 6.563rem;
 }
-
 .value {
   text-align: left;
   word-break: break-all; 
@@ -170,19 +163,16 @@ watch(isModalOpen, (newVal) => {
   max-width: 100%;
   width: 17.813rem;
 }
-
 .value.email {
   text-decoration: underline;
   color: #000;
 }
-
 .about-section h3 {
   font-size: 1.5rem;
   font-weight: 700;
   text-align: center;
   margin-bottom: 0.688rem;
 }
-
 .about-section p {
   font-size: 1.5rem;
   text-align: left;

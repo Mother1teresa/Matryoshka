@@ -26,10 +26,9 @@ const fetchNotifications = async () => {
       notifications.value = mockNotifications;
     }
   } catch (e) {
-    // Теперь notify сработает без ошибки
     notify("Ошибка при загрузке уведомлений");
     console.error("Ошибка при загрузке уведомлений", e);
-    // В случае ошибки API (например, 404) тоже показываем тестовые
+    // В случае ошибки API
     notifications.value = mockNotifications;
   } finally {
     isLoading.value = false;
@@ -41,7 +40,7 @@ watch(
     if (newId) {
       fetchNotifications();
     } else {
-      notifications.value = []; // Очищаем список при выходе
+      notifications.value = [];
     }
   },
   { immediate: true }
@@ -60,8 +59,6 @@ watch(
         <div class="notification-content">
           <h3 class="notification-title">{{ item.title }}</h3>
           <p class="notification-text">{{ item.message }}</p>
-          
-          <!-- Если это уведомление об отклонении, можно вывести причину ярче -->
           <p v-if="item.reason" class="reason">
             Причина: {{ item.reason }}
           </p>
@@ -72,7 +69,6 @@ watch(
           <span class="time">{{ item.time }}</span>
         </div>
       </div>
-
       <div v-if="notifications.length === 0" class="empty-state">
         У вас пока нет уведомлений
       </div>

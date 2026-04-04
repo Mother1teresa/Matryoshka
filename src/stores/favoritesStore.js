@@ -5,12 +5,11 @@ import { useAuthStore } from "./authStore";
 
 export const useFavoritesStore = defineStore("favorites", {
   state: () => ({
-    // Загружаем из памяти браузера при старте
     favorites: JSON.parse(localStorage.getItem('user_favorites') || '[]')
   }),
 
   actions: {
-    // 1. Загрузка избранного с сервера (вызывать после логина)
+    // Загрузка избранного с сервера (вызывать после логина)
     async fetchFavorites() {
       const auth = useAuthStore();
       if (!auth.isAuthenticated) return;

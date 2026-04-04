@@ -121,11 +121,9 @@ async function sendReply(reviewId) {
 }
 </script>
 <style scoped>
-/* Стили максимально приближены к вашему макету */
 .reviews-container {
   padding: 2rem 0;
 }
-
 .reviews-summary {
   display: flex;
   justify-content: center;
@@ -134,7 +132,6 @@ async function sendReply(reviewId) {
   border-radius: 0.625rem;
   padding: 1rem 0;
 }
-
 .summary-card {
   text-align: center;
   display: grid;
@@ -171,13 +168,12 @@ async function sendReply(reviewId) {
   border-radius: 0.625rem;
 }
 .review-body{
-    margin-bottom: .4rem;
+  margin-bottom: .4rem;
 }
 .review-main {
   display: flex;
   gap: 1.5rem;
 }
-
 .user-initials {
   width: 50px;
   height: 50px;
@@ -189,32 +185,27 @@ async function sendReply(reviewId) {
   font-weight: bold;
   font-size: 1.2rem;
 }
-
 .review-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 0.5rem;
 }
-
 .status-tag {
   font-size: 0.75rem;
   color: #999;
 }
-
 .product-link {
   color: #888;
   font-size: 0.9rem;
   margin-bottom: 0.5rem;
 }
-
 .reply-block {
   margin-top: 1rem;
   background: #f9f9f9;
   padding: 1rem;
   border-radius: 12px;
 }
-
 .reply-header {
   display: flex;
   align-items: center;
@@ -223,17 +214,14 @@ async function sendReply(reviewId) {
   color: #999;
   margin-bottom: 5px;
 }
-
 .mini-avatar {
   width: 24px;
   height: 24px;
   border-radius: 50%;
 }
-
 .reply-form {
   margin-top: 1rem;
 }
-
 .input-wrapper {
   display: flex;
   align-items: center;
@@ -242,7 +230,6 @@ async function sendReply(reviewId) {
   padding: 8px 15px;
   border-radius: 25px;
 }
-
 .input-wrapper input {
   flex: 1;
   background: transparent;
@@ -250,7 +237,6 @@ async function sendReply(reviewId) {
   outline: none;
   font-size: 0.9rem;
 }
-
 .send-btn {
   background: none;
   border: none;
@@ -258,11 +244,9 @@ async function sendReply(reviewId) {
   display: flex;
   transition: opacity 0.2s;
 }
-
 .send-btn:hover {
   opacity: 0.7;
 }
-
 .empty-state {
   text-align: center;
   padding: 3rem;
@@ -273,18 +257,16 @@ async function sendReply(reviewId) {
   font-size: 1rem;
 }
 .reply-actions{
-    margin-left: 4.375rem;
+  margin-left: 4.375rem;
 }
-  
-/* Содержимое готового ответа */
 .reply-text {
   color: #2D2D2D;
 }
 
 /* Стили для формы ввода */
 .reply-form-container{
-    margin-left: 4.375rem;
-    width: 80%;
+  margin-left: 4.375rem;
+  width: 80%;
 } 
 .seller-reply {
   margin-left: 0;
@@ -293,7 +275,6 @@ async function sendReply(reviewId) {
   padding: .5rem 0.35rem .65rem .6rem;
   border-radius: 0.625rem;
 }
-
 .seller-reply input {
   flex: 1;
   background: transparent;
@@ -302,12 +283,9 @@ async function sendReply(reviewId) {
   font-size: 0.813rem;
   color: #262626;
 }
-
 .seller-reply input::placeholder {
   color: #8E8C8C;
 }
-
-/* Кнопка отправить (иконка самолетика) */
 .send-reply-btn {
   background: white;
   border: none;
@@ -326,8 +304,7 @@ async function sendReply(reviewId) {
 .send-reply-btn:hover {
   transform: scale(1.1);
 }
-
-/* Кнопка "Ответить" (ссылка под текстом отзыва) */
+/* Кнопка "Ответить" */
 .reply-button {
   background: none;
   border: none;
@@ -338,7 +315,6 @@ async function sendReply(reviewId) {
   margin-top: 8px;
   text-decoration: none;
 }
-
 .reply-button:hover {
   text-decoration: underline;
 }

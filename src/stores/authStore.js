@@ -1,7 +1,9 @@
 import { defineStore } from "pinia"
+import { router } from "/src/router/index.js";
 import { api } from "/src/api/api.js"
-import { useFavoritesStore } from "./favoritesStore";
-import maskAvatar from "/src/assets/img/mask-avatar.png"
+import { useFavoritesStore } from "/src/stores/favoritesStore.js";
+import maskAvatar from "/src/assets/img/mask-avatar.png";
+
 
 export const useAuthStore = defineStore("auth", {
   state: () => ({
@@ -9,7 +11,7 @@ export const useAuthStore = defineStore("auth", {
     user: null,
   }),
   getters: {
-    userAvatar: (state) => state.user?.avatar || maskAvatar,
+    userAvatar: (state) => state.user?.avatarUrl || state.user?.avatar || maskAvatar,
     formattedPhone: (state) => {
       const phone = state.user?.phone;
       if (!phone) return "Не указан";
@@ -28,28 +30,18 @@ export const useAuthStore = defineStore("auth", {
         user: this.user
       }));
     },
-    login(userData) {
+    login(user) {
       this.isAuthenticated = true;
-      const user = userData.user || userData;
-      this.user = {
-        id: user.id,
-        name: user.name,
-        avatar: user.avatar || null 
-      };
+      this.user = { ...user };
       this.saveToStorage();
     },
     async loginAPI({ email, password }) {
       try {
         const res = await api.post("/auth/login", { login:email, password })
-        
-        // if (res.data.token) {
-        //   localStorage.setItem("token", res.data.token);
-        // }
         if (res.data && res.data.user) {
           this.login(res.data.user);
-          
           const favStore = useFavoritesStore();
-          await favStore.fetchFavorites();
+          await favStore.fetchFavorites().catch(() => {});
           return true
         }
       } catch (e) {
@@ -61,11 +53,21 @@ export const useAuthStore = defineStore("auth", {
       try {
         const res = await api.post("/auth/register", userData);
         if (res.data && res.data.user) {
-          this.login(res.data);
+          this.login(res.data.user);
         }
         return res.data;
       } catch (e) {
+        console.error("Register error:", e.response?.data || e);
         throw e;
+      }
+    },
+    async refreshToken() {
+      try {
+        await api.post("/auth/refresh");
+        return true;
+      } catch (e) {
+        this.logout();
+        return false;
       }
     },
     async verifyCodeAPI(payload) { 
@@ -78,19 +80,14 @@ export const useAuthStore = defineStore("auth", {
       }
     },
     async fetchProfile() {
-      if (!this.user?.id) {
-        this.loadAuth();
-      }
-      if (!this.user?.id) return;
       try {
-        const res = await api.get(`/profile/${this.user.id}`);
+        const res = await api.get('/profile/');
         if (res.data && res.data.user) {
-          this.user = { ...this.user, ...res.data.user };
-          this.saveToStorage(); 
+          this.login(res.data.user);
         }
       } catch (e) {
-        if (e.response?.status === 404) {
-          console.warn("Пользователь не найден в БД сервера, используем локальные данные.");
+        if (e.response?.data?.code === "SESSION_EXPIRED" || e.response?.status === 401) {
+          this.logout();
         }
         console.error("Ошибка загрузки профиля:", e.response?.status);
       }
@@ -101,7 +98,6 @@ export const useAuthStore = defineStore("auth", {
     async validateAndFormatCity(query) {
       if (!query || query.length < 3) return null;
       const url = `https://geocode-maps.yandex.ru/1.x/?apikey=ab3a562f-41f9-4eb0-94ab-b982e13c7742&format=json&geocode=${encodeURIComponent(query)}`;
-      
       try {
         const response = await fetch(url);
         const data = await response.json();
@@ -113,30 +109,33 @@ export const useAuthStore = defineStore("auth", {
       }
     },
     async logout() {
-      this.isAuthenticated = false;
-      this.user = null;
-      localStorage.removeItem("auth");
-      localStorage.removeItem("products");
-      localStorage.removeItem("token");
-      
-      const favStore = useFavoritesStore();
-      favStore.clear();
-      
-      api.post("/auth/logout").catch(() => {});
+        this.isAuthenticated = false;
+        this.user = null;
+        localStorage.removeItem("auth");
+        localStorage.removeItem("products");
+        localStorage.removeItem("token");
+        
+        const favStore = useFavoritesStore();
+        favStore.clear();
 
-      // 3. Редирект
-      if (window.location.pathname !== "/") {
-        setTimeout(() => {
-            window.location.href = "/";
-        }, 50);
+        if (window.location.pathname !== "/") {
+        try {
+          await router.push('/');
+        } catch (e) {
+          window.location.href = "/";
+        }
       }
     },
     loadAuth() {
       const saved = localStorage.getItem("auth");
       if (saved) {
-        const data = JSON.parse(saved);
-        this.isAuthenticated = data.isAuthenticated;
-        this.user = data.user;
+        try {
+          const data = JSON.parse(saved);
+          this.isAuthenticated = data.isAuthenticated;
+          this.user = data.user;
+        } catch (e) {
+          localStorage.removeItem("auth");
+        }
       }
     }
   }

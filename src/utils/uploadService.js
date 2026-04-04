@@ -12,14 +12,12 @@ export const uploadToS3 = async (file, endpoint = "/profile/upload-url") => {
   try {
     const extension = file.name.split('.').pop();
     const mimetype = file.type;
-
-    // 1. Запрашиваем у бэкенда Presigned URL
     const { data } = await api.post(endpoint, {
       extension,
       mimetype
     });
 
-    // 2. Грузим файл напрямую в S3
+    // Грузим файл напрямую в S3
     // Используем чистый axios, чтобы не срабатывали интерцепторы нашего api.js
     await axios.put(data.url, file, {
       headers: { "Content-Type": mimetype }
