@@ -123,7 +123,6 @@
     </div>
   </transition>
 </template>
-
 <script setup>
 import { ref, onMounted, onBeforeUnmount, watch  } from "vue";
 import { useAuthStore } from "/src/stores/authStore.js";

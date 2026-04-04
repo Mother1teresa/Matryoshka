@@ -4,12 +4,27 @@ import { api } from "/src/api/api.js"
 import { useFavoritesStore } from "/src/stores/favoritesStore.js";
 import maskAvatar from "/src/assets/img/mask-avatar.png";
 
-
 export const useAuthStore = defineStore("auth", {
-  state: () => ({
-    isAuthenticated: false,
-    user: null,
-  }),
+  state: () => {
+    // 1. Пытаемся достать данные из памяти ПРЯМО ЗДЕСЬ
+    const saved = localStorage.getItem("auth");
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        return {
+          isAuthenticated: data.isAuthenticated || false,
+          user: data.user || null,
+        };
+      } catch (e) {
+        localStorage.removeItem("auth");
+      }
+    }
+    // 2. Если в памяти пусто, возвращаем дефолтные значения
+    return {
+      isAuthenticated: false,
+      user: null,
+    };
+  },
   getters: {
     userAvatar: (state) => state.user?.avatarUrl || state.user?.avatar || maskAvatar,
     formattedPhone: (state) => {
@@ -66,8 +81,7 @@ export const useAuthStore = defineStore("auth", {
         await api.post("/auth/refresh");
         return true;
       } catch (e) {
-        this.logout();
-        return false;
+        throw e; 
       }
     },
     async verifyCodeAPI(payload) { 
@@ -86,10 +100,10 @@ export const useAuthStore = defineStore("auth", {
           this.login(res.data.user);
         }
       } catch (e) {
-        if (e.response?.data?.code === "SESSION_EXPIRED" || e.response?.status === 401) {
+        if (e.response?.data?.code === "SESSION_EXPIRED") {
           this.logout();
         }
-        console.error("Ошибка загрузки профиля:", e.response?.status);
+        // console.error("Ошибка загрузки профиля:", e.response?.status);
       }
     },
     async sendSms(phone) {
@@ -113,7 +127,7 @@ export const useAuthStore = defineStore("auth", {
         this.user = null;
         localStorage.removeItem("auth");
         localStorage.removeItem("products");
-        localStorage.removeItem("token");
+        // localStorage.removeItem("token");
         
         const favStore = useFavoritesStore();
         favStore.clear();
