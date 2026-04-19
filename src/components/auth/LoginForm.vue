@@ -146,6 +146,9 @@ async function submitLogin(){
   cursor: pointer;
   text-align: center;
   transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .auth-btn:hover,
 .auth-btn:focus {

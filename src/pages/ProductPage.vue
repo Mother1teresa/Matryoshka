@@ -94,10 +94,9 @@
                 <div class="confirm-call-card">
                   <p class="confirm-message">
                     Действительно ли вы хотите позвонить 
-                    <strong>{{ ad.seller?.name || 'Продавцу' }}</strong> 
-                    ({{ ad.seller?.phone }}{{ ad.seller?.ext ? ' доб ' + ad.seller.ext : '' }})?
+                    <strong>{{ ad?.seller?.name || 'Продавцу' }}</strong> 
+                    ({{ ad?.seller?.phone }}{{ ad?.seller?.ext ? ' доб ' + ad.seller.ext : '' }})?
                   </p>
-                  
                   <div class="confirm-actions">
                     <button class="btn-black" @click="handleCall(ad.seller?.phone)">Позвонить</button>
                     <button class="btn-gray" @click="showCallModal = false">Отмена</button>
@@ -154,17 +153,14 @@ const product = computed(() => {
   const routeId = route.params.id;
   return productStore.products.find(p => String(p.id) === String(routeId));
 });
-
 const seller = computed(() => {
   if (!product.value) return null;
   return sellerStore.getSellerById(product.value.sellerId);
 });
-
 const currentCategory = computed(() => {
   if (!product.value) return null; 
   return categories.find((c) => c.slug === product.value.category);
 });
-
 const activeTabItem = computed(() => {
   if (!currentCategory.value || !product.value) return null;
   return (
@@ -172,9 +168,7 @@ const activeTabItem = computed(() => {
     currentCategory.value.sections.flatMap((s) => s.links || []).find((l) => l.slug === product.value.section)
   );
 });
-
 const breadcrumbSectionName = computed(() => activeTabItem.value?.title || activeTabItem.value?.name);
-
 const breadcrumbSubName = computed(() => {
   const subSlug = product.value?.subcategory;
   if (!currentCategory.value || !subSlug) return null;
@@ -190,7 +184,6 @@ const breadcrumbSubName = computed(() => {
   }
   return null;
 });
-
 const fields = computed(() => {
   const p = product.value;
   if (!p || !p.attributes) return [];
@@ -245,7 +238,12 @@ const onSubscribeClick = () => {
 };
 
 const onShowNumberClick = () => {
-  checkAuthAndRun(() => { isNumberShown.value = true; }, "Войдите, чтобы увидеть номер телефона");
+  console.log("Клик сработал");
+  checkAuthAndRun(() => { 
+    console.log("Авторизация пройдена, открываю модалку");
+    isNumberShown.value = true; 
+    showCallModal.value = true; 
+  }, "Войдите, чтобы увидеть номер телефона");
 };
 const onWriteClick = (e) => {
   if (!auth.isAuthenticated) {
@@ -455,7 +453,7 @@ onMounted(() => {
   margin-bottom: 0.875rem;
 }
 .subscribe{
-color: #64A07A;
+color: var(--btn-bg);
   transition:
     opacity 0.3s
 }
@@ -463,7 +461,7 @@ color: #64A07A;
   opacity: 70%;
 }
 .primary{
-  background-color: #64A07A;
+  background-color: var(--btn-bg);
   font-size: 1.25rem;
   color: white;
   width: 14.375rem;
@@ -480,48 +478,51 @@ color: #64A07A;
 }
 .confirm-call-card {
   background: white;
-  padding: 32px;
-  border-radius: 28px; /* Сильное скругление */
-  max-width: 440px;
-  width: 90%;
+  padding: 2rem 1.75rem 1.475rem 1.75rem;
+  border-radius: 2.188rem;
+  max-width: 39.063rem;
+  width: 100%;
   text-align: left;
 }
 
 .confirm-message {
-  font-size: 18px;
-  line-height: 1.4;
+  font-size: 1.25rem;
   color: #000;
-  margin-bottom: 24px;
+  margin-bottom: 1.25rem;
 }
-
 .confirm-actions {
   display: flex;
-  gap: 12px;
+  justify-content: center;
+  gap: 1.25rem;
 }
-
 .btn-black {
-  flex: 1;
+  /* flex: 1; */
+  text-align: center;
+  width: 10.375rem;
+  height: 3.563rem;
   background: #000;
   color: #fff;
   border: none;
-  padding: 14px;
-  border-radius: 14px;
-  font-weight: 500;
+  border-radius: 1rem;
+  font-weight:500;
   cursor: pointer;
+  font-size: 1.25rem;
 }
 
 .btn-gray {
-  flex: 1;
-  background: #E5E5E5; /* Светло-серый */
+  /* flex: 1; */
+  width: 10.375rem;
+  height: 3.563rem;
+  text-align: center;
+  background: #D8D8D8; 
   color: #000;
   border: none;
-  padding: 14px;
-  border-radius: 14px;
+  border-radius: 1rem;
   font-weight: 500;
   cursor: pointer;
+  font-size: 1.25rem;
 }
 
 /* Анимация появления */
-.fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
+
 </style>

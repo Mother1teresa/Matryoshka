@@ -61,15 +61,6 @@ onUnmounted(() => {
   z-index: 6;
 }
 
-.fade-enter-active,
-.fade-leave-active {
-  transition: .2s;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
 .overlay {
   position: absolute;
   inset: 0;

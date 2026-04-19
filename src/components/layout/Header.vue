@@ -17,12 +17,11 @@
             <img src="/src/assets/img/icon-primary.svg" />
             Объявление
           </a>
-          <a href="#" class="btn-primary btn">
+          <router-link to="/profile/videos" class="btn-primary btn">
             <img src="/src/assets/img/icon-primary.svg" />
             Мини-видео
-          </a>
+          </router-link>
         </div>
-
         <div class="header__right">
           <!-- НЕ авторизован -->
           <template v-if="!auth.isAuthenticated">
@@ -51,12 +50,12 @@
                 </div>
                 <button class="btn-light" @click="region.open()">
                   <img src="/src/assets/img/location_on.svg" />
-                  {{ region.selectedRegion || "Регион"  }}
+                  {{ currentRegionName }}
                 </button>
               </div>
               <!-- профиль -->
               <div class="profile-wrapper" ref="profileWrapper">
-                <div class="profile" @click.stop="toggleProfileMenu">
+                <div class="profile" @click.prevent.stop="toggleProfileMenu">
                   <div class="profile-block">
                     <img :src="auth.userAvatar" class="avatar" />
                     <img
@@ -65,25 +64,26 @@
                       :class="{ rotate: showProfileMenu }"/>
                   </div>
                   <span>
-                    {{ auth.user?.name }}
+                    {{ auth.user?.name || 'Загрузка...' }}
                   </span>
                 </div>
                 <!-- dropdown -->
                 <transition name="fade">
                   <div v-if="showProfileMenu" class="profile-menu">
                     <div class="rating" v-if="auth.user?.id">{{ reviewStore.getRatingById(auth.user.id) }}
-                      <span>★★★★★</span></div>
-                    <ul @click="showProfileMenu = false">
-                      <li><router-link to="/profile/info" >Мои данные</router-link></li>
-                      <li><router-link to="/profile/videos">Мои ролики</router-link></li>
-                      <li><router-link to="/profile/advertisements">Мои объявления</router-link></li>
-                      <li><router-link to="/create-ad">Создать объявление</router-link></li>
-                      <li><router-link to="/profile/orders">Заказы</router-link></li>
-                      <li><router-link to="/profile/favorites">Избранное</router-link></li>
-                      <li><router-link to="/profile/referral">Приглашайте друзей</router-link></li>
-                      <li><router-link to="/profile/responses">Отклики</router-link></li>
-                      <li><router-link to="/profile/messages">Сообщения</router-link></li>
-                      <li><router-link to="/profile/notifications">Уведомления</router-link></li>
+                      <span>★★★★★</span></div> 
+                      <!-- {{ reviewStore.renderStars(reviewStore.getRatingById(auth.user.id)) }} -->
+                    <ul>
+                      <li @click="showProfileMenu = false" ><router-link to="/profile/info" >Мои данные</router-link></li>
+                      <li @click="showProfileMenu = false"><router-link to="/profile/videos">Мои ролики</router-link></li>
+                      <li @click="showProfileMenu = false"><router-link to="/profile/advertisements">Мои объявления</router-link></li>
+                      <li @click="showProfileMenu = false"><router-link to="/create-ad">Создать объявление</router-link></li>
+                      <li @click="showProfileMenu = false"><router-link to="/profile/orders">Заказы</router-link></li>
+                      <li @click="showProfileMenu = false"><router-link to="/profile/favorites">Избранное</router-link></li>
+                      <li @click="showProfileMenu = false"><router-link to="/profile/referral">Приглашайте друзей</router-link></li>
+                      <li @click="showProfileMenu = false"><router-link to="/profile/responses">Отклики</router-link></li>
+                      <li @click="showProfileMenu = false"><router-link to="/profile/messages">Сообщения</router-link></li>
+                      <li @click="showProfileMenu = false"><router-link to="/profile/notifications">Уведомления</router-link></li>
                       <li class="logout" @click.stop="askLogout">Выйти</li>
                     </ul>
                   </div>
@@ -124,7 +124,7 @@
   </transition>
 </template>
 <script setup>
-import { ref, onMounted, onBeforeUnmount, watch  } from "vue";
+import { ref, onMounted, onBeforeUnmount, watch, computed } from "vue";
 import { useAuthStore } from "/src/stores/authStore.js";
 import { useModalStore } from "/src/stores/modal.js";
 import { useMenuStore } from "/src/stores/menu.js";
@@ -143,6 +143,7 @@ const profileWrapper = ref(null);
 const showProfileMenu = ref(false);
 const showLogoutConfirm = ref(false);
 
+const currentRegionName = computed(() => region.selectedRegion || "Регион");
 function toggleProfileMenu() {
   showProfileMenu.value = !showProfileMenu.value;
 }
@@ -154,19 +155,15 @@ function confirmLogout() {
   showProfileMenu.value = false;
   showLogoutConfirm.value = false;
   notificationText.value = "Вы вышли из аккаунта";
-
   showNotification.value = true;
-  setTimeout(() => {
-    showNotification.value = false;
-  }, 3000);
+  setTimeout(() => { showNotification.value = false; }, 3000);
 }
 function cancelLogout() {
   showLogoutConfirm.value = false;
 }
 
 function handleClickOutside(event) {
-  // Если меню открыто И клик был СНАРУЖИ блока profileWrapper
-  if (showProfileMenu.value && profileWrapper.value && !profileWrapper.value.contains(event.target)) {
+  if (profileWrapper.value && !profileWrapper.value.contains(event.target)) {
     showProfileMenu.value = false;
   }
 }
@@ -491,16 +488,6 @@ watch(
   margin-top: 0.938rem;
 }
 
-/* animation */
-.fade-enter-active,
-.fade-leave-active {
-  transition: 0.2s;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
 .logout-actions .btn-light {
   height: auto;
   border-radius: 1.25rem;

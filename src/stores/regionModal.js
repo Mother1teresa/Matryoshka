@@ -3,9 +3,8 @@ import { defineStore } from "pinia"
 export const useRegionModalStore = defineStore("regionModal", {
   state: () => ({
     isOpen: false,
-    selectedRegion: localStorage.getItem("region") || null,
-    coordinates:
-    JSON.parse(localStorage.getItem("regionCoords") || "null") || [37.6173, 55.7558]
+    selectedRegion: localStorage.getItem("region") || null, 
+    coordinates: JSON.parse(localStorage.getItem("regionCoords")) || [37.6173, 55.7558]
   }),
   actions: {
     open(){
@@ -21,7 +20,6 @@ export const useRegionModalStore = defineStore("regionModal", {
       this.coordinates = coords
       localStorage.setItem("region",name)
       localStorage.setItem("regionCoords",JSON.stringify(coords))
-
       this.close();
     }
   }

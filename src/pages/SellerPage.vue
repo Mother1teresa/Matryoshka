@@ -234,19 +234,18 @@ const onSubscribeClick = () => {
 .desc-text { display: block; max-width: 100%; font-size: 1.5rem; }
 .seller-desc { width: 42.313rem; }
 .desc-text.is-collapsed { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 25rem; font-size: 1.5rem; }
-.btn-more { color: #64a07a; background: none; border: none; cursor: pointer; font-weight: 400; padding: 0; font-size: 1.5rem; }
+.btn-more { color: var(--btn-bg); background: none; border: none; cursor: pointer; font-weight: 400; padding: 0; font-size: 1.5rem; }
 .products { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.938rem; background: #ececec; padding: 1.625rem 1rem 1rem 1rem; border-radius: 0 0 1.25rem 1.25rem; }
 .seller-tabs button { font-size: 2rem; border-bottom: 1px solid black; border-radius: 0; background: none; cursor: pointer; }
-.seller-tabs button.active { border-bottom: 1px solid #64a07a; color: #64a07a; }
+.seller-tabs button.active { border-bottom: 1px solid var(--btn-bg); color: var(--btn-bg); }
 .seller-logo { width: 7.625rem; height: 7.625rem; border-radius: 50%; object-fit: cover; }
 .seller-header-flex { display: flex; justify-content: space-between; }
 .seller-info-left { display: flex; gap: 1.625rem; }
-.btn-subscribe-text { color: #64a07a; background: none; border: none; cursor: pointer; font-size: 1.5rem; }
+.btn-subscribe-text { color: var(--btn-bg); background: none; border: none; cursor: pointer; font-size: 1.5rem; }
 .btn-subscribe-text.is-active { color: #808080; }
 .video-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.938rem; background: #ececec; padding: 1.625rem 1rem 1rem 1rem; border-radius: 0 0 1.25rem 1.25rem; }
 .video-preview { width: 100%; height: 15.438rem; margin-bottom: 0.375rem; position: relative; }
 .video-preview img { width: 100%; height: 100%; }
-.duration { position: absolute; bottom: 0.313rem; right: 0.313rem; background: #00000099; border-radius: 0.313rem; color: white; padding: 0 0.25rem; }
 .video-card { width: 100%; height: 20.313rem; background: white; border-radius: 0.938rem; padding: 0.938rem; }
 .video-info { text-align: end; }
 .video-title { font-size: .9rem; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; overflow: hidden; transition: all 0.3s; border-radius: 0;}

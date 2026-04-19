@@ -3,10 +3,8 @@ import { ref, watch } from "vue";
 import { useRegionModalStore } from "/src/stores/regionModal.js";
 
 const modal = useRegionModalStore();
-
 const raw = modal.coordinates || [37.6173, 55.7558];
 const markerCoords = ref([raw[1], raw[0]]); 
-
 const searchQuery = ref(modal.selectedRegion || "");
 
 let map = null;
@@ -78,7 +76,6 @@ function confirmSelection() {
   modal.setRegion(searchQuery.value, [lon, lat]);
 }
 
-// ИНИЦИАЛИЗАЦИЯ ТОЛЬКО ПРИ ОТКРЫТИИ МОДАЛКИ
 watch(
   () => modal.isOpen,
   (open) => {
@@ -89,6 +86,19 @@ watch(
           handleSearch(searchQuery.value);
         }
       }, 50);
+    }
+  }
+);
+watch(
+  () => modal.selectedRegion,
+  (newRegion) => {
+    if (!newRegion) {
+      searchQuery.value = "";
+      markerCoords.value = [55.7558, 37.6173]; 
+      if (placemark && map) {
+        placemark.geometry.setCoordinates([55.7558, 37.6173]);
+        map.setCenter([55.7558, 37.6173], 12);
+      }
     }
   }
 );
@@ -105,11 +115,8 @@ watch(
           @keyup.enter="handleSearch"
         />
       </div>
-
       <p class="subtitle">Укажите своё местоположение</p>
-
       <div id="map-container" class="map-container"></div>
-
       <div class="footer-row">
         <div class="radius-block">
           <span>Радиус поиска:</span>

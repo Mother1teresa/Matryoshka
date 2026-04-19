@@ -1,34 +1,46 @@
 import axios from "axios";
 import { api } from "/src/api/api.js";
 
-/**
- * Универсальная функция загрузки файла в S3 через наш бэкенд
- * @param {File} file - Объект файла из input
- * @param {string} endpoint - Эндпоинт нашего бэка для получения ссылки (по умолчанию для профиля)
- */
-export const uploadToS3 = async (file, endpoint = "/profile/upload-url") => {
+export const uploadToMediaService = async (file, type = "video", metadata = {}, onProgress = null) => {
   if (!file) return null;
-
   try {
-    const extension = file.name.split('.').pop();
-    const mimetype = file.type;
-    const { data } = await api.post(endpoint, {
-      extension,
-      mimetype
+    const { data: presignedData } = await api.post("/media/presigned", {
+      fileName: file.name,
+      contentType: file.type
+    });
+    const { uploadUrl, key: s3Key } = presignedData;
+    await axios.put(uploadUrl, file, { 
+      headers: { "Content-Type": file.type },
+      onUploadProgress: (progressEvent) => {
+        if (typeof onProgress === 'function') {
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          onProgress(percentCompleted); 
+        }
+      }
     });
 
-    // Грузим файл напрямую в S3
-    // Используем чистый axios, чтобы не срабатывали интерцепторы нашего api.js
-    await axios.put(data.url, file, {
-      headers: { "Content-Type": mimetype }
-    });
+    const payload = [{
+      filename: file.name,
+      s3Key: s3Key, 
+      url: uploadUrl.split('?')[0],
+      mimeType: file.type,
+      type: type,
+      title: metadata.title || file.name,
+      description: metadata.description || '',
+      productId: metadata.productId || null,
+      allowComments: metadata.allowComments ?? true
+    }];
 
-    console.log("Файл успешно загружен в S3:", file.name);
-    
-    // Возвращаем данные, если бэк прислал что-то полезное (например, новый путь к файлу)
-    return data; 
+    const { data: createData } = await api.post("/media/create", payload);
+    const uploadedMedia = createData.media?.[0];
+    const finalUrl = (uploadedMedia?.cdnUrl && !uploadedMedia.cdnUrl.startsWith('undefined')) 
+      ? uploadedMedia.cdnUrl 
+      : uploadedMedia?.url;
+
+    console.log("🚀 Ссылка, которая возвращается из сервиса:", finalUrl);
+    return finalUrl; 
   } catch (error) {
-    console.error("Ошибка в uploadService:", error);
+    console.error("Media Error:", error);
     throw error;
   }
 };

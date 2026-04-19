@@ -231,7 +231,7 @@ h4 {
   text-align: center;
 }
 .stars-row {
-  color: #64a07a;
+  color: var(--btn-bg);
   font-size: 2.25rem;
   margin: 0 0 0.25rem 0;
 }
@@ -337,7 +337,7 @@ h4 {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 10;
   backdrop-filter: blur(1px);
 }
 .overflow-mod {
@@ -349,7 +349,7 @@ h4 {
   width: 6px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #64a07a;
+  background: var(--btn-bg);
   border-radius: 10px;
   transition: all 0.3s;
 }
@@ -442,6 +442,53 @@ h4 {
 .f-input::-webkit-outer-spin-button,
 .f-input::-webkit-inner-spin-button {-webkit-appearance: none;margin: 0;}
 .f-input[type='number'] {-moz-appearance: textfield;}
+.empty-messages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 100px 20px;
+  color: #888;
+}
+.empty-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+  opacity: 0.5;
+}
+.empty-messages h3 {
+  color: #333;
+  margin-bottom: 10px;
+}
+.empty-messages p {
+  max-width: 300px;
+  font-size: 14px;
+  line-height: 1.4;
+  margin-bottom: 25px;
+}
+.go-to-ads-btn {
+  background: var(--btn-bg);
+  color: white;
+  padding: 0.938rem 3.75rem;
+  border-radius: 1.25rem;
+  text-decoration: none;
+  font-weight: 500;
+}
+.duration { position: absolute; bottom: 0.313rem; right: 0.313rem; background: #00000099; border-radius: 0.313rem; color: white; padding: 0 0.25rem; }
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+.checkbox-container{
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+.checkbox-container input{
+  background-color: var(--btn-bg);
+}
+.checkmark{
+  font-size: 0.938rem;
+  color: #8E8C8C;
+}
 @media (max-width:77rem) {
   .container {
     width: 72.5rem;

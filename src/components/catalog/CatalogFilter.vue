@@ -105,7 +105,7 @@ const toggleChip = (key, value) => {
 .filter-title{
   font-size: 1.2rem;
 }
-.filter-card { background: #64A07A; padding: 1.563rem; border-radius: 1.875rem; color: white; position: relative; margin-bottom: .6rem;}
+.filter-card { background: var(--btn-bg); padding: 1.563rem; border-radius: 1.875rem; color: white; position: relative; margin-bottom: .6rem;}
 .filter-main-row { display: flex; gap: 0.625rem; margin-top: 0.938rem; flex-wrap: wrap; align-items: center; justify-content: space-between;
 flex-direction: column;}
 .transport-layout,.moto-layout,.trucks-layout,.water-layout,.jetski-layout{
@@ -145,10 +145,10 @@ flex-direction: column;}
 .expand-btn img { width: 1rem; height: 1rem; display: inline-block; color: #000; transition: transform 0.3s;}
 .expand-btn img.rotate { transform: rotate(180deg); }
 
-:deep(.multiselect__option--highlight) { background: #64A07A !important; color: #fff !important; font-weight: 600;}
+:deep(.multiselect__option--highlight) { background: var(--btn-bg) !important; color: #fff !important; font-weight: 600;}
 :deep(.multiselect__option::after) { display: none !important; }
 :deep(.multiselect__option--selected){
-  color: #64A07A;
+  color: var(--btn-bg);
 }
 :deep(.multiselect__option){
   display: grid;
@@ -209,7 +209,7 @@ flex-direction: column;}
   bottom: -3.4rem;
 }
 .apply-btn {
-  background: #64A07A;
+  background: var(--btn-bg);
   color: white;
   padding: 0.75rem 3.313rem 0.75rem 3.313rem;
   border-radius: 0.938rem;

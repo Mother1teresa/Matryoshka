@@ -18,10 +18,8 @@
         </router-link>
         <div class="user-brief" :class="{ 'hidden-content': isCollapsed }">
           <div class="rating">
-            <p>{{ reviewStore.getRatingById(auth.user?.id) }}</p>
-            <span>{{
-               reviewStore.renderStars(reviewStore.getRatingById(auth.user?.id))
-            }}</span>
+            <p>{{ userRating  }}</p>
+            <span>{{ userStars }}</span>
           </div>
         </div>
       </div>
@@ -49,15 +47,17 @@
     </main>
   </div>
 </template>
-
 <script setup>
-import { ref, watch  } from "vue";
+import { ref, watch, computed  } from "vue";
 import { useAuthStore } from "/src/stores/authStore.js";
 import { useReviewStore } from "/src/stores/reviews.js";
 
 const reviewStore = useReviewStore();
 const auth = useAuthStore();
 const isCollapsed = ref(false);
+// В <script setup> ProfileLayout.vue
+const userRating = computed(() => reviewStore.getRatingById(auth.user?.id));
+const userStars = computed(() => reviewStore.renderStars(userRating.value));
 
 watch(
   () => auth.user?.id,
@@ -75,6 +75,7 @@ watch(
   display: flex;
   gap: 2.5rem;
   min-height: 100vh;
+  width: 94.5rem;
 }
 .profile-sidebar {
   width: 15.625rem;
@@ -111,7 +112,7 @@ watch(
   font-size: 1.25rem;
 }
 .profile-nav a.router-link-active {
-  color: #64a07a;
+  color: var(--btn-bg);
 }
 .user-foto {
   display: flex;
@@ -138,7 +139,7 @@ watch(
   margin-top: 2rem;
   margin-left: 1.875rem;
   font-size: 1.25rem;
-  background: #64a07a;
+  background: var(--btn-bg);
   width: fit-content;
   color: white;
   width: 9.563rem;
@@ -182,5 +183,10 @@ watch(
 .logo::after{
   top: -0.6rem;
   left: -5.813rem;
+}
+@media (max-width: 77rem) {
+  .profile-layout{
+    width: 72.5rem;
+  }
 }
 </style>

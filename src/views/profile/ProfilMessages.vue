@@ -19,18 +19,15 @@ const fetchChats = async (isSilent = false) => {
     isLoading.value = false;
   }
 };
-
 const startPolling = () => {
   pollingTimer = setInterval(() => {
     fetchChats(true); 
   }, 10000);
 };
-
 onMounted(() => {
   fetchChats(); 
   startPolling(); 
 });
-
 onUnmounted(() => {
   if (pollingTimer) clearInterval(pollingTimer);
 });
@@ -40,7 +37,6 @@ onUnmounted(() => {
   <div class="general-container messages-container">
     <h2 class="page-title">Сообщения</h2>
     <div v-if="isLoading" class="loading-state">Загрузка чатов...</div>
-
     <!-- Список чатов -->
     <div v-else-if="chats.length > 0" class="chats-list">
       <div v-for="chat in chats" :key="chat.id" class="chat-card">
@@ -94,36 +90,4 @@ onUnmounted(() => {
   cursor: pointer;
 }
 .chat-card:hover { background: #fafafa; }
-.empty-messages {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 100px 20px;
-  color: #888;
-}
-.empty-icon {
-  font-size: 64px;
-  margin-bottom: 20px;
-  opacity: 0.5;
-}
-.empty-messages h3 {
-  color: #333;
-  margin-bottom: 10px;
-}
-.empty-messages p {
-  max-width: 300px;
-  font-size: 14px;
-  line-height: 1.4;
-  margin-bottom: 25px;
-}
-.go-to-ads-btn {
-  background: #64a07a;
-  color: white;
-  padding: 12px 24px;
-  border-radius: 8px;
-  text-decoration: none;
-  font-weight: 500;
-}
 </style>

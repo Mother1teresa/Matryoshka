@@ -26,11 +26,44 @@
 </template>
 
 <script setup>
+import { watch  } from 'vue';
 import Footer from './components/layout/Footer.vue';
 import RegionModal from "./components/layout/RegionModal.vue"
 import MegaMenu from "./components/layout/MegaMenu.vue";
 import AuthModal from "./modals/AuthModal.vue";
-import zagluhIcon from '/src/assets/img/zagluh/icon-zagluhka.svg'
+import zagluhIcon from '/src/assets/img/zagluh/icon-zagluhka.svg';
+
+import { useAuthStore } from "/src/stores/authStore.js";
+import { useReviewStore } from "/src/stores/reviews.js";
+const auth = useAuthStore();
+const reviewStore = useReviewStore();
+
+watch(
+  () => auth.isAuthenticated,
+  async (isAuth) => {
+    if (isAuth) {
+      await auth.fetchProfile(); 
+      await auth.fetchVideos();
+      // 2. Если ID появился, тянем отзывы для рейтинга в шапке
+      if (auth.allVideos?.length > 0) {
+        auth.allVideos.forEach(video => {
+          if (video.thumbnail) {
+            const img = new Image();
+            img.src = video.thumbnail; // Браузер начнет качать картинку в фоне
+          }
+        });
+      }
+      if (auth.user?.id) {
+        await reviewStore.initUserReviews(auth.user.id);
+      }
+    } else {
+      // 3. Если разлогинились (isAuthenticated = false)
+      // Здесь можно добавить дополнительную логику очистки, 
+      // если logout в сторе что-то пропустил
+    }
+  },
+  { immediate: true } 
+);
 </script>
 
 <style scoped>

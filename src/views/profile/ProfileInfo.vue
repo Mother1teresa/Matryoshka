@@ -8,16 +8,17 @@
       <div class="user-header">
         <img :src="auth.userAvatar" class="large-avatar" />
         <div class="rating-badge">
-          <span class="rating-num">{{ reviewStore.getRatingById(auth.user?.id) }}</span>
+          <span class="rating-num">{{ userRating }}</span>
           <span class="stars">★★★★★</span>
         </div>
         <p class="user-type">
-          {{ auth.user?.type === 'COMPANY' ? 'Компания' : 'Частное лицо' }}
+          {{ (auth.user?.type === 'COMPANY') ? 'Компания' : 'Частное лицо' }}
         </p>
+        <pre>{{ auth.user?.type }}</pre>
       </div>
       <div class="user-info-list">
         <div class="info-row">
-          <span class="label">Имя</span>
+          <span class="label">{{ (auth.user?.type === 'COMPANY') ? 'Название компании' : 'Имя' }}</span>
           <span class="value">{{ auth.user?.name }}</span>
         </div>
         <div class="info-row">
@@ -32,7 +33,7 @@
           <span class="label">Город</span>
           <span class="value">{{ auth.user?.city || 'Не указан'}}</span>
         </div>
-        <div class="info-row" v-if="auth.user?.type === 'company' && auth.user?.employeeName">
+        <div class="info-row" v-if="auth.user?.employeeName">
           <span class="label">Сотрудник</span>
           <span class="value">
             {{ auth.user.employeeName }} {{ auth.user.employeeRole ? `- ${auth.user.employeeRole}` : '' }}
@@ -52,7 +53,7 @@
 />
 </template>
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch , computed} from 'vue';
 import { useAuthStore } from '/src/stores/authStore.js'; 
 import { useReviewStore } from '/src/stores/reviews.js';
 import ProfileEditModal from '../ProfileEditModal.vue';
@@ -60,19 +61,19 @@ import ProfileEditModal from '../ProfileEditModal.vue';
 const reviewStore = useReviewStore();
 const auth = useAuthStore();
 const isModalOpen = ref(false);
+const userRating = computed(() => reviewStore.getRatingById(auth.user?.id));
 
 const fetchUserData = async () => {
   try {
-    auth.loadAuth(); 
     await auth.fetchProfile();
+    if (auth.user?.id) {
+      await reviewStore.fetchReviewsBySeller(auth.user.id);
+    }
   } catch (e) {
     console.error("Не удалось загрузить данные профиля:", e);
   }
 };
-
-onMounted(() => {
-  fetchUserData();
-});
+onMounted(() => { fetchUserData(); });
 watch(
   () => auth.user?.id,
   (newId) => {
@@ -82,13 +83,7 @@ watch(
   },
   { immediate: true }
 );
-watch(isModalOpen, (newVal) => {
-  if (newVal) {
-    document.body.classList.add("overflow-mod");
-  } else {
-    document.body.classList.remove("overflow-mod");
-  }
-});
+watch(isModalOpen, (newVal) => {if (newVal) { document.body.classList.add("overflow-mod");} else { document.body.classList.remove("overflow-mod");}});
 </script>
 <style scoped>
 .profile-container {
@@ -130,7 +125,7 @@ watch(isModalOpen, (newVal) => {
   margin-bottom: 2.5rem;
 }
 .stars {
-  color: #64A07A;
+  color: var(--btn-bg);
   letter-spacing: 2px;
   font-size: 2.65rem;
 }

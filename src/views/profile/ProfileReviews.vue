@@ -24,8 +24,8 @@
                 {{ review.author?.charAt(0).toUpperCase() }}
             </div>
             <div class="user-details">
-                <div class="user-name">{{ review.author }}</div>
-                <div class="review-product">{{ review.productTitle }}</div>
+                <div class="user-name">{{ sellerRating  }}</div>
+                <div class="review-product">{{ sellerStars }}</div>
                 <div class="review-body">
                     {{ review.text }}
                 </div>
@@ -37,9 +37,8 @@
                 <div class="review-date">{{ review.date }}</div>
             </div>
           </div>
-
             <div v-if="review.reply" class="seller-reply">
-                <img :src="seller?.avatar || '/src/assets/img/mask-avatar.png'" class="reply-avatar" />
+                <img :src="auth.userAvatar || '/src/assets/img/mask-avatar.png'" class="reply-avatar" />
                 <div class="reply-content">
                     <div class="reply-label">Ответ продавца</div>
                     <div class="reply-text">{{ review.reply }}</div>
@@ -48,7 +47,7 @@
             <!-- Если нажали "Ответить" — показываем поле ввода -->
             <div v-else-if="activeReplyFields[review.id]" class="reply-form-container">
                 <div class="seller-reply">
-                <img :src="seller?.avatar || '/src/assets/img/mask-avatar.png'" class="reply-avatar" />
+                <img :src="auth.userAvatar || '/src/assets/img/mask-avatar.png'" class="reply-avatar" />
                 <div class="reply-content" style="flex: 1;">
                     <div class="reply-label">Ответ продавца</div>
                     <input 
@@ -87,8 +86,16 @@ const reviewStore = useReviewStore();
 
 const replyTexts = ref({});
 const activeReplyFields = ref({});
+const sellerRating = computed(() => {
+  return reviewStore.getRatingById(auth.user?.id);
+});
+
+const sellerStars = computed(() => {
+  return reviewStore.renderStars(sellerRating.value);
+});
 
 const reviews = computed(() => reviewStore.reviews || []);
+
 watch(
   () => auth.user?.id,
   (newId) => {
@@ -138,7 +145,7 @@ async function sendReply(reviewId) {
   justify-items: center;
 }
 .stars {
-  color: #64A07A;
+  color: var(--btn-bg);
   letter-spacing: 2px;
   font-size: 2.65rem;
 }

@@ -13,7 +13,6 @@ export const useSubscriptionStore = defineStore("subscription", () => {
     const index = subscriptions.value.indexOf(sellerId);
     const isAdding = index === -1;
 
-    // 🔥 оптимистично
     if (isAdding) {
       subscriptions.value.push(sellerId);
     } else {

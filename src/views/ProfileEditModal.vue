@@ -65,10 +65,10 @@
             </div>
           </div>
           <div class="type-toggle">
-            <button :class="{ active: !isCompany }" @click="form.type = 'person'">
+            <button :class="{ active: form.type === 'PRIVATE_PERSON' }" @click="form.type = 'PRIVATE_PERSON'">
               Частное лицо
             </button>
-            <button :class="{ active: isCompany }" @click="form.type = 'company'">
+            <button :class="{ active: form.type === 'COMPANY' }" @click="form.type = 'COMPANY'">
               Компания
             </button>
           </div>
@@ -90,7 +90,7 @@ import { ref, reactive, computed, watch, onBeforeUnmount  } from "vue";
 import { useAuthStore } from "/src/stores/authStore.js";
 import "vue-multiselect/dist/vue-multiselect.css";
 import Multiselect from "vue-multiselect";
-import { uploadToS3 } from "/src/utils/uploadService.js";
+import { uploadToMediaService } from "/src/utils/uploadService.js";
 import { api } from "/src/api/api.js";
 import { notify } from "/src/utils/notify";
 
@@ -102,70 +102,29 @@ const showEmployee = ref(false);
 let cityTimeout = null;
 const errors = reactive({});
 const currentBlobUrl = ref(null);
+const form = reactive({ name: "", phone: "", email: "", city: "", type: "PRIVATE_PERSON", description: "", avatar: "", avatarFile: null, employeeName: "", employeeRole: null,});
+const roleOptions = [{ name: "Менеджер по продажам", value: "manager" },{ name: "Директор", value: "director" },{ name: "Сотрудник", value: "employee" }];
+const isCompany = computed(() => form.type === "COMPANY");
 
-const form = reactive({
-  name: "",
-  phone: "",
-  email: "",
-  city: "",
-  type: "person",
-  description: "",
-  avatar: "",
-  avatarFile: null,
-  employeeName: "",
-  employeeRole: null,
-});
-const roleOptions = [
-  { name: "Менеджер по продажам", value: "manager" },
-  { name: "Директор", value: "director" },
-  { name: "Сотрудник", value: "employee" },
-];
-const revokeBlob = () => {
-  if (currentBlobUrl.value) {
-    URL.revokeObjectURL(currentBlobUrl.value);
-    currentBlobUrl.value = null;
-  }
-};
-const onFileChange = (e) => {
-  const file = e.target.files[0];
-  if (file) {
-    revokeBlob();
-    form.avatar = URL.createObjectURL(file);
-    form.avatarFile = file;
-}};
-const validate = () => {
-  Object.keys(errors).forEach(key => delete errors[key]);
-  if (!form.name?.trim()) errors.name = true;
-  if (!form.city?.trim()) errors.city = true;
-  if (isCompany.value && showEmployee.value) {
-    if (!form.employeeName?.trim()) errors.employeeName = true;
-    if (!form.employeeRole) errors.employeeRole = true;
-  }
-  if (Object.keys(errors).length > 0) {
-notify("Пожалуйста, заполните обязательные поля", "error");
-return false;}return true;};
-const isCompany = computed(() => form.type === "company");
+const revokeBlob = () => { if (currentBlobUrl.value) { URL.revokeObjectURL(currentBlobUrl.value);currentBlobUrl.value = null;}};
+const onFileChange = (e) => { const file = e.target.files[0]; if (file) { revokeBlob(); form.avatar = URL.createObjectURL(file); form.avatarFile = file;}};
+const validate = () => { Object.keys(errors).forEach(key => delete errors[key]); if (!form.name?.trim()) errors.name = true; if (!form.city?.trim()) errors.city = true; if (isCompany.value && showEmployee.value) { if (!form.employeeName?.trim()) errors.employeeName = true; if (!form.employeeRole) errors.employeeRole = true;} if (Object.keys(errors).length > 0) { notify("Пожалуйста, заполните обязательные поля", "error"); return false;}return true;};
 
-watch(() => props.isOpen,(newVal) => {if (newVal && auth.user) {Object.keys(errors).forEach(key => delete errors[key]); const currentRole = roleOptions.find((opt) => opt.value === auth.user.employeeRole) || null; Object.assign(form, { ...auth.user, type: auth.user.type === 'COMPANY' ? 'company' : 'person', employeeRole: currentRole, avatarFile: null });form.avatar = auth.user.avatarUrl; showEmployee.value = !!auth.user.employeeName;} else if (!newVal) {revokeBlob();}});
+watch(() => props.isOpen, (newVal) => { if (newVal && auth.user) { Object.keys(errors).forEach(key => delete errors[key]); Object.assign(form, auth.user); form.type = auth.user.type || 'PRIVATE_PERSON';  form.employeeRole = roleOptions.find(opt => opt.value === auth.user.employeeRole) || null; form.avatarFile = null; form.avatar = auth.user.avatarUrl || auth.user.avatar; showEmployee.value = !!auth.user.employeeName; } else if (!newVal) { revokeBlob();}});
 const handleSave = async () => {
   if (isSubmitting.value) return;
   if (!validate()) return; 
   isSubmitting.value = true;
+  
   try {
     let finalAvatarUrl = auth.user?.avatarUrl;
     if (form.avatarFile) {
-      const s3Response = await uploadToS3(form.avatarFile); 
-      finalAvatarUrl = s3Response?.url || finalAvatarUrl;
-      const mediaData = [{
-        userId: String(auth.user?.id),
-        filename: form.avatarFile.name,
-        s3Key: s3Response?.key || "avatars/" + form.avatarFile.name,
-        url: finalAvatarUrl,
-        mimeType: form.avatarFile.type,
-        type: "avatar",
-      }];
-      await api.post("/media/upload", mediaData).catch(e => console.error("Media error", e));
-      form.avatarFile = null;
+      console.log("Начинаем загрузку новой аватарки...");
+      const uploadedUrl = await uploadToMediaService(form.avatarFile, "image", {});
+      if (uploadedUrl) {
+        finalAvatarUrl = uploadedUrl;
+        console.log("URL успешно получен:", finalAvatarUrl);
+      }
     }
     // Обновляем данные профиля
     const updateData = {
@@ -174,57 +133,31 @@ const handleSave = async () => {
       phone: form.phone.replace(/\D/g, ''),
       city: form.city,
       description: form.description,
-      type: form.type === 'company' ? 'COMPANY' : 'PRIVATE_PERSON', 
+      type: form.type,
       avatarUrl: finalAvatarUrl,  
       employeeName: (isCompany.value && showEmployee.value) ? form.employeeName : "",
       employeeRole: (isCompany.value && showEmployee.value) ? form.employeeRole?.value : ""
     };
     const response = await api.put("/profile/update", updateData);
-    if (response.data.user) {
-      auth.login(response.data.user);
-    }
-    emit("refresh"); 
-    emit("close");
-    notify("Профиль успешно обновлен!"); 
-  } catch (e) {
-    console.error("Ошибка при сохранении профиля:", e.response?.data || e.message);
-    notify(e.response?.data?.message || "Не удалось сохранить профиль", "error");
-    if (e.response?.data?.code === "SESSION_EXPIRED") auth.logout();
-  } finally {
-    isSubmitting.value = false;
-  }
-};
+    if (response.data.user) auth.login(response.data.user);
 
-watch(() => form.city, (val) => {
-  if (!val) return;
-  form.city = val.charAt(0).toUpperCase() + val.slice(1);
-  clearTimeout(cityTimeout);
-  cityTimeout = setTimeout(async () => {
-    const validCity = await auth.validateAndFormatCity(val);
-    if (validCity) form.city = validCity;
-  }, 1000);
-});
-watch(showEmployee, (val) => {
-  if (!val) {
-    form.employeeName = "";
-    form.employeeRole = null;
-    delete errors.employeeName;
-    delete errors.employeeRole;
-  }
-});
-onBeforeUnmount(() => {
-  clearTimeout(cityTimeout);
-});
-watch(isCompany, (newVal) => {
-  if (!newVal) {
-    showEmployee.value = false;
-  }
-});watch(() => form.employeeRole, (val) => {
-  if (val) delete errors.employeeRole;
-});
-watch(() => form.name, (val) => {
-  if (val?.trim()) delete errors.name;
-});
+    await auth.fetchProfile();
+    emit("refresh");
+    emit("close");
+    notify("Профиль успешно обновлен!");
+  } catch (e) {
+    console.error("Ошибка сохранения профиля:", e.response?.data || e.message);
+    notify(e.response?.data?.message || "Не удалось сохранить профиль", "error");
+  } finally {
+    isSubmitting.value = false;}
+};
+watch(() => form.city, (val) => { if (!val) return; form.city = val.charAt(0).toUpperCase() + val.slice(1); clearTimeout(cityTimeout); cityTimeout = setTimeout(async () => { const validCity = await auth.validateAndFormatCity(val); 
+  if (validCity) form.city = validCity; }, 1000);});
+watch(showEmployee, (val) => { if (!val) { form.employeeName = ""; form.employeeRole = null; delete errors.employeeName; delete errors.employeeRole;}});
+onBeforeUnmount(() => { clearTimeout(cityTimeout); });
+watch(isCompany, (newVal) => { if (!newVal) { showEmployee.value = false; } });
+watch(() => form.employeeRole, (val) => { if (val) delete errors.employeeRole; });
+watch(() => form.name, (val) => { if (val?.trim()) delete errors.name; });
 </script>
 
 <style scoped>
@@ -319,13 +252,6 @@ textarea {
   border-radius: 0.625rem;
   margin-bottom: 1.5rem;
   font-size: 1.2rem;
-}
-/* Анимация появления */
-.fade-enter-active, .fade-leave-active {
-  transition: opacity 0.3s;
-}
-.fade-enter-from, .fade-leave-to {
-  opacity: 0;
 }
 .avatar-wrapper {
   border: 1px solid #e2e2e2;
@@ -428,18 +354,6 @@ input::placeholder{
 .employee-inputs{
   margin: 2.5rem 0;
 }
-.checkbox-container{
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-}
-.checkbox-container input{
-  background-color: #64A07A;
-}
-.checkmark{
-  font-size: 0.938rem;
-  color: #8E8C8C;
-}
 .local-prof{
   text-transform: capitalize; 
 }
@@ -488,7 +402,7 @@ input::placeholder{
 }
 /* :deep(.multiselect){min-height: auto !important; height: auto !important;} */
 :deep(.multiselect__placeholder) { color: #A8A1A1 !important; margin: 0 !important; padding: 0 !important; font-size: 1.2rem; }
-:deep(.multiselect__option--highlight) {background: #64A07A !important; color: #fff !important; font-weight: 600;}
+:deep(.multiselect__option--highlight) {background: var(--btn-bg) !important; color: #fff !important; font-weight: 600;}
 :deep(.multiselect__option::after) { display: none !important; }
 :deep(.multiselect__option){
   display: grid;
@@ -530,6 +444,6 @@ input::placeholder{
   font-size: 0.875rem;
 }
 :deep(.multiselect__option--selected){
-  color: #64A07A;
+  color: var(--btn-bg);
 }
 </style>

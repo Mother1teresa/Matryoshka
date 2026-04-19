@@ -92,7 +92,7 @@ watch(route, () => {
 }
 
 .mega-left::-webkit-scrollbar-thumb {
-  background: #64A07A;
+  background: var(--btn-bg);
   border-radius: 10px;
   transition: all .3s;
 }
@@ -140,7 +140,7 @@ watch(route, () => {
 }
 /* SECTION TITLE */
 .section-title {
-  color: #64A07A;
+  color: var(--btn-bg);
   margin-bottom: 0.938rem;
 }
 /* LINKS CONTAINER */
@@ -159,7 +159,7 @@ watch(route, () => {
 }
 /* hover link */
 .section-link:hover {
-  color: #64A07A;
+  color: var(--btn-bg);
 }
 
 .mega-left__icon {

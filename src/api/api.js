@@ -18,6 +18,24 @@ const processQueue = (error) => {
   });
   failedQueue = [];
 };
+api.interceptors.request.use(
+  (config) => {
+    const savedAuth = localStorage.getItem("auth");
+    if (savedAuth) {
+      try {
+        const { user } = JSON.parse(savedAuth);
+        // Если токен лежит в user.token (проверьте структуру вашего юзера)
+        if (user && user.token) {
+          config.headers.Authorization = `Bearer ${user.token}`;
+        }
+      } catch (e) {
+        console.error("Ошибка парсинга токена для заголовков", e);
+      }
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -35,7 +53,7 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
     const isRefreshRequest = originalRequest.url.includes("/auth/refresh");
-    // // Ошибка 401 — пытаемся обновить токен (если это не сам запрос на рефреш)
+    // Ошибка 401 — пытаемся обновить токен (если это не сам запрос на рефреш)
     if (status === 401 && !originalRequest._retry && !isRefreshRequest) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -60,7 +78,7 @@ api.interceptors.response.use(
       } catch (refreshError) {
         isRefreshing = false;
         processQueue(refreshError);
-        // auth.logout();
+        auth.logout();
         return Promise.reject(refreshError);
       }
     }

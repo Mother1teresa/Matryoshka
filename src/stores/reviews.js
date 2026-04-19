@@ -14,22 +14,17 @@ export const useReviewStore = defineStore('reviews', () => {
     const sum = reviews.value.reduce((acc, r) => acc + r.rating, 0)
     return (sum / reviews.value.length).toFixed(1)
   })
-
   const formatDate = (dateStr) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
   };
-  
   const getRatingById = (id) => {
-    if (!id) return 0;
-    // Если мы сейчас смотрим отзывы этого продавца и они реальные — считаем по ним
-    const source = (reviews.value.length > 0 && reviews.value[0].sellerId === String(id)) 
-      ? reviews.value 
-      : allReviews.value.filter(r => String(r.sellerId) === String(id));
-      
-    if (source.length === 0) return 0;
-    return (source.reduce((acc, r) => acc + r.rating, 0) / source.length).toFixed(1);
-  };
+  if (!id) return 0;
+  const sellerReviews = allReviews.value.filter(r => String(r.sellerId) === String(id));
+  if (sellerReviews.length === 0) return 0;
+  const sum = sellerReviews.reduce((acc, r) => acc + r.rating, 0);
+  return (sum / sellerReviews.length).toFixed(1);
+};
   const renderStars = (rating) => {
     const r = Math.round(Number(rating) || 0);
     return '★'.repeat(r) + '☆'.repeat(5 - r);
@@ -41,31 +36,34 @@ export const useReviewStore = defineStore('reviews', () => {
 };
   // Загрузка отзывов по ID продавца
   const fetchReviewsBySeller = async (sellerId) => {
-    reviews.value = [];
     isLoading.value = true;
     try {
-      // Пока API закомментировано, явно задаем data как null
-      let data = null; 
-      // 1. Пытаемся получить реальные данные
-      // const { data } = await reviewsApi.getBySellerId(sellerId);
-      
-      // 2. Проверяем: если реальные отзывы есть, записываем только их
-      if (data && data.length > 0) {
+      // Имитируем запрос к бэку (потом раскомментируете)
+      // const res = await reviewsApi.getBySellerId(sellerId).catch(() => ({ data: [] }));
+      // const data = res?.data || [];
+
+      if (data.length > 0) {
+        // ЕСЛИ ПРИШЕЛ БЭК:
+        // Убираем старые данные этого продавца из allReviews и записываем новые
+        allReviews.value = [
+          ...allReviews.value.filter(r => String(r.sellerId) !== String(sellerId)),
+          ...data
+        ];
         reviews.value = data;
       } else {
-        // 3. Если реальных отзывов нет (data пустой), берем тестовые
+        // ЕСЛИ БЭК ПУСТОЙ: работаем с тем, что есть в allReviews (тестами)
         reviews.value = allReviews.value.filter(r => String(r.sellerId) === String(sellerId));
       }
-
     } catch (error) {
-      console.error('Ошибка при загрузке отзывов:', error);
-      // В случае падения API тоже показываем тестовые
+      console.error('Ошибка:', error);
       reviews.value = allReviews.value.filter(r => String(r.sellerId) === String(sellerId));
     } finally {
       isLoading.value = false;
     }
   };
-
+  const initUserReviews = async (userId) => {
+    if (userId) await fetchReviewsBySeller(userId);
+  };
   const addReply = async (reviewId, replyText) => {
     try {
       await reviewsApi.replyToReview(reviewId, replyText)
@@ -87,6 +85,7 @@ export const useReviewStore = defineStore('reviews', () => {
     fetchReviewsBySeller,
     renderStars,
     addReply,
-    getReviewsCountById
+    getReviewsCountById,
+    initUserReviews
   }
 })

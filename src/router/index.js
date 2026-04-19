@@ -31,7 +31,7 @@ const routes = [
       { path: 'notifications', component: () => import('../views/profile/ProfilNotifications.vue') },  
       { path: 'messages', component: () => import('../views/profile/ProfilMessages.vue') }, 
       { path: 'reviews', component: () => import('../views/profile/ProfileReviews.vue') },
-      // { path: 'advertisements', component: () => import('../views/profile/Messages.vue') }, 
+      { path: 'videos', component: () => import('../views/profile/MyVideos.vue') }, 
       // ... остальные страницы
     ]
   },
@@ -51,14 +51,8 @@ export const router = createRouter({
 });
 router.beforeEach((to, from, next) => {
   const auth = useAuthStore();
-  const saved = localStorage.getItem("auth");
-  const isLogged = auth.isAuthenticated || (saved && JSON.parse(saved).isAuthenticated);
-  if (!auth.isAuthenticated && saved) {
-    auth.loadAuth();
-  }
-
+  const isLogged = auth.isAuthenticated;
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
-  
   if (requiresAuth && !isLogged) {
     next('/'); 
   } else {

@@ -63,32 +63,14 @@ const loadLikes = () => {
     }
   })
 }
-watch(
-  () => route.params.category,
-  () => {
-    loadData()
-  }
-)
+watch(() => route.params.category,() => { loadData() })
 // следим за logout
-watch(
-  () => authStore.isAuthenticated,
-  (isAuth) => {
-
-    if (!isAuth) {
-      productStore.resetLikes()
-    } else {
-      loadLikes()
-    }
-  }
-)
+watch(() => authStore.isAuthenticated,(isAuth) => { if (!isAuth) {productStore.resetLikes() } else {loadLikes()} })
 
 onMounted(() => {
-  loadData() // Загружаем товары при открытии страницы
-  authStore.loadAuth()
+  loadData() 
   if (authStore.isAuthenticated) {
-    loadLikes()
-  }
-})
+loadLikes()}})
 </script>
 <style scoped>
 .products {
