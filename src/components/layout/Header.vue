@@ -80,25 +80,27 @@
                   <div v-if="showProfileMenu" class="profile-menu">
                     <div class="rating" v-if="auth.user?.id">{{ reviewStore.getRatingById(auth.user.id) }}
                       <span>★★★★★</span></div> 
+                      <div class="profile-menu_links">
                       <!-- {{ reviewStore.renderStars(reviewStore.getRatingById(auth.user.id)) }} -->
-                      <div @click="showProfileMenu = false" class="profile-menu_link"><router-link to="/profile/info" >Мои данные</router-link></div>
-                      <div @click="showProfileMenu = false" class="profile-menu_link"><router-link to="/profile/videos">Мои ролики</router-link></div>
-                      <div @click="showProfileMenu = false" class="profile-menu_link"><router-link to="/profile/advertisements">Мои объявления</router-link></div>
-                      <div @click="showProfileMenu = false" class="profile-menu_link"><router-link to="/create-ad">Создать объявление</router-link></div>
-                      <div @click="showProfileMenu = false" class="profile-menu_link"><router-link to="/profile/orders">Заказы</router-link></div>
-                      <div @click="showProfileMenu = false" class="profile-menu_link"><router-link to="/profile/favorites">Избранное</router-link></div>
-                      <div @click="showProfileMenu = false" class="profile-menu_link"><router-link to="/profile/referral">Приглашайте друзей</router-link></div>
-                      <div @click="showProfileMenu = false" class="profile-menu_link"><router-link to="/profile/responses">Отклики</router-link></div>
-                      <div @click="showProfileMenu = false" class="profile-menu_link"><router-link to="/profile/messages">Сообщения 
+                      <router-link to="/profile/info" @click="showProfileMenu = false" class="profile-menu_link">Мои данные</router-link>
+                      <router-link to="/profile/videos" @click="showProfileMenu = false" class="profile-menu_link">Мои ролики</router-link>
+                      <router-link to="/profile/advertisements" @click="showProfileMenu = false" class="profile-menu_link">Мои объявления</router-link>
+                      <router-link to="/create-ad" @click="showProfileMenu = false" class="profile-menu_link">Создать объявление</router-link>
+                      <router-link to="/profile/orders" @click="showProfileMenu = false" class="profile-menu_link">Заказы</router-link>
+                      <router-link to="/profile/favorites" @click="showProfileMenu = false" class="profile-menu_link">Избранное</router-link>
+                      <router-link to="/profile/referral" @click="showProfileMenu = false" class="profile-menu_link">Приглашайте друзей</router-link>
+                      <router-link to="/profile/responses" @click="showProfileMenu = false" class="profile-menu_link">Отклики</router-link>
+                      <router-link to="/profile/messages" @click="showProfileMenu = false" class="profile-menu_link">Сообщения 
                         <span v-if="auth.unreadMessagesCount > 0" class="badge-count">
                         {{ auth.unreadMessagesCount }}
-                      </span></router-link></div>
-                      <div @click="showProfileMenu = false" class="profile-menu_link"><router-link to="/profile/notifications">Уведомления
+                      </span></router-link>
+                      <router-link to="/profile/notifications" @click="showProfileMenu = false" class="profile-menu_link">Уведомления
                         <span v-if="auth.unreadNotificationsCount > 0" class="badge-count">
                           {{ auth.unreadNotificationsCount }}
                         </span>
-                      </router-link></div>
+                      </router-link>
                       <div class="profile-menu_link logout" @click.stop="askLogout">Выйти</div>
+                      </div>
                   </div>
                 </transition>
               </div>
@@ -453,6 +455,10 @@ watch(
   padding: 0.938rem 0;
   z-index: 10;
   /* font-size: 1.25rem; */
+}
+.profile-menu_links{
+  display: grid;
+  gap: 0;
 }
 .profile-menu .profile-menu_link {
   padding: 0.625rem 0.938rem;

@@ -55,15 +55,22 @@ export const useAuthStore = defineStore("auth", {
     },
   },
   actions: {
-    saveToStorage() {
-      localStorage.setItem(
-        "auth",
-        JSON.stringify({
-          isAuthenticated: this.isAuthenticated,
-          user: this.user,
-        }),
-      );
-    },
+      saveToStorage() {
+    // Если данных нет, не затираем старые (или логируем ошибку)
+    if (!this.user && this.isAuthenticated) {
+      console.error("Попытка сохранить пустой профиль!");
+      return;
+    }
+    
+    localStorage.setItem(
+      "auth",
+      JSON.stringify({
+        isAuthenticated: this.isAuthenticated,
+        user: this.user,
+      }),
+    );
+  },
+
     login(user) {
       this.isAuthenticated = true;
       this.user = { ...user };
@@ -160,25 +167,32 @@ export const useAuthStore = defineStore("auth", {
       }
     },
     async deleteVideo(id) {
-      if (!this.user?.id || !this.user?.token) return false;
-      try {
-        await api.delete(`/media/user/${this.user.id}`, {
-          params: { 
-            mediaId: id,
-            geocode: '0,0' 
-          },
-          headers: {
-            Authorization: `Bearer ${this.user.token}`
-          }
-        });
-        this.allVideos = this.allVideos.filter(v => v.id !== id);
-        this.saveToStorage(); 
-        return true;
-      } catch (e) {
-        console.error("Ошибка при удалении:", e);
-        throw e;
+  if (!this.user?.id || !this.user?.token) return false;
+  try {
+    // В документации параметр называется videoId, а не mediaId
+    await api.delete(`/media/user/${this.user.id}`, {
+      params: { 
+        videoId: id, // Исправлено с mediaId
+        // geocode: '0,0' // Если в доке этого нет, лучше убрать или уточнить у бэка
+      },
+      headers: {
+        Authorization: `Bearer ${this.user.token}`
       }
-    },
+    });
+
+    // Обновляем только локальный стейт (в памяти)
+    this.allVideos = this.allVideos.filter(v => v.id !== id);
+    
+    // saveToStorage здесь по сути бесполезен, так как он не сохраняет allVideos,
+    // но если оставить, то он просто лишний раз перезапишет данные юзера.
+    return true;
+  } catch (e) {
+    console.error("Ошибка при удалении:", e);
+    throw e;
+  }
+},
+
+
     toggleArchiveLocal(videoId, status) {
       const video = this.allVideos.find((v) => v.id === videoId);
       if (video) {

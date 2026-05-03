@@ -177,22 +177,26 @@ const closeConfirm = () => {
   videoToDelete.value = null;
 };
 const confirmDelete = async () => {
-  console.log("Удаление", videoToDelete.value);
-
-  if (!videoToDelete.value) return;
+  if (!videoToDelete.value || isLoading.value) return;
 
   try {
     isLoading.value = true;
-    await auth.deleteVideo(videoToDelete.value);
-    notify("Ролик успешно удален");
+    const success = await auth.deleteVideo(videoToDelete.value);
+    
+    if (success) {
+      notify("Ролик успешно удален");
+      closeConfirm(); // Закрываем только при успехе
+    }
   } catch (e) {
-    console.error("Ошибка в компоненте:", e);
-    notify("Не удалось удалить ролик");
+    // Если бэк вернул ошибку, мы не выходим из аккаунта, 
+    // а просто даем юзеру попробовать еще раз
+    console.error("Ошибка при удалении:", e);
+    notify("Ошибка сервера. Попробуйте позже", "error");
   } finally {
     isLoading.value = false;
-    closeConfirm();
   }
 };
+
 const toggleMenu = (id) => {
   activeMenuId.value = activeMenuId.value === id ? null : id;
 };

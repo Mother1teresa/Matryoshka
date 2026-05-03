@@ -64,19 +64,24 @@ api.interceptors.response.use(
       isRefreshing = true;
       try {
         const success = await auth.refreshToken();
-
         isRefreshing = false;
         if (success) {
           processQueue(null);
           return api(originalRequest);
         } else {
-          auth.logout();
+          if (status === 401 || status === 403) {
+            auth.logout();
+          }
+          processQueue(new Error("Refresh failed"));
           return Promise.reject(error);
         }
       } catch (refreshError) {
         isRefreshing = false;
         processQueue(refreshError);
-        auth.logout();
+        const refreshStatus = refreshError.response?.status;
+        if (refreshStatus === 401 || refreshStatus === 403) {
+          auth.logout();
+        }
         return Promise.reject(refreshError);
       }
     }
