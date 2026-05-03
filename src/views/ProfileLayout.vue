@@ -33,15 +33,22 @@
         <router-link to="/profile/resume">Резюме</router-link>
         <router-link to="/profile/favorites">Избранное</router-link>
         <router-link to="/profile/invite">Приглашайте друзей</router-link>
-        <router-link to="/profile/messages">Сообщения</router-link>
-        <router-link to="/profile/notifications">Уведомления</router-link>
+        <router-link to="/profile/messages">Сообщения
+          <span v-if="auth.unreadMessagesCount > 0" class="badge-count">
+            {{ auth.unreadMessagesCount }}
+          </span>
+        </router-link>
+        <router-link to="/profile/notifications">Уведомления
+          <span v-if="auth.unreadNotificationsCount > 0" class="badge-count">
+            {{ auth.unreadNotificationsCount }}
+          </span>
+        </router-link>
         <router-link to="/profile/reviews">Отзывы</router-link>
         <div class="nav-footer">
           <button class="edu-btn">Обучение</button>
         </div>
       </nav>
     </aside>
-
     <main class="profile-main">
       <router-view />
     </main>
@@ -55,7 +62,6 @@ import { useReviewStore } from "/src/stores/reviews.js";
 const reviewStore = useReviewStore();
 const auth = useAuthStore();
 const isCollapsed = ref(false);
-// В <script setup> ProfileLayout.vue
 const userRating = computed(() => reviewStore.getRatingById(auth.user?.id));
 const userStars = computed(() => reviewStore.renderStars(userRating.value));
 
@@ -63,7 +69,7 @@ watch(
   () => auth.user?.id,
   (newId) => {
     if (newId) {
-      reviewStore.fetchReviewsBySeller(newId);
+      // reviewStore.fetchReviewsBySeller(newId);
     }
   },
   { immediate: true }
@@ -110,6 +116,7 @@ watch(
   text-decoration: none;
   padding: 1.031rem 0 1.031rem 1.875rem;
   font-size: 1.25rem;
+  position: relative;
 }
 .profile-nav a.router-link-active {
   color: var(--btn-bg);

@@ -37,7 +37,7 @@ export const useProductStore = defineStore("product", () => {
       city: "г.Краснодар",
       category: "transport",
       section: "cars",
-      subcategory: "sedan",
+      subcategory: "",
       sellerId: "2",
       images: [
         "/img/products/img-prod.jpg",
@@ -71,6 +71,7 @@ export const useProductStore = defineStore("product", () => {
       city: "г.Краснодар",
       category: "animals",
       section:"pets",
+      subcategory:"dogs",
       sellerId: "2",
       images: [
         "/img/products/img-prod.jpg",
@@ -147,12 +148,12 @@ export const useProductStore = defineStore("product", () => {
       description: "Уютная квартира в центре."
     },{
     id: 10,
-    title: "Автомобиль BMW",
+    title: "	Yamaha YZF-R6",
     price: 1200000,
-    city: "г.Краснодар",
+    city: "г. Краснодар",
     images: [
-        "/img/products/img-prod.jpg",
-        "/img/products/img-prod2.jpg"],
+        "/img/products/OIP.webp",
+        "/img/products/1058_s.jpg"],
     category: "transport",
     section: "moto",
     sellerId: "1",
@@ -163,6 +164,7 @@ export const useProductStore = defineStore("product", () => {
     city: "г.Краснодар",
     category: "animals",
     section:"pets",
+    subcategory:"dogs",
     sellerId: "1",
     images: [
         "/img/products/img-prod.jpg",
@@ -221,6 +223,7 @@ export const useProductStore = defineStore("product", () => {
     city: "г.Краснодар",
     category: "animals",
     section:"pet_products",
+    subcategory:"buy",
     sellerId: "2",
     images: [
         "/img/products/img-prod.jpg",

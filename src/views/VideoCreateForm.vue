@@ -25,11 +25,7 @@
       </div>
       <div class="upload-fields">
         <div class="field-group">
-          <label><span>Аа</span> Добавить надпись</label>
-          <textarea class="textarea-title" v-model="form.title" placeholder="Напишите текст..." maxlength="50" />
-        </div>
-        <div class="field-group">
-          <label><span>Аа</span> Описание</label>
+          <label><span>Аа</span> Описание <span style="color: red">*</span></label>
           <textarea class="textarea-description" v-model="form.description" placeholder="Ролик как на складе лежит коробка..."></textarea>
         </div>
         <div class="field-group">
@@ -53,8 +49,8 @@
                 </div>
                 <img src="/src/assets/img/icons/arrow-down.svg" class="dropdown-icon" alt="arrow" />
             </div>
-            <button class="btn publish-btn" :disabled="!form.file" @click="onPublish">
-                Опубликовать
+            <button class="btn publish-btn" :disabled="!form.file || !form.description.trim()" @click="onPublish">
+              Опубликовать
             </button>
         </div>
       </div>
@@ -131,33 +127,43 @@ const handleFileSelect = (e) => {
   }
 };
 const onPublish = async () => {
-  if (!form.file) return;
+  // Проверяем и файл, и наличие текста в описании
+  if (!form.file) {
+    notify("Выберите видеофайл");
+    return;
+  }
+  if (!form.description.trim()) {
+    notify("Пожалуйста, заполните описание");
+    return;
+  }
+
   status.value = 'uploading';
   uploadProgress.value = 0;
   
   try {
     await uploadToMediaService(form.file, "video", {
-      title: form.title,
-      description: form.description,
+      title: form.title || 'Без названия',
+      description: form.description.trim(),
       productId: form.productId,
       allowComments: form.allowComments
     },
     (progress) => {
-            uploadProgress.value = progress; 
-        }
-    );
+      uploadProgress.value = progress; 
+    });
 
     status.value = 'success';
-    setTimeout(() => finish(), 2000);
+    setTimeout(() => finish(), 2000); 
   } catch (e) {
     console.error("Ошибка при публикации:", e);
     notify("Ошибка загрузки видео");
     status.value = 'edit';
-}};
+  }
+};
+
 </script>
 
 <style scoped>
-.video-upload-container { padding: 20px; margin: 0 auto; }
+.video-upload-container { padding: 1.25rem; margin: 0 auto; }
 .back-nav { cursor: pointer; display: flex; align-items: center; gap: 10px; margin-bottom: 30px; font-size: 18px; color: #333; }
 .upload-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 3.5rem; }
 .upload-zone {

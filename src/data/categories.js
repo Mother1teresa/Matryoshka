@@ -288,8 +288,8 @@ export const categories = [
       {title: "Товары и корма",
         slug:"pet_products",
         links: [
-          { name: "Корма и лакомства", slug: "food" },
+          { name: "Корма и лакомства", slug: "pet_food" },
           { name: "Клетки, переноски, вольеры", slug: "cages" },
           { name: "Аквариумы и террариумы", slug: "aquariums" },
-          { name: "Одежда и амуниция", slug: "management" },
-          { name: "Ветеринарные препараты", slug: "marketing" }]}]},]
+          { name: "Одежда и амуниция", slug: "pet_clothes" },
+          { name: "Ветеринарные препараты", slug: "veterinary" }]}]},]

@@ -1,31 +1,29 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
-import { api } from '/src/api/api.js';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useAuthStore } from "/src/stores/authStore.js";
 import { notify } from "/src/utils/notify";
-
-const chats = ref([]);
+const auth = useAuthStore();
 const isLoading = ref(true);
 let pollingTimer = null;
+const chats = computed(() => auth.allChats);
 
-const fetchChats = async (isSilent = false) => {
+const loadChats = async (isSilent = false) => {
   if (!isSilent) isLoading.value = true;
   try {
-    // const response = await api.get('/chats');
-    chats.value = response.data.chats;
+    await auth.fetchUserChats();
   } catch (e) {
-    notify("Ошибка обновления чатов")
-    console.error("Ошибка обновления чатов", e);
+    if (!isSilent) notify("Ошибка обновления чатов");
   } finally {
     isLoading.value = false;
   }
 };
 const startPolling = () => {
   pollingTimer = setInterval(() => {
-    fetchChats(true); 
+    loadChats(true); 
   }, 10000);
 };
 onMounted(() => {
-  fetchChats(); 
+  loadChats(); 
   startPolling(); 
 });
 onUnmounted(() => {
@@ -39,7 +37,7 @@ onUnmounted(() => {
     <div v-if="isLoading" class="loading-state">Загрузка чатов...</div>
     <!-- Список чатов -->
     <div v-else-if="chats.length > 0" class="chats-list">
-      <div v-for="chat in chats" :key="chat.id" class="chat-card">
+      <div v-for="chat in chats" :key="chat.id" class="chat-card" @click="$router.push({ name: 'ChatDetail', params: { id: chat.id } })" style="cursor: pointer;">
         <div class="chat-main-info">
           <!-- Аватар с индикатором онлайн -->
           <div class="avatar-block">
@@ -56,7 +54,6 @@ onUnmounted(() => {
             </div>
           </div>
         </div>
-
         <div class="chat-meta">
           <div class="price-info">
             <span class="price">{{ chat.price }}</span>
@@ -69,7 +66,6 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
-
     <!-- Пустое состояние -->
     <div v-else class="empty-messages">
       <div class="empty-icon">✉️</div>

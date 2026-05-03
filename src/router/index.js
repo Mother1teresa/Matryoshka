@@ -29,9 +29,12 @@ const routes = [
       { path: '', redirect: 'info' },
       { path: 'info', component: () => import('../views/profile/ProfileInfo.vue') },
       { path: 'notifications', component: () => import('../views/profile/ProfilNotifications.vue') },  
-      { path: 'messages', component: () => import('../views/profile/ProfilMessages.vue') }, 
+      { path: 'messages', component: () => import('../views/profile/ProfilMessages.vue') },
+      { path: 'messages/:id', name: 'ChatDetail', component: () => import('../views/profile/ChatDetail.vue') },
       { path: 'reviews', component: () => import('../views/profile/ProfileReviews.vue') },
       { path: 'videos', component: () => import('../views/profile/MyVideos.vue') }, 
+      { path: 'advertisements', component: () => import('../views/profile/MyAdvertisements.vue') }, 
+      { path: 'favorites', component: () => import('../views/profile/Favorites.vue') },
       // ... остальные страницы
     ]
   },

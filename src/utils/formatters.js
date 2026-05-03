@@ -1,0 +1,15 @@
+export const formatNumber = (num) => {
+  if (!num) return 0;
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  }
+  if (num >= 1000) {
+    return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'к';
+  }
+  return num;
+};
+
+export const formatFullNumber = (num) => {
+  if (!num) return '0';
+  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+};

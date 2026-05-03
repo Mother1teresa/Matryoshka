@@ -9,7 +9,7 @@
         <img :src="auth.userAvatar" class="large-avatar" />
         <div class="rating-badge">
           <span class="rating-num">{{ userRating }}</span>
-          <span class="stars">★★★★★</span>
+          <span class="stars">{{ reviewStore.renderStars(reviewStore.getRatingById(auth.user?.id)) }}</span>
         </div>
         <p class="user-type">
           {{ (auth.user?.type === 'COMPANY') ? 'Компания' : 'Частное лицо' }}
@@ -142,6 +142,7 @@ watch(isModalOpen, (newVal) => {if (newVal) { document.body.classList.add("overf
 .info-row {
   display: flex;
   justify-content: flex-start;
+  align-items: baseline;
   gap: 1.5rem;
   font-size: 1.5rem; 
 }
@@ -149,6 +150,7 @@ watch(isModalOpen, (newVal) => {if (newVal) { document.body.classList.add("overf
   font-weight: 700;
   color: #000;
   width: 6.563rem;
+  font-size: 1.28rem;
 }
 .value {
   text-align: left;

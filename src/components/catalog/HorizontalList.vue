@@ -5,6 +5,7 @@ import { useProductStore } from "../../stores/product.js";
 import { notify } from "../../utils/notify";
 import heart from "/src/assets/img/icons/heart.svg";
 import heartFilled from "/src/assets/img/icons/heart-filled.svg";
+import { categories } from "/src/data/categories.js";
 
 import { useFavoritesStore } from "/src/stores/favoritesStore";
 const favStore = useFavoritesStore();
@@ -91,6 +92,51 @@ const onWriteClick = (e) => {
     notify("Войдите, чтобы написать сообщение");
   }
 };
+const getSubcategoryName = (item) => {
+  const targetSlug = item.subcategory || item.section;
+  if (!targetSlug) return "";
+  for (const cat of categories) {
+    for (const section of cat.sections) {
+      for (const link of section.links) {
+        if (link.slug === targetSlug) {
+          return link.name; 
+        }
+        if (link.subLinks) {
+          const sub = link.subLinks.find(s => s.slug === targetSlug);
+          if (sub) {
+            return sub.name;
+          }
+        }
+      }
+    }
+  }
+  return ""; 
+};
+
+const getCategoryDisplayName = (catSlug, secSlug) => {
+  const cat = categories.find(c => c.slug === catSlug);
+  const catName = cat ? cat.name : catSlug;
+  if (!secSlug) return catName;
+  let secName = secSlug;
+  if (cat) {
+    for (const section of cat.sections) {
+      const link = section.links.find(l => l.slug === secSlug);
+      if (link) {
+        secName = link.name;
+        break;
+      }
+    }
+  }
+  return { catName, secName };
+};
+const emptyStateText = computed(() => {
+  const { catName, secName } = getCategoryDisplayName(props.category, props.section);
+  if (secName && secName !== props.section) {
+    return `Нет объявлений в категории "${catName}": "${secName}"`;
+  }
+  return `Нет объявлений в категории "${catName}"`;
+});
+
 </script>
 <template>
   <div class="horizontal-list">
@@ -165,8 +211,8 @@ const onWriteClick = (e) => {
             <span class="city-text">{{ item.city }}</span>
           </div>
           <p class="card-description">{{ item.description }}</p>
-          <div class="card-footer-info" v-if="item.subcategory">
-            {{ item.subcategory }}
+          <div class="card-footer-info" v-if="item.subcategory || item.section">
+            {{ getSubcategoryName(item) }}
           </div>
           <img
             class="card-like"
@@ -185,7 +231,7 @@ const onWriteClick = (e) => {
       </div>
       <!-- Сообщение, если ничего не нашли -->
       <div v-if="displayItems.length === 0" class="empty-state">
-        Нет объявлений в категории "{{ category }}":"{{ section }}"
+        {{ emptyStateText }}
       </div>
     </template>
   </div>
@@ -272,6 +318,7 @@ const onWriteClick = (e) => {
   color: #7c7c7c;
   font-size: 0.938rem;
   margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
   display: -webkit-box;
   -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
@@ -280,7 +327,6 @@ const onWriteClick = (e) => {
 /* Тот самый "Офис" или "Седан" внизу */
 .card-footer-info {
   margin-top: auto;
-  padding-top: 1rem;
   color: #b0b0b0;
   font-size: 0.875rem;
   text-transform: capitalize;

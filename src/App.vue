@@ -26,7 +26,7 @@
 </template>
 
 <script setup>
-import { watch  } from 'vue';
+import { watch,onUnmounted } from 'vue';
 import Footer from './components/layout/Footer.vue';
 import RegionModal from "./components/layout/RegionModal.vue"
 import MegaMenu from "./components/layout/MegaMenu.vue";
@@ -37,33 +37,44 @@ import { useAuthStore } from "/src/stores/authStore.js";
 import { useReviewStore } from "/src/stores/reviews.js";
 const auth = useAuthStore();
 const reviewStore = useReviewStore();
-
+let globalPolling = null;
+const startGlobalPolling = () => {
+  // Каждые 30 секунд проверяем новые чаты и уведомления в фоне
+  globalPolling = setInterval(() => {
+    auth.fetchUserChats();
+    auth.fetchUserNotifications();
+  }, 30000); 
+};
 watch(
   () => auth.isAuthenticated,
   async (isAuth) => {
     if (isAuth) {
       await auth.fetchProfile(); 
+      auth.fetchUserChats();
+      auth.fetchUserNotifications();
       await auth.fetchVideos();
       // 2. Если ID появился, тянем отзывы для рейтинга в шапке
       if (auth.allVideos?.length > 0) {
         auth.allVideos.forEach(video => {
           if (video.thumbnail) {
             const img = new Image();
-            img.src = video.thumbnail; // Браузер начнет качать картинку в фоне
+            img.src = video.thumbnail;
           }
         });
       }
       if (auth.user?.id) {
         await reviewStore.initUserReviews(auth.user.id);
       }
+      startGlobalPolling();
     } else {
-      // 3. Если разлогинились (isAuthenticated = false)
-      // Здесь можно добавить дополнительную логику очистки, 
-      // если logout в сторе что-то пропустил
+      if (globalPolling) clearInterval(globalPolling);
     }
   },
   { immediate: true } 
 );
+onUnmounted(() => {
+  if (globalPolling) clearInterval(globalPolling);
+});
 </script>
 
 <style scoped>

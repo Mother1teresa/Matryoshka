@@ -41,12 +41,20 @@
             <div class="header__right-true">
               <div class="header__right-block">
                 <div class="header__right-icons">
-                  <a class="icon">
+                  <router-link to="/profile/notifications" class="icon">
                     <img src="/src/assets/img/uved.svg" />
-                  </a>
-                  <a class="icon">
+                    <span v-if="auth.unreadNotificationsCount > 0" class="badge-count">
+                      {{ auth.unreadNotificationsCount }}
+                    </span>
+                  </router-link>
+
+                  <!-- Ссылка на сообщения (список чатов) -->
+                  <router-link to="/profile/messages" class="icon">
                     <img src="/src/assets/img/mes.svg" />
-                  </a>
+                    <span v-if="auth.unreadMessagesCount > 0" class="badge-count">
+                      {{ auth.unreadMessagesCount }}
+                    </span>
+                  </router-link>
                 </div>
                 <button class="btn-light" @click="region.open()">
                   <img src="/src/assets/img/location_on.svg" />
@@ -73,19 +81,24 @@
                     <div class="rating" v-if="auth.user?.id">{{ reviewStore.getRatingById(auth.user.id) }}
                       <span>★★★★★</span></div> 
                       <!-- {{ reviewStore.renderStars(reviewStore.getRatingById(auth.user.id)) }} -->
-                    <ul>
-                      <li @click="showProfileMenu = false" ><router-link to="/profile/info" >Мои данные</router-link></li>
-                      <li @click="showProfileMenu = false"><router-link to="/profile/videos">Мои ролики</router-link></li>
-                      <li @click="showProfileMenu = false"><router-link to="/profile/advertisements">Мои объявления</router-link></li>
-                      <li @click="showProfileMenu = false"><router-link to="/create-ad">Создать объявление</router-link></li>
-                      <li @click="showProfileMenu = false"><router-link to="/profile/orders">Заказы</router-link></li>
-                      <li @click="showProfileMenu = false"><router-link to="/profile/favorites">Избранное</router-link></li>
-                      <li @click="showProfileMenu = false"><router-link to="/profile/referral">Приглашайте друзей</router-link></li>
-                      <li @click="showProfileMenu = false"><router-link to="/profile/responses">Отклики</router-link></li>
-                      <li @click="showProfileMenu = false"><router-link to="/profile/messages">Сообщения</router-link></li>
-                      <li @click="showProfileMenu = false"><router-link to="/profile/notifications">Уведомления</router-link></li>
-                      <li class="logout" @click.stop="askLogout">Выйти</li>
-                    </ul>
+                      <div @click="showProfileMenu = false" class="profile-menu_link"><router-link to="/profile/info" >Мои данные</router-link></div>
+                      <div @click="showProfileMenu = false" class="profile-menu_link"><router-link to="/profile/videos">Мои ролики</router-link></div>
+                      <div @click="showProfileMenu = false" class="profile-menu_link"><router-link to="/profile/advertisements">Мои объявления</router-link></div>
+                      <div @click="showProfileMenu = false" class="profile-menu_link"><router-link to="/create-ad">Создать объявление</router-link></div>
+                      <div @click="showProfileMenu = false" class="profile-menu_link"><router-link to="/profile/orders">Заказы</router-link></div>
+                      <div @click="showProfileMenu = false" class="profile-menu_link"><router-link to="/profile/favorites">Избранное</router-link></div>
+                      <div @click="showProfileMenu = false" class="profile-menu_link"><router-link to="/profile/referral">Приглашайте друзей</router-link></div>
+                      <div @click="showProfileMenu = false" class="profile-menu_link"><router-link to="/profile/responses">Отклики</router-link></div>
+                      <div @click="showProfileMenu = false" class="profile-menu_link"><router-link to="/profile/messages">Сообщения 
+                        <span v-if="auth.unreadMessagesCount > 0" class="badge-count">
+                        {{ auth.unreadMessagesCount }}
+                      </span></router-link></div>
+                      <div @click="showProfileMenu = false" class="profile-menu_link"><router-link to="/profile/notifications">Уведомления
+                        <span v-if="auth.unreadNotificationsCount > 0" class="badge-count">
+                          {{ auth.unreadNotificationsCount }}
+                        </span>
+                      </router-link></div>
+                      <div class="profile-menu_link logout" @click.stop="askLogout">Выйти</div>
                   </div>
                 </transition>
               </div>
@@ -361,6 +374,7 @@ watch(
   width: 3.75rem;
   height: 3.75rem;
   border-radius: 50%;
+  object-fit: cover;
 }
 .header__right-true {
   display: flex;
@@ -383,6 +397,7 @@ watch(
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
 }
 .icon img {
   width: auto;
@@ -395,6 +410,10 @@ watch(
 .icon:last-child img {
   width: 2.808rem;
   height: 2.536rem;
+}
+.icon .badge-count{
+  right: 0;
+  top: 0;
 }
 .profile-block {
   display: flex;
@@ -435,20 +454,19 @@ watch(
   z-index: 10;
   /* font-size: 1.25rem; */
 }
-
-.profile-menu ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.profile-menu li {
+.profile-menu .profile-menu_link {
   padding: 0.625rem 0.938rem;
   cursor: pointer;
   border-radius: 0.5rem;
+  position: relative;
 }
-
-.profile-menu li:hover {
+.profile-menu_link a{
+ position: relative;
+}
+.profile-menu_link .badge-count{
+  top: 0;
+}
+.profile-menu .profile-menu_link:hover {
   background: #e7e7e7;
   border-radius: 0;
 }

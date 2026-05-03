@@ -85,9 +85,9 @@
               <button class="btn primary" @click="onShowNumberClick">
                 Показать номер
               </button>
-              <a href="" class="btn secondary" @click="onWriteClick">
+              <button class="btn secondary" @click="onWriteClick">
                 <img src="/src/assets/img/mes.svg" />
-              </a>
+              </button>
             </div></div></div></div>
             <Transition name="fade">
               <div v-if="showCallModal" class="modal-overlay" @click.self="showCallModal = false">
@@ -113,7 +113,7 @@
 </template>
 <script setup>
 import { ref, computed, watch, onMounted } from "vue" 
-import { useRoute } from "vue-router"
+import { useRoute, useRouter } from "vue-router"
 import { useProductStore } from "/src/stores/product.js"
 import { productLabels } from "/src/stores/productLabels.js"
 import { categories } from "/src/data/categories.js"
@@ -130,25 +130,21 @@ import { useAuthStore } from "/src/stores/authStore.js";
 import { useModalStore } from "/src/stores/modal.js";
 import { useReviewStore } from '/src/stores/reviews.js';
 import { useSellerStore } from "/src/stores/sellers.js";
-
 // Иконки
 import heart from "/src/assets/img/icons/heart.svg";
 import heartFilled from "/src/assets/img/icons/heart-filled.svg";
-
-const route = useRoute()
+const route = useRoute();
+const router = useRouter();
 const auth = useAuthStore();
 const modal = useModalStore();
-const productStore = useProductStore()
+const productStore = useProductStore();
 const favStore = useFavoritesStore();
 const subStore = useSubscriptionStore();
 const reviewStore = useReviewStore();
 const sellerStore = useSellerStore();
-
 const isReady = ref(false);
 const isNumberShown = ref(false);
 const activeImage = ref("");
-
-// --- COMPUTED ---
 const product = computed(() => {
   const routeId = route.params.id;
   return productStore.products.find(p => String(p.id) === String(routeId));
@@ -176,13 +172,9 @@ const breadcrumbSubName = computed(() => {
     const directLink = section.links?.find(l => l.slug === subSlug);
     if (directLink) return directLink.name;
     if (section.links) {
-      for (const link of section.links) {
-        const deepLink = link.subLinks?.find(sl => sl.slug === subSlug);
-        if (deepLink) return deepLink.name;
-      }
-    }
-  }
-  return null;
+  for (const link of section.links) {
+  const deepLink = link.subLinks?.find(sl => sl.slug === subSlug);
+  if (deepLink) return deepLink.name;}}}return null;
 });
 const fields = computed(() => {
   const p = product.value;
@@ -193,8 +185,6 @@ const fields = computed(() => {
 });
 
 const previewImages = computed(() => product.value?.images?.slice(0, 8) || []);
-
-// --- METHODS ---
 const formatPrice = (price) => price ? price.toLocaleString("ru-RU") : "0";
 
 const openFullGallery = (index = 0) => {
@@ -211,7 +201,6 @@ const loadAllData = async () => {
   }
   isReady.value = true;
 };
-
 const checkAuthAndRun = (action, message = "Авторизуйтесь, чтобы продолжить") => {
   if (!auth.isAuthenticated) {
     modal.openLogin();
@@ -220,7 +209,6 @@ const checkAuthAndRun = (action, message = "Авторизуйтесь, чтоб
   }
   action();
 };
-
 const onLikeClick = (item) => {
   if (!item) return;
   checkAuthAndRun(() => {
@@ -228,7 +216,6 @@ const onLikeClick = (item) => {
     notify(favStore.isFavorite(item.id) ? "Добавлено в избранное" : "Удалено из избранного");
   }, "Войдите, чтобы добавить в избранное");
 };
-
 const onSubscribeClick = () => {
   const sellerId = seller.value?.id;
   checkAuthAndRun(async () => {
@@ -245,20 +232,32 @@ const onShowNumberClick = () => {
     showCallModal.value = true; 
   }, "Войдите, чтобы увидеть номер телефона");
 };
-const onWriteClick = (e) => {
-  if (!auth.isAuthenticated) {
-    e.preventDefault(); 
-    modal.openLogin();
-    notify("Войдите, чтобы написать сообщение");
-  }
+// const onWriteClick = (e) => {
+//   if (!auth.isAuthenticated) {
+//     e.preventDefault(); 
+//     modal.openLogin();
+//     notify("Войдите, чтобы написать сообщение");
+//   }
+// };
+const onWriteClick = async (e) => {
+  e.preventDefault();
+
+  checkAuthAndRun(async () => {
+    try {
+      // const chatId = await auth.getOrCreateChat(product.value.sellerId, product.value.id);
+      router.push({ name: 'ChatDetail', params: { id: chatId } });
+    } catch (err) {
+      notify("Не удалось открыть чат", "error");
+    }
+  }, "Войдите, чтобы написать сообщение");
 };
+
 const showCallModal = ref(false);
 const handleCall = (phone) => {
   window.location.href = `tel:${phone}`;
   showCallModal.value = false;
 };
 
-// --- WATCHERS & LIFECYCLE ---
 watch(() => route.params.id, (newId) => {
   if (newId) loadAllData();
 }, { immediate: true });
@@ -434,6 +433,7 @@ onMounted(() => {
   height: 4.525rem;
   border-radius: 50%;
   margin-left: 0.938rem;
+  object-fit: cover;
 }
 .name,.rating{
   margin-bottom: .5rem;

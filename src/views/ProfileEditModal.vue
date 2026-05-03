@@ -214,7 +214,7 @@ watch(() => form.name, (val) => { if (val?.trim()) delete errors.name; });
   font-size: 2.25rem;
   position: absolute;
   top: 0.8rem;
-  right: 1.8rem;
+  right: 1.4rem;
 }
 .save-button {
   width: 8.438rem;
@@ -230,7 +230,8 @@ watch(() => form.name, (val) => { if (val?.trim()) delete errors.name; });
 .form-group {
   display: flex;
   gap: 1.375rem;
-  align-items: baseline;
+  align-items: center;
+  margin-bottom: 1.5rem;
 }
 .photo-section{
   display: grid;
@@ -250,8 +251,10 @@ textarea {
   border: 1px solid #e0e0e0;
   padding: 0.75rem;
   border-radius: 0.625rem;
-  margin-bottom: 1.5rem;
   font-size: 1.2rem;
+}
+.employee-inputs .form-group input::placeholder{
+  color: #A8A1A1 !important;
 }
 .avatar-wrapper {
   border: 1px solid #e2e2e2;

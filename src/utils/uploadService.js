@@ -37,7 +37,7 @@ export const uploadToMediaService = async (file, type = "video", metadata = {}, 
       ? uploadedMedia.cdnUrl 
       : uploadedMedia?.url;
 
-    console.log("🚀 Ссылка, которая возвращается из сервиса:", finalUrl);
+    console.log("Ссылка, которая возвращается из сервиса:", finalUrl);
     return finalUrl; 
   } catch (error) {
     console.error("Media Error:", error);

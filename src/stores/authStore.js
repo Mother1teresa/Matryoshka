@@ -15,10 +15,18 @@ export const useAuthStore = defineStore("auth", {
         user: data?.user || null,
         allVideos: [],
         isVideosLoading: false,
+        allChats: [],
+        allNotifications: [],
+        isNotificationsLoading: false,
       };
     } catch {
       localStorage.removeItem("auth");
-      return { isAuthenticated: false, user: null };
+      return {
+        isAuthenticated: false,
+        user: null,
+        allVideos: [],
+        allChats: [],
+      };
     }
   },
   getters: {
@@ -34,13 +42,27 @@ export const useAuthStore = defineStore("auth", {
       }
       return phone;
     },
+    unreadMessagesCount: (state) => {
+      return state.allChats.filter(
+        (chat) =>
+          chat.lastMessage &&
+          !chat.lastMessage.isRead &&
+          !chat.lastMessage.isMine,
+      ).length;
+    },
+    unreadNotificationsCount: (state) => {
+      return state.allNotifications.filter((note) => !note.is_read).length;
+    },
   },
   actions: {
     saveToStorage() {
-      localStorage.setItem("auth", JSON.stringify({
-        isAuthenticated: this.isAuthenticated,
-        user: this.user,
-      }));
+      localStorage.setItem(
+        "auth",
+        JSON.stringify({
+          isAuthenticated: this.isAuthenticated,
+          user: this.user,
+        }),
+      );
     },
     login(user) {
       this.isAuthenticated = true;
@@ -52,11 +74,15 @@ export const useAuthStore = defineStore("auth", {
         const res = await api.post("/auth/login", { login: email, password });
         if (res.data && res.data.user) {
           this.login(res.data.user);
-
           if (res.data.user.city) {
-            useRegionModalStore().setRegion(res.data.user.city, res.data.user.coordinates || [37.6173, 55.7558]);
+            useRegionModalStore().setRegion(
+              res.data.user.city,
+              res.data.user.coordinates || [37.6173, 55.7558],
+            );
           }
-          await useFavoritesStore().fetchFavorites().catch(() => {});
+          await useFavoritesStore()
+            .fetchFavorites()
+            .catch(() => {});
           return true;
         }
       } catch (e) {
@@ -104,10 +130,12 @@ export const useAuthStore = defineStore("auth", {
           this.user = { ...this.user, ...userData };
           this.isAuthenticated = true;
           this.saveToStorage();
-
           const regionStore = useRegionModalStore();
           if (userData.city) {
-            regionStore.setRegion(userData.city, userData.coordinates || [37.6173, 55.7558]);
+            regionStore.setRegion(
+              userData.city,
+              userData.coordinates || [37.6173, 55.7558],
+            );
           }
         }
       } catch (e) {
@@ -120,10 +148,10 @@ export const useAuthStore = defineStore("auth", {
       this.isVideosLoading = true;
       try {
         const res = await api.get(`/media/user/${this.user.id}`);
-        this.allVideos = (res.data.data || []).map(v => ({
+        this.allVideos = (res.data.data || []).map((v) => ({
           ...v,
           isArchived: false,
-          thumbnail: v.previewUrl || v.cdnUrl || v.url
+          thumbnail: v.previewUrl || v.cdnUrl || v.url,
         }));
       } catch (e) {
         console.error("Ошибка загрузки роликов:", e);
@@ -131,23 +159,28 @@ export const useAuthStore = defineStore("auth", {
         this.isVideosLoading = false;
       }
     },
-    async deleteVideo(videoId) {
-      if (!this.user?.id) return;
+    async deleteVideo(id) {
+      if (!this.user?.id || !this.user?.token) return false;
       try {
-        // DELETE /api/media/user/{id}?videoId={videoId}
         await api.delete(`/media/user/${this.user.id}`, {
-          params: { videoId }
+          params: { 
+            mediaId: id,
+            geocode: '0,0' 
+          },
+          headers: {
+            Authorization: `Bearer ${this.user.token}`
+          }
         });
-        // Удаляем из стейта только после успешного ответа сервера
-        this.allVideos = this.allVideos.filter(v => v.id !== videoId);
+        this.allVideos = this.allVideos.filter(v => v.id !== id);
+        this.saveToStorage(); 
         return true;
       } catch (e) {
-        console.error("Ошибка при удалении видео:", e.response?.data || e.message);
+        console.error("Ошибка при удалении:", e);
         throw e;
       }
     },
     toggleArchiveLocal(videoId, status) {
-      const video = this.allVideos.find(v => v.id === videoId);
+      const video = this.allVideos.find((v) => v.id === videoId);
       if (video) {
         video.isArchived = status;
       }
@@ -166,14 +199,125 @@ export const useAuthStore = defineStore("auth", {
         return null;
       }
     },
+    async fetchUserNotifications() {
+      if (!this.user?.id) return;
+      this.isNotificationsLoading = true;
+      try {
+        // const res = await api.get('/notifications');
+        // this.allNotifications = res.data.notifications || [];
+      } catch (e) {
+        console.error("Ошибка уведомлений:", e);
+        // Если API пока нет, можно оставить моки прямо здесь для тестов:
+        this.allNotifications = [
+          {
+            id: 1,
+            title: "Объявление опубликовано",
+            message: "Ваш товар 'Дождевик чугунный' успешно прошел модерацию.",
+            date: "15 нояб.",
+            time: "12:30",
+            is_read: true,
+          },
+          {
+            id: 2,
+            title: "Новый отзыв",
+            message: "Пользователь Иван оставил отзыв о вашем товаре.",
+            date: "14 нояб.",
+            time: "10:15",
+            is_read: false,
+          },
+          {
+            id: 3,
+            title: "Объявление отклонено",
+            message: "Ваше объявление не соответствует правилам площадки.",
+            reason: "Некорректная категория",
+            date: "13 нояб.",
+            time: "09:00",
+            is_read: false,
+          },
+        ];
+      } finally {
+        this.isNotificationsLoading = false;
+      }
+    },
+    async fetchFavorites(type) {
+      // Выбираем эндпоинт: видео или айтемы (вместо ads)
+      const endpoint =
+        type === "videos" ? "/favorites/videos" : "/favorites/items";
+      try {
+        // const res = await api.get(endpoint);
+        return res.data.data || [];
+      } catch (e) {
+        console.error("Ошибка загрузки избранного:", e);
+        return [];
+      }
+    },
+
+    async removeFromFavorites(id) {
+      try {
+        // await api.delete(`/favorites/${id}`);
+        return true;
+      } catch (e) {
+        console.error("Ошибка удаления из избранного:", e);
+        return false;
+      }
+    },
+    async fetchUserChats() {
+      try {
+        // const res = await api.get('/chats');
+        // Предполагаем, что бэкенд возвращает { chats: [...] }
+        // this.allChats = res.data.chats || [];
+        return this.allChats;
+      } catch (e) {
+        console.error("Ошибка загрузки списка чатов:", e);
+        throw e;
+      }
+    },
+    async getOrCreateChat(sellerId, productId) {
+      if (!this.isAuthenticated) throw new Error("UNAUTHORIZED");
+      try {
+        // const res = await api.post('/chats/get-or-create', { sellerId, productId });
+
+        // Возвращаем ID чата (проверь, как именно бэк отдает: res.data.id или res.data.chatId)
+        return res.data.chatId || res.data.id;
+      } catch (e) {
+        console.error("Ошибка при создании чата в Store:", e);
+        throw e;
+      }
+    },
+    async fetchChatMessages(chatId) {
+      try {
+        // const res = await api.get(`/chats/${chatId}`);
+        return res.data; // Ожидаем { chat: {...}, messages: [...] }
+      } catch (e) {
+        console.error("Ошибка загрузки сообщений:", e);
+        throw e;
+      }
+    },
+    async sendMessage(chatId, text) {
+      try {
+        // await api.post(`/chats/${chatId}/send`, { text });
+      } catch (e) {
+        console.error("Ошибка отправки:", e);
+        throw e;
+      }
+    },
+    async markChatAsRead(chatId) {
+      try {
+        // await api.post(`/chats/${chatId}/read`);
+      } catch (e) {
+        console.error("Ошибка прочтения:", e);
+      }
+    },
     async logout() {
       this.isAuthenticated = false;
       this.user = null;
       useRegionModalStore().$patch({
         selectedRegion: null,
-        coordinates: [37.6173, 55.7558]
+        coordinates: [37.6173, 55.7558],
       });
-      ["auth", "region", "regionCoords", "products"].forEach(key => localStorage.removeItem(key));
+      ["auth", "region", "regionCoords", "products"].forEach((key) =>
+        localStorage.removeItem(key),
+      );
       useFavoritesStore().clear();
 
       const favStore = useFavoritesStore();

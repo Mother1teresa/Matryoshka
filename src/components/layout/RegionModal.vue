@@ -133,7 +133,6 @@ watch(
 </template>
 
 <style scoped>
-
 .region-card {
   background: white;
   width: 90%;

@@ -20,11 +20,11 @@ const processQueue = (error) => {
 };
 api.interceptors.request.use(
   (config) => {
+    if (config.headers.Authorization) return config;
     const savedAuth = localStorage.getItem("auth");
     if (savedAuth) {
       try {
         const { user } = JSON.parse(savedAuth);
-        // Если токен лежит в user.token (проверьте структуру вашего юзера)
         if (user && user.token) {
           config.headers.Authorization = `Bearer ${user.token}`;
         }
@@ -45,8 +45,6 @@ api.interceptors.response.use(
     const status = error.response?.status;
     // const code = error.response?.data?.code;
     const data = error.response?.data;
-
-    // Критическая ошибка сессии — сразу на выход
     if (data?.code === "SESSION_EXPIRED"){
       auth.logout();
       notify("Сессия истекла. Войдите заново.", "error");

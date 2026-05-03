@@ -77,15 +77,9 @@
               <div class="video-info">
                 <template v-if="activeTab === 'active'">
                   <div class="stats-line">
-                    <div class="stat">
-                      <img src="/src/assets/img/icons/eye.svg" /> 23 645
-                    </div>
-                    <div class="stat">
-                      <img src="/src/assets/img/icons/heart.svg" /> 249
-                    </div>
-                    <div class="stat">
-                      <img src="/src/assets/img/icons/comment.svg" /> 23
-                    </div>
+                    <div class="stat" :title="formatFullNumber(video.views_count)"><img src="/src/assets/img/icons/eye.svg" />{{ formatNumber(video.views_count) }}</div>
+                    <div class="stat" :title="formatFullNumber(video.likes_count)"><img src="/src/assets/img/icons/heart.svg" />{{ formatNumber(video.likes_count) }}</div>
+                    <div class="stat" :title="formatFullNumber(video.comments_count)"><img src="/src/assets/img/icons/comment.svg" />{{ formatNumber(video.comments_count) }}</div>
                   </div>
                   <p class="video-description">
                     {{
@@ -94,7 +88,6 @@
                     }}
                   </p>
                 </template>
-                <!-- В архиве показываем только дату или статус "Снято с публикации" -->
                 <template v-else>
                   <div class="archive-info">
                     <span class="status-label">Снято с публикации</span>
@@ -109,15 +102,12 @@
               </div>
             </div>
           </div>
-          <!-- Пустое состояние -->
-          <div v-else class="empty-messages">
+
+          <div v-else class="empty-messages"> <!-- Пустое состояние -->
             <div class="empty-icon">🎬</div>
             <h3>
               {{
-                activeTab === "active"
-                  ? "У вас пока нет активных роликов"
-                  : "Архив пуст"
-              }}
+                activeTab === "active" ? "У вас пока нет активных роликов" : "Архив пуст"}}
             </h3>
             <p>Когда вы перенесете ролик в архив, он появится здесь.</p>
             <router-link to="/" class="btn go-to-ads-btn"
@@ -131,12 +121,28 @@
     <VideoCreateForm v-else key="form"@back="isCreating = false" @success="handleVideoCreated"/>
     </transition>
   </div>
+  <!-- Модальное окно подтверждения -->
+  <transition name="fade">
+    <div v-if="isConfirmOpen" class="modal-overlay" @click.self="closeConfirm">
+      <div class="confirm-modal" @click.stop>
+        <div class="confirm-modal__content">
+          <h2>Удалить ролик?</h2>
+          <p>Вы действительно хотите удалить этот ролик? Это действие невозможно отменить.</p>
+        </div>
+        <div class="confirm-modal__actions">
+          <button type="button" class="btn go-to-ads-btn" @click="() => { console.log('Клик по кнопке'); confirmDelete(); }">Удалить</button>
+          <button class="btn" @click="closeConfirm">Отмена</button>
+        </div>
+      </div>
+    </div>
+  </transition>
 </template>
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useAuthStore } from "/src/stores/authStore.js";
 import VideoCreateForm from '../VideoCreateForm.vue';
 import { notify } from "/src/utils/notify";
+import { formatNumber, formatFullNumber  } from "/src/utils/formatters.js";
 
 const auth = useAuthStore();
 const activeMenuId = ref(null);
@@ -144,7 +150,6 @@ const activeTab = ref("active");
 const isLoading = ref(false);
 const allVideos = computed(() => auth.allVideos || []);
 const isCreating = ref(false);
-
 // Фильтрация роликов
 const activeVideos = computed(() =>
   allVideos.value.filter((v) => !v.isArchived),
@@ -159,24 +164,46 @@ const handleArchive = (id, status) => {
   auth.toggleArchiveLocal(id, status);
   activeMenuId.value = null;
 };
-const handleDelete = async (id) => {
+const isConfirmOpen = ref(false);
+const videoToDelete = ref(null);
+const handleDelete = (id) => {
+  console.log("Проверка id:", id);
+  videoToDelete.value = id;
+  isConfirmOpen.value = true;
+  activeMenuId.value = null; 
+};
+const closeConfirm = () => {
+  isConfirmOpen.value = false;
+  videoToDelete.value = null;
+};
+const confirmDelete = async () => {
+  console.log("Удаление", videoToDelete.value);
+
+  if (!videoToDelete.value) return;
+
   try {
-    if (confirm("Вы точно хотите удалить видео?")) {
-      await auth.deleteVideo(id);
-    }
+    isLoading.value = true;
+    await auth.deleteVideo(videoToDelete.value);
+    notify("Ролик успешно удален");
   } catch (e) {
-    notify("Ошибка при удалении");
+    console.error("Ошибка в компоненте:", e);
+    notify("Не удалось удалить ролик");
+  } finally {
+    isLoading.value = false;
+    closeConfirm();
   }
 };
 const toggleMenu = (id) => {
   activeMenuId.value = activeMenuId.value === id ? null : id;
 };
-const closeMenu = () => {
-  activeMenuId.value = null;
+const closeMenu = (e) => {
+  if (!e.target.closest('.video-card')) {
+    activeMenuId.value = null;
+  }
 };
 onMounted(() => {
   auth.fetchVideos();
-  window.addEventListener("click", closeMenu);
+  // window.addEventListener("click", closeMenu);
 });
 onUnmounted(() => {
   window.removeEventListener("click", closeMenu);
@@ -187,29 +214,6 @@ const handleVideoCreated = () => {
 };
 </script>
 <style scoped>
-.header-row {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 30px;
-  min-height: 40px;
-  position: relative;
-}
-.promo-btn {
-  background: var(--btn-bg);
-  color: white;
-  border: none;
-  padding: 0.938rem 3.75rem;
-  border-radius: 1.875rem;
-  cursor: pointer;
-  transition: opacity 0.3s ease;
-  position: absolute;
-  right: 0;
-  top: -0.3rem;
-}
-.promo-btn:hover {
-  opacity: 0.9;
-}
 .videos-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -271,14 +275,18 @@ const handleVideoCreated = () => {
 .tabs-nav {
   display: flex;
   gap: 4rem;
-  margin-bottom: 25px;
+  margin-bottom: 1.625rem;
 }
 .tabs-nav button {
-  font-size: 1.5rem;
-  border-bottom: 1px solid black;
-  border-radius: 0;
+  padding-bottom: 0.625rem;
   background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #000000;
   cursor: pointer;
+  position: relative;
+  border-radius: 0;
+  border-bottom: 1px solid #020202;
 }
 .tabs-nav button.active {
   border-bottom: 1px solid #64a07a;
@@ -443,5 +451,31 @@ const handleVideoCreated = () => {
   .videos-grid{
     grid-template-columns: repeat(2, 1fr);
   }
+}
+.confirm-modal{
+  padding: 2.5rem 2.813rem;
+  background: white;
+  border-radius: 2.188rem;
+}
+.confirm-modal__content{
+  display: grid;
+  gap: 1rem;
+  justify-items: center;
+}
+.confirm-modal__actions{
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.modal-overlay {
+  pointer-events: auto;
+}
+
+.confirm-modal {
+  pointer-events: all;
+  position: relative;
+  z-index: 2;
 }
 </style>
