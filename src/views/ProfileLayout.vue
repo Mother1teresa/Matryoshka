@@ -27,12 +27,12 @@
         <router-link to="/profile/info">Мои данные</router-link>
         <router-link to="/profile/advertisements">Мои объявления</router-link>
         <router-link to="/profile/videos">Мои ролики</router-link>
-        <router-link to="/profile/create">Создать объявление</router-link>
-        <router-link to="/profile/orders">Заказы</router-link>
-        <router-link to="/profile/responses">Отклики</router-link>
-        <router-link to="/profile/resume">Резюме</router-link>
+        <router-link to="/profile/create-ad">Создать объявление</router-link>
+        <a class="locked-link" @click="openMaintenance">Заказы</a>
+        <a class="locked-link" @click="openMaintenance">Отклики</a>
+        <a class="locked-link" @click="openMaintenance">Резюме</a>
         <router-link to="/profile/favorites">Избранное</router-link>
-        <router-link to="/profile/invite">Приглашайте друзей</router-link>
+        <a class="locked-link" @click="openMaintenance">Приглашайте друзей</a>
         <router-link to="/profile/messages">Сообщения
           <span v-if="auth.unreadMessagesCount > 0" class="badge-count">
             {{ auth.unreadMessagesCount }}
@@ -45,7 +45,7 @@
         </router-link>
         <router-link to="/profile/reviews">Отзывы</router-link>
         <div class="nav-footer">
-          <button class="edu-btn">Обучение</button>
+          <button class="edu-btn" @click="handleEduClick">Обучение</button>
         </div>
       </nav>
     </aside>
@@ -55,16 +55,33 @@
   </div>
 </template>
 <script setup>
-import { ref, watch, computed  } from "vue";
+import { ref, watch, computed, inject  } from "vue";
 import { useAuthStore } from "/src/stores/authStore.js";
 import { useReviewStore } from "/src/stores/reviews.js";
 
 const reviewStore = useReviewStore();
 const auth = useAuthStore();
+const openMaintenance = inject('openMaintenance');
 const isCollapsed = ref(false);
 const userRating = computed(() => reviewStore.getRatingById(auth.user?.id));
 const userStars = computed(() => reviewStore.renderStars(userRating.value));
 
+const handleEduClick = () => {
+  openMaintenance();
+};
+const unavailableRoutes = [
+  '/profile/orders',
+  '/profile/responses',
+  '/profile/resume',
+  '/profile/referral'
+];
+
+const checkAccess = (event, path) => {
+  if (unavailableRoutes.includes(path)) {
+    event.preventDefault(); 
+    openMaintenance();
+  }
+};
 watch(
   () => auth.user?.id,
   (newId) => {
@@ -74,6 +91,7 @@ watch(
   },
   { immediate: true }
 );
+
 </script>
 
 <style scoped>
@@ -191,6 +209,7 @@ watch(
   top: -0.6rem;
   left: -5.813rem;
 }
+
 @media (max-width: 77rem) {
   .profile-layout{
     width: 72.5rem;

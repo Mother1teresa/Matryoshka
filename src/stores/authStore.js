@@ -151,48 +151,58 @@ export const useAuthStore = defineStore("auth", {
       }
     },
     async fetchVideos() {
-      if (!this.user?.id) return;
       this.isVideosLoading = true;
       try {
-        const res = await api.get(`/media/user/${this.user.id}`);
-        this.allVideos = (res.data.data || []).map((v) => ({
-          ...v,
-          isArchived: false,
-          thumbnail: v.previewUrl || v.cdnUrl || v.url,
+        const res = await api.get('/media/video');
+        const rawVideos = Array.isArray(res.data) ? res.data : [];
+        const enrichedVideos = await Promise.all(rawVideos.map(async (v) => {
+          let userData = null;
+          if (v.userId) {
+            try {
+              const userRes = await api.get(`/users/${v.userId}`);
+              userData = userRes.data;
+            } catch (e) {
+              console.error(`Не удалось загрузить автора для видео ${v.id}`);
+            }
+          }
+
+          return {
+            ...v,
+            thumbnail: v.thumbnailUrl || v.cdnUrl || v.url,
+            // Добавляем адаптивные данные автора
+            author: {
+              name: userData?.name || 'Пользователь',
+              avatar: userData?.avatar || userData?.avatarUrl || '/src/assets/img/mask-avatar.png',
+              city: userData?.city || 'Город не указан',
+              rating: userData?.rating || 0,
+              deals: userData?.dealsCount || 0
+            },
+            // Заглушки для статистики (пока нет в API)
+            likesCount: v.likesCount || '0',
+            viewsCount: v.viewsCount || '0',
+            commentsDisabled: v.commentsDisabled || false
+          };
         }));
+
+        this.allVideos = enrichedVideos;
       } catch (e) {
         console.error("Ошибка загрузки роликов:", e);
       } finally {
         this.isVideosLoading = false;
       }
     },
-    async deleteVideo(id) {
-  if (!this.user?.id || !this.user?.token) return false;
-  try {
-    // В документации параметр называется videoId, а не mediaId
-    await api.delete(`/media/user/${this.user.id}`, {
-      params: { 
-        videoId: id, // Исправлено с mediaId
-        // geocode: '0,0' // Если в доке этого нет, лучше убрать или уточнить у бэка
-      },
-      headers: {
-        Authorization: `Bearer ${this.user.token}`
+    async deleteVideo(s3Key) {
+      if (!this.user?.id) return false;
+      try {
+        await api.delete(`/media/${s3Key}`); 
+        this.allVideos = this.allVideos.filter(v => v.s3Key !== s3Key);
+        this.saveToStorage();
+        return true;
+      } catch (e) {
+        console.error("Ошибка удаления:", e.response?.data || e.message);
+        throw e;
       }
-    });
-
-    // Обновляем только локальный стейт (в памяти)
-    this.allVideos = this.allVideos.filter(v => v.id !== id);
-    
-    // saveToStorage здесь по сути бесполезен, так как он не сохраняет allVideos,
-    // но если оставить, то он просто лишний раз перезапишет данные юзера.
-    return true;
-  } catch (e) {
-    console.error("Ошибка при удалении:", e);
-    throw e;
-  }
-},
-
-
+    },
     toggleArchiveLocal(videoId, status) {
       const video = this.allVideos.find((v) => v.id === videoId);
       if (video) {
@@ -265,7 +275,6 @@ export const useAuthStore = defineStore("auth", {
         return [];
       }
     },
-
     async removeFromFavorites(id) {
       try {
         // await api.delete(`/favorites/${id}`);

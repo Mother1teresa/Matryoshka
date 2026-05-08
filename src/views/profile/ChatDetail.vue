@@ -36,7 +36,7 @@
                 <span class="msg-time">{{ msg.time }}</span>
                 <div v-if="msg.isMine" class="msg-status">
                     <img v-if="!msg.isRead" src="/src/assets/img/icons/tick.svg" class="tick-icon" />
-                    <img v-else src="/src/assets/img/icons/double-tick.svg" class="tick-icon is-read" />
+                    <img v-else src="/src/assets/img/icons/check-mark.png" class="tick-icon is-read" />
                 </div>
                 </div>
             </div>

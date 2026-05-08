@@ -85,11 +85,14 @@
                       <router-link to="/profile/info" @click="showProfileMenu = false" class="profile-menu_link">Мои данные</router-link>
                       <router-link to="/profile/videos" @click="showProfileMenu = false" class="profile-menu_link">Мои ролики</router-link>
                       <router-link to="/profile/advertisements" @click="showProfileMenu = false" class="profile-menu_link">Мои объявления</router-link>
-                      <router-link to="/create-ad" @click="showProfileMenu = false" class="profile-menu_link">Создать объявление</router-link>
-                      <router-link to="/profile/orders" @click="showProfileMenu = false" class="profile-menu_link">Заказы</router-link>
+                      <router-link to="/profile/create-ad" @click="showProfileMenu = false" class="profile-menu_link">Создать объявление</router-link>
+                      <!-- <router-link to="/profile/orders" @click="showProfileMenu = false" class="profile-menu_link">Заказы</router-link> -->
+                      <a class="profile-menu_link locked-link" @click="openMaintenance">Заказы</a>
                       <router-link to="/profile/favorites" @click="showProfileMenu = false" class="profile-menu_link">Избранное</router-link>
-                      <router-link to="/profile/referral" @click="showProfileMenu = false" class="profile-menu_link">Приглашайте друзей</router-link>
-                      <router-link to="/profile/responses" @click="showProfileMenu = false" class="profile-menu_link">Отклики</router-link>
+                      <!-- <router-link to="/profile/referral" @click="showProfileMenu = false" class="profile-menu_link">Приглашайте друзей</router-link>
+                      <router-link to="/profile/responses" @click="showProfileMenu = false" class="profile-menu_link">Отклики</router-link> -->
+                      <a class="profile-menu_link locked-link" @click="openMaintenance">Приглашайте друзей</a>
+                      <a class="profile-menu_link locked-link" @click="openMaintenance">Отклики</a>
                       <router-link to="/profile/messages" @click="showProfileMenu = false" class="profile-menu_link">Сообщения 
                         <span v-if="auth.unreadMessagesCount > 0" class="badge-count">
                         {{ auth.unreadMessagesCount }}
@@ -145,7 +148,11 @@ import { useModalStore } from "/src/stores/modal.js";
 import { useMenuStore } from "/src/stores/menu.js";
 import { useRegionModalStore } from "/src/stores/regionModal.js";
 import { useReviewStore } from '/src/stores/reviews.js';
+import { inject } from 'vue';
+import { useRouter } from 'vue-router';
 
+const openMaintenance = inject('openMaintenance');
+const router = useRouter();
 const modal = useModalStore();
 const menu = useMenuStore();
 const auth = useAuthStore();
@@ -196,6 +203,19 @@ onBeforeUnmount(() => {
   document.removeEventListener("click", handleClickOutside);
   window.removeEventListener("notify", handleNotify);
 });
+const lockedRoutes = [
+  '/profile/orders',
+  '/profile/referral',
+  '/profile/responses',
+];
+
+const handleHeaderNav = (event, path) => {
+  if (lockedRoutes.includes(path)) {
+    event.preventDefault();
+    if (typeof showProfileMenu !== 'undefined') {showProfileMenu.value = false;}
+    openMaintenance();
+  }
+};
 watch(
   () => auth.user?.id,
   (newId) => {

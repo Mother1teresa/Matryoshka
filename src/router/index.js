@@ -39,6 +39,11 @@ const routes = [
     ]
   },
   {
+    path: '/shorts/:id?',
+    name: 'shorts',
+    component: () => import('../pages/ShortsPage.vue')
+  },
+  {
     path: "/:pathMatch(.*)*",
     name: "NotFound",
     component: () => import("../components/common/NotFound.vue"),

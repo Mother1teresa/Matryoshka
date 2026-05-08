@@ -97,7 +97,7 @@ const form = reactive({
   description: '',
   file: null,
   productId: null,
-  allowComments: true
+  allowComments: false
 });
 const finish = () => {
   emit('success'); 
@@ -127,7 +127,6 @@ const handleFileSelect = (e) => {
   }
 };
 const onPublish = async () => {
-  // Проверяем и файл, и наличие текста в описании
   if (!form.file) {
     notify("Выберите видеофайл");
     return;
@@ -136,21 +135,18 @@ const onPublish = async () => {
     notify("Пожалуйста, заполните описание");
     return;
   }
-
   status.value = 'uploading';
   uploadProgress.value = 0;
-  
   try {
     await uploadToMediaService(form.file, "video", {
       title: form.title || 'Без названия',
       description: form.description.trim(),
-      productId: form.productId,
-      allowComments: form.allowComments
+      // productId: form.productId,
+      // allowComments: form.allowComments
     },
     (progress) => {
       uploadProgress.value = progress; 
     });
-
     status.value = 'success';
     setTimeout(() => finish(), 2000); 
   } catch (e) {
@@ -159,7 +155,6 @@ const onPublish = async () => {
     status.value = 'edit';
   }
 };
-
 </script>
 
 <style scoped>
@@ -199,11 +194,11 @@ const onPublish = async () => {
     font-size: 0.813rem;
     height: 20.688rem;
 }
-.empty-stub { background: #fdf2f2; padding: 12px; border-radius: 10px; color: #b91c1c; font-size: 14px; border: 1px solid #fee2e2; }
+.empty-stub { background: #fdf2f2; padding: 0.75rem; border-radius: 0.625rem; color: #b91c1c; font-size: 0.875rem; border: 1px solid #fee2e2; }
 .publish-btn { background: var(--btn-bg); color: white; width: 23.563rem; height: 3.5rem; padding: 0.875rem 0; border-radius: 1.25rem; font-size: 1.5rem; border: none; cursor: pointer; text-align: center;}
 .publish-btn:disabled { background: #ccc; cursor: not-allowed; }
 .status-screen { height: 60vh; display: flex; justify-content: center; align-items: center; }
-.status-card {  background: white; padding: 60px; border-radius: 30px; text-align: center;  box-shadow: 0 10px 30px rgba(0,0,0,0.05); width: 100%; max-width: 500px;}
+.status-card {  background: white; padding: 3.75rem; border-radius: 1.875rem; text-align: center;  box-shadow: 0 10px 30px rgba(0,0,0,0.05); width: 100%; max-width: 500px;}
 .progress-bar { 
   width: 220px; 
   height: 20px;
@@ -239,29 +234,23 @@ const onPublish = async () => {
   margin-bottom: 1.525rem;
   /* cursor: pointer; */
 }
-
 .author-info {
   display: flex;
   align-items: center;
   width: 29rem;
   gap: 0.813rem;
 }
-
 .author-avatar {
   width: 3.4rem;
   height: 3.4rem;
   border-radius: 50%;
   object-fit: cover;
 }
-
 .author-name {font-size: 1.5rem;}
-
 .dropdown-icon {
-  width: 14px;
-  height: 14px;
+  width: 0.875rem;
+  height: 0.875rem;
   opacity: 0.6;
 }
-
-
 </style>
 

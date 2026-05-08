@@ -221,10 +221,7 @@ onMounted(() => {
   gap: 3.625rem;
   position: relative;
 }
-.select-header span{
-    font-size: 1.5rem;
-    font-weight: 1;
-}
+.select-header span{font-size: 1.5rem;font-weight: 1;}
 .arrow-icon {
   width: 0.75rem;
   height: 0.75rem;
@@ -301,7 +298,6 @@ onMounted(() => {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-
 .video-stats {
   display: grid;
   gap: 0.313rem;
@@ -312,7 +308,6 @@ onMounted(() => {
   font-size: 0.875rem; color: #333;
 }
 .stat img { width: 1.688rem; }
-
 .linked-product-box {
   background: #FBFBFB;
   border: 0.063rem solid #CCCCCC;
@@ -323,7 +318,6 @@ onMounted(() => {
   position: relative;
   width: 80%;
 }
-
 .prod-thumb { width: 4.375rem; height: 100%; object-fit: contain; border-radius: 0.625rem;}
 .prod-info { display: flex; flex-direction: column; gap: 0.25rem; justify-content: space-between; }
 .prod-name { font-size: 0.813rem; color: #2D2D2D; }
@@ -351,9 +345,7 @@ onMounted(() => {
 .action-btns { width: 11.313rem; display: flex; flex-direction: column; gap: 0.188rem; }
 .btn-green { background: var(--btn-bg); color: white; padding: 0.313rem 0; text-align: center; border-radius: 0.313rem; border: none; cursor: pointer; font-size: 0.825rem;}
 .btn-outline { background-color: white; border: 1px solid var(--btn-bg) !important; color: var(--btn-bg); padding: 0.313rem 0; text-align: center; font-size: 0.825rem; border-radius: 0.313rem; border: none; cursor: pointer; }
-.fav-video-card + .fav-video-card{
-    margin-bottom: 1.25rem;
-}
+.fav-video-card + .fav-video-card{ margin-bottom: 1.25rem; }
 .fav-ad-horizontal {
   display: flex;
   gap: 1.5rem;
@@ -367,8 +359,8 @@ onMounted(() => {
 
 /* Блок изображения */
 .ad-img-container {
-  width: 13.75rem; /* 220px */
-  height: 10.625rem; /* 170px */
+  width: 13.75rem;
+  height: 10.625rem;
   flex-shrink: 0;
   background: #F2F2F2;
   border-radius: 0.75rem;
@@ -380,8 +372,7 @@ onMounted(() => {
 .ad-main-img { width: 100%; height: 100%; object-fit: cover; }
 
 /* Контент */
-.ad-content-info { width: 100%;
-    display: grid; }
+.ad-content-info { width: 100%; display: grid; }
 
 .ad-title-row { display: flex; justify-content: space-between; align-items: flex-start; }
 .ad-title { font-size: 1.25rem; font-weight: 600; color: #000; margin-bottom: 0.5rem; }
@@ -412,8 +403,6 @@ onMounted(() => {
 .seller-brief { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
 .seller-avatar { width: 3.75rem; height: 3.75rem; border-radius: 0.625rem; object-fit: cover; }
 .seller-name { font-size: 0.875rem; font-weight: 500; text-align: center; }
-
 .action-buttons { width: 100%; display: flex; flex-direction: column; gap: 0.5rem; }
-
 .ad-date { font-size: 0.75rem; color: #7C7C7C; margin-top: 0.5rem; text-align: right; width: 100%;}
 </style>

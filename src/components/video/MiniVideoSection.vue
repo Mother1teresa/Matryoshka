@@ -1,138 +1,154 @@
 <template>
   <section class="mini-video">
     <div class="container">
-      <div class="mini-video-section">
-        <a href="">
+      <div v-if="videos.length" class="mini-video-section">
+        <!-- Цикл по видео из стора -->
+        <router-link 
+          v-for="video in videos.slice(0, 10)" 
+          :key="video.id" 
+          :to="{ name: 'shorts', params: { id: video.id }}"
+          class="mini-video-link"
+        >
           <img
-            src="/src/assets/img/video/fs.jpg"
-            alt=""
+            :src="video.thumbnail || '/src/assets/img/video/fs.jpg'"
+            alt="video thumbnail"
             class="mini-video_img"
           />
-        </a>
-        <a href="">
-          <img
-            src="/src/assets/img/video/fs.jpg"
-            alt=""
-            class="mini-video_img"
-          />
-        </a>
-        <a href="">
-          <img
-            src="/src/assets/img/video/fs.jpg"
-            alt=""
-            class="mini-video_img"
-          />
-        </a>
-        <a href="">
-          <img
-            src="/src/assets/img/video/fs.jpg"
-            alt=""
-            class="mini-video_img"
-          />
-        </a>
-        <a href="">
-          <img
-            src="/src/assets/img/video/fs.jpg"
-            alt=""
-            class="mini-video_img"
-          />
-        </a>
-        <a href="">
-          <img
-            src="/src/assets/img/video/fs.jpg"
-            alt=""
-            class="mini-video_img"
-          />
-        </a>
-        <a href="">
-          <img
-            src="/src/assets/img/video/fs.jpg"
-            alt=""
-            class="mini-video_img"
-          />
-        </a>
-        <a href="">
-          <img
-            src="/src/assets/img/video/fs.jpg"
-            alt=""
-            class="mini-video_img"
-          />
-        </a>
+        </router-link>
       </div>
+
+      <!-- Если видео еще грузятся или их нет -->
+      <div v-else-if="isLoading" class="mini-video-section">
+        <div v-for="i in 6" :key="i" class="mini-video_img skeleton"></div>
+      </div>
+
+      <!-- Правая плашка с кнопкой -->
       <div class="block-link">
-        <a href=""
-          >Мини-видео
-          <img src="/src/assets/img/video/arrow.svg" alt="" />
-        </a>
+        <router-link :to="{ name: 'shorts' }">
+          Мини-видео
+          <img src="/src/assets/img/video/arrow.svg" alt="arrow" />
+        </router-link>
       </div>
     </div>
   </section>
 </template>
 
-<script setup></script>
+<script setup>
+import { computed, onMounted } from 'vue';
+import { useAuthStore } from "/src/stores/authStore.js";
+
+const authStore = useAuthStore();
+
+// Берем видео из стора
+const videos = computed(() => authStore.allVideos);
+const isLoading = computed(() => authStore.isVideosLoading);
+
+onMounted(async () => {
+  // Загружаем, если еще не загружены
+  if (videos.value.length === 0) {
+    await authStore.fetchVideos();
+  }
+});
+</script>
 
 <style scoped>
 .mini-video {
   overflow: hidden;
   background-color: white;
+  padding: 2rem 0;
+}
+
+.container {
+  max-width: 1200px; /* Подправь под свою сетку */
+  margin: 0 auto;
+  position: relative;
 }
 
 .mini-video-section {
-  padding: 1rem 0;
   display: flex;
   align-items: center;
   flex-wrap: nowrap;
-  overflow: hidden;
+  overflow-x: auto; /* Позволяет скроллить ленту */
   gap: 0.938rem;
-}
-.mini-video .container {
-  height: 17.5rem;
-  width: 100rem;
-  position: relative;
-  overflow: hidden;
-}
-.block-link {
-  /* opacity: 50%; */
-  z-index: 0;
-  width: 24.875rem;
-  position: absolute;
-  right: 0;
-  top: 0.688rem;
-  height: 16rem;
-  background-color: #ffffff8a;
-  transition: width .8s;
+  scrollbar-width: none; /* Скрываем скроллбар */
+  padding-right: 25rem; /* Место, чтобы видео не уходили под кнопку */
 }
 
-.block-link a {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.413rem 1.313rem 0.413rem 0.938rem;
-  color: white;
-  background-color: var(--btn-bg);
-  box-shadow: 0px 4px 4px 0px #00000040;
-  border-radius: 0.625rem;
-  width: fit-content;
-  width: 13.25rem;
-  z-index: 1;
-  right: 1.4rem;
+.mini-video-section::-webkit-scrollbar {
+  display: none;
 }
-.block-link a img {
-  width: 1.125rem;
-  transition: all 0.3s;
+
+.mini-video-link {
+  flex-shrink: 0; /* Чтобы картинки не сжимались */
+  transition: transform 0.3s ease;
 }
-.block-link a:hover img {
-  transform: translateX(25%);
+
+.mini-video-link:hover {
+  transform: translateY(-5px);
 }
+
 .mini-video_img {
   width: 11.688rem;
   height: 15.438rem;
   border-radius: 0.625rem;
+  object-fit: cover;
+  display: block;
 }
-@media (max-width:77rem) {
-  .block-link{
-    width: 37%;
+
+.block-link {
+  z-index: 5;
+  width: 24.875rem;
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  background: linear-gradient(270deg, #FFFFFF 54.11%, rgba(255, 255, 255, 0) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  pointer-events: none; /* Чтобы можно было кликать на видео под плашкой */
+}
+
+.block-link a {
+  pointer-events: auto; /* А на саму кнопку кликать можно */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 1.3rem;
+  color: white;
+  background-color: #64a07a; /* Твой основной зеленый */
+  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+  border-radius: 0.625rem;
+  width: 13.25rem;
+  text-decoration: none;
+  font-weight: 500;
+  margin-right: 1.5rem;
+}
+
+.block-link a img {
+  width: 1.125rem;
+  transition: transform 0.3s;
+}
+
+.block-link a:hover img {
+  transform: translateX(5px);
+}
+
+/* Скелетон для загрузки */
+.skeleton {
+  background: #eee;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+@media (max-width: 77rem) {
+  .block-link {
+    width: 30%;
   }
 }
 </style>

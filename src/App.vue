@@ -20,16 +20,18 @@
     <router-view :key="$route.fullPath" />
     <MegaMenu />
     <AuthModal />
+    <MaintenanceModal ref="maintenanceRef" />
     <RegionModal/>
     <Footer />
   </div>
 </template>
 
 <script setup>
-import { watch,onUnmounted } from 'vue';
+import { ref,watch,onUnmounted,provide } from 'vue';
 import Footer from './components/layout/Footer.vue';
 import RegionModal from "./components/layout/RegionModal.vue"
 import MegaMenu from "./components/layout/MegaMenu.vue";
+import MaintenanceModal from './modals/MaintenanceModal.vue';
 import AuthModal from "./modals/AuthModal.vue";
 import zagluhIcon from '/src/assets/img/zagluh/icon-zagluhka.svg';
 
@@ -37,6 +39,7 @@ import { useAuthStore } from "/src/stores/authStore.js";
 import { useReviewStore } from "/src/stores/reviews.js";
 const auth = useAuthStore();
 const reviewStore = useReviewStore();
+const maintenanceRef = ref(null);
 let globalPolling = null;
 const startGlobalPolling = () => {
   // Каждые 30 секунд проверяем новые чаты и уведомления в фоне
@@ -53,7 +56,7 @@ watch(
       auth.fetchUserChats();
       auth.fetchUserNotifications();
       await auth.fetchVideos();
-      // 2. Если ID появился, тянем отзывы для рейтинга в шапке
+       // Предзагрузка миниатюр видео для плавности
       if (auth.allVideos?.length > 0) {
         auth.allVideos.forEach(video => {
           if (video.thumbnail) {
@@ -67,13 +70,20 @@ watch(
       }
       startGlobalPolling();
     } else {
-      if (globalPolling) clearInterval(globalPolling);
+      if (globalPolling) clearInterval(globalPolling); globalPolling = null;
     }
   },
   { immediate: true } 
 );
 onUnmounted(() => {
   if (globalPolling) clearInterval(globalPolling);
+});
+provide('openMaintenance', () => {
+  if (maintenanceRef.value) {
+    maintenanceRef.value.open();
+  } else {
+    console.warn("MaintenanceModal еще не инициализирован");
+  }
 });
 </script>
 

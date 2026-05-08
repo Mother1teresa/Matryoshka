@@ -134,7 +134,8 @@ const handleSave = async () => {
       city: form.city,
       description: form.description,
       type: form.type,
-      avatarUrl: finalAvatarUrl,  
+      avatarUrl: finalAvatarUrl, 
+      //  
       employeeName: (isCompany.value && showEmployee.value) ? form.employeeName : "",
       employeeRole: (isCompany.value && showEmployee.value) ? form.employeeRole?.value : ""
     };
@@ -350,6 +351,9 @@ textarea {
 }
 .multiselect-container{
   width: 100%;
+  min-height: 3rem !important;
+  height: 3.1rem !important;
+  border: 1px solid #e0e0e0;
 }
 input::placeholder{
   color: #adadad;
@@ -377,11 +381,12 @@ input::placeholder{
 }
 .error-field {
   border: 1px solid #ff4d4f !important;
+  border-radius: 0.625rem;
 }
 /* Для мультиселекта специфично */
-.multiselect-container.error-field :deep(.multiselect__tags) {
+/* .multiselect-container.error-field :deep(.multiselect__tags) {
   border-color: #ff4d4f;
-}
+} */
 .multiselect__caret {
   position: absolute; right: 12px; top: 50%; width: 12px; height: 12px; margin-top: -6px;
   background-image: url("/src/assets/img/arr-select.svg");
@@ -401,7 +406,7 @@ input::placeholder{
 :deep(.multiselect__tags) { 
   min-height: 3rem !important; height: 3rem !important; background: #fff !important; padding: 0.75rem;
   border-radius: 0.625rem; display: flex !important; align-items: center !important;
-  transition: all .1s; font-size: 1.2rem; border: 1px solid #e0e0e0;
+  transition: all .1s; font-size: 1.2rem; border: 0 solid transparent;
 }
 /* :deep(.multiselect){min-height: auto !important; height: auto !important;} */
 :deep(.multiselect__placeholder) { color: #A8A1A1 !important; margin: 0 !important; padding: 0 !important; font-size: 1.2rem; }

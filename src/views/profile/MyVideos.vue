@@ -130,7 +130,7 @@
           <p>Вы действительно хотите удалить этот ролик? Это действие невозможно отменить.</p>
         </div>
         <div class="confirm-modal__actions">
-          <button type="button" class="btn go-to-ads-btn" @click="() => { console.log('Клик по кнопке'); confirmDelete(); }">Удалить</button>
+          <button type="button" class="btn go-to-ads-btn" @click="confirmDelete">Удалить</button>
           <button class="btn" @click="closeConfirm">Отмена</button>
         </div>
       </div>
@@ -178,24 +178,20 @@ const closeConfirm = () => {
 };
 const confirmDelete = async () => {
   if (!videoToDelete.value || isLoading.value) return;
-
   try {
     isLoading.value = true;
     const success = await auth.deleteVideo(videoToDelete.value);
-    
     if (success) {
       notify("Ролик успешно удален");
-      closeConfirm(); // Закрываем только при успехе
+      closeConfirm();
     }
   } catch (e) {
-    // Если бэк вернул ошибку, мы не выходим из аккаунта, 
-    // а просто даем юзеру попробовать еще раз
-    console.error("Ошибка при удалении:", e);
-    notify("Ошибка сервера. Попробуйте позже", "error");
+    notify("Ошибка сервера. Не удалось удалить", "error");
   } finally {
     isLoading.value = false;
   }
 };
+
 
 const toggleMenu = (id) => {
   activeMenuId.value = activeMenuId.value === id ? null : id;

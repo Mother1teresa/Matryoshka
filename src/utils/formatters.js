@@ -13,3 +13,14 @@ export const formatFullNumber = (num) => {
   if (!num) return '0';
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 };
+
+export const formatDate = (dateStr) => { 
+  if (!dateStr) return 'недавно';
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffInMonths = Math.floor((now - date) / (1000 * 60 * 60 * 24 * 30));
+  
+  if (diffInMonths === 0) return 'в этом месяце';
+  if (diffInMonths < 12) return `${diffInMonths} мес. назад`;
+  return `${Math.floor(diffInMonths / 12)} г. назад`;
+};
