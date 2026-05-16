@@ -1,23 +1,22 @@
 export const productFields = {
-  tovary: { default: {
-      main: [
-        { key: "subcategory", label: "Категория", type: "select" },
-        { key: "priceFrom", label: "Цена: от", type: "number" },
-        { key: "priceTo", label: "Цена: до", type: "number" }
-      ],
-    extra: []}},
-    rabota: {
-    jobs: {
-      main: [
-        { key: "subcategory", label: "Сфера деятельности", type: "select" },
-        { key: "profession", label: "Профессия", type: "select" },
-        { key: "experience", label: "Опыт работы", type: "select", options: ['Без опыта', 'От 1 года', 'От 3 лет', 'От 5 лет'] },
-      ],
-      extra: [
-        { key: "employment", label: "Занятость", type: "chips", options: ['Полная', 'Частичная', 'Временная'] },
-        { key: "schedule", label: "Формат работы", type: "chips", options: ['Удалённо', 'В офисе', 'Гибкий'] },
-      ]
-    },
+tovary: { default: {
+  main: [
+    { key: "subcategory", label: "Категория", type: "select" },
+    { key: "priceFrom", label: "Цена: от", type: "number" },
+    { key: "priceTo", label: "Цена: до", type: "number" }
+  ],
+extra: []}},
+rabota: {
+  jobs: {
+    main: [
+      { key: "subcategory", label: "Сфера деятельности", type: "select" },
+      { key: "profession", label: "Профессия", type: "select" },
+      { key: "experience", label: "Опыт работы", type: "select", options: ['Без опыта', 'От 1 года', 'От 3 лет', 'От 5 лет'] },
+    ],
+    extra: [
+    { key: "employment", label: "Занятость", type: "chips", options: ['Полная', 'Частичная', 'Временная'] },
+    { key: "schedule", label: "Формат работы", type: "chips", options: ['Удалённо', 'В офисе', 'Гибкий'] },
+]},
     resume: {
       main: [
         { key: "subcategory", label: "Сфера деятельности", type: "select" },
@@ -28,9 +27,7 @@ export const productFields = {
       extra: [
         { key: "employment", label: "Желаемая занятость", type: "chips", options: ['Полная', 'Частичная', 'Проектная'] },
         { key: "schedule", label: "График", type: "chips", options: ['Удалёнка', 'Полный день', 'Сменный'] },
-      ]
-    }
-  },
+]}},
 nedvizhimost: {
 apartments: { 
   buy:{

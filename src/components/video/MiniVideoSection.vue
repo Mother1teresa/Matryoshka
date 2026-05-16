@@ -58,9 +58,10 @@ onMounted(async () => {
   padding: 2rem 0;
 }
 
-.container {
-  max-width: 1200px; /* Подправь под свою сетку */
+ .container {
+  width: 86.5rem;
   margin: 0 auto;
+  transition: width .8s;
   position: relative;
 }
 

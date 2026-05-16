@@ -76,8 +76,7 @@
           <button 
             class="submit-review-btn" 
             :disabled="!isFormValid || isSubmitting"
-            @click="submitReview"
-          >
+            @click="submitReview">
             {{ isSubmitting ? 'Отправка...' : 'Оставить отзыв' }}
           </button>
         </div>

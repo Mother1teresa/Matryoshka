@@ -120,7 +120,7 @@ const handleSave = async () => {
     let finalAvatarUrl = auth.user?.avatarUrl;
     if (form.avatarFile) {
       console.log("Начинаем загрузку новой аватарки...");
-      const uploadedUrl = await uploadToMediaService(form.avatarFile, "image", {});
+      const uploadedUrl = await uploadToMediaService(form.avatarFile, "avatar", {});
       if (uploadedUrl) {
         finalAvatarUrl = uploadedUrl;
         console.log("URL успешно получен:", finalAvatarUrl);
@@ -135,7 +135,6 @@ const handleSave = async () => {
       description: form.description,
       type: form.type,
       avatarUrl: finalAvatarUrl, 
-      //  
       employeeName: (isCompany.value && showEmployee.value) ? form.employeeName : "",
       employeeRole: (isCompany.value && showEmployee.value) ? form.employeeRole?.value : ""
     };

@@ -155,31 +155,34 @@ export const useAuthStore = defineStore("auth", {
       try {
         const res = await api.get('/media/video');
         const rawVideos = Array.isArray(res.data) ? res.data : [];
+
         const enrichedVideos = await Promise.all(rawVideos.map(async (v) => {
           let userData = null;
+          // Делаем запрос автора только если есть userId
           if (v.userId) {
             try {
               const userRes = await api.get(`/users/${v.userId}`);
               userData = userRes.data;
             } catch (e) {
-              console.error(`Не удалось загрузить автора для видео ${v.id}`);
+              console.warn(`Автор ${v.userId} не найден`);
             }
           }
 
           return {
             ...v,
+            // Обязательно сохраняем s3Key, иначе удаление не сработает!
+            s3Key: v.s3Key,
             thumbnail: v.thumbnailUrl || v.cdnUrl || v.url,
-            // Добавляем адаптивные данные автора
             author: {
               name: userData?.name || 'Пользователь',
-              avatar: userData?.avatar || userData?.avatarUrl || '/src/assets/img/mask-avatar.png',
+              avatar: userData?.avatar || userData?.avatarUrl || maskAvatar,
               city: userData?.city || 'Город не указан',
               rating: userData?.rating || 0,
               deals: userData?.dealsCount || 0
             },
-            // Заглушки для статистики (пока нет в API)
-            likesCount: v.likesCount || '0',
-            viewsCount: v.viewsCount || '0',
+            // Статистика с защитой от пустых данных
+            likesCount: v.likesCount || 0,
+            viewsCount: v.viewsCount || 0,
             commentsDisabled: v.commentsDisabled || false
           };
         }));

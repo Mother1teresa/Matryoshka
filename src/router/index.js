@@ -35,6 +35,7 @@ const routes = [
       { path: 'videos', component: () => import('../views/profile/MyVideos.vue') }, 
       { path: 'advertisements', component: () => import('../views/profile/MyAdvertisements.vue') }, 
       { path: 'favorites', component: () => import('../views/profile/Favorites.vue') },
+      { path: 'create-ad', component: () => import('../views/profile/CreateAd.vue') },
       // ... остальные страницы
     ]
   },

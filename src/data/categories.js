@@ -1,13 +1,14 @@
-import imgCateg1 from "../assets/img/catalog/catalog3.svg"
-import imgCateg2 from "../assets/img/catalog/catalog2.svg"
-import imgCateg3 from "../assets/img/catalog/catalog11.svg"
-import imgCateg4 from "../assets/img/catalog/catalog5.svg"
-import imgCateg5 from "../assets/img/catalog/catalog4.svg"
-import imgCateg6 from "../assets/img/catalog/catalog6.svg"
-import imgCateg7 from "../assets/img/catalog/catalog7.svg"
-import imgCateg8 from "../assets/img/catalog/catalog8.svg"
+import imgCateg1 from "../assets/img/catalog/catalog3.svg";
+import imgCateg2 from "../assets/img/catalog/catalog2.svg";
+import imgCateg3 from "../assets/img/catalog/catalog11.svg";
+import imgCateg4 from "../assets/img/catalog/catalog5.svg";
+import imgCateg5 from "../assets/img/catalog/catalog4.svg";
+import imgCateg6 from "../assets/img/catalog/catalog6.svg";
+import imgCateg7 from "../assets/img/catalog/catalog7.svg";
+import imgCateg8 from "../assets/img/catalog/catalog8.svg";
 export const categories = [
-{id: 1,
+  {
+    id: 1,
     name: "Транспорт",
     slug: "transport",
     icon: imgCateg1,
@@ -18,59 +19,79 @@ export const categories = [
           { name: "Автомобили", slug: "cars" },
           { name: "Мотоциклы", slug: "moto" },
           { name: "Грузовики и спецтехника", slug: "trucks" },
-          { name: "Водный транспорт", 
+          {
+            name: "Водный транспорт",
             slug: "water",
             subLinks: [
               { name: "Яхты и катера", slug: "yachts" },
-              { name: "Гидроциклы", slug: "jetski" }
-            ]
+              { name: "Гидроциклы", slug: "jetski" },
+            ],
           },
-          { name: "Запчасти и аксессуары", slug: "parts" },]}]},
-{id:2,
-    name:"Товары",
-    slug:"tovary",
-    icon:imgCateg3,
-    sections:[
+          { name: "Запчасти и аксессуары", slug: "parts" },
+        ],
+      },
+    ],
+  },
+  {
+    id: 2,
+    name: "Товары",
+    slug: "tovary",
+    icon: imgCateg3,
+    sections: [
       {
-        title:"Одежда, обувь, аксессуары",
-        slug:"fashion",
-        links:[
-          { name:"Женская одежда", slug:"women-clothes"},
-          { name:"Женская обувь", slug:"women-shoes"},
-          { name:"Мужская одежда", slug:"men-clothes"},
-          { name:"Мужская обувь", slug:"men-shoes"},
-          { name:"Сумки", slug:"bags"},
-          { name:"Аксессуары", slug:"accessories"}]},
-      {title:"Ремонт и строительство",
-        slug:"repair_build",
-        links:[
-          { name:"Двери", slug:"doors"},
-          { name:"Инструменты", slug:"tools"},
-          { name:"Камины", slug:"heaters"},
-          { name:"Потолки", slug:"ceilings"},
-          { name:"Окна", slug:"windows"}
-        ]},
-        {title:"Красота и здоровье",
-        slug:"beauty_health",
-          links:[
-          { name:"Косметика", slug:"cosmetics"},
-          { name:"Парфюм", slug:"perfume"},
-          { name:"Массажеры", slug:"massagers"},
-          { name:"Мед техника", slug:"med-tech"}]},
-      {title: "Мебель и интерьер",
-        slug:"furniture",
+        title: "Одежда, обувь, аксессуары",
+        slug: "fashion",
+        links: [
+          { name: "Женская одежда", slug: "women-clothes" },
+          { name: "Женская обувь", slug: "women-shoes" },
+          { name: "Мужская одежда", slug: "men-clothes" },
+          { name: "Мужская обувь", slug: "men-shoes" },
+          { name: "Сумки", slug: "bags" },
+          { name: "Аксессуары", slug: "accessories" },
+        ],
+      },
+      {
+        title: "Ремонт и строительство",
+        slug: "repair_build",
+        links: [
+          { name: "Двери", slug: "doors" },
+          { name: "Инструменты", slug: "tools" },
+          { name: "Камины", slug: "heaters" },
+          { name: "Потолки", slug: "ceilings" },
+          { name: "Окна", slug: "windows" },
+        ],
+      },
+      {
+        title: "Красота и здоровье",
+        slug: "beauty_health",
+        links: [
+          { name: "Косметика", slug: "cosmetics" },
+          { name: "Парфюм", slug: "perfume" },
+          { name: "Массажеры", slug: "massagers" },
+          { name: "Мед техника", slug: "med-tech" },
+        ],
+      },
+      {
+        title: "Мебель и интерьер",
+        slug: "furniture",
         links: [
           { name: "Ремонт техники", slug: "repair" },
           { name: "Уборка", slug: "cleaning" },
           { name: "Фотосъёмка", slug: "photo" },
-          { name: "Дизайн", slug: "design" },]},]},
-{id: 3,
+          { name: "Дизайн", slug: "design" },
+        ],
+      },
+    ],
+  },
+  {
+    id: 3,
     name: "Услуги",
     slug: "uslugi",
     icon: imgCateg2,
-    sections: [{
+    sections: [
+      {
         title: "Все услуги",
-        slug:"all_services",
+        slug: "all_services",
         links: [
           { name: "Ремонт техники", slug: "repair-tech" },
           { name: "Уборка", slug: "cleaning" },
@@ -109,14 +130,20 @@ export const categories = [
           { name: "Услуги сантехника", slug: "plumber" },
           { name: "Услуги электрика", slug: "electrician" },
           { name: "Бьюти-услуги", slug: "beauty" },
-          { name: "Фитнес-тренер", slug: "fitness" },]}]},
-{id: 4,
+          { name: "Фитнес-тренер", slug: "fitness" },
+        ],
+      },
+    ],
+  },
+  {
+    id: 4,
     name: "Работа",
     slug: "rabota",
     icon: imgCateg4,
-    sections: [{
+    sections: [
+      {
         title: "Вакансии",
-        slug:"jobs",
+        slug: "jobs",
         links: [
           { name: "Репетиторство", slug: "repetitor" },
           { name: "Консультации", slug: "consulting" },
@@ -128,9 +155,12 @@ export const categories = [
           { name: "Частичная занятость", slug: "part-time" },
           { name: "Волонтерство", slug: "volunteering" },
           { name: "Самозанятость", slug: "self-employed" },
-          { name: "Подработка", slug: "gig-job" },]},
-      {title: "Резюме",
-        slug:"resume",
+          { name: "Подработка", slug: "gig-job" },
+        ],
+      },
+      {
+        title: "Резюме",
+        slug: "resume",
         links: [
           { name: "IT", slug: "resume-it" },
           { name: "Дизайн", slug: "resume-design" },
@@ -162,104 +192,140 @@ export const categories = [
           { name: "Водители", slug: "resume-drivers" },
           { name: "Охрана", slug: "resume-guard" },
           { name: "Уборка", slug: "resume-cleaning" },
-          { name: "Страхование", slug: "resume-insurance" },]}]},
-{id: 5,
-  name: "Недвижимость",
-  slug: "nedvizhimost",
-  icon: imgCateg5,
-  extraClass:"grid-realty",
-  sections: [{
-    title: "",
-    links: [
-      { name: "Базовые категории жилья", slug: "apartments", 
-        subLinks: [
-          { name: "Купить", slug: "buy" },
-          { name: "Снять", slug: "rent" }]},
-      { name: "Загород и участки", slug: "houses", 
-        subLinks: [
-          { name: "Участок", slug: "uchastok" },
-          { name: "Дом", slug: "dom" },
-          { name: "Коттедж", slug: "kottedzh" },
-          { name: "Дача", slug: "dacha" },
-          { name: "Таунхаус", slug: "townhouse" },]},
-      { name: "Коммерческая недвижимость", slug: "commercial" , 
-        subLinks: [
-          { name: "Офис", slug: "office" },
-          { name: "Торговое помещение", slug: "retail" },
-          { name: "Склад", slug: "warehouse" },
-          { name: "Производство", slug: "factory" },
-          { name: "Свободного назначения", slug: "free" },]},
-      { name: "Гаражи и паркинги", slug: "parking", 
-        subLinks: [
-          { name: "Гараж", slug: "garage" },
-          { name: "Паркинг", slug: "parking_place" }
-]},]},]},
-{id: 6,
-  name: "Бизнес и оборудование",
-  slug: "biznes",
-  icon: imgCateg6,
-  sections: [{
-      title: "Готовый бизнес", 
-      slug: "ready_business", 
-      links: [
-        { name: "Продажа бизнеса", slug: "sale" },
-        { name: "Партнерство", slug: "partnership" },
-        { name: "Инвестиции", slug: "investments" },
-        { name: "Франшиза", slug: "franchise" },
-        { name: "Торговля", slug: "trade" },
-        { name: "Готовый бизнес", slug: "ready-biz" },
-        { name: "Аренда помещений", slug: "rent-space" },
-        { name: "Продажа помещений", slug: "sale-space" },
-        { name: "Коммерческая недвижимость", slug: "commercial-realty" },
-        { name: "Оборудование для бизнеса", slug: "biz-equipment" },
-        { name: "Сырье и материалы", slug: "raw-materials" },
-        { name: "Автомобильный бизнес", slug: "auto-biz" },
-        { name: "Кредитование", slug: "credit" },
-        { name: "Сельское хозяйство", slug: "agriculture" },
-        { name: "Посреднические услуги", slug: "agent-services" },
-        { name: "Стартапы", slug: "startups" },
-        { name: "Интернет-бизнес", slug: "online-biz" },]},
-    {title: "Оборудование",
-      slug: "equipment",
-      links: [
-        { name: "Станки", slug: "machines" },
-        { name: "Торговое", slug: "trade-equipment" },
-        { name: "Пищевое", slug: "food-equipment" },
-        { name: "Промышленное", slug: "industrial" },
-        { name: "Строительное", slug: "construction" },
-        { name: "Производственное", slug: "production" },
-        { name: "Офисное", slug: "office" },
-        { name: "Медицинское", slug: "medical" },
-        { name: "Кухонное", slug: "kitchen" },
-        { name: "Холодильное", slug: "cooling" },
-        { name: "Клининговое", slug: "cleaning" },
-        { name: "Парикмахерское", slug: "beauty" },
-        { name: "Автомобильное", slug: "auto-service" },
-        { name: "Сварочное", slug: "welding" },
-        { name: "Серверное", slug: "servers" },
-        { name: "Сетевое", slug: "network" },
-        { name: "Телекоммуникационное", slug: "telecom" },
-        { name: "Печатное", slug: "printing" },
-        { name: "Фотографическое", slug: "photo" },
-        { name: "Электротехническое", slug: "electrical" },
-        { name: "Измерительное", slug: "measuring" },
-        { name: "Насосы", slug: "pumps" },
-        { name: "Компрессоры", slug: "compressors" },
-        { name: "Генераторы", slug: "generators" },
-        { name: "Вентиляция", slug: "ventilation" },
-        { name: "Отопление", slug: "heating" },
-        { name: "Водоснабжение", slug: "water" },
-        { name: "Канализация", slug: "sewerage" },
-        { name: "Подъемное", slug: "lifting" },
-        { name: "Погрузочное", slug: "loading" },]}]},
-  {id: 7,
+          { name: "Страхование", slug: "resume-insurance" },
+        ],
+      },
+    ],
+  },
+  {
+    id: 5,
+    name: "Недвижимость",
+    slug: "nedvizhimost",
+    icon: imgCateg5,
+    extraClass: "grid-realty",
+    sections: [
+      {
+        title: "",
+        links: [
+          {
+            name: "Базовые категории жилья",
+            slug: "apartments",
+            subLinks: [
+              { name: "Купить", slug: "buy" },
+              { name: "Снять", slug: "rent" },
+            ],
+          },
+          {
+            name: "Загород и участки",
+            slug: "houses",
+            subLinks: [
+              { name: "Участок", slug: "uchastok" },
+              { name: "Дом", slug: "dom" },
+              { name: "Коттедж", slug: "kottedzh" },
+              { name: "Дача", slug: "dacha" },
+              { name: "Таунхаус", slug: "townhouse" },
+            ],
+          },
+          {
+            name: "Коммерческая недвижимость",
+            slug: "commercial",
+            subLinks: [
+              { name: "Офис", slug: "office" },
+              { name: "Торговое помещение", slug: "retail" },
+              { name: "Склад", slug: "warehouse" },
+              { name: "Производство", slug: "factory" },
+              { name: "Свободного назначения", slug: "free" },
+            ],
+          },
+          {
+            name: "Гаражи и паркинги",
+            slug: "parking",
+            subLinks: [
+              { name: "Гараж", slug: "garage" },
+              { name: "Паркинг", slug: "parking_place" },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 6,
+    name: "Бизнес и оборудование",
+    slug: "biznes",
+    icon: imgCateg6,
+    sections: [
+      {
+        title: "Готовый бизнес",
+        slug: "ready_business",
+        links: [
+          { name: "Продажа бизнеса", slug: "sale" },
+          { name: "Партнерство", slug: "partnership" },
+          { name: "Инвестиции", slug: "investments" },
+          { name: "Франшиза", slug: "franchise" },
+          { name: "Торговля", slug: "trade" },
+          { name: "Готовый бизнес", slug: "ready-biz" },
+          { name: "Аренда помещений", slug: "rent-space" },
+          { name: "Продажа помещений", slug: "sale-space" },
+          { name: "Коммерческая недвижимость", slug: "commercial-realty" },
+          { name: "Оборудование для бизнеса", slug: "biz-equipment" },
+          { name: "Сырье и материалы", slug: "raw-materials" },
+          { name: "Автомобильный бизнес", slug: "auto-biz" },
+          { name: "Кредитование", slug: "credit" },
+          { name: "Сельское хозяйство", slug: "agriculture" },
+          { name: "Посреднические услуги", slug: "agent-services" },
+          { name: "Стартапы", slug: "startups" },
+          { name: "Интернет-бизнес", slug: "online-biz" },
+        ],
+      },
+      {
+        title: "Оборудование",
+        slug: "equipment",
+        links: [
+          { name: "Станки", slug: "machines" },
+          { name: "Торговое", slug: "trade-equipment" },
+          { name: "Пищевое", slug: "food-equipment" },
+          { name: "Промышленное", slug: "industrial" },
+          { name: "Строительное", slug: "construction" },
+          { name: "Производственное", slug: "production" },
+          { name: "Офисное", slug: "office" },
+          { name: "Медицинское", slug: "medical" },
+          { name: "Кухонное", slug: "kitchen" },
+          { name: "Холодильное", slug: "cooling" },
+          { name: "Клининговое", slug: "cleaning" },
+          { name: "Парикмахерское", slug: "beauty" },
+          { name: "Автомобильное", slug: "auto-service" },
+          { name: "Сварочное", slug: "welding" },
+          { name: "Серверное", slug: "servers" },
+          { name: "Сетевое", slug: "network" },
+          { name: "Телекоммуникационное", slug: "telecom" },
+          { name: "Печатное", slug: "printing" },
+          { name: "Фотографическое", slug: "photo" },
+          { name: "Электротехническое", slug: "electrical" },
+          { name: "Измерительное", slug: "measuring" },
+          { name: "Насосы", slug: "pumps" },
+          { name: "Компрессоры", slug: "compressors" },
+          { name: "Генераторы", slug: "generators" },
+          { name: "Вентиляция", slug: "ventilation" },
+          { name: "Отопление", slug: "heating" },
+          { name: "Водоснабжение", slug: "water" },
+          { name: "Канализация", slug: "sewerage" },
+          { name: "Подъемное", slug: "lifting" },
+          { name: "Погрузочное", slug: "loading" },
+        ],
+      },
+    ],
+  },
+  {
+    id: 7,
     name: "Путешествия",
     slug: "travel",
     icon: imgCateg7,
-    sections: [{
-        title:"Отдых, развлечение, билеты",
-        slug:"tours",
-        links:[
+    sections: [
+      {
+        title: "Отдых, развлечение, билеты",
+        slug: "tours",
+        links: [
           { name: "Туры и экскурсии", slug: "excursions" },
           { name: "Авиабилеты", slug: "flights" },
           { name: "Ж/Д и автобусные билеты", slug: "transport-tickets" },
@@ -269,14 +335,20 @@ export const categories = [
           { name: "Трансферы и такси", slug: "transfers" },
           { name: "Круизы", slug: "cruises" },
           { name: "Экстрим и приключения", slug: "adventure" },
-          { name: "Путеводители и гиды", slug: "guides" },]},]},
-  { id: 8,
+          { name: "Путеводители и гиды", slug: "guides" },
+        ],
+      },
+    ],
+  },
+  {
+    id: 8,
     name: "Животные",
     slug: "animals",
     icon: imgCateg8,
-    sections: [{
+    sections: [
+      {
         title: "Братья наши меньшие, питомцы",
-        slug:"pets",
+        slug: "pets",
         links: [
           { name: "Собаки", slug: "dogs" },
           { name: "Рыбы и амфибии", slug: "fish" },
@@ -284,12 +356,20 @@ export const categories = [
           { name: "Сельскохозяйственные животные", slug: "remote" },
           { name: "Птицы", slug: "birds" },
           { name: "Грызуны", slug: "seasonal" },
-          { name: "Другие животные", slug: "full" },]},
-      {title: "Товары и корма",
-        slug:"pet_products",
+          { name: "Другие животные", slug: "full" },
+        ],
+      },
+      {
+        title: "Товары и корма",
+        slug: "pet_products",
         links: [
           { name: "Корма и лакомства", slug: "pet_food" },
           { name: "Клетки, переноски, вольеры", slug: "cages" },
           { name: "Аквариумы и террариумы", slug: "aquariums" },
           { name: "Одежда и амуниция", slug: "pet_clothes" },
-          { name: "Ветеринарные препараты", slug: "veterinary" }]}]},]
+          { name: "Ветеринарные препараты", slug: "veterinary" },
+        ],
+      },
+    ],
+  },
+];
