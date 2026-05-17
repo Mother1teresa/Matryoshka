@@ -1,124 +1,133 @@
 <template>
   <div class="general-container videos-page">
     <transition name="fade-fast" mode="out-in">
-    <div v-if="!isCreating" key="list">
-    <div class="header-row">
-      <h2 class="page-title">Мои ролики</h2>
-      <button v-if="activeTab === 'active'" class="btn promo-btn">
-        Продвижение
-      </button>
-    </div>
-    <div class="create-video-section">
-      <div class="create-box">
-        <div class="camera-icon-circle">
-          <img src="/src/assets/img/icons/camera.svg" alt="camera" />
+      <div v-if="!isCreating" key="list">
+        <div class="header-row">
+          <h2 class="page-title">Мои ролики</h2>
+          <button v-if="activeTab === 'active'" class="btn promo-btn">
+            Продвижение
+          </button>
         </div>
-        <button class="btn create-btn" @click="isCreating = true">Создать свой ролик</button>
-      </div>
-    </div>
-    <div class="create-video__block">
-      <!-- Табы -->
-      <div class="tabs-nav">
-        <button
-          :class="{ active: activeTab === 'active' }"
-          @click="activeTab = 'active'">
-          Действующие
-        </button>
-        <button
-          :class="{ active: activeTab === 'archive' }"
-          @click="activeTab = 'archive'">
-          Архив
-        </button>
-      </div>
-      <div class="tab-content">
-        <div v-if="isLoading" class="loading-state">Загрузка...</div>
-        <div v-else>
-          <div
-            v-if="currentVideos.length > 0"
-            class="videos-grid"
-            :class="activeTab">
-            <div
-              v-for="video in currentVideos"
-              :key="video.id"
-              class="video-item"
-              :class="{ 'archived-item': activeTab === 'archive' }">
-              <div class="video-card">
-                <img :src="video.thumbnail" class="thumbnail" />
-                <button
-                  class="menu-dots-btn"
-                  @click.stop="toggleMenu(video.id)">
-                  <span></span><span></span><span></span>
-                </button>
-                <!-- Выпадающее меню -->
+        <div class="create-video-section">
+          <div class="create-box">
+            <div class="camera-icon-circle">
+              <img src="/src/assets/img/icons/camera.svg" alt="camera" />
+            </div>
+            <button class="btn create-btn" @click="isCreating = true">Создать свой ролик</button>
+          </div>
+        </div>
+        <div class="create-video__block">
+          <!-- Табы -->
+          <div class="tabs-nav">
+            <button
+              :class="{ active: activeTab === 'active' }"
+              @click="activeTab = 'active'">
+              Действующие
+            </button>
+            <button
+              :class="{ active: activeTab === 'archive' }"
+              @click="activeTab = 'archive'">
+              Архив
+            </button>
+          </div>
+          <div class="tab-content">
+            <div v-if="isLoading" class="loading-state">Загрузка...</div>
+            <div v-else>
+              <div
+                v-if="currentVideos.length > 0"
+                class="videos-grid"
+                :class="activeTab">
                 <div
-                  v-if="activeMenuId === video.id"
-                  class="video-dropdown-menu">
-                  <button
-                    v-if="!video.isArchived"
-                    @click.stop="handleArchive(video.id, true)">
-                    В архив
-                  </button>
-                  <button v-else @click.stop="handleArchive(video.id, false)">
-                    Опубликовать заново
-                  </button>
-                  <button
-                    class="delete-btn"
-                    @click.stop="handleDelete(video.id)">
-                    Удалить
-                  </button>
-                </div>
-                <div v-if="activeTab === 'archive'" class="archive-overlay">
-                  Архив
-                </div>
-                <div class="video-overlay">
-                  <span class="duration">{{ video.duration || "0:11" }}</span>
+                  v-for="video in currentVideos"
+                  :key="video.id"
+                  class="video-item"
+                  :class="{ 'archived-item': activeTab === 'archive' }">
+                  <div class="video-card">
+                    <img :src="video.thumbnail" class="thumbnail" />
+                    <button
+                      class="menu-dots-btn"
+                      @click.stop="toggleMenu(video.id)">
+                      <span></span><span></span><span></span>
+                    </button>
+                    <!-- Выпадающее меню -->
+                    <div
+                      v-if="activeMenuId === video.id"
+                      class="video-dropdown-menu">
+                      <button
+                        v-if="!video.isArchived"
+                        @click.stop="handleArchive(video.id, true)">
+                        В архив
+                      </button>
+                      <button v-else @click.stop="handleArchive(video.id, false)">
+                        Опубликовать заново
+                      </button>
+                      <button
+                        class="delete-btn"
+                        @click.stop="handleDelete(video.s3Key)">
+                        Удалить
+                      </button>
+                    </div>
+                    <div v-if="activeTab === 'archive'" class="archive-overlay">
+                      Архив
+                    </div>
+                    <div class="video-overlay">
+                      <span class="duration">{{ video.duration || "0:11" }}</span>
+                    </div>
+                  </div>
+                  <div class="video-info">
+                    <template v-if="activeTab === 'active'">
+                      <div class="stats-line">
+                        <!-- Исправлено на camelCase под структуру из Store -->
+                        <div class="stat" :title="formatFullNumber(video.viewsCount)">
+                          <img src="/src/assets/img/icons/eye.svg" />
+                          {{ formatNumber(video.viewsCount) }}
+                        </div>
+                        <div class="stat" :title="formatFullNumber(video.likesCount)">
+                          <img src="/src/assets/img/icons/heart.svg" />
+                          {{ formatNumber(video.likesCount) }}
+                        </div>
+                        <div class="stat" :title="formatFullNumber(video.commentsCount)">
+                          <img src="/src/assets/img/icons/comment.svg" />
+                          {{ formatNumber(video.commentsCount || 0) }}
+                        </div>
+                      </div>
+                      <p class="video-description">
+                        {{
+                          video.description ||
+                          "Везем коробки со склада быстро и без проблем, звоните по номеру "
+                        }}
+                      </p>
+                    </template>
+                    <template v-else>
+                      <div class="archive-info">
+                        <span class="status-label">Снято с публикации</span>
+                        <button
+                          class="restore-link"
+                          @click="handleArchive(video.id, false)"
+                        >
+                          Опубликовать снова
+                        </button>
+                      </div>
+                    </template>
+                  </div>
                 </div>
               </div>
-              <div class="video-info">
-                <template v-if="activeTab === 'active'">
-                  <div class="stats-line">
-                    <div class="stat" :title="formatFullNumber(video.views_count)"><img src="/src/assets/img/icons/eye.svg" />{{ formatNumber(video.views_count) }}</div>
-                    <div class="stat" :title="formatFullNumber(video.likes_count)"><img src="/src/assets/img/icons/heart.svg" />{{ formatNumber(video.likes_count) }}</div>
-                    <div class="stat" :title="formatFullNumber(video.comments_count)"><img src="/src/assets/img/icons/comment.svg" />{{ formatNumber(video.comments_count) }}</div>
-                  </div>
-                  <p class="video-description">
-                    {{
-                      video.description ||
-                      "Везем коробки со склада быстро и без проблем, звоните по номеру "
-                    }}
-                  </p>
-                </template>
-                <template v-else>
-                  <div class="archive-info">
-                    <span class="status-label">Снято с публикации</span>
-                    <button
-                      class="restore-link"
-                      @click="handleArchive(video.id, false)"
-                    >
-                      Опубликовать снова
-                    </button>
-                  </div>
-                </template>
+
+              <div v-else class="empty-messages"> <!-- Пустое состояние -->
+                <div class="empty-icon">🎬</div>
+                <h3>
+                  {{
+                    activeTab === "active" ? "У вас пока нет активных роликов" : "Архив пуст"
+                  }}
+                </h3>
+                <p>Когда вы перенесете ролик в архив, он появится здесь.</p>
+                <router-link to="/" class="btn go-to-ads-btn">Найти объявления</router-link>
               </div>
             </div>
           </div>
-
-          <div v-else class="empty-messages"> <!-- Пустое состояние -->
-            <div class="empty-icon">🎬</div>
-            <h3>
-              {{
-                activeTab === "active" ? "У вас пока нет активных роликов" : "Архив пуст"}}
-            </h3>
-            <p>Когда вы перенесете ролик в архив, он появится здесь.</p>
-            <router-link to="/" class="btn go-to-ads-btn"
-              >Найти объявления</router-link
-            >
-          </div>
         </div>
       </div>
-    </div>
-    </div>
-    <VideoCreateForm v-else key="form"@back="isCreating = false" @success="handleVideoCreated"/>
+      <VideoCreateForm v-else key="form" @back="isCreating = false" @success="handleVideoCreated"/>
     </transition>
   </div>
   <!-- Модальное окно подтверждения -->
@@ -147,9 +156,10 @@ import { formatNumber, formatFullNumber  } from "/src/utils/formatters.js";
 const auth = useAuthStore();
 const activeMenuId = ref(null);
 const activeTab = ref("active");
-const isLoading = ref(false);
+const isLoading = computed(() => auth.isVideosLoading);
 const allVideos = computed(() => auth.allVideos || []);
 const isCreating = ref(false);
+
 // Фильтрация роликов
 const activeVideos = computed(() =>
   allVideos.value.filter((v) => !v.isArchived),
@@ -164,6 +174,7 @@ const handleArchive = (id, status) => {
   auth.toggleArchiveLocal(id, status);
   activeMenuId.value = null;
 };
+
 const isConfirmOpen = ref(false);
 const videoToDelete = ref(null);
 const handleDelete = (id) => {
@@ -192,22 +203,25 @@ const confirmDelete = async () => {
   }
 };
 
-
 const toggleMenu = (id) => {
   activeMenuId.value = activeMenuId.value === id ? null : id;
 };
+
 const closeMenu = (e) => {
   if (!e.target.closest('.video-card')) {
     activeMenuId.value = null;
   }
 };
+
 onMounted(() => {
   auth.fetchVideos();
   // window.addEventListener("click", closeMenu);
 });
+
 onUnmounted(() => {
   window.removeEventListener("click", closeMenu);
 });
+
 const handleVideoCreated = () => {
   isCreating.value = false; 
   auth.fetchVideos();

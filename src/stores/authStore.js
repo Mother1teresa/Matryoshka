@@ -150,15 +150,14 @@ export const useAuthStore = defineStore("auth", {
         if (e.response?.data?.code === "SESSION_EXPIRED") this.logout();
       }
     },
-    async fetchVideos() {
+     async fetchVideos() {
       this.isVideosLoading = true;
       try {
-        const res = await api.get('/media/video');
+        const res = await api.get('/media/video', { withCredentials: true });
         const rawVideos = Array.isArray(res.data) ? res.data : [];
 
         const enrichedVideos = await Promise.all(rawVideos.map(async (v) => {
           let userData = null;
-          // Делаем запрос автора только если есть userId
           if (v.userId) {
             try {
               const userRes = await api.get(`/users/${v.userId}`);
@@ -170,9 +169,10 @@ export const useAuthStore = defineStore("auth", {
 
           return {
             ...v,
-            // Обязательно сохраняем s3Key, иначе удаление не сработает!
-            s3Key: v.s3Key,
+            s3Key: v.s3Key || v.fileName || v.id, 
             thumbnail: v.thumbnailUrl || v.cdnUrl || v.url,
+            description: v.description || 'Описание ролика временно недоступно',
+            isArchived: v.isArchived || false,
             author: {
               name: userData?.name || 'Пользователь',
               avatar: userData?.avatar || userData?.avatarUrl || maskAvatar,
@@ -180,9 +180,9 @@ export const useAuthStore = defineStore("auth", {
               rating: userData?.rating || 0,
               deals: userData?.dealsCount || 0
             },
-            // Статистика с защитой от пустых данных
             likesCount: v.likesCount || 0,
             viewsCount: v.viewsCount || 0,
+            commentsCount: v.commentsCount || 0, 
             commentsDisabled: v.commentsDisabled || false
           };
         }));
@@ -197,7 +197,7 @@ export const useAuthStore = defineStore("auth", {
     async deleteVideo(s3Key) {
       if (!this.user?.id) return false;
       try {
-        await api.delete(`/media/${s3Key}`); 
+        await api.delete(`/media/${encodeURIComponent(s3Key)}`, { withCredentials: true }); 
         this.allVideos = this.allVideos.filter(v => v.s3Key !== s3Key);
         this.saveToStorage();
         return true;
@@ -207,9 +207,10 @@ export const useAuthStore = defineStore("auth", {
       }
     },
     toggleArchiveLocal(videoId, status) {
-      const video = this.allVideos.find((v) => v.id === videoId);
+      const video = this.allVideos.find((v) => String(v.id) === String(videoId));
       if (video) {
         video.isArchived = status;
+        this.saveToStorage();
       }
     },
     async validateAndFormatCity(query) {

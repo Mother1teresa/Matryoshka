@@ -6,7 +6,7 @@ export const uploadToMediaService = async (file, type = "video", metadata = {}, 
   try {
     const { data: presignedData } = await api.post("/media/presigned", {
       fileName: file.name,
-      contentType: type
+      contentType: file.type || "video/mp4"
     });
     
     const { url, s3Key } = presignedData;

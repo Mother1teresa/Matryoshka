@@ -5,22 +5,22 @@
       <span class="back-text">Назад к роликам</span>
     </div>
     <div v-if="status === 'edit'" class="upload-grid">
-     <div class="upload__block-left">
-      <div class="upload-zone" @click="triggerFileInput">
-        <input type="file" ref="fileInput" @change="handleFileSelect" accept="video/*" hidden />
-        <video v-if="videoPreview" :src="videoPreview" class="video-preview-player" muted autoplay loop></video>
-        <div v-else class="upload-placeholder">
-          <div class="upload-icon"><img src="/src/assets/img/icons/upload_icon.svg" alt=""></div>
-          <p>Выберите видео</p>
-          <button class="btn select-btn">Выбрать файл</button>
+      <div class="upload__block-left">
+        <div class="upload-zone" @click="triggerFileInput">
+          <input type="file" ref="fileInput" @change="handleFileSelect" accept="video/*" hidden />
+          <video v-if="videoPreview" :src="videoPreview" class="video-preview-player" muted autoplay loop></video>
+          <div v-else class="upload-placeholder">
+            <div class="upload-icon"><img src="/src/assets/img/icons/upload_icon.svg" alt=""></div>
+            <p>Выберите видео</p>
+            <button class="btn select-btn">Выбрать файл</button>
+          </div>
         </div>
-      </div>
-      <div class="toggle-group">
-        <label class="checkbox-container auth-forgot__check">
+        <div class="toggle-group">
+          <label class="checkbox-container auth-forgot__check">
             <input type="checkbox" v-model="form.allowComments" />
             <span class="checkmark"></span>
             Заблокировать комментарии
-        </label>
+          </label>
         </div>
       </div>
       <div class="upload-fields">
@@ -42,27 +42,29 @@
           </div>
         </div>
         <div class="footer_block-author">
-            <div class="author-preview-card">
-                <div class="author-info">
-                <img :src="auth.userAvatar" class="author-avatar" alt="avatar" />
-                <span class="author-name">От {{ auth.user?.name || 'Пользователя' }}</span>
-                </div>
-                <img src="/src/assets/img/icons/arrow-down.svg" class="dropdown-icon" alt="arrow" />
+          <div class="author-preview-card">
+            <div class="author-info">
+              <img :src="auth.userAvatar" class="author-avatar" alt="avatar" />
+              <span class="author-name">От {{ auth.user?.name || 'Пользователя' }}</span>
             </div>
-            <button class="btn publish-btn" :disabled="!form.file || !form.description.trim()" @click="onPublish">
-              Опубликовать
-            </button>
+            <img src="/src/assets/img/icons/arrow-down.svg" class="dropdown-icon" alt="arrow" />
+          </div>
+          <button class="btn publish-btn" :disabled="!form.file || !form.description.trim()" @click="onPublish">
+            Опубликовать
+          </button>
         </div>
       </div>
     </div>
+
     <div v-else-if="status === 'uploading'" class="status-screen">
       <div class="status-card">
         <div class="progress-bar">
           <div class="progress-fill" :style="{ width: uploadProgress + '%' }"></div>
         </div>
-        <p class="status-text">Видео загружается</p>
+        <p class="status-text">Видео загружается ({{ uploadProgress }}%)</p>
       </div>
     </div>
+
     <transition name="fade-slow">
       <div v-if="status === 'success'" class="status-screen">
         <div class="status-card">
@@ -92,6 +94,8 @@ const uploadProgress = ref(0);
 
 const myProducts = ref([]);
 const isLoadingProducts = ref(false);
+let autoFinishTimeout = null; // Для очистки таймера при деструктуризации компонента
+
 const form = reactive({
   title: '',
   description: '',
@@ -99,25 +103,26 @@ const form = reactive({
   productId: null,
   allowComments: false
 });
+
 const finish = () => {
+  if (isFinishing.value) return;
+  isFinishing.value = true;
+  if (autoFinishTimeout) clearTimeout(autoFinishTimeout);
   emit('success'); 
 };
+
 onBeforeUnmount(() => {
   if (videoPreview.value) URL.revokeObjectURL(videoPreview.value);
+  if (autoFinishTimeout) clearTimeout(autoFinishTimeout);
 });
+
 onMounted(async () => {
-//   isLoadingProducts.value = true;
-//   try {
-//     const res = await api.get('/profile/my-products');
-//     myProducts.value = res.data.products || [];
-//   } catch (e) {
-//     console.error("Ошибка загрузки товаров:", e);
-//   } finally {
-//     isLoadingProducts.value = false;
-//   }
- myProducts.value = []; 
+  // Код загрузки товаров закомментирован, как в вашем исходнике
+  myProducts.value = []; 
 });
+
 const triggerFileInput = () => fileInput.value.click();
+
 const handleFileSelect = (e) => {
   const file = e.target.files[0]; 
   if (file) {
@@ -126,6 +131,7 @@ const handleFileSelect = (e) => {
     videoPreview.value = URL.createObjectURL(file);
   }
 };
+
 const onPublish = async () => {
   if (!form.file) {
     notify("Выберите видеофайл");
@@ -135,20 +141,31 @@ const onPublish = async () => {
     notify("Пожалуйста, заполните описание");
     return;
   }
+
   status.value = 'uploading';
   uploadProgress.value = 0;
+
   try {
-    await uploadToMediaService(form.file, "video", {
-      title: form.title || 'Без названия',
-      description: form.description.trim(),
-      // productId: form.productId,
-      // allowComments: form.allowComments
-    },
-    (progress) => {
-      uploadProgress.value = progress; 
-    });
+    await uploadToMediaService(
+      form.file, 
+      "video", 
+      {
+        title: form.title || 'Без названия',
+        description: form.description.trim(),
+        productId: form.productId,
+        // По Swagger флаг называется commentsDisabled, передаем инверсию чекбокса
+        commentsDisabled: form.allowComments 
+      },
+      (progress) => {
+        uploadProgress.value = progress; 
+      }
+    );
+
     status.value = 'success';
-    setTimeout(() => finish(), 2000); 
+    // Автоматический переход к списку через 2.5 секунды, если пользователь не нажал сам
+    autoFinishTimeout = setTimeout(() => {
+      finish();
+    }, 2500); 
   } catch (e) {
     console.error("Ошибка при публикации:", e);
     notify("Ошибка загрузки видео");

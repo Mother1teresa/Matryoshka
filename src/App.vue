@@ -56,7 +56,6 @@ watch(
       auth.fetchUserChats();
       auth.fetchUserNotifications();
       await auth.fetchVideos();
-       // Предзагрузка миниатюр видео для плавности
       if (auth.allVideos?.length > 0) {
         auth.allVideos.forEach(video => {
           if (video.thumbnail) {

@@ -41,7 +41,7 @@ export const useReviewStore = defineStore('reviews', () => {
       // Имитируем запрос к бэку (потом раскомментируете)
       // const res = await reviewsApi.getBySellerId(sellerId).catch(() => ({ data: [] }));
       // const data = res?.data || [];
-
+      const data = [];
       if (data.length > 0) {
         // ЕСЛИ ПРИШЕЛ БЭК:
         // Убираем старые данные этого продавца из allReviews и записываем новые
