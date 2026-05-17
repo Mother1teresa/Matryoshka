@@ -41,10 +41,8 @@
         :placeholder="field.placeholder || 'Выберите'" 
         :searchable="field.searchable !== false"
         :show-labels="false"
-      >
-        <template #caret>
-          <div class="multiselect__caret"></div>
-        </template>
+        open-direction="bottom">
+        <template #caret><div class="multiselect__caret"></div></template>
       </multiselect>
     </div>
 
@@ -192,6 +190,7 @@
 <script setup>
 import { computed } from 'vue';
 import Multiselect from 'vue-multiselect';
+import 'vue-multiselect/dist/vue-multiselect.css';
 
 const props = defineProps({
   field: { type: Object, required: true },
@@ -322,9 +321,10 @@ const updateNumeric = (val) => {
 /* Suffix input */
 .input-with-suffix { 
   position: relative; 
+  width: fit-content;
 }
 .input-with-suffix .f-input { 
-  padding-right: 40px; 
+  padding-right: 2.5rem; 
 }
 .suffix { 
   position: absolute; 
@@ -338,8 +338,8 @@ const updateNumeric = (val) => {
 /* Price with unit */
 .price-type-wrapper { 
   display: flex; 
-  gap: 12px; 
-  max-width: 400px; 
+  gap: 0.75rem; 
+  max-width: 25rem; 
 }
 .price-input-container { 
   position: relative; 
@@ -509,7 +509,46 @@ const updateNumeric = (val) => {
 }
 
 /* Multiselect */
-.multiselect-container {
-  position: relative;
+/* Кастомная стрелка */
+.multiselect__caret {
+  position: absolute; right: 12px; top: 50%; width: 12px; height: 12px; margin-top: -6px;
+  background-image: url("/src/assets/img/arr-select.svg");
+  background-repeat: no-repeat; background-size: contain; transition: transform 0.3s; z-index: 1; pointer-events: none;
 }
+:deep(.multiselect--active) .multiselect{
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+:deep(.multiselect--active) .multiselect__caret { transform: rotate(180deg); }
+:deep(.multiselect__select) { display: none !important; }
+/* Фикс текста */
+:deep(.multiselect__single) { 
+  color: #000 !important; font-size: 1rem !important; 
+  padding-left: 0 !important; margin-bottom: 0 !important; background: transparent !important; display: block !important;
+}
+:deep(.multiselect__tags) { 
+  min-height: 2.6rem !important; height: 2.6rem !important; background: #fff !important; 
+  border-radius: 0.938rem; padding: 0 0.638rem 0 0.938rem !important; display: flex !important; align-items: center !important;
+  transition: all .1s; 
+}
+:deep(.multiselect){min-height: 2.6rem !important; height: 2.6rem !important;}
+:deep(.multiselect__placeholder) { color: #A8A1A1 !important; line-height: 40px !important; margin: 0 !important; padding: 0 !important; font-size: 1rem;}
+:deep(.multiselect__input), :deep(.multiselect__single){
+  margin-bottom: 0;
+}
+:deep(.multiselect), :deep( .multiselect__input),:deep( .multiselect__single){
+  font-size: 1rem !important;
+  padding:0 !important;
+ 
+}
+:deep( .multiselect__input){
+ color: #A8A1A1 !important;
+}
+:deep(.multiselect__option--highlight) { background: var(--btn-bg) !important; color: #fff !important; font-weight: 600;}
+.multiselect-container { width: 100%; position: relative; cursor: pointer; }
+.f-input {border: 1px solid #e8e8e8; -webkit-appearance: none; font-size: 1rem !important; padding: 0 1.875rem 0 0.938rem !important; height: 2.6rem !important; border-radius: 0.938rem; width: auto; outline: none; color: #000; }
+.f-input::placeholder{color: #A8A1A1;}
+.f-input::-webkit-outer-spin-button,
+.f-input::-webkit-inner-spin-button {-webkit-appearance: none;margin: 0;}
+.f-input[type='number'] {-moz-appearance: textfield;}
 </style>

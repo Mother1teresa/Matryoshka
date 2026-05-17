@@ -133,14 +133,14 @@
                     activeTab === "active" ? "У вас пока нет активных роликов" : "Архив пуст"
                   }}
                 </h3>
-                <p>Когда вы перенесете ролик в архив, он появится здесь.</p>
+                <p>{{ activeTab === "active"  ? "Создайте свой первый ролик, чтобы привлечь больше покупателей к вашим объявлениям." : "Когда вы перенесете действующий ролик в архив, он появится здесь." }}</p>
                 <router-link to="/" class="btn go-to-ads-btn">Найти объявления</router-link>
               </div>
             </div>
           </div>
         </div>
       </div>
-      <VideoCreateForm v-else key="form" @back="isCreating = false" @success="handleVideoCreated"/>
+      <VideoCreateForm v-else key="form" @back="isCreating = false" @success="handleVideoCreated($event)"/>
     </transition>
   </div>
   <!-- Модальное окно подтверждения -->
@@ -166,23 +166,31 @@ import VideoCreateForm from '../VideoCreateForm.vue';
 import { notify } from "/src/utils/notify";
 import { formatNumber, formatFullNumber  } from "/src/utils/formatters.js";
 
+const emit = defineEmits(['refresh', 'close']);
+
 const auth = useAuthStore();
 const activeMenuId = ref(null);
 const activeTab = ref("active");
+
 const isLoading = computed(() => auth.isVideosLoading);
-const allVideos = computed(() => auth.allVideos || []);
+const isDeleting = ref(false); 
+const allVideos = computed(() => {
+  const videos = auth.allVideos;
+  return Array.isArray(videos) ? videos : [];
+});
+
 const isCreating = ref(false);
 
-// Фильтрация роликов
 const activeVideos = computed(() =>
-  allVideos.value.filter((v) => !v.isArchived),
+  allVideos.value.filter((v) => v.isArchived === true ? false : true)
 );
 const archivedVideos = computed(() =>
-  allVideos.value.filter((v) => v.isArchived),
+  allVideos.value.filter((v) => v.isArchived === true)
 );
 const currentVideos = computed(() =>
-  activeTab.value === "active" ? activeVideos.value : archivedVideos.value,
+  activeTab.value === "active" ? activeVideos.value : archivedVideos.value
 );
+
 const handleArchive = (id, status) => {
   auth.toggleArchiveLocal(id, status);
   activeMenuId.value = null;
@@ -190,20 +198,23 @@ const handleArchive = (id, status) => {
 
 const isConfirmOpen = ref(false);
 const videoToDelete = ref(null);
-const handleDelete = (id) => {
-  console.log("Проверка id:", id);
-  videoToDelete.value = id;
+
+const handleDelete = (s3Key) => {
+  console.log("Маркер удаления (s3Key):", s3Key);
+  videoToDelete.value = s3Key;
   isConfirmOpen.value = true;
   activeMenuId.value = null; 
 };
+
 const closeConfirm = () => {
   isConfirmOpen.value = false;
   videoToDelete.value = null;
 };
+
 const confirmDelete = async () => {
-  if (!videoToDelete.value || isLoading.value) return;
+  if (!videoToDelete.value || isDeleting.value) return;
   try {
-    isLoading.value = true;
+    isDeleting.value = true;
     const success = await auth.deleteVideo(videoToDelete.value);
     if (success) {
       notify("Ролик успешно удален");
@@ -212,7 +223,7 @@ const confirmDelete = async () => {
   } catch (e) {
     notify("Ошибка сервера. Не удалось удалить", "error");
   } finally {
-    isLoading.value = false;
+    isDeleting.value = false;
   }
 };
 
@@ -228,18 +239,40 @@ const closeMenu = (e) => {
 
 onMounted(() => {
   auth.fetchVideos();
-  // window.addEventListener("click", closeMenu);
+  window.addEventListener("click", closeMenu);
 });
 
 onUnmounted(() => {
   window.removeEventListener("click", closeMenu);
 });
 
-const handleVideoCreated = () => {
+const handleVideoCreated = (createdMedia) => {
   isCreating.value = false; 
-  auth.fetchVideos();
+  
+  if (createdMedia && typeof createdMedia === 'object') {
+    const fallbackVideo = {
+      ...createdMedia,
+      id: createdMedia.id || Date.now(),
+      s3Key: createdMedia.s3Key || createdMedia.fileName,
+      thumbnail: createdMedia.cdnUrl || createdMedia.url,
+      description: createdMedia.description || 'Действующий ролик',
+      isArchived: false,
+      likesCount: 0,
+      viewsCount: 0,
+      commentsCount: 0,
+      author: {
+        name: auth.user?.name || 'Пользователь',
+        avatar: auth.userAvatar
+      }
+    };
+    auth.allVideos = [fallbackVideo, ...auth.allVideos];
+  }
+  setTimeout(() => {
+    auth.fetchVideos();
+  }, 1000);
 };
 </script>
+
 <style scoped>
 .videos-grid {
   display: grid;

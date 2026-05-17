@@ -10,7 +10,6 @@ export const uploadToMediaService = async (file, type = "video", metadata = {}, 
       fileName: file.name,
       contentType: finalContentType
     }, { withCredentials: true });
-    
     const { url, s3Key } = presignedData;
     await axios.put(url, file, { 
       headers: {

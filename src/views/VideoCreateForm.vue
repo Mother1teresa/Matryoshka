@@ -146,14 +146,14 @@ const onPublish = async () => {
   uploadProgress.value = 0;
 
   try {
-    await uploadToMediaService(
+    // ИСПРАВЛЕНО: Сохраняем объект, который возвращает наш сервис загрузки
+    const createdMedia = await uploadToMediaService(
       form.file, 
       "video", 
       {
         title: form.title || 'Без названия',
         description: form.description.trim(),
         productId: form.productId,
-        // По Swagger флаг называется commentsDisabled, передаем инверсию чекбокса
         commentsDisabled: form.allowComments 
       },
       (progress) => {
@@ -162,9 +162,12 @@ const onPublish = async () => {
     );
 
     status.value = 'success';
-    // Автоматический переход к списку через 2.5 секунды, если пользователь не нажал сам
+    
     autoFinishTimeout = setTimeout(() => {
-      finish();
+      if (isFinishing.value) return;
+      isFinishing.value = true;
+      // ИСПРАВЛЕНО: передаем объект созданного видео вместе с событием успеха
+      emit('success', createdMedia); 
     }, 2500); 
   } catch (e) {
     console.error("Ошибка при публикации:", e);
