@@ -43,7 +43,20 @@
                   class="video-item"
                   :class="{ 'archived-item': activeTab === 'archive' }">
                   <div class="video-card">
-                    <img :src="video.thumbnail" class="thumbnail" />
+                    <video 
+                      v-if="video.thumbnail && video.thumbnail.endsWith('.mp4')" 
+                      :src="video.thumbnail" 
+                      class="thumbnail" 
+                      preload="metadata"
+                      muted
+                      playsinline
+                    ></video>
+                    <img 
+                      v-else 
+                      :src="video.thumbnail" 
+                      class="thumbnail" 
+                      alt="Превью" 
+                    />
                     <button
                       class="menu-dots-btn"
                       @click.stop="toggleMenu(video.id)">

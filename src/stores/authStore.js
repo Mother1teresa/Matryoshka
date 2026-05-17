@@ -150,7 +150,7 @@ export const useAuthStore = defineStore("auth", {
         if (e.response?.data?.code === "SESSION_EXPIRED") this.logout();
       }
     },
-     async fetchVideos() {
+    async fetchVideos() {
       this.isVideosLoading = true;
       try {
         const res = await api.get('/media/video', { withCredentials: true });
