@@ -55,7 +55,6 @@
         </div>
       </div>
     </div>
-
     <div v-else-if="status === 'uploading'" class="status-screen">
       <div class="status-card">
         <div class="progress-bar">
@@ -64,7 +63,6 @@
         <p class="status-text">Видео загружается ({{ uploadProgress }}%)</p>
       </div>
     </div>
-
     <transition name="fade-slow">
       <div v-if="status === 'success'" class="status-screen">
         <div class="status-card">
@@ -94,7 +92,6 @@ const uploadProgress = ref(0);
 
 const myProducts = ref([]);
 const isLoadingProducts = ref(false);
-let autoFinishTimeout = null; // Для очистки таймера при деструктуризации компонента
 
 const form = reactive({
   title: '',
@@ -117,7 +114,6 @@ onBeforeUnmount(() => {
 });
 
 onMounted(async () => {
-  // Код загрузки товаров закомментирован, как в вашем исходнике
   myProducts.value = []; 
 });
 
@@ -141,12 +137,9 @@ const onPublish = async () => {
     notify("Пожалуйста, заполните описание");
     return;
   }
-
   status.value = 'uploading';
   uploadProgress.value = 0;
-
   try {
-    // ИСПРАВЛЕНО: Сохраняем объект, который возвращает наш сервис загрузки
     const createdMedia = await uploadToMediaService(
       form.file, 
       "video", 
@@ -160,13 +153,10 @@ const onPublish = async () => {
         uploadProgress.value = progress; 
       }
     );
-
     status.value = 'success';
-    
     autoFinishTimeout = setTimeout(() => {
       if (isFinishing.value) return;
       isFinishing.value = true;
-      // ИСПРАВЛЕНО: передаем объект созданного видео вместе с событием успеха
       emit('success', createdMedia); 
     }, 2500); 
   } catch (e) {

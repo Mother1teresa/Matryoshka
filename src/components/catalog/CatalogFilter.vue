@@ -72,7 +72,7 @@ const toggleChip = (key, value) => {
       <div v-if="isExpanded && hasExtra" class="filter-extra" :class="currentConfig.extraClass">
         <div class="transport-grid-container">
             <div v-for="field in extraFields" :key="field.key" class="extra-group" :class="[field.type, field.gridClass]">
-              <label class="field-label-top">{{ field.label }}</label>
+              <label class="field-label-top">{{ field.titlelabel || field.label }}</label>
               <div v-if="field.type === 'chips'" class="chips-row">
                 <button
                   v-for="opt in field.options || []"
@@ -106,7 +106,7 @@ const toggleChip = (key, value) => {
   font-size: 1.2rem;
 }
 .filter-card { background: var(--btn-bg); padding: 1.563rem; border-radius: 1.875rem; color: white; position: relative; margin-bottom: .6rem;}
-.filter-main-row { display: flex; gap: 0.625rem; margin-top: 0.938rem; flex-wrap: wrap; align-items: center; justify-content: space-between;
+.filter-main-row { display: flex; gap: 0.625rem; margin-top: 0.938rem; flex-wrap: wrap; align-items: center; justify-content: space-between;  align-items: flex-start;
 flex-direction: column;}
 .transport-layout,.moto-layout,.trucks-layout,.water-layout,.jetski-layout{
   display: flex; gap: 0.625rem; align-items: flex-end; justify-content: space-between;
@@ -134,15 +134,15 @@ flex-direction: column;}
   transition: all .1s; 
 }
 :deep(.multiselect){min-height: 2.6rem !important; height: 2.6rem !important;}
-:deep(.multiselect__placeholder) { color: #A8A1A1 !important; line-height: 40px !important; margin: 0 !important; padding: 0 !important; font-size: 1rem;}
+:deep(.multiselect__placeholder) { color: #A8A1A1 !important; line-height: 1rem !important; margin: 0 !important; padding: 0 !important; font-size: 1rem;}
 .multiselect-container { width: 14.5rem; position: relative; cursor: pointer; }
-.f-input {border: 1px solid #e8e8e8; -webkit-appearance: none; font-size: 1rem !important; padding: 0 1.875rem 0 0.938rem !important; height: 2.6rem !important; border-radius: 0.938rem; width: 11.438rem; outline: none; color: #000; }
+.f-input {border: 1px solid #e8e8e8; -webkit-appearance: none; font-size: 1rem !important; padding: 0 1.875rem 0 0.938rem !important; height: 2.6rem !important; border-radius: 0.938rem; width: 11.338rem; outline: none; color: #000; }
 .f-input::placeholder{color: #A8A1A1;}
 .f-input::-webkit-outer-spin-button,
 .f-input::-webkit-inner-spin-button {-webkit-appearance: none;margin: 0;}
 .f-input[type='number'] {-moz-appearance: textfield;}
 .expand-btn {text-align: center; background: white; border: none; border-radius: 0.938rem; width: 2.5rem; height: 2.4rem; cursor: pointer; }
-.expand-btn img { width: 1rem; height: 1rem; display: inline-block; color: #000; transition: transform 0.3s;}
+.expand-btn img { width: 1rem; height: 1rem; display: inline-block; color: #000; transition: transform 0.3s; margin-bottom: -.1rem; margin-left: .05rem;}
 .expand-btn img.rotate { transform: rotate(180deg); }
 
 :deep(.multiselect__option--highlight) { background: var(--btn-bg) !important; color: #fff !important; font-weight: 600;}
@@ -194,7 +194,6 @@ flex-direction: column;}
   margin-left: 7px;
   width: 20px;
 }
-/* Стили для чипсов (кнопок выбора как на фото) */
 .filter-extra {
   margin-top: 20px;
   border-top: 1px solid rgba(255,255,255,0.2);
@@ -230,7 +229,7 @@ flex-direction: column;}
     box-shadow: 0px 0.2rem 0.2rem 0px #00000040;}
 .transport-grid-container {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(13.5rem, 1fr)); /* Авто-сетка */
+  grid-template-columns: repeat(auto-fill, minmax(13.4rem, 1fr)); /* Авто-сетка */
   /* gap: 1rem; */
   row-gap: 1rem;
   /* margin-top: 1.25rem; */
@@ -250,11 +249,12 @@ flex-direction: column;}
   background: white;
   border: none;
   border-radius: 0.938rem;
-  padding: .5rem 1rem;
-  color: #666;
+  padding: .6rem 1rem;
+  color: #A8A1A1;
   cursor: pointer;
   font-size: 0.9rem;
   transition: background 0.2s;
+  text-align: center;
 }
 .chip-item.active {
   background: #4a6d54;
@@ -299,11 +299,11 @@ flex-direction: column;}
   gap: 8px;
 }
 
-.voltage-grid .chips-row, 
+/* .voltage-grid .chips-row, 
 .access-grid .chips-row {
   display: flex; 
   gap: 12px;
-}
+} */
 
 /* Заголовки над группами (белые на зеленом фоне) */
 .extra-container label {
@@ -404,11 +404,11 @@ flex-direction: column;}
   gap: 8px;
 }
 
-.voltage-grid .chips-row, 
+/* .voltage-grid .chips-row, 
 .access-grid .chips-row {
   display: flex; 
   gap: 12px;
-}
+} */
 
 .extra-container label {
   color: #fff;
@@ -420,12 +420,124 @@ flex-direction: column;}
   grid-column: span 2;
 }
 
-.voltage-grid {
+/* .voltage-grid {
   display: flex;
   gap: 6px;
-}
+} */
 
 .parking .chips-row {
   justify-content: space-between;
+}
+
+.grid-parking .transport-grid-container,
+.grid-parking-open .transport-grid-container {
+    display: block;
+}
+
+.grid-parking .chips-row,
+.grid-parking-open .chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.75rem;
+  width: 42%;
+}
+
+.grid-parking .chips-row > *,
+.grid-parking-open .chips-row > *,.grid-realty-land .chips-row > * ,.grid-realty-home .chips-row > *,.grid-realty-kottedzh .chips-row > *,.grid-realty-dacha .chips-row > *,.grid-realty-townhouse .chips-row > *,.grid-comm-retail .chips-row > *{
+  flex: 1 1 calc(33.333% - 1rem); 
+  text-align: center;
+}
+.grid-parking .transport-grid-container .chip-item, .grid-realty-home .transport-grid-container .chip-item,
+.grid-parking-open .transport-grid-container .chip-item,.grid-realty-land .transport-grid-container .chip-item,.grid-realty-kottedzh .transport-grid-container .chip-item,.grid-realty-dacha .chip-item, .grid-realty-townhouse .chip-item,.grid-comm-office .chip-item,.grid-comm-retail .chip-item,.grid-comm-warehouse .chip-item, .grid-comm-factory .chip-item,.grid-comm-free .chip-item{
+  padding: 0.875rem 1rem;
+  font-size: 1rem
+}
+.transport-grid-container .multiselect-container,.transport-grid-container .range-inputs input{
+  width: 92%;
+}
+.transport-grid-container{
+  column-gap: 0rem;
+  row-gap: 1rem;
+}
+.grid-water-open .transport-grid-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  column-gap: 2.5rem;
+  row-gap: 1rem;
+  align-items: start;
+  WIDTH: fit-content;
+}
+.grid-water-open2 .transport-grid-container,.grid-comm-factory .transport-grid-container,.grid-comm-free .transport-grid-container, .grid-comm-retail .transport-grid-container{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 1rem;
+  row-gap: 1rem;
+  align-items: start;
+  WIDTH: fit-content;
+}
+.grid-water-open .extra-group-number {
+  display: flex;
+  flex-direction: column;
+}
+.grid-water-open .range-inputs,.grid-water-open2 .range-inputs,.grid-realty-home .range-inputs,.grid-realty-kottedzh .range-inputs,.grid-realty-dacha .range-inputs{
+  display: flex;
+  gap: 1rem; 
+}
+.grid-water-open .range-inputs > *,.grid-water-open2 .range-inputs > *,.grid-realty-home .range-inputs > * ,.grid-realty-kottedzh .range-inputs > *,.grid-realty-dacha .range-inputs > *,.grid-comm-office .range-inputs > *, .grid-comm-warehouse .range-inputs > *,.grid-comm-factory .range-inputs > *,.grid-comm-free .range-inputs > *{
+  flex: 1;
+}
+.grid-water-open .extra-group-select,
+.grid-water-open .extra-group-chips,
+.grid-water-open .transport-grid-container > [class*="select"] {
+  grid-column: span 2;
+  width: 100%;
+} 
+.grid-realty-buy .transport-grid-container .multiselect-container{
+  width: 50%;
+}
+.grid-realty-rent .transport-grid-container{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 2.5rem;
+  row-gap: 1.25rem;
+  align-items: start;
+}
+.grid-realty-rent .chip-item {
+  background: rgb(255, 255, 255);
+  border: 0.0625rem solid rgba(255, 255, 255, 0.3);
+  border-radius: 0.938rem;
+  color: #4a6d54;
+  padding: 0.75rem 0.9375rem;
+  font-size: 1rem;
+  text-align: center;
+  width: 100%;
+  transition: all 0.2s;
+}
+.grid-realty-rent .extra-group:nth-child(3) .chips-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.grid-realty-rent .chip-item.active{
+  background: #4a6d54;
+  color: white;
+}
+.grid-realty-rent .transport-grid-container .multiselect-container{
+  width: 50%;
+}
+.grid-realty-land .transport-grid-container, .grid-comm-office .transport-grid-container{
+  grid-template-columns: repeat(auto-fill, minmax(20.4rem, 1fr));
+  column-gap: 1rem;
+}
+.grid-comm-retail .f-input:last-child,.grid-comm-factory .f-input:last-child,.grid-comm-free .f-input:last-child,.grid-parking .f-input:last-child,.grid-parking-open .f-input:last-child{
+  width: 12.5rem;
+}
+.grid-comm-retail .f-input:nth-last-of-type(2),.grid-comm-factory .f-input:nth-last-of-type(2),.grid-comm-free .f-input:nth-last-of-type(2),.grid-parking .f-input:nth-last-of-type(2),.grid-parking-open .f-input:nth-last-of-type(2){
+  width: 12.5rem;
+}
+.grid-realty-home .transport-grid-container, .grid-realty-kottedzh .transport-grid-container,.grid-realty-dacha .transport-grid-container, .grid-realty-townhouse .transport-grid-container,.grid-comm-warehouse .transport-grid-container{
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  column-gap: 1rem;
 }
 </style>

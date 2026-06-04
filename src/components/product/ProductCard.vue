@@ -11,11 +11,8 @@
       }"
     >
       <img
-        :src="
-          product.images
-            ? product.images[0]
-            : product.pictures?.[0]?.url || '/img/placeholder.png'
-        "
+        :src="product.images?.[0] || '/img/placeholder.png'"
+        @error="$event.target.src = '/img/placeholder.png'"
         alt=""
         class="product-img"
       />

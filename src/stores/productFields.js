@@ -77,51 +77,78 @@ uchastok: {
 },
 dom: {
  extraClass: 'grid-realty-home',
-  main: [{ key: "land_purpose", label: "Назначение земли", type: "select", options: ["ИЖС", "СНТ", "ДНП"] },
-      { key: "status", label: "Состояние участка", type: "select", options: ["Чистый", "Застроен", "Запущен"] },
+  main: [{ key: "land_purpose", label: "Материал стен", type: "select", options: ["ИЖС", "СНТ", "ДНП"] },
+      { key: "status", label: "Состояние", type: "select", options: ["Чистый", "Застроен", "Запущен"] },
       { key: "dealType", label: "Тип сделки", type: "select", options: ["Продажа", "Аренда"] },
       { key: "priceFrom", label: "Цена от", type: "number" },
       { key: "priceTo", label: "Цена до", type: "number" },
-      { key: "documents", label: "Документы", type: "select", options: ["Собственность", "Аренда", "Наследство"] },
-      { key: "areaFrom", label: "Площадь от", type: "number" },
-      { key: "areaTo", label: "Площадь до", type: "number" },],
-    extra: [{  key: "communications", label: "Коммуникации",  type: "chips", options: ["Электричество", "Вода", "Газ", "Канализация", "Отсутствуют"] },{ key: "additional",  label: "Дополнительно", type: "chips", options: ["Кадастр", "Межевание", "Собственник", "Возможность ипотеки"] }]
+      { key: "attic", label: "Мансард", type: "select", options: ["Есть", "Нет"] }
+      // { key: "documents", label: "Документы", type: "select", options: ["Собственность", "Аренда", "Наследство"] },
+      ],
+    extra: [{  key: "communications", label: "Коммуникации",  type: "chips", options: ["Электричество", "Вода", "Газ", "Канализация", "Отсутствуют"] },
+    { key: "landAreaFrom", titlelabel: "Участок", label: "Площадь от", type: "number" },
+    { key: "landAreaTo", titlelabel: "Участок", label: "Площадь до", type: "number" },
+    { key: "houseAreaFrom", titlelabel: "Дом", label: "Площадь от", type: "number" },
+    { key: "houseAreaTo", titlelabel: "Дом", label: "Площадь до", type: "number" },
+
+    { key: "bathrooms", label: "Кол-во санузлов", type: "select" },
+    { key: "rooms", label: "Кол-во комнат", type: "select" },
+    { key: "floors", label: "Кол-во этажей", type: "select" }
+  ]
 },
 kottedzh: {
  extraClass: 'grid-realty-kottedzh',
-  main: [{ key: "land_purpose", label: "Назначение земли", type: "select", options: ["ИЖС", "СНТ", "ДНП"] },
-      { key: "status", label: "Состояние участка", type: "select", options: ["Чистый", "Застроен", "Запущен"] },
+  main: [{ key: "land_purpose", label: "Материал стен", type: "select", options: ["ИЖС", "СНТ", "ДНП"] },
+      { key: "status", label: "Состояние", type: "select", options: ["Чистый", "Застроен", "Запущен"] },
       { key: "dealType", label: "Тип сделки", type: "select", options: ["Продажа", "Аренда"] },
       { key: "priceFrom", label: "Цена от", type: "number" },
       { key: "priceTo", label: "Цена до", type: "number" },
-      { key: "documents", label: "Документы", type: "select", options: ["Собственность", "Аренда", "Наследство"] },
-      { key: "areaFrom", label: "Площадь от", type: "number" },
-      { key: "areaTo", label: "Площадь до", type: "number" },],
-    extra: [{  key: "communications", label: "Коммуникации",  type: "chips", options: ["Электричество", "Вода", "Газ", "Канализация", "Отсутствуют"] },{ key: "additional",  label: "Дополнительно", type: "chips", options: ["Кадастр", "Межевание", "Собственник", "Возможность ипотеки"] }]
+      { key: "attic", label: "Мансард", type: "select", options: ["Есть", "Нет"] }],
+    extra: [{  key: "communications", label: "Коммуникации",  type: "chips", options: ["Электричество", "Вода", "Газ", "Канализация", "Отсутствуют"] },
+    { key: "landAreaFrom", titlelabel: "Участок", label: "Площадь от", type: "number" },
+    { key: "landAreaTo", titlelabel: "Участок", label: "Площадь до", type: "number" },
+    { key: "houseAreaFrom", titlelabel: "Дом", label: "Площадь от", type: "number" },
+    { key: "houseAreaTo", titlelabel: "Дом", label: "Площадь до", type: "number" },
+
+    { key: "bathrooms", label: "Кол-во санузлов", type: "select" },
+    { key: "rooms", label: "Кол-во комнат", type: "select" },
+    { key: "floors", label: "Кол-во этажей", type: "select" }]
 },
 dacha: {
  extraClass: 'grid-realty-dacha',
-  main: [{ key: "land_purpose", label: "Назначение земли", type: "select", options: ["ИЖС", "СНТ", "ДНП"] },
-      { key: "status", label: "Состояние участка", type: "select", options: ["Чистый", "Застроен", "Запущен"] },
+  main: [{ key: "land_purpose", label: "Материал стен", type: "select", options: ["ИЖС", "СНТ", "ДНП"] },
+      { key: "status", label: "Состояние", type: "select", options: ["Чистый", "Застроен", "Запущен"] },
       { key: "dealType", label: "Тип сделки", type: "select", options: ["Продажа", "Аренда"] },
       { key: "priceFrom", label: "Цена от", type: "number" },
       { key: "priceTo", label: "Цена до", type: "number" },
-      { key: "documents", label: "Документы", type: "select", options: ["Собственность", "Аренда", "Наследство"] },
-      { key: "areaFrom", label: "Площадь от", type: "number" },
-      { key: "areaTo", label: "Площадь до", type: "number" },],
-    extra: [{  key: "communications", label: "Коммуникации",  type: "chips", options: ["Электричество", "Вода", "Газ", "Канализация", "Отсутствуют"] },{ key: "additional",  label: "Дополнительно", type: "chips", options: ["Кадастр", "Межевание", "Собственник", "Возможность ипотеки"] }]
+     { key: "attic", label: "Мансард", type: "select", options: ["Есть", "Нет"] }],
+    extra: [{key: "communications", label: "Коммуникации",  type: "chips", options: ["Электричество", "Вода", "Газ", "Канализация", "Отсутствуют"] },
+    { key: "landAreaFrom", titlelabel: "Участок", label: "Площадь от", type: "number" },
+    { key: "landAreaTo", titlelabel: "Участок", label: "Площадь до", type: "number" },
+    { key: "houseAreaFrom", titlelabel: "Дом", label: "Площадь от", type: "number" },
+    { key: "houseAreaTo", titlelabel: "Дом", label: "Площадь до", type: "number" },
+
+    { key: "bathrooms", label: "Кол-во санузлов", type: "select" },
+    { key: "rooms", label: "Кол-во комнат", type: "select" },
+    { key: "floors", label: "Кол-во этажей", type: "select" }]
 },
 townhouse: {
  extraClass: 'grid-realty-townhouse',
-  main: [{ key: "land_purpose", label: "Назначение земли", type: "select", options: ["ИЖС", "СНТ", "ДНП"] },
-      { key: "status", label: "Состояние участка", type: "select", options: ["Чистый", "Застроен", "Запущен"] },
+  main: [{ key: "land_purpose", label: "Материал стен", type: "select", options: ["ИЖС", "СНТ", "ДНП"] },
+      { key: "status", label: "Состояние", type: "select", options: ["Чистый", "Застроен", "Запущен"] },
       { key: "dealType", label: "Тип сделки", type: "select", options: ["Продажа", "Аренда"] },
       { key: "priceFrom", label: "Цена от", type: "number" },
       { key: "priceTo", label: "Цена до", type: "number" },
-      { key: "documents", label: "Документы", type: "select", options: ["Собственность", "Аренда", "Наследство"] },
-      { key: "areaFrom", label: "Площадь от", type: "number" },
-      { key: "areaTo", label: "Площадь до", type: "number" },],
-    extra: [{  key: "communications", label: "Коммуникации",  type: "chips", options: ["Электричество", "Вода", "Газ", "Канализация", "Отсутствуют"] },{ key: "additional",  label: "Дополнительно", type: "chips", options: ["Кадастр", "Межевание", "Собственник", "Возможность ипотеки"] }]
+      { key: "attic", label: "Мансард", type: "select", options: ["Есть", "Нет"] }],
+    extra: [{key: "communications", label: "Коммуникации",  type: "chips", options: ["Электричество", "Вода", "Газ", "Канализация", "Отсутствуют"] },
+    { key: "landAreaFrom", titlelabel: "Участок", label: "Площадь от", type: "number" },
+    { key: "landAreaTo", titlelabel: "Участок", label: "Площадь до", type: "number" },
+    { key: "houseAreaFrom", titlelabel: "Дом", label: "Площадь от", type: "number" },
+    { key: "houseAreaTo", titlelabel: "Дом", label: "Площадь до", type: "number" },
+
+    { key: "bathrooms", label: "Кол-во санузлов", type: "select" },
+    { key: "rooms", label: "Кол-во комнат", type: "select" },
+    { key: "floors", label: "Кол-во этажей", type: "select" }]
 },},
 commercial: {
 office: {
@@ -133,8 +160,10 @@ office: {
     { key: "areaFrom", label: "Площадь от", type: "number" },
     { key: "areaTo", label: "Площадь до", type: "number" },
     { key: "floors", label: "Кол-во этажей", type: "number" },],
-  extra: [{ key: "communications", label: "Коммуникации", type: "chips",  options: ["Электричество", "Вентиляция", "Охрана", "Кондиционер", "Интернет", "Лифт", "Отсутствуют"],gridClass: "comm-grid"},{ key: "voltage", label: "Напряжение", type: "chips", options: ["220 В", "360 В"],gridClass: "voltage-grid"},
-    { key: "truck_access", label: "Подъезд пути для грузового транспорта", type: "chips", options: ["Есть", "Нет"],gridClass: "access-grid"}]
+  extra: [{ key: "communications", label: "Коммуникации", type: "chips",  options: ["Электричество", "Вентиляция", "Охрана", "Кондиционер", "Интернет", "Лифт", "Отсутствуют"],gridClass: "comm-grid"},
+    { key: "parking", label: "Парковка", type: "chips",  options: ["Места на улице", "В здании"]},
+    // { key: "truck_access", label: "Подъезд пути для грузового транспорта", type: "chips", options: ["Есть", "Нет"],gridClass: "access-grid"}
+    ]
 },
 retail: {
   extraClass: 'grid-comm-retail',
@@ -144,22 +173,26 @@ retail: {
     { key: "dealType", label: "Тип сделки", type: "select" },
     { key: "areaFrom", label: "Площадь от", type: "number" },
     { key: "areaTo", label: "Площадь до", type: "number" },
-    { key: "floors", label: "Кол-во этажей", type: "number" },],
-  extra: [{ key: "communications", label: "Коммуникации", type: "chips",  options: ["Электричество", "Вентиляция", "Охрана", "Кондиционер", "Интернет", "Лифт", "Отсутствуют"],gridClass: "comm-grid"},{ key: "voltage", label: "Напряжение", type: "chips", options: ["220 В", "360 В"],gridClass: "voltage-grid"},
-    { key: "truck_access", label: "Подъезд пути для грузового транспорта", type: "chips", options: ["Есть", "Нет"],gridClass: "access-grid"}]
+    { key: "floors", label: "Кол-во этажей", type: "number" },
+    { key: "heightFrom", label: "Высота потолков от", type: "number" },
+    { key: "heightTo", label: "Высота потолков до", type: "number" },
+  ],
+  extra: [{ key: "communications", label: "Коммуникации", type: "chips",  options: ["Электричество", "Вентиляция", "Охрана", "Кондиционер", "Интернет", "Лифт", "Отсутствуют"],gridClass: "comm-grid"},
+   { key: "parking", label: "Парковка", type: "chips",  options: ["Места на улице", "В здании"]},]
 },
 warehouse: {
   extraClass: 'grid-comm-warehouse',
-  main: [{ key: "office_status", label: "Состояние офиса", type: "select" },
+  main: [{ key: "office_status", label: "Состояние помещения", type: "select" },
     { key: "priceFrom", label: "Цена: от", type: "number" },
     { key: "priceTo", label: "Цена: до", type: "number" },
     { key: "dealType", label: "Тип сделки", type: "select" },
     { key: "areaFrom", label: "Площадь от", type: "number" },
     { key: "areaTo", label: "Площадь до", type: "number" },
-    { key: "floors", label: "Кол-во этажей", type: "number" },],
-  extra: [{ key: "communications", label: "Коммуникации", type: "chips",  options: ["Электричество", "Вентиляция", "Охрана", "Кондиционер", "Интернет", "Лифт", "Отсутствуют"],gridClass: "comm-grid"},{ key: "voltage", label: "Напряжение", type: "chips", options: ["220 В", "360 В"],gridClass: "voltage-grid"},
-    { key: "truck_access", label: "Подъезд пути для грузового транспорта", type: "chips", options: ["Есть", "Нет"],gridClass: "access-grid"}]
-},
+    { key: "floors", label: "Кол-во этажей", type: "number" },
+    { key: "heightFrom", label: "Высота потолков от", type: "number" },
+    { key: "heightTo", label: "Высота потолков до", type: "number" },
+  ],
+  extra: [{ key: "communications", label: "Коммуникации", type: "chips",  options: ["Электричество", "Вентиляция", "Охрана", "Кондиционер", "Интернет", "Лифт", "Отсутствуют"],gridClass: "comm-grid"},]},
 factory: {
   extraClass: 'grid-comm-factory',
   main: [{ key: "office_status", label: "Состояние офиса", type: "select" },
@@ -168,10 +201,14 @@ factory: {
     { key: "dealType", label: "Тип сделки", type: "select" },
     { key: "areaFrom", label: "Площадь от", type: "number" },
     { key: "areaTo", label: "Площадь до", type: "number" },
-    { key: "floors", label: "Кол-во этажей", type: "number" },],
-  extra: [{ key: "communications", label: "Коммуникации", type: "chips",  options: ["Электричество", "Вентиляция", "Охрана", "Кондиционер", "Интернет", "Лифт", "Отсутствуют"],gridClass: "comm-grid"},{ key: "voltage", label: "Напряжение", type: "chips", options: ["220 В", "360 В"],gridClass: "voltage-grid"},
-    { key: "truck_access", label: "Подъезд пути для грузового транспорта", type: "chips", options: ["Есть", "Нет"],gridClass: "access-grid"}]
-},
+    { key: "floors", label: "Кол-во этажей", type: "number" },
+    { key: "heightFrom", label: "Высота потолков от", type: "number" },
+    { key: "heightTo", label: "Высота потолков до", type: "number" },
+  ],
+  extra: [{ key: "communications", label: "Коммуникации", type: "chips",  options: ["Электричество", "Вентиляция", "Охрана", "Кондиционер", "Интернет", "Лифт", "Отсутствуют"],gridClass: "comm-grid"},
+  { key: "voltage", label: "Напряжение", type: "chips", options: ["220 В", "360 В"],gridClass: "voltage-grid"},
+    { key: "truck_access", label: "Подъезд пути для грузового транспорта", type: "chips", options: ["Есть", "Нет"],gridClass: "access-grid"},
+]},
 free: {
   extraClass: 'grid-comm-free',
   main: [{ key: "office_status", label: "Состояние офиса", type: "select" },
@@ -180,9 +217,13 @@ free: {
     { key: "dealType", label: "Тип сделки", type: "select" },
     { key: "areaFrom", label: "Площадь от", type: "number" },
     { key: "areaTo", label: "Площадь до", type: "number" },
-    { key: "floors", label: "Кол-во этажей", type: "number" },],
-  extra: [{ key: "communications", label: "Коммуникации", type: "chips",  options: ["Электричество", "Вентиляция", "Охрана", "Кондиционер", "Интернет", "Лифт", "Отсутствуют"],gridClass: "comm-grid"},{ key: "voltage", label: "Напряжение", type: "chips", options: ["220 В", "360 В"],gridClass: "voltage-grid"},
-    { key: "truck_access", label: "Подъезд пути для грузового транспорта", type: "chips", options: ["Есть", "Нет"],gridClass: "access-grid"}]
+    { key: "floors", label: "Кол-во этажей", type: "number" },
+    { key: "heightFrom", label: "Высота потолков от", type: "number" },
+    { key: "heightTo", label: "Высота потолков до", type: "number" },
+  ],
+  extra: [{ key: "communications", label: "Коммуникации", type: "chips",  options: ["Электричество", "Вентиляция", "Охрана", "Кондиционер", "Интернет", "Лифт", "Отсутствуют"],gridClass: "comm-grid"},
+   { key: "voltage", label: "Напряжение", type: "chips", options: ["220 В", "360 В"],gridClass: "voltage-grid"},
+    { key: "truck_access", label: "Подъезд пути для грузового транспорта", type: "chips", options: ["Есть", "Нет"],gridClass: "access-grid"},]
 },},
 parking: {
 garage: {
@@ -197,7 +238,7 @@ garage: {
     { key: "places", label: "Кол-во машиномест", type: "select", options: ["1", "2", "3+"] },
     { key: "heightFrom", label: "Высота потолков от", type: "number" },
     { key: "heightTo", label: "Высота потолков до", type: "number" },],
-  extra: [{ key: "communications",label: "Коммуникации", type: "chips", options: ["Охрана", "Отопление", "Освещение", "Видеонаблюдение", "Электричество 220В"] }]
+  extra: [{ key: "communications",label: "Коммуникации", type: "chips", options: ["Охрана", "Отопление", "Освещение", "Видеонаблюдение", "Электричество", "Отсутствуют"] }]
 },
 parking_place: {
   extraClass: 'grid-parking-open',
@@ -211,7 +252,7 @@ parking_place: {
     { key: "places", label: "Кол-во машиномест", type: "select", options: ["1", "2", "3+"] },
     { key: "heightFrom", label: "Высота потолков от", type: "number" },
     { key: "heightTo", label: "Высота потолков до", type: "number" },],
-  extra: [{ key: "communications",label: "Коммуникации", type: "chips", options: ["Охрана", "Отопление", "Освещение", "Видеонаблюдение", "Электричество 220В"] }]
+  extra: [{ key: "communications",label: "Коммуникации", type: "chips", options: ["Охрана", "Отопление", "Освещение", "Видеонаблюдение", "Электричество", "Отсутствуют"] }]
 },}},
   uslugi: { all_services:{ main: [{ key: "subcategory", label: "Категория", type: "select" },
       { key: "experience", label: "Опыт", type: "select" },
@@ -236,10 +277,10 @@ parking_place: {
         { key: "owners", label: "Владельцы", type: "chips", options: ['1', '2', '3+'] },
         { key: "condition", label: "Состояние", type: "chips", options: ['Все', 'Кроме битых', 'Битые'] },
         { key: "drive", label: "Привод", type: "chips", options: ['Передний', 'Задний', 'Полный'] },
-        { key: "powerFrom", titlelabel: "Объём двигателя", label: "Мощность от", type: "number" },
-        { key: "powerTo", label: "Мощность до", type: "number" },
-        { key: "engineVolFrom", titlelabel: "Объём двигателя", label: "От", type: "number" },
-        { key: "engineVolTo", label: "До", type: "number" },
+        { key: "powerFrom", titlelabel:"Мощность: от", label: "От", type: "number" },
+        { key: "powerTo", titlelabel:"Мощность: до", label: "До", type: "number" },
+        { key: "engineVolFrom", titlelabel: "Объём двигателя: от", label: " от", type: "number" },
+        { key: "engineVolTo",titlelabel: "Объём двигателя: до", label: "до", type: "number" },
         { key: "steering", label: "Руль", type: "chips", options: ['Не важно', 'Левый ', 'Правый'] },
         { key: "color", label: "Цвет", type: "select" }]},
     moto: {main: [{ key: "country", label: "Страна производства", type: "select" },
@@ -247,43 +288,81 @@ parking_place: {
         { key: "brand", label: "Марка", type: "select" },
         { key: "model", label: "Модель", type: "select" },
         { key: "priceFrom", label: "Цена от", type: "number" },
-        { key: "priceTo", label: "Цена до", type: "number" }],
-      extra: [{ key: "owners", label: "Владельцы", type: "chips" },
-        { key: "cooling", label: "Охлаждение", type: "chips" },
-        { key: "engineType", label: "Двигатель", type: "select" }]},
-    water: { yachts: { main: [
+        { key: "priceTo", label: "Цена до", type: "number" },
+        { key: "yearFrom", label: "Год выпуска: от", type: "select" },
+        { key: "yearTo", label: "Год выпуска: до", type: "select" },
+        { key: "mileageFrom", label: "Пробег: от", type: "select" },
+        { key: "mileageTo", label: "Пробег: до", type: "select" }],
+      extra: [
+        { key: "owners", label: "Владельцев по ПТС", type: "chips", options: ["Один", "До двух", "До трёх", "Не важно"]}, 
+        { key: "condition", label: "Состояние", type: "chips", options: [ "Все","Кроме битых","Битые"] },
+        
+        { key: "transmission", label: "КПП", type: "select" },
+        { key: "powerFrom", label: "Мощность: от", type: "number" },
+        { key: "powerTo", label: "Мощность: до", type: "number" },
+        { key: "engineType", label: "Тип двигатель", type: "select" },
+        { key: "cooling", label: "Охлаждение", type: "chips", options: ["Воздушное", "Жидкостное"] },
+        { key: "color", label: "Цвет", type: "select" }]},
+    water: { yachts: {extraClass: 'grid-water-open' , main: [
         { key: "country", label: "Страна производства", type: "select" },
-        { key: "motoType", label: "Тип", type: "select" },
         { key: "brand", label: "Марка", type: "select" },
         { key: "model", label: "Модель", type: "select" },
         { key: "priceFrom", label: "Цена от", type: "number" },
-        { key: "priceTo", label: "Цена до", type: "number" }],
+        { key: "priceTo", label: "Цена до", type: "number" },
+        { key: "yearFrom", label: "Год выпуска: от", type: "select" },
+        { key: "yearTo", label: "Год выпуска: до", type: "select" },
+        { key: "condition", label: "Состояние", type: "select", options: ["Все", "Кроме битых", "Битые"] },],
        extra: [
-        { key: "owners", label: "Владельцы", type: "chips" },
-        { key: "cooling", label: "Охлаждение", type: "chips" },
-        { key: "engineType", label: "Двигатель", type: "select" }]},
-      jetski: { main: [
-        { key: "country", label: "Страна", type: "select" },
-        { key: "motoType", label: "Тип", type: "select" },
+         { key: "lengthFrom", titlelabel: "Длина, м", label: "От", type: "number" },
+         { key: "lengthTo", label: "До", type: "number" },
+         { key: "draftFrom", titlelabel: "Осадка, м", label: "От", type: "number" },
+         { key: "draftTo", label: "До", type: "number" },
+         { key: "widthFrom", titlelabel: "Ширина, м", label: "От", type: "number" },
+         { key: "widthTo", label: "До", type: "number" }, 
+         { key: "passengersFrom", titlelabel: "Макс. число пассажиров", label: "От", type: "number" },
+         { key: "passengersTo", label: "До", type: "number" },     
+         { key: "hullMaterial", label: "Материал корпуса", type: "select" }]},
+    jetski: {extraClass: 'grid-water-open2' , main: [
+        { key: "country", label: "Страна производитель", type: "select" },
         { key: "brand", label: "Марка", type: "select" },
         { key: "model", label: "Модель", type: "select" },
         { key: "priceFrom", label: "Цена от", type: "number" },
-        { key: "priceTo", label: "Цена до", type: "number" }],
+        { key: "priceTo", label: "Цена до", type: "number" },
+        { key: "yearFrom", label: "Год выпуска: от", type: "select" },
+        { key: "yearTo", label: "Год выпуска: до", type: "select" },
+        { key: "condition", label: "Состояние", type: "select", options: ["Все", "Кроме битых", "Битые"] },],
        extra: [
-        { key: "owners", label: "Владельцы", type: "chips" },
-        { key: "cooling", label: "Охлаждение", type: "chips" },
-        { key: "engineType", label: "Двигатель", type: "select" }]}},
+        { key: "powerFrom", titlelabel:"Мощность: от", label: "От", type: "number" },
+        { key: "powerTo", titlelabel:"Мощность: до", label: "До", type: "number" },
+        { key: "engineVolFrom", titlelabel: "Объём двигателя: от", label: " от", type: "number" },
+        { key: "engineVolTo",titlelabel: "Объём двигателя: до", label: "до", type: "number" },
+      ]}},
     trucks: { main: [
-        { key: "country", label: "Страна", type: "select" },
-        { key: "specialType", label: "Тип", type: "select" },
+        { key: "country", label: "Страна производства", type: "select" },
+        { key: "specialType", label: "Тип техники", type: "select" },
         { key: "brand", label: "Марка", type: "select" },
         { key: "model", label: "Модель", type: "select" },
         { key: "priceFrom", label: "Цена от", type: "number" },
-        { key: "priceTo", label: "Цена до", type: "number" }
+        { key: "priceTo", label: "Цена до", type: "number" },
+        { key: "yearFrom", label: "Год выпуска: от", type: "select" },
+        { key: "yearTo", label: "Год выпуска: до", type: "select" },
+        { key: "mileageFrom", label: "Пробег: от", type: "select" },
+        { key: "mileageTo", label: "Пробег: до", type: "select" }
       ],
       extra: [
-        { key: "condition", label: "Состояние", type: "chips" },
-        { key: "drive", label: "Привод", type: "chips" }]}},
+        { key: "pts", label: "Владельцев по ПТС", type: "chips", options: ['Один', 'До двух', 'До трёх', 'Не важно'] },
+        { key: "condition", label: "Состояние", type: "chips", options: ['Все', 'Кроме битых', 'Битые'] },
+        { key: "engineType", label: "Двигатель", type: "select" },
+        { key: "transmission", label: "КПП", type: "select" },
+        { key: "powerFrom", titlelabel: "Мощность", label: "Мощность: от", type: "number" },
+        { key: "powerTo", label: "Мощность до", type: "number" },
+        { key: "engineVolFrom", titlelabel: "Объём двигателя", label: "Объём двигателя: от", type: "number" },
+        { key: "engineVolTo", label: "Объём двигателя: до", type: "number" },
+        { key: "drive", label: "Привод", type: "chips", options: ['Передний', 'Задний', 'Полный'] },
+        ]},
+      parts:{main: [{ key: "subcategory", label: "Категория", type: "select" },{ key: "condition", label: "Состояние", type: "select", options: ["Все", "Новая", "Б/у"] },{ key: "priceFrom", label: "Цена от", type: "number" },
+        { key: "priceTo", label: "Цена до", type: "number" },],
+        extra: []}},
   biznes: {
   ready_business: {
     main: [
@@ -311,18 +390,18 @@ parking_place: {
         { key: "age", label: "Возраст", type: "select" }],
       extra: []},
       pet_products: {main: [
-        { key: "subcategory", label: "Категория", type: "select" },
-        { key: "gender", label: "Пол", type: "select" },
+        { key: "subcategory", label: "Выберите категорию", type: "select" },
+        { key: "animal_category", label: "Вид животного", type: "select" },
+        { key: "food_type", label: "Тип корма", type: "select", options: ['Влажный корм', 'Сухой корм', 'Натуральный', 'Лакомства'], },
+        //  visibleIf: (formData) => formData.subcategory !== 'Аквариумы и террариумы'
         { key: "priceFrom", label: "Цена от", type: "number" },
-        { key: "priceTo", label: "Цена до", type: "number" },
-        { key: "color", label: "Окрас", type: "select" },
-        { key: "age", label: "Возраст", type: "select" }],
+        { key: "priceTo", label: "Цена до", type: "number" },],
       extra: []},
     },
   price: { main: [
       { key: "subcategory", label: "Категория", type: "select" },
       { key: "priceFrom", label: "Цена от", type: "number" },
-      { key: "priceTo", label: "Цена до", type: "number" }],
+      { key: "priceTo", label: "Цена до", type: "number" },],
     extra: []},
   travel: { tours:{ main: [
       { key: "subcategory", label: "Тип предложения", type: "select" },

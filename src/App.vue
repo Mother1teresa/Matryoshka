@@ -27,7 +27,7 @@
 </template>
 
 <script setup>
-import { ref,watch,onUnmounted,provide } from 'vue';
+import { ref,watch,onUnmounted,provide,onMounted } from 'vue';
 import Footer from './components/layout/Footer.vue';
 import RegionModal from "./components/layout/RegionModal.vue"
 import MegaMenu from "./components/layout/MegaMenu.vue";
@@ -41,38 +41,39 @@ const auth = useAuthStore();
 const reviewStore = useReviewStore();
 const maintenanceRef = ref(null);
 let globalPolling = null;
+const loadVideos = async () => {
+  await auth.fetchVideos();
+};
 const startGlobalPolling = () => {
-  // Каждые 30 секунд проверяем новые чаты и уведомления в фоне
+  if (globalPolling) clearInterval(globalPolling);
   globalPolling = setInterval(() => {
     auth.fetchUserChats();
     auth.fetchUserNotifications();
-  }, 30000); 
+  }, 30000);
 };
+onMounted(() => {
+  loadVideos();
+});
 watch(
   () => auth.isAuthenticated,
   async (isAuth) => {
     if (isAuth) {
-      await auth.fetchProfile(); 
+      // Только для авторизованных: профиль, чаты, уведомления
+      await auth.fetchProfile();
       auth.fetchUserChats();
       auth.fetchUserNotifications();
-      await auth.fetchVideos();
-      if (auth.allVideos?.length > 0) {
-        auth.allVideos.forEach(video => {
-          if (video.thumbnail) {
-            const img = new Image();
-            img.src = video.thumbnail;
-          }
-        });
-      }
+      
       if (auth.user?.id) {
         await reviewStore.initUserReviews(auth.user.id);
       }
       startGlobalPolling();
     } else {
-      if (globalPolling) clearInterval(globalPolling); globalPolling = null;
+      // Очищаем polling при выходе
+      if (globalPolling) clearInterval(globalPolling);
+      globalPolling = null;
     }
   },
-  { immediate: true } 
+  { immediate: true }
 );
 onUnmounted(() => {
   if (globalPolling) clearInterval(globalPolling);

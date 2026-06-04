@@ -3,16 +3,25 @@
     <div class="container">
       <div v-if="videos.length" class="mini-video-section">
         <!-- Цикл по видео из стора -->
-        <router-link 
-          v-for="video in videos.slice(0, 10)" 
-          :key="video.id" 
-          :to="{ name: 'shorts', params: { id: video.id }}"
+        <router-link
+          v-for="video in videos.slice(0, 10)"
+          :key="video.id"
+          :to="{ name: 'shorts', params: { id: video.id } }"
           class="mini-video-link"
         >
-          <img
-            :src="video.thumbnail || '/src/assets/img/video/fs.jpg'"
-            alt="video thumbnail"
-            class="mini-video_img"
+          <video 
+            v-if="video.thumbnail && video.thumbnail.endsWith('.mp4')" 
+            :src="video.thumbnail" 
+            class="thumbnail mini-video_img" 
+            preload="metadata"
+            muted
+            playsinline
+          ></video>
+          <img 
+            v-else 
+            :src="video.thumbnail" 
+            class="thumbnail mini-video_img" 
+            alt="Превью" 
           />
         </router-link>
       </div>
@@ -34,7 +43,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue';
+import { computed, onMounted } from "vue";
 import { useAuthStore } from "/src/stores/authStore.js";
 
 const authStore = useAuthStore();
@@ -58,10 +67,10 @@ onMounted(async () => {
   padding: 2rem 0;
 }
 
- .container {
+.container {
   width: 86.5rem;
   margin: 0 auto;
-  transition: width .8s;
+  transition: width 0.8s;
   position: relative;
 }
 
@@ -69,10 +78,10 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   flex-wrap: nowrap;
-  overflow-x: auto; /* Позволяет скроллить ленту */
+  overflow-x: auto;
   gap: 0.938rem;
-  scrollbar-width: none; /* Скрываем скроллбар */
-  padding-right: 25rem; /* Место, чтобы видео не уходили под кнопку */
+  scrollbar-width: none; 
+  padding-right: 25rem; 
 }
 
 .mini-video-section::-webkit-scrollbar {
@@ -80,12 +89,14 @@ onMounted(async () => {
 }
 
 .mini-video-link {
-  flex-shrink: 0; /* Чтобы картинки не сжимались */
-  transition: transform 0.3s ease;
+  flex-shrink: 0;
+  transition: transform 0.3s;
+  border-radius: 0.625rem;
+  overflow: hidden;
 }
 
-.mini-video-link:hover {
-  transform: translateY(-5px);
+.mini-video-link:hover .mini-video_img{
+  transform: scale(1.03)
 }
 
 .mini-video_img {
@@ -94,6 +105,7 @@ onMounted(async () => {
   border-radius: 0.625rem;
   object-fit: cover;
   display: block;
+  transition: transform 0.3s;
 }
 
 .block-link {
@@ -103,27 +115,33 @@ onMounted(async () => {
   right: 0;
   top: 0;
   height: 100%;
-  background: linear-gradient(270deg, #FFFFFF 54.11%, rgba(255, 255, 255, 0) 100%);
+  background: linear-gradient(
+    270deg,
+    #ffffff 54.11%,
+    rgba(255, 255, 255, 0) 100%
+  );
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  pointer-events: none; /* Чтобы можно было кликать на видео под плашкой */
+  pointer-events: none;
 }
 
 .block-link a {
-  pointer-events: auto; /* А на саму кнопку кликать можно */
+  pointer-events: auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0.6rem 1.3rem;
   color: white;
-  background-color: #64a07a; /* Твой основной зеленый */
+  background-color: #64a07a; 
   box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
   border-radius: 0.625rem;
   width: 13.25rem;
   text-decoration: none;
   font-weight: 500;
   margin-right: 1.5rem;
+  position: absolute;
+  top: 0;
 }
 
 .block-link a img {
@@ -135,21 +153,29 @@ onMounted(async () => {
   transform: translateX(5px);
 }
 
-/* Скелетон для загрузки */
 .skeleton {
   background: #eee;
   animation: pulse 1.5s infinite;
 }
 
 @keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.5; }
-  100% { opacity: 1; }
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 @media (max-width: 77rem) {
   .block-link {
     width: 30%;
+  }
+  .block-link a{
+    left: 10%;
   }
 }
 </style>

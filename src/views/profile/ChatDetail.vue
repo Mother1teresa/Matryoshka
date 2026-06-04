@@ -94,21 +94,45 @@ const isOrderPlaced = ref(false);
 const showBotActions = ref(false);
 const showReviewLink = ref(false);
 
+const loadChatInfo = () => {
+  const roomId = route.params.id;
+  const found = auth.allChats.find(c => c.id === roomId);
+  if (found) chatData.value = found;
+};
+
 const fetchMessages = async () => {
   try {
-    // const data = await auth.fetchChatMessages(route.params.id);
-    chatData.value = data.chat;
+    const data = await auth.fetchChatMessages(route.params.id);
     messages.value = data.messages;
-    
-    isOrderPlaced.value = data.chat.isOrderPlaced;
-    if (messages.value.some(m => !m.isMine && !m.isRead)) {
-    //   await auth.markChatAsRead(route.params.id);
-    }
-
-    if (!showReviewLink.value) checkBotStatus(messages.value);
+    loadChatInfo();
     nextTick(() => scrollToBottom());
   } catch (e) {
-    console.error("Ошибка:", e);
+    console.error("Ошибка загрузки сообщений:", e);
+  }
+};
+
+const sendMessage = async () => {
+  if (!newMessage.value.trim()) return;
+  const text = newMessage.value;
+  newMessage.value = "";
+
+  const tempMsg = {
+    id: `temp-${Date.now()}`,
+    text,
+    isMine: true,
+    isRead: false,
+    time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    createdAt: new Date().toISOString(),
+  };
+  messages.value.push(tempMsg);
+  nextTick(() => scrollToBottom());
+
+  try {
+    await auth.sendMessage(route.params.id, text);
+    await fetchMessages();
+  } catch (e) {
+    messages.value = messages.value.filter(m => m.id !== tempMsg.id);
+    newMessage.value = text;
   }
 };
 
@@ -119,32 +143,18 @@ const checkBotStatus = (msgs) => {
     if (diffHours >= 24) showBotActions.value = true;
   }
 };
-const sendMessage = async () => {
-  if (!newMessage.value.trim()) return;
-  const text = newMessage.value;
-  newMessage.value = "";
-  try {
-    // await auth.sendMessage(route.params.id, text);
-    // await fetchMessages();
-  } catch (e) {
-    newMessage.value = text;
-  }
-};
-// Логика ответов чат-бота
+
 const handleBotAnswer = (answer) => {
   if (answer === 'yes') {
-    // Если "Да" — появляется плашка отзыва, кнопки исчезают
     showBotActions.value = false;
     showReviewLink.value = true;
   } else if (answer === 'no') {
-    // Если "Нет" — чат-бот пропадает
     showBotActions.value = false;
   } else if (answer === 'deciding') {
-    // Если "Еще решаем" — бот пропадает и появится снова через 24ч 
-    // (так как условие в checkBotStatus снова станет true при следующем fetch)
     showBotActions.value = false;
   }
 };
+
 const handleCreateOrder = () => isOrderPlaced.value = true;
 
 const scrollToBottom = () => {
@@ -152,9 +162,9 @@ const scrollToBottom = () => {
     scrollContainer.value.scrollTop = scrollContainer.value.scrollHeight;
   }
 };
+
 const openReviewModal = () => {
   console.log("Открытие модалки отзыва...");
-  // Здесь будет вызов твоей модалки
 };
 
 const formatStickyDate = (dateStr) => {
@@ -165,11 +175,9 @@ const formatStickyDate = (dateStr) => {
 
   if (date.toDateString() === now.toDateString()) return 'Сегодня';
   if (date.toDateString() === yesterday.toDateString()) return 'Вчера';
-  
+ 
   const options = { day: 'numeric', month: 'long' };
-  if (date.getFullYear() !== now.getFullYear()) {
-    options.year = 'numeric';
-  }
+  if (date.getFullYear() !== now.getFullYear()) options.year = 'numeric';
   return date.toLocaleDateString('ru-RU', options);
 };
 
@@ -180,8 +188,8 @@ const shouldShowDate = (msg, index) => {
   return prevDate !== currDate;
 };
 
-
 onMounted(() => {
+  loadChatInfo();
   fetchMessages();
   polling = setInterval(fetchMessages, 3000);
 });

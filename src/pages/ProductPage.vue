@@ -38,16 +38,67 @@
                 :class="{ active: activeImage === img }"
               /></div></div>
           <!-- Подробности -->
-          <div class="product-details">
+          <!-- <div class="product-details">
             <h3>Подробности</h3>
             <div class="details-grid">
               <div
                 v-for="field in fields"
                 :key="field.key"
-                class="detail-row">
+                :class="['detail-row', { 'full-width-row': field.type === 'chips' }]">
+                
                 <span class="label">{{ field.label }}</span>
-                <span class="value">{{ product.attributes?.[field.key] || "—" }}</span>
-              </div></div></div>
+                
+                <div v-if="field.type === 'chips' && Array.isArray(product.attributes?.[field.key])" class="details-chips-group">
+                  <span 
+                    v-for="(chip, index) in product.attributes[field.key]" 
+                    :key="index" 
+                    class="detail-chip-item">
+                    {{ chip }}
+                  </span>
+                </div>
+                
+                <span v-else class="value">
+                  {{ product.attributes?.[field.key] || "—" }}
+                </span>
+
+              </div>
+            </div>
+          </div> -->
+          <div class="product-details">
+            <div 
+              v-for="(group, groupIndex) in fieldGroups" 
+              :key="groupIndex"
+              class="details-group"
+            >
+              <h3>{{ group.title }}</h3>
+              <div class="details-grid">
+                <div
+                  v-for="field in group.fields"
+                  :key="field.key"
+                  :class="['detail-row', { 'full-width-row': field.type === 'chips' }]"
+                >
+                  <span class="label">{{ getLabel(field.key, field.label) }}</span>
+                  
+                  <!-- Чипсы (множественный выбор) -->
+                  <div v-if="field.type === 'chips'" class="details-chips-group">
+                    <span 
+                      v-for="(chip, index) in formatValue(product.attributes?.[field.key], 'chips')" 
+                      :key="index" 
+                      class="detail-chip-item"
+                      :class="{ 'chip-active': isChipActive(chip, field.key) }"
+                    >
+                      {{ chip }}
+                    </span>
+                  </div>
+                  
+                  <!-- Обычное текстовое значение -->
+                  <span v-else class="value">
+                    {{ formatValue(product.attributes?.[field.key], 'text', field.suffix) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
           <!-- Описание -->
           <div class="product-description">
             <h3>Описание</h3>
@@ -115,7 +166,8 @@
 import { ref, computed, watch, onMounted } from "vue" 
 import { useRoute, useRouter } from "vue-router"
 import { useProductStore } from "/src/stores/product.js"
-import { productLabels } from "/src/stores/productLabels.js"
+// import { productLabels } from "/src/stores/productLabels.js"
+import { getFieldGroups, getLabel, formatValue } from "/src/stores/productLabels.js";
 import { categories } from "/src/data/categories.js"
 import { Fancybox } from "@fancyapps/ui";
 import "@fancyapps/ui/dist/fancybox/fancybox.css";
@@ -232,20 +284,12 @@ const onShowNumberClick = () => {
     showCallModal.value = true; 
   }, "Войдите, чтобы увидеть номер телефона");
 };
-// const onWriteClick = (e) => {
-//   if (!auth.isAuthenticated) {
-//     e.preventDefault(); 
-//     modal.openLogin();
-//     notify("Войдите, чтобы написать сообщение");
-//   }
-// };
-const onWriteClick = async (e) => {
-  e.preventDefault();
 
+const onWriteClick = async () => {
   checkAuthAndRun(async () => {
     try {
-      // const chatId = await auth.getOrCreateChat(product.value.sellerId, product.value.id);
-      router.push({ name: 'ChatDetail', params: { id: chatId } });
+      const roomId = await auth.createPrivateRoom(product.value.sellerId);
+      router.push({ name: 'ChatDetail', params: { id: roomId } });
     } catch (err) {
       notify("Не удалось открыть чат", "error");
     }
@@ -271,6 +315,16 @@ watch(product, (newVal) => {
 onMounted(() => {
   Fancybox.bind("[data-fancybox='gallery']", { Hash: false });
 });
+const fieldGroups = computed(() => {
+  if (!product.value) return [];
+  return getFieldGroups(product.value.section, product.value.subcategory);
+});
+
+// Опционально: подсветка активных чипсов (если есть фильтр)
+function isChipActive(chip, key) {
+  // Логика подсветки, если нужно
+  return true;
+}
 </script>
 
 <style scoped>
@@ -523,6 +577,124 @@ color: var(--btn-bg);
   font-size: 1.25rem;
 }
 
-/* Анимация появления */
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  column-gap: 3rem;
+  row-gap: 1rem;
+  margin-top: 1rem;
+}
 
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px dashed #e0e0e0;
+  padding-bottom: 0.25rem;
+}
+
+.detail-row.full-width-row {
+  grid-column: span 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-top: 0.5rem;
+}
+
+.details-chips-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.detail-chip-item {
+  background-color: #5b9279;
+  color: white;
+  padding: 0.4rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+@media (max-width: 77rem) {
+  .product-left {
+    width: 47.75rem;
+  }
+  .main-image{
+    width: 100%;
+  }
+  .gallery{
+    grid-template-columns: repeat(1, 29.8rem 12.375rem);
+  }
+}
+/* Группы деталей */
+.details-group {
+  margin-bottom: 2rem;
+}
+
+.details-group h3 {
+  font-weight: 600;
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+/* Сетка для обычных полей */
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem 2rem;
+}
+
+/* Строка детали */
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px dashed #e0e0e0;
+}
+
+.detail-row.full-width-row {
+  grid-column: span 2;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+  border-bottom: none;
+}
+
+/* Чипсы */
+.details-chips-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.detail-chip-item {
+  background-color: #e8e8e8;
+  color: #666;
+  padding: 0.4rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.detail-chip-item.chip-active {
+  background-color: #5b9279;
+  color: white;
+}
+
+/* Подписи */
+.label {
+  color: #888;
+  font-size: 1rem;
+}
+
+.value {
+  font-weight: 500;
+  color: #333;
+}
 </style>

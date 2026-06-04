@@ -125,7 +125,7 @@
             </div>
             <label v-if="photoPreviews.length < 30" class="photo-box upload-btn">
               <input type="file" multiple accept="image/*" @change="handlePhotoUpload" hidden />
-              <img src="/src/assets/img/icons/camera.svg" alt="camera" />
+              <img src="/src/assets/img/icons/camera.svg" alt="camera" class="camera-foto"/>
             </label>
           </div>
         </section>
@@ -169,12 +169,21 @@
             </div>
           </div>
         </section>
+        <div style="font-size: 12px; color: red; margin: 10px 0;">
+          <div>title: {{ form.title ? 'OK' : 'EMPTY' }}</div>
+          <div>description: {{ form.description ? 'OK' : 'EMPTY' }}</div>
+          <div>price: {{ form.price ? 'OK' : 'EMPTY' }}</div>
+          <div>address: {{ form.address ? 'OK' : 'EMPTY' }}</div>
+          <div>phone: {{ form.phone ? 'OK' : 'EMPTY' }}</div>
+          <div>v$.$invalid: {{ v$.$invalid }}</div>
+          <div>v$.$dirty: {{ v$.$dirty }}</div>
+        </div>
         <!-- Кнопка отправки -->
         <div class="submit-section">
           <button 
             type="button" 
             class="btn-submit" 
-            :class="{ 'btn-disabled': v$.$invalid }" 
+            :class="{ 'btn-disabled': v$.$invalid && v$.$dirty }" 
             :disabled="isSubmitting" 
             @click="publishAd"
           >
@@ -198,7 +207,9 @@ import { notify } from "/src/utils/notify";
 import { uploadToMediaService } from "/src/utils/uploadService.js";
 import { useAuthStore } from "/src/stores/authStore.js";
 import FormField from '/src/views/FormField.vue';
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const auth = useAuthStore();
 const isSubmitting = ref(false);
 const searchQuery = ref("");
@@ -301,16 +312,21 @@ const locationLabel = computed(() => {
   if (form.mainCategory === 'rabota') return 'Место работы';
   return 'Местоположение';
 });
-const rules = computed(() => ({
-  title: { required, minLength: minLength(3) },
-  description: descriptionInConfig.value ? {} : { required },
-  price: { 
-    required, 
-    minValue: minValue(1) 
-  },
-  address: { required },
-  phone: { required, minLength: minLength(18) }
-}));
+const rules = computed(() => {
+  const base = {
+    title: { required, minLength: minLength(3) },
+    description: descriptionInConfig.value ? {} : { required },
+    address: { required },
+    phone: { required, minLength: minLength(18) }
+  };
+  
+  // Для работы цена берётся из attributes.salary, а не form.price
+  if (form.mainCategory !== 'rabota') {
+    base.price = { required, minValue: minValue(1) };
+  }
+  
+  return base;
+});
 const v$ = useVuelidate(rules, form);
 
 // ═══════════════════════════════════════════════════════════
@@ -363,12 +379,19 @@ function getFieldValue(key) {
   return form.attributes[key];
 }
 
+// В setFieldValue добавь:
 function setFieldValue(key, value) {
   form.attributes[key] = value;
   
   const field = findFieldByKey(key);
   if (field?.bindToTitle) {
     form.title = value;
+    console.log('Title updated:', form.title);
+  }
+  
+  // Синхронизируем salary с form.price
+  if (key === 'salary' && typeof value === 'object') {
+    form.price = value.price;
   }
   
   if (key === 'price' && typeof value === 'object') {
@@ -395,13 +418,12 @@ function selectMainCategory(cat) {
   form.title = '';
   form.description = '';
   form.price = '';
+  form.address = '';
+  form.phone = '';
   form.attributes = {};
   
-  try {
-    v$.$reset();
-  } catch {
-    try { v$.value.$reset(); } catch {}
-  }
+  // В Vuelidate v2 $reset() существует
+  v$.value.$reset();
   
   const sections = cat.sections || [];
   const slugSections = sections.filter(s => s.slug);
@@ -631,42 +653,62 @@ watch(searchQuery, (query) => {
 // ═══════════════════════════════════════════════════════════
 
 const publishAd = async () => {
-  const isValid = await (v$.value?.$validate?.() ?? v$.$validate());
+  const isValid = await v$.value.$validate();
+  
   if (!isValid) {
     notify("Заполните все обязательные поля", "error");
     return;
   }
+  
   isSubmitting.value = true;
   
   try {
+    // Загружаем фото
     const uploadedUrls = [];
     for (const file of photos.value) {
-      const url = await uploadToMediaService(file, auth.user?.id, "ad_photo");
-      if (url) uploadedUrls.push(url);
+      const url = await uploadToMediaService(file, "image", { title: "ad_photo" });
+      if (url) uploadedUrls.push({ pictureUrl: url });
     }
+
+    // Загружаем видео если есть
+    let videoId = null;
+    if (form.videoFile) {
+      const videoResult = await uploadToMediaService(form.videoFile, "video", { 
+        title: form.title 
+      });
+      if (videoResult?.id) videoId = videoResult.id;
+    }
+
+    // Формируем payload
     const payload = {
-      mainCategory: form.mainCategory,
-      subCategory: form.subCategory,
-      subSubCategory: form.subSubCategory || undefined,
+      category: form.mainCategory,
       title: form.title,
+      price: String(form.price || 0),
       description: form.description,
-      price: Number(form.price) || 0,
       address: form.address,
-      coordinates: form.coordinates,
-      phone: form.phone.replace(/\D/g, ''),
-      images: uploadedUrls,
-      attributes: form.attributes
+      contacts: form.phone.replace(/\D/g, ''),
+      pictures: uploadedUrls,
+      videoId: videoId,
+      subCategory: form.subCategory,
+      ...form.attributes,
     };
-    await api.post('/ads/create', payload);
-    notify("Объявление успешно опубликовано!", "success");  
+
+    // Убираем undefined/null поля
+    Object.keys(payload).forEach(key => {
+      if (payload[key] === undefined || payload[key] === null || payload[key] === '') {
+        delete payload[key];
+      }
+    });
+
+    await auth.createAdvert(payload);
+    router.push('/profile/advertisements');
+    
   } catch (e) {
-    console.error("Ошибка публикации:", e);
-    notify(e.response?.data?.message || "Не удалось опубликовать объявление", "error");
+    console.error('Ошибка публикации:', e);
   } finally {
     isSubmitting.value = false;
   }
 };
-
 
 // ═══════════════════════════════════════════════════════════
 // MOUNTED
@@ -681,68 +723,103 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.create-ad-page { padding-bottom: 40px; }
+.profile-main .container{
+  width: 100%;
+  margin: 0;
+}
+.create-ad-page { padding-bottom: 2.857rem; background: #FFFFFF; padding: 0.938rem 2.188rem 2.938rem 2.188rem;
+margin-top: 2.438rem; border-radius: 1.875rem; height: 97%;
+    margin-bottom: 2rem;}
+
+.create-ad-page .page-title{
+  text-align: start;
+  color: var(--btn-bg);
+  margin-bottom: 1.563rem;
+}
 .breadcrumbs { 
   display: flex; 
-  gap: 8px; 
-  color: #aaa; 
-  font-size: 14px; 
-  margin-bottom: 25px; 
+  gap: 0.313rem; 
+  color: #A8A1A1; 
+  font-size: 1rem; 
+  margin-bottom: 2.188rem;
 }
 .crumb-item.last { color: #555; }
 
 .category-grid { 
-  display: grid; 
-  grid-template-columns: repeat(4, 1fr); 
-  gap: 15px; 
-  margin-top: 15px; 
+  display: flex;  
+  flex-wrap: wrap;
+  gap: 1.071rem; 
+  margin-top: 2.188rem; 
 }
 .category-card { 
-  border: 1px solid #eef0ef; 
-  padding: 20px; 
-  border-radius: 18px; 
-  text-align: center; 
-  cursor: pointer; 
-  transition: 0.2s; 
-  background: #fff; 
+  position: relative;
+  width: fit-content;
+  height: 4.75rem;
+  padding: 0.625rem 1rem 0.825rem 1rem;
+  padding-right: 1.75rem;
+  color: #262626;
+  font-weight: 500;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  border-radius: 0.938rem;
+  background-color: #d9d9d980;
+  transition: opacity 0.3s, box-shadow 0.3s;
+    /* margin-bottom: 1.738rem; */
+    overflow: hidden;
+    cursor: pointer;
 }
 .category-card:hover {
   border-color: #76a58f;
 }
 .category-card.active { 
-  border-color: #76a58f; 
-  background: #f7faf9; 
+  width: fit-content;
+  box-shadow: 0px 0.2rem 0.2rem 0px #00000040;
+  background-color: white;
 }
-.cat-icon img { width: 40px; height: 40px; margin-bottom: 8px; }
-
+.cat-icon img { width: 4.357rem; height: 2.857rem; }
+.cat-icon{
+  position: relative;
+  order: 2;
+  right: -1rem;
+  bottom: -1.2rem;
+  width: 3rem;
+  height: 3rem;
+}
 .subcategory-grid { 
   display: flex; 
   flex-wrap: wrap; 
-  gap: 12px; 
-  margin-top: 15px; 
+  gap: 0.75rem; 
+  margin-top: 0.938rem; 
 }
 .subcategory-card { 
-  padding: 14px 24px; 
+  padding: 0.875rem 1.5rem; 
   border: 1px solid #e0e0e0; 
-  border-radius: 14px; 
+  border-radius: 0.875rem; 
   background: #f5f5f5; 
   cursor: pointer; 
   transition: 0.2s; 
-  font-size: 14px;
+  font-size: 0.975rem;
 }
 .subcategory-card:hover {
   border-color: #76a58f;
 }
 .subcategory-card.active { 
-  background: #76a58f; 
-  color: white; 
+  width: fit-content;
+  box-shadow: 0px 0.2rem 0.2rem 0px #00000040;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background-color: white;
   border-color: #76a58f; 
 }
 
 .fields-grid { 
   display: flex; 
   flex-direction: column; 
-  gap: 4px; 
+  gap: 0.938rem; 
+  margin-top: 0.938rem;
 }
 .photo-grid { 
   display: flex; 
@@ -751,10 +828,10 @@ onBeforeUnmount(() => {
   margin-top: 15px; 
 }
 .photo-box { 
-  width: 110px; 
-  height: 100px; 
-  border: 1px solid #e0e0e0; 
-  border-radius: 14px; 
+  width: 11.688rem; 
+  height: 8.438rem; 
+  border: 0.5px solid #000000; 
+  border-radius: 0.625rem; 
   display: flex; 
   align-items: center; 
   justify-content: center; 
@@ -763,20 +840,24 @@ onBeforeUnmount(() => {
   cursor: pointer; 
   overflow: hidden;
 }
-.upload-btn { border-style: dashed; }
+.photo-box .camera-foto{
+  width: 6.188rem;
+  height: 4.688rem;
+}
+/* .upload-btn { border-style: dashed; } */
 .preview-img { width: 100%; height: 100%; object-fit: cover; }
 .remove-photo { 
   position: absolute; 
-  top: -6px; 
-  right: -6px; 
+  top: auto; 
+  right: auto; 
   background: #ff4d4f; 
   color: white; 
   border: none; 
   border-radius: 50%; 
-  width: 22px; 
-  height: 22px; 
+  width: 1.375rem;
+  height: 1.375rem;
   cursor: pointer; 
-  font-size: 14px; 
+  font-size: 1rem; 
   display: flex;
   align-items: center;
   justify-content: center;
@@ -784,25 +865,29 @@ onBeforeUnmount(() => {
 
 .map-container-ad { 
   width: 100%; 
-  height: 320px; 
-  border-radius: 20px; 
-  margin-top: 16px; 
+  height: 31.676rem; 
+  border-radius: 0.625rem !important; 
+  margin-top: 0.938rem; 
   background: #f5f5f5; 
   overflow: hidden; 
   border: 1px solid #eaeaea; 
 }
-
+.submit-section{
+  display: grid;
+  align-items: center;
+  justify-content: center;
+}
 .btn-submit { 
-  background: #76a58f; 
-  color: white; 
-  width: 100%; 
-  padding: 16px; 
-  border-radius: 30px; 
+  background: var(--btn-bg); 
+  color: white;
+  text-align: center;
+  width: fit-content; 
+  padding: 1.375rem 1.75rem; 
+  border-radius: 1.875rem; 
   border: none; 
-  font-size: 16px; 
-  font-weight: 600; 
+  font-size: 1.25rem; 
+  font-weight: 400; 
   cursor: pointer; 
-  margin-top: 20px; 
   transition: 0.2s;
 }
 .btn-submit:hover {
@@ -851,18 +936,20 @@ onBeforeUnmount(() => {
 .clear-phone-btn:hover { opacity: 0.7; }
 .error-border { border-color: #ff4d4f !important; }
 .required { color: #ff4d4f; margin-left: 2px; }
-.section { margin-bottom: 24px; }
-.section-title { font-size: 18px; font-weight: 600; margin-bottom: 12px; color: #333; }
-.form-group { margin-bottom: 16px; }
-.label { font-size: 14px; font-weight: 500; color: #333; display: block; margin-bottom: 8px; }
+.section { margin-bottom: 2.188rem; }
+.section-title { font-size: 1.5rem; font-weight: 700; color: #262626; margin-bottom: 0.938rem;}
+/* .form-group { margin-bottom: .5rem; } */
+.label { font-size: 1.25rem; font-weight: 400; color: #262626; display: block; margin-bottom: 8px; }
 .f-input, .f-textarea {
+  min-width: 8rem;
   width: 100%;
-  padding: 12px 16px;
+  padding: 0.875rem 0.938rem !important;
   border: 1px solid #e0e0e0;
-  border-radius: 12px;
-  font-size: 14px;
+  border-radius: 0.625rem !important;
+  font-size: 1rem !important;
   transition: border-color 0.2s;
   outline: none;
+  height: 3.188rem !important;
 }
 .f-input:focus, .f-textarea:focus {
   border-color: #76a58f;
@@ -890,5 +977,18 @@ onBeforeUnmount(() => {
   background: #76a58f; 
   color: white; 
   border-color: #76a58f; 
+}
+:deep(.multiselect--active:not(.multiselect--above) .multiselect__current), :deep(.multiselect--active:not(.multiselect--above) .multiselect__input), :deep(.multiselect--active:not(.multiselect--above) .multiselect__tags) {
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+:deep(.multiselect__input), :deep(.multiselect__single){
+  line-height: normal !important;
+  min-height:auto !important;
+  vertical-align:auto !important;
+}
+:deep(.multiselect__option--selected) {
+  color: var(--btn-bg);
+  background: #f3f3f3;
 }
 </style>

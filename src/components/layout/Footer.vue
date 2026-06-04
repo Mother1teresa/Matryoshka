@@ -66,6 +66,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 2rem;
   width: 100%;
   margin-top: 2.625rem;
   margin-bottom: 1.25rem;
@@ -79,7 +81,7 @@
 .footer__bottom-right {
   display: flex;
   justify-content: space-between;
-  width: 100%;
+  width:35%;
 }
 .footer__bottom-right img {
   position: relative;

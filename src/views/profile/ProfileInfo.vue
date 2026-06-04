@@ -125,7 +125,6 @@ watch(isModalOpen, (newVal) => {if (newVal) { document.body.classList.add("overf
   margin-bottom: 2.5rem;
 }
 .stars {
-  color: var(--btn-bg);
   letter-spacing: 2px;
   font-size: 2.65rem;
 }

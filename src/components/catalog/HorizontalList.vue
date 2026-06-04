@@ -85,12 +85,15 @@ const onShowNumberClick = () => {
     isNumberShown.value = true;
   }, "Войдите, чтобы увидеть номер телефона");
 };
-const onWriteClick = (e) => {
-  if (!auth.isAuthenticated) {
-    e.preventDefault();
-    modal.openLogin();
-    notify("Войдите, чтобы написать сообщение");
-  }
+const onWriteClick = async (item) => {
+  checkAuthAndRun(async () => {
+    try {
+      const roomId = await auth.createPrivateRoom(item.sellerId);
+      router.push({ name: 'ChatDetail', params: { id: roomId } });
+    } catch (err) {
+      notify("Не удалось открыть чат", "error");
+    }
+  }, "Войдите, чтобы написать сообщение");
 };
 const getSubcategoryName = (item) => {
   const targetSlug = item.subcategory || item.section;
@@ -222,7 +225,7 @@ const emptyStateText = computed(() => {
         </div>
         <div class="card-content__rigth">
           <div class="card-content__rigth-btns">
-            <a class="btn card-btn" @click="onWriteClick">Написать</a>
+            <a class="btn card-btn" @click="onWriteClick(item)">Написать</a>
             <button class="btn card-btn" @click="onShowNumberClick">
               Показать номер
             </button>

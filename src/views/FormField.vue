@@ -275,14 +275,9 @@ const updateNumeric = (val) => {
 .form-group { 
   display: flex; 
   flex-direction: column; 
-  gap: 8px; 
-  margin-bottom: 16px; 
+  gap: 0.938rem; 
 }
-.label { 
-  font-size: 14px; 
-  font-weight: 500; 
-  color: #333; 
-}
+.label { font-size: 1.25rem; font-weight: 400; color: #262626; display: block;}
 .required { 
   color: #ff4d4f; 
   margin-left: 4px; 
@@ -445,7 +440,7 @@ const updateNumeric = (val) => {
 .dynamic-list { 
   display: flex; 
   flex-direction: column; 
-  gap: 8px; 
+  gap: 0.938rem; 
 }
 .list-row { 
   display: flex; 
@@ -491,15 +486,26 @@ const updateNumeric = (val) => {
 }
 
 /* Общие стили инпутов */
-.f-input, .f-textarea {
+.f-input, .f-textarea,:deep(.multiselect__tags) {
+  min-width: 8rem;
   width: 100%;
-  padding: 12px 16px;
+  padding: 0.875rem 0.938rem !important;
   border: 1px solid #e0e0e0;
-  border-radius: 12px;
-  font-size: 14px;
+  border-radius: 0.625rem !important;
+  font-size: 1rem !important;
   transition: border-color 0.2s;
   outline: none;
+  height: 3.188rem !important;
 }
+.price-input-container .f-input{
+  padding-right: 2rem !important;
+}
+:deep(.multiselect__input), :deep(.multiselect__single){
+  line-height: normal !important;
+  min-height:auto !important;
+  vertical-align:auto !important;
+}
+
 .f-input:focus, .f-textarea:focus {
   border-color: #76a58f;
 }
@@ -526,13 +532,13 @@ const updateNumeric = (val) => {
   color: #000 !important; font-size: 1rem !important; 
   padding-left: 0 !important; margin-bottom: 0 !important; background: transparent !important; display: block !important;
 }
-:deep(.multiselect__tags) { 
+/* :deep(.multiselect__tags) { 
   min-height: 2.6rem !important; height: 2.6rem !important; background: #fff !important; 
   border-radius: 0.938rem; padding: 0 0.638rem 0 0.938rem !important; display: flex !important; align-items: center !important;
   transition: all .1s; 
-}
-:deep(.multiselect){min-height: 2.6rem !important; height: 2.6rem !important;}
-:deep(.multiselect__placeholder) { color: #A8A1A1 !important; line-height: 40px !important; margin: 0 !important; padding: 0 !important; font-size: 1rem;}
+} */
+:deep(.multiselect){height: 3.188rem !important;}
+:deep(.multiselect__placeholder) { color: #A8A1A1 !important; margin: 0 !important; padding: 0 !important; font-size: 1rem;}
 :deep(.multiselect__input), :deep(.multiselect__single){
   margin-bottom: 0;
 }
@@ -546,9 +552,13 @@ const updateNumeric = (val) => {
 }
 :deep(.multiselect__option--highlight) { background: var(--btn-bg) !important; color: #fff !important; font-weight: 600;}
 .multiselect-container { width: 100%; position: relative; cursor: pointer; }
-.f-input {border: 1px solid #e8e8e8; -webkit-appearance: none; font-size: 1rem !important; padding: 0 1.875rem 0 0.938rem !important; height: 2.6rem !important; border-radius: 0.938rem; width: auto; outline: none; color: #000; }
+/* .f-input {border: 1px solid #e8e8e8; -webkit-appearance: none; font-size: 1rem !important; padding: 0 1.875rem 0 0.938rem !important; height: 2.6rem !important; border-radius: 0.938rem; outline: none; color: #000; } */
 .f-input::placeholder{color: #A8A1A1;}
 .f-input::-webkit-outer-spin-button,
 .f-input::-webkit-inner-spin-button {-webkit-appearance: none;margin: 0;}
 .f-input[type='number'] {-moz-appearance: textfield;}
+:deep(.multiselect__option--selected) {
+  color: var(--btn-bg);
+  background: #f3f3f3;
+}
 </style>

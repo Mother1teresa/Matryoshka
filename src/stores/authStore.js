@@ -26,6 +26,9 @@ export const useAuthStore = defineStore("auth", {
         user: null,
         allVideos: [],
         allChats: [],
+        isVideosLoading: false,
+        allNotifications: [],
+        isNotificationsLoading: false,
       };
     }
   },
@@ -55,22 +58,167 @@ export const useAuthStore = defineStore("auth", {
     },
   },
   actions: {
-      saveToStorage() {
-    // Если данных нет, не затираем старые (или логируем ошибку)
-    if (!this.user && this.isAuthenticated) {
-      console.error("Попытка сохранить пустой профиль!");
-      return;
-    }
-    
-    localStorage.setItem(
-      "auth",
-      JSON.stringify({
-        isAuthenticated: this.isAuthenticated,
-        user: this.user,
-      }),
-    );
-  },
+    async fetchUserChats() {
+      if (!this.user?.id) {
+        console.warn("Невозможно загрузить чаты: пользователь не авторизован");
+        return;
+      }
+      try {
+        // Делаем запрос к эндпоинту согласно OpenAPI спецификации
+        const res = await api.get(`/chat/users/${this.user.id}/rooms`);
+        const rooms = res.data?.rooms || [];
 
+        // Преобразуем структуру бэкенда под структуру вашего компонента Vue
+        this.allChats = rooms.map((room) => {
+          // Ищем собеседника (пользователя, чей ID отличается от текущего)
+          const opponent = room.users?.find((u) => u.id !== this.user.id) || {};
+          
+          // Достаем последнее сообщение из истории комнаты
+          const lastMsg = room.messages && room.messages.length > 0
+            ? room.messages[room.messages.length - 1]
+            : null;
+
+          return {
+            id: room.id,
+            productName: "Объявление",
+            productImage: "/src/assets/img/mask-avatar.png",
+            price: "",
+            user: {
+              id: opponent.id || "",
+              name: opponent.username || opponent.email || "Пользователь",
+              avatar: opponent.avatar || "/src/assets/img/mask-avatar.png",
+              isOnline: false,
+            },
+            lastMessage: {
+              text: lastMsg ? lastMsg.text : "Сообщений нет",
+              isMine: lastMsg ? lastMsg.userId === this.user.id : false,
+              isRead: false,
+              time: lastMsg && lastMsg.createdAt
+                ? new Date(lastMsg.createdAt).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                : "",
+            },
+          };
+        });
+      } catch (e) {
+        console.error("Ошибка при получении чатов через API:", e.response?.data || e);
+        throw e;
+      }
+    },
+    async fetchChatMessages(roomId) {
+      try {
+        const res = await api.get(`/chat/rooms/${roomId}/messages`);
+        const msgs = res.data?.messages || [];
+        return {
+          messages: msgs.map(msg => ({
+            id: msg.id,
+            text: msg.text,
+            isMine: msg.userId === this.user?.id,
+            isRead: false,
+            time: msg.createdAt
+              ? new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+              : "",
+            createdAt: msg.createdAt,
+          })),
+        };
+      } catch (e) {
+        console.error("Ошибка загрузки сообщений:", e.response?.data || e);
+        throw e;
+      }
+    },
+    async sendMessage(roomId, text) {
+      try {
+        const res = await api.post(`/chat/rooms/${roomId}/messages`, {
+          text,
+          userId: this.user?.id,
+        });
+        return res.data;
+      } catch (e) {
+        console.error("Ошибка отправки сообщения:", e.response?.data || e);
+        throw e;
+      }
+    },
+    async createPrivateRoom(userBId) {
+      if (!this.user?.id) throw new Error("Пользователь не авторизован");
+      try {
+        const res = await api.post("/chat/rooms/private", {
+          userA: this.user.id,
+          userB: userBId,
+        });
+        return res.data?.roomId;
+      } catch (e) {
+        console.error("Ошибка создания комнаты:", e.response?.data || e);
+        throw e;
+      }
+    },
+    async searchMessages(roomId, query) {
+      if (!query.trim()) return [];
+      try {
+        const res = await api.get(
+          `/chat/rooms/${roomId}/messages/search?q=${encodeURIComponent(query)}`
+        );
+        return res.data?.messages || [];
+      } catch (e) {
+        console.error("Ошибка поиска:", e.response?.data || e);
+        throw e;
+      }
+    },
+    async createAdvert(payload) {
+      try {
+        const res = await api.post('/advert/create', payload);
+        notify("Объявление успешно опубликовано!", "success");
+        return res.data;
+      } catch (e) {
+        console.error("Ошибка создания объявления:", e);
+        notify(e.response?.data?.message || "Не удалось опубликовать объявление", "error");
+        throw e;
+      }
+    },
+    async fetchMyAdverts() {
+      if (!this.isAuthenticated) {
+        console.warn("Нужна авторизация для загрузки объявлений");
+        return [];
+      }
+      try {
+        const res = await api.get('/advert', { withCredentials: true });
+        return Array.isArray(res.data) ? res.data : [];
+      } catch (e) {
+        console.error("Ошибка загрузки объявлений:", e);
+        notify("Не удалось загрузить объявления", "error");
+        return [];
+      }
+    },
+    async updateAdvertStatus(id, status) {
+      try {
+        await api.patch(`/advert/${id}`, { status });
+        notify(status === 'archive' ? "В архив" : "Опубликовано", "success");
+        return true;
+      } catch (e) {
+        console.error("Ошибка обновления статуса:", e);
+        notify("Не удалось обновить статус", "error");
+        return false;
+      }
+    },
+    async deleteAdvert(id) {
+      try {
+        await api.delete(`/advert/${id}`);
+        notify("Объявление удалено", "success");
+        return true;
+      } catch (e) {
+        console.error("Ошибка удаления:", e);
+        notify("Не удалось удалить объявление", "error");
+        return false;
+      }
+    },
+    saveToStorage() {
+      if (!this.user && this.isAuthenticated) {
+        console.error("Попытка сохранить пустой профиль!");
+        return;
+      }
+      localStorage.setItem("auth", JSON.stringify({ isAuthenticated: this.isAuthenticated, user: this.user,}),);
+    },
     login(user) {
       this.isAuthenticated = true;
       this.user = { ...user };
@@ -157,11 +305,13 @@ export const useAuthStore = defineStore("auth", {
         const rawVideos = Array.isArray(res.data) ? res.data : [];
 
         const enrichedVideos = await Promise.all(rawVideos.map(async (v) => {
+          console.log('Processing video:', v.id, 'userId:', v.userId);
           let userData = null;
           if (v.userId) {
             try {
-              const userRes = await api.get(`/users/${v.userId}`);
-              userData = userRes.data;
+              // const userRes = await api.get(`/users/${v.userId}`);
+              // userData = userRes.data;
+              console.log('User data:', userData);
             } catch (e) {
               console.warn(`Автор ${v.userId} не найден`);
             }
@@ -174,7 +324,7 @@ export const useAuthStore = defineStore("auth", {
             description: v.description || 'Описание ролика временно недоступно',
             isArchived: v.isArchived || false,
             author: {
-              name: userData?.name || 'Пользователь',
+              name: userData?.name || userData?.username || 'Пользователь',
               avatar: userData?.avatar || userData?.avatarUrl || maskAvatar,
               city: userData?.city || 'Город не указан',
               rating: userData?.rating || 0,

@@ -19,39 +19,57 @@
       <div v-if="isLoading" class="loading-state">Загрузка объявлений...</div>
       <div v-else-if="currentAds.length > 0" class="ads-list">
         <div v-for="ad in currentAds" :key="ad.id" class="ad-card-horizontal">
-            <div class="ad-image-block">
-                <img :src="ad.image || '/src/assets/img/placeholder.png'" alt="product" />
+          <div class="ad-image-block">
+            <img 
+              :src="ad.image" 
+              alt="product" 
+              @error="ad.image = '/src/assets/img/placeholder.png'"
+            />
+          </div>
+          <div class="ad-main-info">
+            <div class="ad-title-row">
+              <h3 class="ad-title">{{ ad.title }}</h3>
+              <button class="menu-dots-btn" @click.stop="toggleMenu(ad.id)">
+                <span></span><span></span><span></span>
+              </button>
+              <div v-if="activeMenuId === ad.id" class="video-dropdown-menu">
+                <button @click="editAd(ad.id)">Редактировать</button>
+                <button v-if="activeTab !== 'archive'" @click="handleStatusChange(ad.id, 'archive')">
+                  В архив
+                </button>
+                <button v-else @click="handleStatusChange(ad.id, 'active')">
+                  Опубликовать заново
+                </button>
+                <button class="delete-btn" @click="handleDelete(ad.id)">Удалить</button>
+              </div>
             </div>
-            <div class="ad-main-info">
-                <div class="ad-title-row">
-                <h3 class="ad-title">{{ ad.title }}</h3>
-                <button class="menu-dots-btn" @click.stop="toggleMenu(ad.id)"><span></span><span></span><span></span></button>
-                <div v-if="activeMenuId === ad.id" class="video-dropdown-menu">
-                    <button @click="editAd(ad.id)">Редактировать</button>
-                    <button v-if="activeTab !== 'archive'" @click="handleStatusChange(ad.id, 'archive')">В архив</button>
-                    <button v-else @click="handleStatusChange(ad.id, 'active')">Опубликовать заново</button>
-                    <button class="delete-btn" @click="handleDelete(ad.id)">Удалить</button>
+            <div v-if="activeTab === 'archive'" class="archive-reason">Продал / Другая причина</div>
+            <div class="ad-price">{{ ad.price.toLocaleString() }} ₽</div>
+            <div class="ad-stock">{{ ad.stock }} шт. в наличии</div>
+            <div class="ad-auto-pub">Автопубликация: осталось {{ ad.daysLeft }} дней</div>
+            <p class="ad-description">{{ ad.description }}</p>
+            <div class="ad-location">{{ ad.city }}</div>
+          </div>
+          <div class="ad-stats-block">
+            <div class="mini-preview-stats">
+              <img :src="ad.image" class="preview-img-mini" @error="$event.target.style.display='none'" />
+              <div class="stats-column">
+                <div class="stat-item">
+                  <img src="/src/assets/img/icons/eye.svg" /> {{ ad.views }}
                 </div>
+                <div class="stat-item">
+                  <img src="/src/assets/img/icons/heart.svg" /> {{ ad.likes }}
                 </div>
-                <div v-if="activeTab === 'archive'" class="archive-reason">Продал / Другая причина</div>
-                <div class="ad-price">{{ ad.price.toLocaleString() }} ₽</div>
-                <div class="ad-stock">{{ ad.stock }} шт. в наличии</div>
-                <div class="ad-auto-pub">Автопубликация: осталось {{ ad.daysLeft }} дней</div>
-                <p class="ad-description">{{ ad.description }}</p>
-                <div class="ad-location">{{ ad.city }}</div>
+                <div class="stat-item">
+                  <img src="/src/assets/img/icons/comment.svg" /> {{ ad.comments }}
+                </div>
+                <div class="stat-item">
+                  <img src="/src/assets/img/icons/share.svg" /> {{ ad.shares }}
+                </div>
+              </div>
             </div>
-            <div class="ad-stats-block">
-                <div class="mini-preview-stats">
-                <img :src="ad.image" class="preview-img-mini" />
-                <div class="stats-column">
-                    <div class="stat-item"><img src="/src/assets/img/icons/eye.svg" /> {{ ad.views }}</div>
-                    <div class="stat-item"><img src="/src/assets/img/icons/heart.svg" /> {{ ad.likes }}</div>
-                    <div class="stat-item"><img src="/src/assets/img/icons/comment.svg" /> {{ ad.comments }}</div>
-                    <div class="stat-item"><img src="/src/assets/img/icons/share.svg" /> {{ ad.shares }}</div>
-                </div>
-                </div>
-                <button v-if="activeTab === 'active'" class="btn boost-btn">Увеличить продажи</button>
-            </div>
+            <button v-if="activeTab === 'active'" class="btn boost-btn">Увеличить продажи</button>
+          </div>
         </div>
       </div>
       <!-- Пустое состояние -->
@@ -62,67 +80,95 @@
              activeTab === 'drafts' ? 'Черновики пусты' : 'Архив пуст' }}
         </h3>
         <p>Вы можете создать новое объявление в разделе "Создать".</p>
-        <router-link to="/profile/create" class="btn go-to-ads-btn">К созданию</router-link>
+        <router-link to="/profile/create-ad" class="btn go-to-ads-btn">К созданию</router-link>
       </div></div></div></template>
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useAuthStore } from "/src/stores/authStore.js";
 import { notify } from "/src/utils/notify";
+
 const auth = useAuthStore();
 const activeMenuId = ref(null);
 const activeTab = ref("active");
 const isLoading = ref(false);
-// В будущем здесь будет запрос к api/profile/my-adverts
-const myAds = ref([
-  {
-    id: 1,
-    title: 'Короб 600*400*400 мм Т-23',
-    price: 70,
-    stock: 29,
-    daysLeft: 30,
-    description: 'Короб мастер - надёжный поставщик коробок. Предлагаем вам гофроящик 600*400*400 мм марка гофрокартона Т-23. Оптом Предлагаем вам гофроящик 600*400*400 мм марка гофрокартона Т-23. Оптом',
-    city: 'г. Москва',
-    views: 23645,
-    likes: 249,
-    comments: 23,
-    shares: 11,
-    status: 'active',
-    image: "/img/roliks/rolik.png"
+const myAds = ref([]);
+
+// Загрузка объявлений
+const loadAdverts = async () => {
+  isLoading.value = true;
+  try {
+    const ads = await auth.fetchMyAdverts();
+    myAds.value = ads.map(ad => ({
+      id: ad.id,
+      title: ad.title,
+      price: Number(ad.price) || 0,
+      stock: ad.stock || 0,
+      daysLeft: ad.daysLeft || 30,
+      description: ad.description || '',
+      city: ad.address || ad.city || '',
+      views: ad.viewsCount || 0,
+      likes: ad.likesCount || 0,
+      comments: ad.commentsCount || 0,
+      shares: ad.sharesCount || 0,
+      status: ad.status || 'active',
+      image: ad.pictures?.[0]?.pictureUrl || ad.thumbnailUrl || '/src/assets/img/placeholder.png',
+      videoId: ad.videoId
+    }));
+  } catch (e) {
+    console.error("Ошибка:", e);
+  } finally {
+    isLoading.value = false;
   }
-]);
+};
+
 // Фильтрация по табам
 const currentAds = computed(() => {
   return myAds.value.filter(ad => ad.status === activeTab.value);
 });
-// Счетчики для табов
+
 const counts = computed(() => ({
   drafts: myAds.value.filter(ad => ad.status === 'drafts').length,
   active: myAds.value.filter(ad => ad.status === 'active').length,
   archive: myAds.value.filter(ad => ad.status === 'archive').length,
 }));
+
 const toggleMenu = (id) => {
   activeMenuId.value = activeMenuId.value === id ? null : id;
 };
+
 const closeMenu = (e) => {
-  if (!e.target.closest('.video-card')) {
+  if (!e.target.closest('.ad-card-horizontal')) {
     activeMenuId.value = null;
   }
 };
-const handleArchive = async (id, status) => {
-  notify("Перенесено в архив");
-  closeMenu();
-};
-const handleDelete = async (id) => {
-  if (confirm("Вы точно хотите удалить объявление?")) {
-    notify("Объявление удалено");
+
+const handleStatusChange = async (id, newStatus) => {
+  const success = await auth.updateAdvertStatus(id, newStatus);
+  if (success) {
+    const ad = myAds.value.find(a => a.id === id);
+    if (ad) ad.status = newStatus;
   }
+  activeMenuId.value = null;
 };
+
+const handleDelete = async (id) => {
+  if (!confirm("Вы точно хотите удалить объявление?")) return;
+  const success = await auth.deleteAdvert(id);
+  if (success) {
+    myAds.value = myAds.value.filter(ad => ad.id !== id);
+  }
+  activeMenuId.value = null;
+};
+
 const editAd = (id) => {
-  console.log("Редактируем:", id);
+  router.push({ name: 'EditAd', params: { id } });
 };
+
 onMounted(() => {
+  loadAdverts();
   window.addEventListener("click", closeMenu);
 });
+
 onUnmounted(() => {
   window.removeEventListener("click", closeMenu);
 });
