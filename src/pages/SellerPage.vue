@@ -38,7 +38,7 @@
             </div>
           </div>
           <div class="seller-info-right">
-            <div class="experience">На Матрёшке 8 месяцев</div>
+            <div class="experience">{{ membershipText }}</div>
             <button class="btn-subscribe-text" @click="onSubscribeClick":class="{ 'is-active': subStore.isSubscribed(seller?.id) }"> 
               {{ subStore.isSubscribed(seller?.id) ? "Отписаться" : "Подписаться"}}
             </button>
@@ -58,20 +58,34 @@
       </div>
       <div class="seller-content">
         <div v-if="currentTab === 'announcements'" class="products-grid-wrapper">
-          <div class="products">
+          <div v-if="sellerProducts.length" class="products">
             <ProductCard v-for="product in sellerProducts" :key="product.id" :product="product"/>
+          </div>
+          <div v-else class="no-reviews">
+            <p>У продавца пока нет объявлений</p>
           </div>
         </div>
         <div v-if="currentTab === 'video'" class="video-grid">
-          <div v-for="video in sellerVideos" :key="video.id" class="video-card">
-            <div class="video-preview">
-              <img :src="video.thumbnail" />
-              <span class="duration">{{ video.duration }}</span>
+          <div v-if="sellerVideos.length" class="video-grid_block">
+            <div v-for="video in sellerVideos" :key="video.id" class="video-card">
+              <div class="video-preview" @click="playVideo(video)">
+                <video 
+                  :src="video.thumbnail || video.cdnUrl || video.url"
+                  class="video-thumb"
+                  preload="metadata"
+                  muted
+                  playsinline
+                ></video>
+                <span class="duration">{{ video.duration }}</span>
+              </div>
+              <div class="video-info">
+                <div class="video-title">{{ video.title }}</div>
+                <div class="video-date">{{ video.date }}</div>
+              </div>
             </div>
-            <div class="video-info">
-              <div class="video-title">{{ video.title }}</div>
-              <div class="video-date">{{ video.date }}</div>
-            </div>
+          </div>
+          <div v-else class="no-reviews">
+            <p>У продавца пока нет видео</p>
           </div>
         </div>
         <div v-if="currentTab === 'reviews'" class="reviews-container">
@@ -110,8 +124,8 @@
   У этого продавца пока нет отзывов.
 </div></div></div></div></section></template>
 <script setup>
-import { ref, computed, watch, onUnmounted } from "vue";
-import { useRoute } from "vue-router";
+import { ref, reactive, computed, watch, onUnmounted } from "vue";
+import { useRoute, useRouter  } from "vue-router";
 import { useProductStore } from "/src/stores/product.js";
 import { useAuthStore } from "/src/stores/authStore.js";
 import { useModalStore } from "/src/stores/modal.js";
@@ -119,11 +133,13 @@ import { notify } from "/src/utils/notify";
 import { useReviewStore } from "/src/stores/reviews.js";
 import { useSubscriptionStore } from "../stores/subscriptionStore.js";
 import { useSellerStore } from "/src/stores/sellers.js";
+import { formatDate } from "/src/utils/formatters.js";
 
 import Header from '../components/layout/Header.vue';
 import ProductCard from "/src/components/product/ProductCard.vue";
 
 const route = useRoute();
+const router = useRouter();
 const auth = useAuthStore();
 const modal = useModalStore();
 const subStore = useSubscriptionStore();
@@ -131,20 +147,46 @@ const productStore = useProductStore();
 const reviewStore = useReviewStore();
 const sellerStore = useSellerStore();
 
+const videoRefs = ref({});
+const canvasRefs = ref({});
+const videoThumbnails = reactive({});
+const setVideoRef = (el, id) => { if (el) videoRefs.value[id] = el; };
+
+const captureFrame = (videoId) => {
+  const video = videoRefs.value[videoId];
+  if (!video) return;
+  video.currentTime = 0.5;
+  video.onseeked = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 360;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    videoThumbnails[videoId] = canvas.toDataURL('image/jpeg', 0.8);
+  };
+};
+
+const playVideo = (video) => {
+  router.push({
+    name: 'shorts',
+    query: { 
+      videoId: video.id,
+      sellerId: route.params.id
+    }
+  });
+};
+
 const currentTab = ref("announcements");
 const isDescExpanded = ref(false);
 
-// Данные из сторов
 const sellerReviews = computed(() => reviewStore.reviews);
 
 const seller = computed(() => {
-  // Ищем продавца по ID из роута
   return sellerStore.getSellerById(route.params.id) || { name: "Загрузка...", id: route.params.id };
 });
 
 const sellerProducts = computed(() => {
   const targetId = String(route.params.id);
-  // Фильтруем все товары, которые есть в сторе
   return productStore.products.filter(p => String(p.sellerId) === targetId);
 });
 const sellerVideos = ref([
@@ -153,14 +195,40 @@ const sellerVideos = ref([
 const loadSellerData = async (sellerId) => {
   if (!sellerId) return;
   try {
-    await productStore.fetchAdverts(); 
-    await sellerStore.ensureSellers();
+    await productStore.fetchAdverts();
+    await sellerStore.fetchSellerById(sellerId);
+    await sellerStore.ensureSellers(sellerId);
     await reviewStore.fetchReviewsBySeller(sellerId);
     
+    // Вызываем метод из стора авторизации (или где у вас лежит fetchVideos)
+    // И записываем результат в sellerVideos.value
+    sellerVideos.value = await auth.fetchVideosBySeller(sellerId);
   } catch (err) {
-    console.error("Ошибка при загрузке страницы продавца:", err);
+    console.error("Ошибка загрузки данных продавца:", err);
   }
 };
+
+const membershipText = computed(() => {
+  if (!seller.value?.createdAt) return 'На Матрёшке недавно';
+  
+  const date = new Date(seller.value.createdAt);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMonth = Math.floor(diffMs / (1000 * 60 * 60 * 24 * 30));
+  
+  if (diffMonth < 1) return 'На Матрёшке меньше месяца';
+  
+  // Склонение
+  const lastDigit = diffMonth % 10;
+  const lastTwo = diffMonth % 100;
+  let suffix = 'месяцев';
+  if (lastTwo < 11 || lastTwo > 14) {
+    if (lastDigit === 1) suffix = 'месяц';
+    else if (lastDigit >= 2 && lastDigit <= 4) suffix = 'месяца';
+  }
+  
+  return `На Матрёшке ${diffMonth} ${suffix}`;
+});
 watch(
   () => route.params.id,
   (newId) => {
@@ -235,7 +303,7 @@ const onSubscribeClick = () => {
 .seller-desc { width: 42.313rem; }
 .desc-text.is-collapsed { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 25rem; font-size: 1.5rem; }
 .btn-more { color: var(--btn-bg); background: none; border: none; cursor: pointer; font-weight: 400; padding: 0; font-size: 1.5rem; }
-.products { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.938rem; background: #ececec; padding: 1.625rem 1rem 1rem 1rem; border-radius: 0 0 1.25rem 1.25rem; }
+.products { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.938rem; padding-left: -1rem; padding-right: -1rem; }
 .seller-tabs button { font-size: 2rem; border-bottom: 1px solid black; border-radius: 0; background: none; cursor: pointer; }
 .seller-tabs button.active { border-bottom: 1px solid var(--btn-bg); color: var(--btn-bg); }
 .seller-logo { width: 7.625rem; height: 7.625rem; border-radius: 50%; object-fit: cover; }
@@ -243,7 +311,8 @@ const onSubscribeClick = () => {
 .seller-info-left { display: flex; gap: 1.625rem; }
 .btn-subscribe-text { color: var(--btn-bg); background: none; border: none; cursor: pointer; font-size: 1.5rem; }
 .btn-subscribe-text.is-active { color: #808080; }
-.video-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.938rem; background: #ececec; padding: 1.625rem 1rem 1rem 1rem; border-radius: 0 0 1.25rem 1.25rem; }
+.video-grid {background: #ececec; padding: 1.625rem 2rem 2rem 2rem;}
+.video-grid_block{display: grid; grid-template-columns: repeat(6, 13rem); gap: 0.938rem; padding-left: -1rem; padding-right: -1rem; border-radius: 0 0 1.25rem 1.25rem; }
 .video-preview { width: 100%; height: 15.438rem; margin-bottom: 0.375rem; position: relative; }
 .video-preview img { width: 100%; height: 100%; }
 .video-card { width: 100%; height: 20.313rem; background: white; border-radius: 0.938rem; padding: 0.938rem; }
@@ -257,5 +326,7 @@ const onSubscribeClick = () => {
 .seller-type { margin-bottom: 0.875rem; font-size: 1.5rem; }
 .rating-block { margin-bottom: 0.563rem; }
 .rating { font-size: 1.5rem; font-weight: 600; }
-@media (max-width: 77rem) { .products { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; background: #ececec; padding: 1.625rem 1.7rem 1rem 1.7rem; border-radius: 0 0 1.25rem 1.25rem;}}
+.products-grid-wrapper{background: #ececec; padding: 1.625rem 2rem 2rem 2rem; border-radius: 0 0 1.25rem 1.25rem;}
+
+@media (max-width: 77rem) { .products,.video-grid_block { display: grid; grid-template-columns: repeat(5, 12.2rem); gap: 1rem; background: #ececec;}}
 </style>

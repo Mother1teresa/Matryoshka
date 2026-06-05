@@ -236,21 +236,6 @@ watch(
   border-bottom: 6px solid #dddddd;
 }
 
-/* -------- Плашка -------- */
-.notification {
-  position: absolute;
-  top: 3.45rem;
-  left: 50%;
-  transform: translateX(-50%);
-  background: white;
-  padding: 1.2rem 1.5rem;
-  border-radius: 2.125rem;
-  box-shadow: 0px 0.2rem 0.2rem 0px #00000040;
-  font-weight: 400;
-  font-size: 1.25rem;
-  z-index: 6;
-}
-
 /* Анимация */
 .slide-enter-active,
 .slide-leave-active {

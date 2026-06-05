@@ -22,6 +22,8 @@ const videoRefs = ref([]);
 const scrollContainer = ref(null);
 const newComment = ref("");
 const replyTo = ref(null);
+let copyTimeout = null;
+const isCopied = ref(false);
 
 const videos = computed(() => authStore.allVideos);
 const isLoading = computed(() => authStore.isVideosLoading);
@@ -97,14 +99,24 @@ const postComment = (video, parentId = null) => {
         replyTo: parentId ? replyTo.value?.userName : null,
         replies: [],
       };
-
       if (!video.comments) video.comments = [];
-
       if (parentId) {
-        const parent = video.comments.find((c) => c.id === parentId);
+        const findParent = (comments, id) => {
+          for (const c of comments) {
+            if (c.id === id) return c;
+            if (c.replies?.length) {
+              const found = findParent(c.replies, id);
+              if (found) return found;
+            }
+          }
+          return null;
+        };
+        const parent = findParent(video.comments, parentId);
         if (parent) {
           if (!parent.replies) parent.replies = [];
           parent.replies.push(newItem);
+        } else {
+          video.comments.push(newItem);
         }
         replyTo.value = null;
       } else {
@@ -120,6 +132,11 @@ const postComment = (video, parentId = null) => {
 };
 
 const startReply = (comment) => {
+  const currentUserName = authStore.user?.username || "Вы";
+  if (comment.author?.name === currentUserName) {
+    notify("Нельзя ответить на своё сообщение");
+    return;
+  }
   replyTo.value = {
     commentId: comment.id,
     userName: comment.author?.name || "Пользователь",
@@ -195,7 +212,15 @@ const initObserver = () => {
   );
   videoRefs.value.forEach((v) => observer.observe(v));
 };
-
+const isOwnComment = (comment) => {
+  const currentUserName = authStore.user?.username || "Вы";
+  if (comment.author?.name === currentUserName) return true;
+  if (comment.author?.id && authStore.user?.id) {
+    return String(comment.author.id) === String(authStore.user.id);
+  }
+  
+  return false;
+};
 // ===== CLOSE =====
 const closeShorts = () => {
   if (window.history.length > 1) {
@@ -217,13 +242,40 @@ const openShareModal = (video) => {
 
 const copyToClipboard = async () => {
   try {
-    await navigator.clipboard.writeText(shareLink.value);
-    notify("Ссылка скопирована!");
-  } catch (err) {
+    await navigator.clipboard?.writeText(shareLink.value);
+    isCopied.value = true;
+    clearTimeout(copyTimeout);
+    copyTimeout = setTimeout(() => isCopied.value = false, 2000);
+  } catch {
     notify("Ошибка копирования", "error");
   }
 };
+// Если нужен fallback для HTTP:
 
+// const copyToClipboard = async () => {
+//   try {
+//     const text = shareLink.value;
+//     if (navigator.clipboard && window.isSecureContext) {
+//       await navigator.clipboard.writeText(text);
+//     } else {
+//       // Fallback
+//       const el = document.createElement("textarea");
+//       el.value = text;
+//       el.style.cssText = 'position:fixed;left:-9999px;';
+//       document.body.appendChild(el);
+//       el.select();
+//       document.execCommand('copy');
+//       document.body.removeChild(el);
+//     }
+//     isCopied.value = true;
+//     setTimeout(() => isCopied.value = false, 2000);
+//   } catch {
+//     notify("Ошибка копирования", "error");
+//   }
+// };
+const isOwnVideo = (video) => {
+  return String(video.author?.id) === String(authStore.user?.id);
+};
 // ===== LIFECYCLE =====
 onMounted(async () => {
   if (videos.value.length === 0) {
@@ -240,6 +292,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   window.removeEventListener("keydown", handleKeyDown);
+  clearTimeout(copyTimeout);
 });
 </script>
 <template>
@@ -253,24 +306,14 @@ onUnmounted(() => {
             <button class="close-btn" @click="closeShorts">
               <img src="/src/assets/img/icons/close-white.svg" alt="close" />
             </button>
-            <video
-              :src="video.cdnUrl || video.url"
-              :ref="setVideoRef"
-              :data-id="video.id"
-              loop
-              playsinline
-              muted
-            ></video>
+            <video :src="video.cdnUrl || video.url" :ref="setVideoRef" :data-id="video.id" loop playsinline muted></video>
             <div class="video-actions">
               <div class="v-action">
                 <button class="action-btn" @click.stop="onLikeClick(video)">
-                  <img
-                    :src="favStore.isFavorite(video.id) ? heartFilled : heart"
-                    class="like-icon"
-                  />
+                  <img :src="favStore.isFavorite(video.id) ? heartFilled : heart" class="like-icon"/>
                 </button>
               </div>
-              <div class="v-action">
+              <div v-if="!isOwnVideo(video)" class="v-action">
                 <button class="action-btn" @click="onWriteClick(video)">
                   <img src="/src/assets/img/mes.svg" />
                 </button>
@@ -336,29 +379,21 @@ onUnmounted(() => {
                     </button>
                   </div>
                   <div class="author-card">
-                    <div class="author-main">
-                      <img :src="video.author.avatar" class="author-ava" />
-                      <div class="author-details">
-                        <p class="name">{{ video.author?.name || 'Загрузка...' }}</p>
+                    <router-link 
+                      :to="{ name: 'SellerPage', params: { id: video.author?.id } }"
+                      class="author-link">
+                      <div class="author-main">
+                        <img :src="video.author?.avatar" class="author-ava" />
+                        <div class="author-details">
+                          <p class="name">{{ video.author?.name || 'Загрузка...' }}</p>
+                        </div>
                       </div>
-                    </div>
+                    </router-link>
                     <div class="rating-badge">
                       <span class="rating-num">{{ video.author.rating}}</span>
                       <span class="stars">★★★★★</span>
-                      <button
-                            class="btn-primary"
-                            :class="{
-                              'is-active': subStore.isSubscribed(
-                                video.author?.id,
-                              ),
-                            }"
-                            @click="onSubscribeClick(video.author?.id)"
-                          >
-                            {{
-                              subStore.isSubscribed(video.author?.id)
-                                ? "Отписаться"
-                                : "Подписаться"
-                            }}
+                      <button class="btn-primary" :class="{'is-active': subStore.isSubscribed(video.author?.id,),}"@click="onSubscribeClick(video.author?.id)">
+                        {{subStore.isSubscribed(video.author?.id)? "Отписаться": "Подписаться"}}
                       </button>
                     </div>
                     <div class="author-meta">
@@ -369,7 +404,6 @@ onUnmounted(() => {
                     </div>
                   </div>
                  </div>
-                
               </div>
               <!-- КОММЕНТАРИИ -->
               <div class="comments-block">
@@ -384,36 +418,42 @@ onUnmounted(() => {
                   <p>Комментариев нет</p>
                 </div>
                 <div v-else class="comments-list">
-                  <div
-                    v-for="comment in video.comments"
-                    :key="comment.id"
-                    class="comment-item">
-                    <img :src=" comment.author?.avatar || '/src/assets/img/mask-avatar.png'"/>
+                  <div v-for="comment in video.comments" :key="comment.id" class="comment-item">
+                    <router-link 
+                      :to="{ name: 'SellerPage', params: { id: comment.author?.id } }"
+                      class="author-link">
+                      <img :src="comment.author?.avatar || '/src/assets/img/mask-avatar.png'"/>
+                    </router-link>
                     <div class="c-body">
                       <div class="c-header">
-                        <p class="c-user">
+                        <router-link 
+                          :to="{ name: 'SellerPage', params: { id: comment.author?.id } }"
+                          class="c-user author-name">
                           {{ comment.author?.name || "Пользователь" }}
-                        </p>
-                        <span class="c-date">{{
-                          formatDate(comment.createdAt)
-                        }}</span>
+                        </router-link>
+                         <p class="c-text">{{ comment.text }}</p>
                       </div>
-                      <p class="c-text">{{ comment.text }}</p>
-                      <span class="c-reply" @click="startReply(comment)">Ответить</span>
-
+                      <div class="c-header_footer">
+                        <span class="c-date">{{formatDate(comment.createdAt)}}</span>
+                        <span v-if="!isOwnComment(comment)" class="c-reply" @click="startReply(comment)">
+                          Ответить</span>
+                      </div>
                       <!-- Ответы на комментарий -->
                       <div v-if="comment.replies?.length" class="replies-list">
-                        <div
-                          v-for="reply in comment.replies"
-                          :key="reply.id"
-                          class="comment-item is-reply">
-                          <img :src=" reply.author?.avatar || '/src/assets/img/mask-avatar.png'"/>
+                        <div v-for="reply in comment.replies" :key="reply.id" class="comment-item is-reply">
+                          <router-link 
+                            :to="{ name: 'SellerPage', params: { id: reply.author?.id } }"
+                            class="author-link">
+                            <img :src="reply.author?.avatar || '/src/assets/img/mask-avatar.png'"/>
+                          </router-link>
                           <div class="c-body">
                             <div class="c-header">
-                              <p class="c-user">{{ reply.author?.name }}</p>
-                              <span class="c-date">{{
-                                formatDate(reply.createdAt)
-                              }}</span>
+                              <router-link 
+                                :to="{ name: 'SellerPage', params: { id: reply.author?.id } }"
+                                class="c-user author-name">
+                                {{ reply.author?.name }}
+                              </router-link>
+                              <span class="c-date">{{formatDate(reply.createdAt)}}</span>
                             </div>
                             <p class="c-text">
                               <span class="reply-to">@{{ reply.replyTo }}</span>
@@ -434,19 +474,8 @@ onUnmounted(() => {
               </div>
 
               <div class="input-row">
-                <input
-                  type="text"
-                  v-model="newComment"
-                  :placeholder="
-                    replyTo ? `Ответ ${replyTo.userName}...` : 'Сообщение'
-                  "
-                  :disabled="video.commentsDisabled"
-                  @keyup.enter="postComment(video, replyTo?.commentId)"
-                />
-                <button
-                  class="send-btn"
-                  @click="postComment(video, replyTo?.commentId)"
-                >
+                <input type="text" v-model="newComment" :placeholder="replyTo ? `Ответ ${replyTo.userName}...` : 'Сообщение' " :disabled="video.commentsDisabled" @keyup.enter="postComment(video, replyTo?.commentId)"/>
+                <button class="send-btn" @click="postComment(video, replyTo?.commentId)">
                   <img src="/src/assets/img/icons/send-plane.svg" />
                 </button>
               </div>
@@ -455,11 +484,7 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
-    <div
-      v-if="isShareModalOpen"
-      class="modal-overlay"
-      @click.self="isShareModalOpen = false"
-    >
+    <div v-if="isShareModalOpen" class="modal-overlay" @click.self="isShareModalOpen = false">
       <div class="share-modal">
         <header class="modal-header">
           <h3>Поделиться</h3>
@@ -467,7 +492,6 @@ onUnmounted(() => {
             ✕
           </button>
         </header>
-
         <div class="social-icons">
           <a href="#" class="social-btn whatsapp"
             ><img src="/src/assets/img/icons/whatsapp.svg"
@@ -482,14 +506,13 @@ onUnmounted(() => {
             ><img src="/src/assets/img/icons/download.svg"
           /></a>
         </div>
-
         <div class="link-section">
           <label>Ссылка на мини-видео</label>
           <div class="input-wrapper">
             <input type="text" :value="shareLink" readonly />
           </div>
-          <button class="copy-btn" @click="copyToClipboard">
-            Копировать ссылку
+          <button class="copy-btn" :class="{ 'copied': isCopied }"@click="copyToClipboard">
+            {{ isCopied ? 'Скопировано!' : 'Копировать ссылку' }}
           </button>
         </div>
       </div>
@@ -905,8 +928,8 @@ onUnmounted(() => {
   z-index: 2;
 }
 .section-title img {
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 1.5rem;
+  height: 1.5rem;
 }
 .comments-empty {
   text-align: center;
@@ -924,18 +947,20 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  overflow-y: scroll;
+  height: 15.8rem;
+  overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: #ddd transparent;
 }
+.comments-list
 .comment-item {
   display: flex;
   gap: 0.75rem;
 }
 .comment-item.is-reply {
-  margin-left: 1.5rem;
-  padding-left: 0.75rem;
-  border-left: 0.125rem solid #e8e8e8;
+  background: #F6F6F6;
+  padding: 0.313rem;
+  border-radius: 0.625rem;
 }
 .comment-item > img {
   width: 2.25rem;
@@ -952,46 +977,51 @@ onUnmounted(() => {
   font-size: 0.875rem;
   font-weight: 600;
   color: #1a1a1a;
-  margin: 0 0 0.25rem 0;
 }
 .c-date {
-  font-size: 0.75rem;
-  color: #999;
+  font-size: 0.638rem;
+  color: #959595;
 }
 .c-text {
   font-size: 0.875rem;
   color: #444;
-  margin: 0 0 0.25rem 0;
-  line-height: 1.4;
+  margin: 0 0 0.438rem 0;
 }
 .c-reply {
   font-size: 0.75rem;
   color: #6aaa7d;
   cursor: pointer;
+}
+.c-header {
+  display: grid;
+}
+.c-header_footer{
+  display: flex;
+  gap: 5rem;
 }
 .reply-to {
   color: #6aaa7d;
   font-weight: 500;
   margin-right: 0.25rem;
 }
-
 .c-reply {
   font-size: 0.75rem;
-  color: #999;
+  color: #828282;
   cursor: pointer;
   transition: color 0.2s;
 }
 .c-reply:hover {
   color: #6aaa7d;
 }
-
 .replies-list {
   margin-top: 0.75rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
-
+.replies-list .c-header{
+  display: flex; gap: .5rem;
+}
 /* ===== FOOTER INPUT ===== */
 .footer-input {
   padding: 0.333rem 0.5rem 0.467rem 0.5rem;
@@ -1099,6 +1129,7 @@ onUnmounted(() => {
 /* ===== SOCIAL ICONS ===== */
 .social-icons {
   display: flex;
+  align-items: center;
   gap: 0.75rem;
   margin-bottom: 1.5rem;
 }
@@ -1194,5 +1225,15 @@ onUnmounted(() => {
   grid-template-columns: auto 1fr;
   gap: 1rem;
   margin-bottom: 1rem;
+}
+.reply-banner{
+  display: flex;
+  gap: 2rem;
+  margin-bottom: .5rem;
+  justify-content: space-between;
+}
+.reply-banner button{
+  font-size: 1rem;
+  width: 1.3rem;
 }
 </style>

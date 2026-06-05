@@ -25,7 +25,6 @@
     <Footer />
   </div>
 </template>
-
 <script setup>
 import { ref,watch,onUnmounted,provide,onMounted } from 'vue';
 import Footer from './components/layout/Footer.vue';

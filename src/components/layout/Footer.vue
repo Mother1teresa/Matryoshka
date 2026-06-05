@@ -81,7 +81,7 @@
 .footer__bottom-right {
   display: flex;
   justify-content: space-between;
-  width:35%;
+  width:34%;
 }
 .footer__bottom-right img {
   position: relative;

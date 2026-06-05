@@ -111,7 +111,7 @@
         <!-- Фотографии -->
         <section class="section fade-in">
           <h3 class="section-title">
-            Фотографии
+            Фотографии <span class="required">*</span>
             <span class="hint">Не более 30 фото</span>
           </h3>
           <div class="photo-grid">
@@ -132,7 +132,7 @@
         <!-- Карта -->
         <section class="section fade-in">
           <h3 class="section-title">
-            {{ locationLabel }}
+            {{ locationLabel }} <span class="required">*</span>
             <span class="hint">Укажите адрес</span>
           </h3>
           <div class="input-wrapper">
@@ -147,7 +147,7 @@
         </section>
         <!-- Контакты -->
         <section class="section fade-in">
-          <h3 class="section-title">Контакты</h3>
+          <h3 class="section-title">Контакты <span class="required">*</span></h3>
           <div class="form-group">
             <div class="phone-input-wrapper">
               <input 
@@ -232,7 +232,21 @@ const form = reactive({
   phone: '',
   attributes: {}         
 });
+// ═══════════════════════════════════════════════════════════
+// КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Синхронизация searchQuery ↔ form.address
+// ═══════════════════════════════════════════════════════════
 
+// При любом изменении searchQuery — обновляем form.address
+watch(searchQuery, (val) => {
+  form.address = val;
+});
+
+// При изменении form.address (например, из карты) — обновляем searchQuery
+watch(() => form.address, (val) => {
+  if (val !== searchQuery.value) {
+    searchQuery.value = val;
+  }
+});
 // ═══════════════════════════════════════════════════════════
 // ВЫЧИСЛЯЕМЫЕ: Доступные подкатегории
 // ═══════════════════════════════════════════════════════════
@@ -245,7 +259,6 @@ const currentCategory = computed(() => {
 // ВЫЧИСЛЯЕМЫЕ: Нормализованный список подкатегорий
 // ═══════════════════════════════════════════════════════════
 
-// Нормализуем: sections со slug ИЛИ links без slug (транспорт, недвижимость)
 const subcategoryChoices = computed(() => {
   if (!currentCategory.value) return [];
   const sections = currentCategory.value.sections || [];
@@ -320,7 +333,6 @@ const rules = computed(() => {
     phone: { required, minLength: minLength(18) }
   };
   
-  // Для работы цена берётся из attributes.salary, а не form.price
   if (form.mainCategory !== 'rabota') {
     base.price = { required, minValue: minValue(1) };
   }
@@ -419,10 +431,10 @@ function selectMainCategory(cat) {
   form.description = '';
   form.price = '';
   form.address = '';
+  searchQuery.value = '';
   form.phone = '';
   form.attributes = {};
   
-  // В Vuelidate v2 $reset() существует
   v$.value.$reset();
   
   const sections = cat.sections || [];
@@ -620,6 +632,7 @@ async function initMapWithUserCity() {
 }
 
 watch(searchQuery, (query) => {
+  form.address = query;
   clearTimeout(searchTimeout);
   
   if (!query || query.length < 3) return;
@@ -644,7 +657,7 @@ watch(searchQuery, (query) => {
         }
       }
     } catch (e) {
-      console.error('Поиск адреса не удался:', e);
+      console.error('Поиск адреса не удалось:', e);
     }
   }, 600);
 });
@@ -663,14 +676,12 @@ const publishAd = async () => {
   isSubmitting.value = true;
   
   try {
-    // Загружаем фото
     const uploadedUrls = [];
     for (const file of photos.value) {
       const url = await uploadToMediaService(file, "image", { title: "ad_photo" });
       if (url) uploadedUrls.push({ pictureUrl: url });
     }
 
-    // Загружаем видео если есть
     let videoId = null;
     if (form.videoFile) {
       const videoResult = await uploadToMediaService(form.videoFile, "video", { 
@@ -679,7 +690,6 @@ const publishAd = async () => {
       if (videoResult?.id) videoId = videoResult.id;
     }
 
-    // Формируем payload
     const payload = {
       category: form.mainCategory,
       title: form.title,
@@ -693,7 +703,6 @@ const publishAd = async () => {
       ...form.attributes,
     };
 
-    // Убираем undefined/null поля
     Object.keys(payload).forEach(key => {
       if (payload[key] === undefined || payload[key] === null || payload[key] === '') {
         delete payload[key];
@@ -713,10 +722,8 @@ const publishAd = async () => {
 // ═══════════════════════════════════════════════════════════
 // MOUNTED
 // ═══════════════════════════════════════════════════════════
-
 onMounted(() => {
 });
-
 onBeforeUnmount(() => {
   destroyMap();
 });

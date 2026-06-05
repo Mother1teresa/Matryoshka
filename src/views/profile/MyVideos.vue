@@ -42,7 +42,7 @@
                   :key="video.id"
                   class="video-item"
                   :class="{ 'archived-item': activeTab === 'archive' }">
-                  <div class="video-card">
+                  <div class="video-card" @click="openVideo(video.id)">
                     <video 
                       v-if="video.thumbnail && video.thumbnail.endsWith('.mp4')" 
                       :src="video.thumbnail" 
@@ -236,16 +236,13 @@ const closeMenu = (e) => {
     activeMenuId.value = null;
   }
 };
-
 onMounted(() => {
   auth.fetchVideos();
   window.addEventListener("click", closeMenu);
 });
-
 onUnmounted(() => {
   window.removeEventListener("click", closeMenu);
 });
-
 const handleVideoCreated = (createdMedia) => {
   isCreating.value = false; 
   
