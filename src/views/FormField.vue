@@ -24,7 +24,7 @@
     <div v-else-if="field.type === 'number'" class="input-with-suffix">
       <input 
         :value="modelValue" 
-        @input="$emit('update:modelValue', $event.target.value)"
+        @input="$emit('update:modelValue', $event.target.valueAsNumber || $event.target.value)"
         type="number" 
         :placeholder="field.placeholder || '0'" 
         class="f-input" 
@@ -293,16 +293,16 @@ const updateNumeric = (val) => {
 .chips-row { 
   display: flex; 
   flex-wrap: wrap; 
-  gap: 10px; 
+  gap: 0.75rem; 
 }
 .chip-btn { 
-  padding: 10px 20px; 
+  padding: 0.875rem 1.5rem; 
   border: 1px solid #e0e0e0; 
-  border-radius: 12px; 
+  border-radius: 0.875rem;
   background: #f5f5f5; 
   cursor: pointer; 
-  font-size: 14px; 
-  transition: 0.2s;
+  font-size: 0.975rem;
+  transition: 0.3s;
 }
 .chip-btn:hover {
   background: #eef0ef;
@@ -319,15 +319,15 @@ const updateNumeric = (val) => {
   width: fit-content;
 }
 .input-with-suffix .f-input { 
-  padding-right: 2.5rem; 
+  padding-right: 2.5rem !important; 
 }
 .suffix { 
   position: absolute; 
-  right: 16px; 
+  right: .8rem; 
   top: 50%; 
   transform: translateY(-50%); 
   color: #aaa; 
-  font-size: 14px; 
+  font-size: 0.875rem; 
 }
 
 /* Price with unit */

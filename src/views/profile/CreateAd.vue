@@ -178,6 +178,11 @@
           <div>v$.$invalid: {{ v$.$invalid }}</div>
           <div>v$.$dirty: {{ v$.$dirty }}</div>
         </div>
+        <div style="font-size: 12px; color: red;">
+          <div>price value: "{{ form.price }}"</div>
+          <div>price type: {{ typeof form.price }}</div>
+          <div>price is number: {{ !isNaN(Number(form.price)) }}</div>
+        </div>
         <!-- Кнопка отправки -->
         <div class="submit-section">
           <button 
@@ -200,6 +205,7 @@
 import { ref, reactive, computed, watch, onMounted, nextTick, onBeforeUnmount } from 'vue';
 import { useVuelidate } from '@vuelidate/core';
 import { required, minValue, minLength } from '@vuelidate/validators';
+import { numeric } from '@vuelidate/validators';
 import { categories } from "/src/data/categories.js";
 import { getAdConfig, getSections } from "/src/data/adCreateConfig.js";
 import { api } from "/src/api/api.js";
@@ -334,7 +340,12 @@ const rules = computed(() => {
   };
   
   if (form.mainCategory !== 'rabota') {
-    base.price = { required, minValue: minValue(1) };
+    base.price = { 
+      required, 
+      minValue: minValue(1),
+      // Добавляем проверку что это число
+      numeric: (value) => !value || Number(value) > 0
+    };
   }
   
   return base;
@@ -391,23 +402,31 @@ function getFieldValue(key) {
   return form.attributes[key];
 }
 
-// В setFieldValue добавь:
 function setFieldValue(key, value) {
   form.attributes[key] = value;
   
   const field = findFieldByKey(key);
   if (field?.bindToTitle) {
     form.title = value;
-    console.log('Title updated:', form.title);
   }
   
-  // Синхронизируем salary с form.price
-  if (key === 'salary' && typeof value === 'object') {
-    form.price = value.price;
-  }
-  
-  if (key === 'price' && typeof value === 'object') {
-    form.price = value.price;
+  // ═══════════════════════════════════════════════════════════
+  // Синхронизация price/salary с form.price для валидации
+  // ═══════════════════════════════════════════════════════════
+  if (key === 'price' || key === 'salary') {
+    let rawPrice = '';
+    
+    // price-with-unit → объект { price: '123', unit: '₽' }
+    if (typeof value === 'object' && value !== null && 'price' in value) {
+      rawPrice = value.price;
+    }
+    // number / text → строка '123' или число 123
+    else if (typeof value === 'string' || typeof value === 'number') {
+      rawPrice = value;
+    }
+    
+    form.price = rawPrice ? Number(rawPrice) : '';
+    console.log(`Price synced [${key}]:`, form.price, 'from:', value);
   }
 }
 
@@ -664,7 +683,57 @@ watch(searchQuery, (query) => {
 // ═══════════════════════════════════════════════════════════
 // МЕТОДЫ: Публикация
 // ═══════════════════════════════════════════════════════════
+// Маппинг employment для API
+function mapEmployment(val) {
+  const map = {
+    'Полная': 'FullTime',
+    'Полная занятость': 'FullTime',
+    'Частичная': 'PartTime',
+    'Частичная занятость': 'PartTime',
+    'Временная': 'Temporary',
+    'Стажировка': 'Internship',
+    'Проектная': 'Project',
+    'Волонтерство': 'Volunteer',
+    'Самозанятость': 'SelfEmployed',
+    'Подработка': 'Gig'
+  };
+  return map[val] || 'FullTime';
+}
 
+// Маппинг workFormat для API
+function mapWorkFormat(val) {
+  const map = {
+    'Удалённо': 'Remote',
+    'Удалённая работа': 'Remote',
+    'В офисе или на предприятии': 'Office',
+    'Работа в офисе': 'Office',
+    'Гибрид': 'Hybrid',
+    'Гибкий': 'Flexible'
+  };
+  return map[val] || 'Office';
+}
+
+// Сборка workSchedule из дней и времени
+function buildWorkSchedule(days, timeRange) {
+  if (!days || days.length === 0) return [];
+  if (!timeRange) return [];
+  
+  const dayMap = {
+    'пн.': 1, 'вт.': 2, 'ср.': 3, 'чт.': 4, 
+    'пт.': 5, 'сб.': 6, 'вс.': 7
+  };
+  
+  const sorted = days.map(d => dayMap[d]).filter(Boolean).sort((a, b) => a - b);
+  if (sorted.length === 0) return [];
+  
+  return [{
+    fromDay: sorted[0],
+    toDay: sorted[sorted.length - 1],
+    fromTime: timeRange.from || '08:00',
+    toTime: timeRange.to || '20:00',
+    is24h: false
+  }];
+}
 const publishAd = async () => {
   const isValid = await v$.value.$validate();
   
@@ -676,21 +745,18 @@ const publishAd = async () => {
   isSubmitting.value = true;
   
   try {
+    // 1. Загрузка фото
     const uploadedUrls = [];
     for (const file of photos.value) {
       const url = await uploadToMediaService(file, "image", { title: "ad_photo" });
       if (url) uploadedUrls.push({ pictureUrl: url });
     }
 
-    let videoId = null;
-    if (form.videoFile) {
-      const videoResult = await uploadToMediaService(form.videoFile, "video", { 
-        title: form.title 
-      });
-      if (videoResult?.id) videoId = videoResult.id;
-    }
-
+    // 2. Маппинг attributes → плоские поля API
+    const attr = form.attributes;
+    
     const payload = {
+      // Обязательные общие поля
       category: form.mainCategory,
       title: form.title,
       price: String(form.price || 0),
@@ -698,22 +764,106 @@ const publishAd = async () => {
       address: form.address,
       contacts: form.phone.replace(/\D/g, ''),
       pictures: uploadedUrls,
-      videoId: videoId,
-      subCategory: form.subCategory,
-      ...form.attributes,
+      
+      // Подкатегория
+      subCategory: form.subSubCategory || form.subCategory || '',
+      
+      // --- РАБОТА (resume / jobs) ---
+      profession: attr.profession || attr.desired_position || '',
+      sphere: attr.activity_sphere || '',
+      workExperience: attr.experience?.value ? Number(attr.experience.value) : (attr.experience_required?.value ? Number(attr.experience_required.value) : 0),
+      advantages: attr.advantages || '',
+      employment: mapEmployment(attr.employment_type?.[0]),
+      workFormat: mapWorkFormat(attr.work_format?.[0]),
+      
+      // --- ТРАНСПОРТ ---
+      brand: attr.brand || '',
+      model: attr.model || '',
+      yearOfManufacture: attr.year ? Number(attr.year) : 0,
+      color: attr.color || '',
+      isOnTheGo: attr.condition?.includes('На ходу') || false,
+      vehicleBodyType: attr.body_type || '',
+      vehicleKpp: attr.transmission || '',
+      ownersPts: attr.pts_owners ? Number(attr.pts_owners) : 0,
+      milage: attr.mileage ? Number(attr.mileage) : 0,
+      engineCapacity: attr.engine_volume ? Number(attr.engine_volume) : 0,
+      horsePower: attr.power ? Number(attr.power) : 0,
+      drive: attr.drive?.[0] || '',
+      steeringWheel: attr.steering?.[0] || '',
+      engineType: attr.engine || '',
+      cooling: attr.cooling?.[0] || '',
+      
+      // --- ВОДНЫЙ ТРАНСПОРТ ---
+      vesselType: attr.vessel_type || '',
+      vesselLength: attr.length ? Number(attr.length) : 0,
+      vesselWidth: attr.width ? Number(attr.width) : 0,
+      vesselDraft: attr.draft ? Number(attr.draft) : 0,
+      maxPassengers: attr.max_passengers ? Number(attr.max_passengers) : 0,
+      vesselBodyMaterial: attr.hull_material || '',
+      
+      // --- УСЛУГИ ---
+      priceFor: attr.price?.unit || 'Service',
+      services: (attr.service_types || []).filter(s => s).map(text => ({ text })),
+      workSchedule: buildWorkSchedule(attr.work_days, attr.work_time),
+      
+      // --- НЕДВИЖИМОСТЬ ---
+      propertyType: form.objectType || '',
+      totalArea: attr.area?.value ? Number(attr.area.value) : (attr.area ? Number(attr.area) : 0),
+      livingArea: attr.house_area?.value ? Number(attr.house_area.value) : (attr.house_area ? Number(attr.house_area) : 0),
+      kitchenArea: 0,
+      apartmentFloor: attr.floor ? Number(attr.floor) : 0,
+      floorsInHouse: attr.floors ? Number(attr.floors) : 0,
+      houseState: attr.status?.[0] || '',
+      hasBalcony: attr.balcony?.includes('Есть') || false,
+      balconyAmount: 0,
+      hasElevator: attr.elevator?.includes('Есть') || false,
+      hasParking: attr.parking?.includes('Есть') || attr.parking?.includes('Места на улице') || false,
+      stationDistance: attr.distance_to_metro ? Number(attr.distance_to_metro) : 0,
+      cityInfrastructure: attr.infrastructure_nearby?.includes('Есть') || false,
+      cityInfrastructureDistance: 0,
+      hasSecurity: attr.documents?.includes('Собственность') || false,
+      hasVideoSecurity: false,
+      hasChildrenPlayground: false,
+      hasSportPlayground: false,
+      paymentType: attr.deal_type?.[0] || 'Full',
+      hasDocuments: attr.documents?.length > 0 || false,
+      
+      // --- ЖИВОТНЫЕ ---
+      petBreed: attr.breed || '',
+      petName: attr.nickname || '',
+      petColor: attr.color || '',
+      
+      // --- БИЗНЕС ---
+      transactionScope: attr.deal_goal?.[0] || '',
+      isProfitable: attr.business_status?.includes('Прибыль') || false,
+      businessForm: attr.legal_form?.[0] || '',
+      payBackPeriod: attr.payback_period || '',
+      
+      // --- ПУТЕШЕСТВИЯ ---
+      offerType: attr.offer_type || '',
     };
 
+    // Удаляем пустые поля
     Object.keys(payload).forEach(key => {
       if (payload[key] === undefined || payload[key] === null || payload[key] === '') {
         delete payload[key];
       }
+      // Удаляем пустые массивы
+      if (Array.isArray(payload[key]) && payload[key].length === 0) {
+        delete payload[key];
+      }
     });
 
+    // 3. Отправка через auth store
+    console.log('Отправляем payload:', payload);
     await auth.createAdvert(payload);
+    
+    // Редирект на "Мои объявления"
     router.push('/profile/advertisements');
     
   } catch (e) {
     console.error('Ошибка публикации:', e);
+    // notify уже вызван в auth.createAdvert
   } finally {
     isSubmitting.value = false;
   }
@@ -911,10 +1061,10 @@ margin-top: 2.438rem; border-radius: 1.875rem; height: 97%;
   text-align: center; 
 }
 .hint { 
-  font-size: 13px; 
+  font-size: 0.853rem; 
   color: #bbb; 
   font-weight: normal; 
-  margin-left: 8px; 
+  margin-left: 0.5rem; 
 }
 
 .fade-in { 

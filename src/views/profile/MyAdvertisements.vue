@@ -81,12 +81,16 @@
         </h3>
         <p>Вы можете создать новое объявление в разделе "Создать".</p>
         <router-link to="/profile/create-ad" class="btn go-to-ads-btn">К созданию</router-link>
-      </div></div></div></template>
+      </div>
+</div></div></template>
+
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
+import { useRouter } from "vue-router";
 import { useAuthStore } from "/src/stores/authStore.js";
 import { notify } from "/src/utils/notify";
 
+const router = useRouter();
 const auth = useAuthStore();
 const activeMenuId = ref(null);
 const activeTab = ref("active");
@@ -97,25 +101,47 @@ const myAds = ref([]);
 const loadAdverts = async () => {
   isLoading.value = true;
   try {
+    console.log('Загружаем объявления...');
     const ads = await auth.fetchMyAdverts();
-    myAds.value = ads.map(ad => ({
-      id: ad.id,
-      title: ad.title,
-      price: Number(ad.price) || 0,
-      stock: ad.stock || 0,
-      daysLeft: ad.daysLeft || 30,
-      description: ad.description || '',
-      city: ad.address || ad.city || '',
-      views: ad.viewsCount || 0,
-      likes: ad.likesCount || 0,
-      comments: ad.commentsCount || 0,
-      shares: ad.sharesCount || 0,
-      status: ad.status || 'active',
-      image: ad.pictures?.[0]?.pictureUrl || ad.thumbnailUrl || '/src/assets/img/placeholder.png',
-      videoId: ad.videoId
-    }));
+    console.log('Получено объявлений:', ads.length);
+    console.log('Первое объявление:', ads[0]);
+    myAds.value = ads.map(ad => {
+      // Маппинг статуса с API на фронтовые табы
+      let status = ad.status || 'active';
+      
+      // Если API возвращает другие статусы — мапим их
+      const statusMap = {
+        'ACTIVE': 'active',
+        'ACTIVE_PUBLISHED': 'active',
+        'DRAFT': 'drafts',
+        'ARCHIVED': 'archive',
+        'DELETED': 'archive'
+      };
+      
+      if (statusMap[status]) {
+        status = statusMap[status];
+      }
+      
+      return {
+        id: ad.id,
+        title: ad.title,
+        price: Number(ad.price) || 0,
+        stock: ad.stock || 0,
+        daysLeft: ad.daysLeft || 30,
+        description: ad.description || '',
+        city: ad.address || ad.city || '',
+        views: ad.viewsCount || ad.views || 0,
+        likes: ad.likesCount || ad.likes || 0,
+        comments: ad.commentsCount || ad.comments || 0,
+        shares: ad.sharesCount || ad.shares || 0,
+        status: status,
+        image: ad.pictures?.[0]?.pictureUrl || ad.thumbnailUrl || ad.image || '/src/assets/img/placeholder.png',
+        videoId: ad.videoId
+      };
+    });
   } catch (e) {
-    console.error("Ошибка:", e);
+    console.error("Ошибка загрузки:", e);
+    notify("Не удалось загрузить объявления", "error");
   } finally {
     isLoading.value = false;
   }

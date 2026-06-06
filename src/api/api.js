@@ -18,24 +18,24 @@ const processQueue = (error) => {
   });
   failedQueue = [];
 };
-api.interceptors.request.use(
-  (config) => {
-    if (config.headers.Authorization) return config;
-    const savedAuth = localStorage.getItem("auth");
-    if (savedAuth) {
-      try {
-        const { user } = JSON.parse(savedAuth);
-        if (user && user.token) {
-          config.headers.Authorization = `Bearer ${user.token}`;
-        }
-      } catch (e) {
-        console.error("Ошибка парсинга токена для заголовков", e);
-      }
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+// api.interceptors.request.use(
+//   (config) => {
+//     if (config.headers.Authorization) return config;
+//     const savedAuth = localStorage.getItem("auth");
+//     if (savedAuth) {
+//       try {
+//         const { user } = JSON.parse(savedAuth);
+//         if (user && user.token) {
+//           config.headers.Authorization = `Bearer ${user.token}`;
+//         }
+//       } catch (e) {
+//         console.error("Ошибка парсинга токена для заголовков", e);
+//       }
+//     }
+//     return config;
+//   },
+//   (error) => Promise.reject(error)
+// );
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
