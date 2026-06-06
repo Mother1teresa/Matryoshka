@@ -38,7 +38,7 @@
                 :class="{ active: activeImage === img }"
               /></div></div>
           <!-- Подробности -->
-          <!-- <div class="product-details">
+          <div class="product-details">
             <h3>Подробности</h3>
             <div class="details-grid">
               <div
@@ -56,15 +56,13 @@
                     {{ chip }}
                   </span>
                 </div>
-                
                 <span v-else class="value">
                   {{ product.attributes?.[field.key] || "—" }}
                 </span>
-
               </div>
             </div>
-          </div> -->
-          <div class="product-details">
+          </div>
+          <!-- <div class="product-details">
             <div 
               v-for="(group, groupIndex) in fieldGroups" 
               :key="groupIndex"
@@ -79,7 +77,6 @@
                 >
                   <span class="label">{{ getLabel(field.key, field.label) }}</span>
                   
-                  <!-- Чипсы (множественный выбор) -->
                   <div v-if="field.type === 'chips'" class="details-chips-group">
                     <span 
                       v-for="(chip, index) in formatValue(product.attributes?.[field.key], 'chips')" 
@@ -91,14 +88,13 @@
                     </span>
                   </div>
                   
-                  <!-- Обычное текстовое значение -->
                   <span v-else class="value">
                     {{ formatValue(product.attributes?.[field.key], 'text', field.suffix) }}
                   </span>
                 </div>
               </div>
             </div>
-          </div>
+          </div> -->
           <!-- Описание -->
           <div class="product-description">
             <h3>Описание</h3>
@@ -167,7 +163,7 @@ import { ref, computed, watch, onMounted } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { useProductStore } from "/src/stores/product.js"
 // import { productLabels } from "/src/stores/productLabels.js"
-import { getFieldGroups, getLabel, formatValue } from "/src/stores/productLabels.js";
+import { getLabel, formatValue } from "/src/stores/productLabels.js";
 import { categories } from "/src/data/categories.js"
 import { Fancybox } from "@fancyapps/ui";
 import "@fancyapps/ui/dist/fancybox/fancybox.css";
@@ -315,10 +311,10 @@ watch(product, (newVal) => {
 onMounted(() => {
   Fancybox.bind("[data-fancybox='gallery']", { Hash: false });
 });
-const fieldGroups = computed(() => {
-  if (!product.value) return [];
-  return getFieldGroups(product.value.section, product.value.subcategory);
-});
+// const fieldGroups = computed(() => {
+//   if (!product.value) return [];
+//   return getFieldGroups(product.value.section, product.value.subcategory);
+// });
 
 // Опционально: подсветка активных чипсов (если есть фильтр)
 function isChipActive(chip, key) {
