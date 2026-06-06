@@ -36,8 +36,7 @@ const routes = [
       { path: 'advertisements', component: () => import('../views/profile/MyAdvertisements.vue') }, 
       { path: 'favorites', component: () => import('../views/profile/Favorites.vue') },
       { path: 'create-ad', component: () => import('../views/profile/CreateAd.vue') },
-      { path: 'edit-ad/:id', name: 'EditAd',component: () => import('/src/views/CreateAd.vue') }
-      // ... остальные страницы
+      { path: 'edit-ad/:id', name: 'EditAd', component: () => import('../views/profile/CreateAd.vue') }
     ]
   },
   {
