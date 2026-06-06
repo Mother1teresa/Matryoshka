@@ -36,9 +36,12 @@ import zagluhIcon from '/src/assets/img/zagluh/icon-zagluhka.svg';
 
 import { useAuthStore } from "/src/stores/authStore.js";
 import { useReviewStore } from "/src/stores/reviews.js";
+import { useProductStore } from "/src/stores/product.js";
+
 const auth = useAuthStore();
 const reviewStore = useReviewStore();
 const maintenanceRef = ref(null);
+const productStore = useProductStore();
 let globalPolling = null;
 const loadVideos = async () => {
   await auth.fetchVideos();
@@ -51,7 +54,12 @@ const startGlobalPolling = () => {
   }, 30000);
 };
 onMounted(() => {
+  console.log('App.vue onMounted')
   loadVideos();
+  console.log('Calling fetchAdverts...')
+  productStore.fetchAdverts().then(() => {
+    console.log('fetchAdverts done, products:', productStore.products.length)
+  })
 });
 watch(
   () => auth.isAuthenticated,
@@ -94,26 +102,21 @@ provide('openMaintenance', () => {
   justify-content: center;
   margin-top: 2.813rem;
 }
-
 .mobile-card {
   text-align: center;
-  /* max-width: 320px; */
 }
-
 .zagluh-title {
   font-weight: 700;
   margin-bottom: 0.625rem;
   margin-left: 1.563rem;
   margin-right: 1.563rem;
 }
-
 .mobile-card p {
   font-size: 0.875rem;
   margin-bottom: 2.125rem;
   margin-left: 2.2rem;
   margin-right: 2.2rem;
 }
-
 .btn {
   display: block;
   background: #5d8f6e;
@@ -124,22 +127,10 @@ provide('openMaintenance', () => {
   margin-bottom: 0.313rem;
   font-size: 0.875rem;
 }
-.icon {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 0.313rem;
-}
-.icon img {
-  width: 2.625rem;
-  height: 1.688rem;
-}
+.icon { display: flex; justify-content: center; margin-bottom: 0.313rem;}
+.icon img { width: 2.625rem; height: 1.688rem;}
 @media (max-width: 61.813rem) {
-  .mobile-block {
-    display: flex;
-    padding: 0.938rem;
-  }
-  .desktop-content {
-    display: none;
-  }
+  .mobile-block { display: flex; padding: 0.938rem;}
+  .desktop-content { display: none;}
 }
 </style>

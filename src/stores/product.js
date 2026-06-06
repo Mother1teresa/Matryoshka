@@ -260,7 +260,6 @@
 //     // }
 //     products.value = allProducts.value.filter(p => {
 //       if (filters.category && p.category !== filters.category) return false;
-      
 //       // Добавьте эту строку для фильтрации по секциям (cars, water, moto и т.д.)
 //       if (filters.section && p.section !== filters.section) return false;
 
@@ -285,7 +284,6 @@
 //     resetLikes
 //   };
 // });
-
 // /src/stores/product.js
 import { defineStore } from "pinia"
 import { ref } from "vue"
@@ -298,43 +296,56 @@ export const useProductStore = defineStore("product", () => {
 
   const fetchAdverts = async (filters = {}) => {
     isLoading.value = true
+    console.log('=== fetchAdverts START ===', filters)
     
     try {
-      // Запрос к вашему API
-      const params = new URLSearchParams()
-      if (filters.category) params.append('category', filters.category)
-      if (filters.section) params.append('section', filters.section)
+      const res = await api.get('/advert', {
+        params: {
+          category: filters.category || undefined,
+          section: filters.section || undefined,
+        }
+      })
       
-      const url = `/advert${params.toString() ? '?' + params.toString() : ''}`
-      const res = await api.get(url)
-      
+      console.log('API status:', res.status)
+      console.log('API data type:', typeof res.data)
+      console.log('API data isArray:', Array.isArray(res.data))
+      console.log('API data length:', res.data?.length || res.data?.items?.length || 0)
       const ads = Array.isArray(res.data) ? res.data : res.data?.items || []
+      console.log('Ads count:', ads.length)
       
-      // Маппим данные API под вашу структуру
-      allProducts.value = ads.map(ad => ({
-        id: ad.id,
-        title: ad.title || 'Без названия',
-        price: Number(ad.price) || 0,
-        city: ad.city || ad.address || '',
-        category: ad.category || 'tovary',
-        section: ad.subCategory || 'default',
-        images: ad.pictures?.map(p => p.pictureUrl || p.url) || [],
-        isLiked: false,
-      }))
+      allProducts.value = ads.map(ad => {
+        console.log('Mapping ad:', ad.id, ad.title, ad.category)
+        return {
+          id: ad.id,
+          title: ad.title || 'Без названия',
+          price: Number(ad.price) || 0,
+          city: ad.city || ad.address || '',
+          category: ad.category || 'tovary',
+          section: ad.subCategory || 'default',
+          images: ad.pictures?.map(p => p.pictureUrl || p.url) || [],
+          isLiked: false,
+        }
+      })
+      
+      console.log('allProducts:', allProducts.value.length)
+      
+      // Фильтрация на фронте
+      products.value = allProducts.value.filter(p => {
+        if (filters.category && p.category !== filters.category) return false
+        if (filters.section && p.section !== filters.section) return false
+        return true
+      })
+      
+      console.log('products after filter:', products.value.length)
+      console.log('=== fetchAdverts END ===')
       
     } catch (e) {
-      console.warn("API не отвечает:", e)
+      console.error("Ошибка загрузки:", e.response?.status, e.response?.data)
       allProducts.value = []
+      products.value = []
+    } finally {
+      isLoading.value = false
     }
-    
-    // Фильтрация на фронте (как у вас было)
-    products.value = allProducts.value.filter(p => {
-      if (filters.category && p.category !== filters.category) return false
-      if (filters.section && p.section !== filters.section) return false
-      return true
-    })
-    
-    isLoading.value = false
   }
 
   const toggleLike = (id) => {

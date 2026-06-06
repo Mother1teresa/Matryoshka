@@ -1,7 +1,7 @@
 <template>
   <div class="create-ad-page">
     <div class="container">
-      <h1 class="page-title">Создать объявление</h1>
+      <h1 class="page-title">{{ isEditMode ? 'Редактировать объявление' : 'Создать объявление' }}</h1>
       <!-- Хлебные крошки -->
       <nav class="breadcrumbs">
         <template v-for="(crumb, index) in breadcrumbs" :key="index">
@@ -14,14 +14,19 @@
       <!-- ═══════════════════════════════════════════════════════ -->
       <!-- ШАГ 1: Выбор основной категории -->
       <!-- ═══════════════════════════════════════════════════════ -->
-      <section class="section">
-        <h3 class="section-title">Выбор категории</h3>
+      <section class="section" :class="{ 'section-disabled': isEditMode }">
+        <div v-if="isEditMode" class="edit-mode-banner">
+        Режим редактирования. Категорию изменить нельзя.
+      </div>
+        <h3 class="section-title">Выбор категории
+          <span v-if="isEditMode" class="edit-hint">(нельзя изменить)</span>
+        </h3>
         <div class="category-grid">
           <div 
             v-for="cat in categories" 
             :key="cat.id" 
             class="category-card" 
-            :class="{ active: form.mainCategory === cat.slug }" 
+            :class="{ active: form.mainCategory === cat.slug, 'card-disabled': isEditMode && form.mainCategory !== cat.slug}" 
             @click="selectMainCategory(cat)"
           >
             <div class="cat-icon">
@@ -34,7 +39,7 @@
       <!-- ═══════════════════════════════════════════════════════ -->
       <!-- ШАГ 2: Выбор подкатегории                              -->
       <!-- ═══════════════════════════════════════════════════════ -->
-      <section v-if="showSubcategoryChoices" class="section fade-in">
+      <section v-if="showSubcategoryChoices" class="section fade-in" :class="{ 'section-disabled': isEditMode }">
         <h3 class="section-title">Выбор подкатегории</h3>
         <div class="subcategory-grid">
           <div 
@@ -54,8 +59,7 @@
       <!-- ═══════════════════════════════════════════════════════ -->
       <section 
         v-if="form.subCategory && availableSubLinks.length > 0" 
-        class="section fade-in"
-      >
+        class="section fade-in" :class="{ 'section-disabled': isEditMode }" >
         <h3 class="section-title">Выбор подкатегории</h3>
         <div class="subcategory-grid">
           <div 
@@ -192,7 +196,7 @@
             :disabled="isSubmitting" 
             @click="publishAd"
           >
-            {{ isSubmitting ? 'Публикация...' : 'Разместить объявление' }}
+            {{ isSubmitting ? 'Сохранение...' : isEditMode ? 'Сохранить изменения' : 'Разместить объявление' }}
           </button>
           <p v-if="v$.$invalid && v$.$dirty" class="validation-msg">Заполните все поля со звёздочкой *</p>
         </div>
@@ -213,14 +217,17 @@ import { notify } from "/src/utils/notify";
 import { uploadToMediaService } from "/src/utils/uploadService.js";
 import { useAuthStore } from "/src/stores/authStore.js";
 import FormField from '/src/views/FormField.vue';
-import { useRouter } from 'vue-router'
+import { useRouter,useRoute } from 'vue-router'
 
-const router = useRouter()
+const router = useRouter();
+const route = useRoute();
 const auth = useAuthStore();
 const isSubmitting = ref(false);
 const searchQuery = ref("");
 const photos = ref([]);
 const photoPreviews = ref([]);
+const isEditMode = computed(() => !!route.params.id)
+const advertId = computed(() => route.params.id)
 
 // ═══════════════════════════════════════════════════════════
 // ФОРМА
@@ -238,6 +245,145 @@ const form = reactive({
   phone: '',
   attributes: {}         
 });
+
+async function loadAdvertForEdit() {
+  if (!isEditMode.value) return
+  
+  try {
+    const ad = await auth.getAdvertById(advertId.value)
+    
+    // Заполняем форму
+    form.mainCategory = ad.category
+    form.subCategory = ad.subCategory
+    form.subSubCategory = ad.subSubCategory || ''
+    form.title = ad.title
+    form.description = ad.description
+    form.price = Number(ad.price) || ''
+    form.address = ad.address
+    form.phone = ad.contacts ? formatPhoneForInput(ad.contacts) : ''
+    searchQuery.value = ad.address
+    initFieldsFromConfig()
+    fillAttributesFromApi(ad)
+    
+    // Фото
+    if (ad.pictures?.length) {
+      photoPreviews.value = ad.pictures.map(p => p.pictureUrl)
+    }
+    
+    nextTick(() => initMapWithUserCity())
+    
+  } catch (e) {
+    console.error('Ошибка загрузки объявления:', e)
+    notify('Не удалось загрузить объявление', 'error')
+    router.push('/profile/advertisements')
+  }
+}
+
+function formatPhoneForInput(contacts) {
+  const cleaned = String(contacts).replace(/\D/g, '')
+  if (cleaned.length === 11 && cleaned.startsWith('7')) {
+    return `+7 (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7, 9)}-${cleaned.slice(9, 11)}`
+  }
+  return contacts
+}
+function fillAttributesFromApi(ad) {
+  const attr = {}
+  
+  // Недвижимость
+  if (ad.category === 'nedvizhimost') {
+    attr.rooms = ad.rooms
+    attr.area = ad.totalArea
+    attr.floor = ad.apartmentFloor
+    attr.floors = ad.floorsInHouse
+    attr.house_type = ad.houseType
+    attr.payment_form = ad.paymentType
+    attr.balcony = ad.hasBalcony ? 'Есть' : 'Нет'
+    attr.elevator = ad.hasElevator ? 'Есть' : 'Нет'
+    attr.parking = ad.hasParking ? 'Есть' : 'Нет'
+    attr.status = ad.houseState
+    attr.documents = ad.hasDocuments ? ['Собственность'] : []
+    attr.distance_to_metro = ad.stationDistance
+    attr.infrastructure_nearby = ad.cityInfrastructure ? 'Есть' : 'Нет'
+    attr.deal_type = ad.paymentType
+  }
+  
+  // Транспорт
+  if (ad.category === 'transport') {
+    attr.brand = ad.brand
+    attr.model = ad.model
+    attr.year = ad.yearOfManufacture
+    attr.color = ad.color
+    attr.body_type = ad.vehicleBodyType
+    attr.transmission = ad.vehicleKpp
+    attr.pts_owners = String(ad.ownersPts)
+    attr.mileage = ad.milage
+    attr.engine_volume = ad.engineCapacity
+    attr.power = ad.horsePower
+    attr.drive = [ad.drive]
+    attr.steering = [ad.steeringWheel]
+    attr.engine = ad.engineType
+    attr.cooling = [ad.cooling]
+    attr.condition = ad.isOnTheGo ? 'На ходу' : 'Не на ходу'
+  }
+  
+  // Работа
+  if (ad.category === 'rabota') {
+    attr.profession = ad.profession
+    attr.activity_sphere = ad.sphere
+    attr.experience = { value: ad.workExperience, unit: 'лет' }
+    attr.experience_required = { value: ad.workExperience, unit: 'лет' }
+    attr.employment_type = [ad.employment]
+    attr.work_format = [ad.workFormat]
+    attr.advantages = ad.advantages
+    attr.salary = { price: Number(ad.price), unit: 'За месяц' }
+    attr.desired_position = ad.profession
+  }
+  
+  // Услуги
+  if (ad.category === 'uslugi') {
+    attr.price = { price: String(ad.price), unit: ad.priceFor || 'За услугу' }
+    attr.service_types = ad.services?.map(s => s.text) || []
+    attr.service_name = ad.title
+    attr.activity = ad.description
+    if (ad.workSchedule?.length) {
+      const ws = ad.workSchedule[0]
+      const dayMap = {1:'пн.',2:'вт.',3:'ср.',4:'чт.',5:'пт.',6:'сб.',7:'вс.'}
+      attr.work_days = []
+      for (let i = ws.fromDay; i <= ws.toDay; i++) {
+        attr.work_days.push(dayMap[i])
+      }
+      attr.work_time = { from: ws.fromTime, to: ws.toTime }
+    }
+  }
+  
+  // Животные
+  if (ad.category === 'animals') {
+    attr.breed = ad.petBreed
+    attr.nickname = ad.petName
+    attr.color = ad.petColor
+    attr.gender = [ad.gender] // если есть
+    attr.age = ad.age
+  }
+  
+  // Бизнес
+  if (ad.category === 'biznes') {
+    attr.deal_goal = [ad.transactionScope]
+    attr.business_status = ad.isProfitable ? ['Прибыль'] : ['Убыток']
+    attr.payback_period = ad.payBackPeriod
+    attr.legal_form = [ad.businessForm]
+  }
+  
+  // Путешествия
+  if (ad.category === 'travel') {
+    attr.offer_type = ad.offerType
+    attr.travel_catalog = ad.subCategory
+  }
+  
+  form.attributes = attr
+}
+
+
+
 // ═══════════════════════════════════════════════════════════
 // КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Синхронизация searchQuery ↔ form.address
 // ═══════════════════════════════════════════════════════════
@@ -443,6 +589,10 @@ function findFieldByKey(key) {
 // ═══════════════════════════════════════════════════════════
 
 function selectMainCategory(cat) {
+  if (isEditMode.value) {
+    notify('Категорию нельзя изменить при редактировании', 'warning')
+    return
+  }
   form.mainCategory = cat.slug;
   form.subCategory = '';
   form.subSubCategory = '';
@@ -471,6 +621,10 @@ function selectMainCategory(cat) {
 }
 
 function selectSubCategory(choice) {
+  if (isEditMode.value) {
+    notify('Подкатегорию нельзя изменить при редактировании', 'warning')
+    return
+  }
   form.subCategory = choice.slug;
   form.subSubCategory = '';
   form.attributes = {};
@@ -485,6 +639,10 @@ function selectSubCategory(choice) {
 }
 
 function selectSubSubCategory(link) {
+  if (isEditMode.value) {
+    notify('Подкатегорию нельзя изменить при редактировании', 'warning')
+    return
+  }
   form.subSubCategory = link.slug;
   form.attributes = {};
   initFieldsFromConfig();
@@ -537,22 +695,25 @@ function initFieldsFromConfig() {
 // ═══════════════════════════════════════════════════════════
 
 const handlePhotoUpload = (e) => {
-  const files = Array.from(e.target.files);
-  if (photos.value.length + files.length > 30) {
-    notify("Максимум 30 фотографий", "error");
-    return;
+  const files = Array.from(e.target.files)
+  if (photoPreviews.value.length + files.length > 30) {
+    notify("Максимум 30 фотографий", "error")
+    return
   }
   files.forEach(file => {
-    photos.value.push(file);
-    photoPreviews.value.push(URL.createObjectURL(file));
-  });
-};
+    photos.value.push(file)
+    photoPreviews.value.push(URL.createObjectURL(file))
+  })
+}
 
 const removePhoto = (index) => {
-  URL.revokeObjectURL(photoPreviews.value[index]);
-  photos.value.splice(index, 1);
-  photoPreviews.value.splice(index, 1);
-};
+  // Если это File (новое фото) — освобождаем URL
+  if (photos.value[index] instanceof File) {
+    URL.revokeObjectURL(photoPreviews.value[index])
+  }
+  photos.value.splice(index, 1)
+  photoPreviews.value.splice(index, 1)
+}
 
 // ═══════════════════════════════════════════════════════════
 // КАРТА — исправленная версия
@@ -741,15 +902,22 @@ const publishAd = async () => {
     notify("Заполните все обязательные поля", "error");
     return;
   }
-  
   isSubmitting.value = true;
-  
   try {
     // 1. Загрузка фото
-    const uploadedUrls = [];
+    const uploadedUrls = []
     for (const file of photos.value) {
-      const url = await uploadToMediaService(file, "image", { title: "ad_photo" });
-      if (url) uploadedUrls.push({ pictureUrl: url });
+      if (file instanceof File) {
+        const url = await uploadToMediaService(file, "image", { title: "ad_photo" })
+        if (url) uploadedUrls.push({ pictureUrl: url })
+      }
+    }
+
+    // Старые фото (URL) — уже загруженные
+    for (const url of photoPreviews.value) {
+      if (typeof url === 'string' && url.startsWith('http')) {
+        uploadedUrls.push({ pictureUrl: url })
+      }
     }
 
     // 2. Маппинг attributes → плоские поля API
@@ -846,23 +1014,27 @@ const publishAd = async () => {
     // Удаляем пустые поля
     Object.keys(payload).forEach(key => {
       if (payload[key] === undefined || payload[key] === null || payload[key] === '') {
-        delete payload[key];
+        delete payload[key]
       }
-      // Удаляем пустые массивы
       if (Array.isArray(payload[key]) && payload[key].length === 0) {
-        delete payload[key];
+        delete payload[key]
       }
-    });
+    })
 
-    // 3. Отправка через auth store
-    console.log('Отправляем payload:', payload);
-    await auth.createAdvert(payload);
-    
-    // Редирект на "Мои объявления"
+    // 3. Отправка
+     if (isEditMode.value) {
+      payload.id = advertId.value
+      await auth.updateAdvert(payload)
+      notify('Объявление обновлено!', 'success')
+    } else {
+      await auth.createAdvert(payload)
+      notify('Объявление опубликовано!', 'success')
+    }
     router.push('/profile/advertisements');
     
   } catch (e) {
     console.error('Ошибка публикации:', e);
+    notify('Не удалось сохранить объявление', 'error');
     // notify уже вызван в auth.createAdvert
   } finally {
     isSubmitting.value = false;
@@ -873,7 +1045,10 @@ const publishAd = async () => {
 // MOUNTED
 // ═══════════════════════════════════════════════════════════
 onMounted(() => {
-});
+  if (isEditMode.value) {
+    loadAdvertForEdit()
+  }
+})
 onBeforeUnmount(() => {
   destroyMap();
 });
@@ -1148,4 +1323,9 @@ margin-top: 2.438rem; border-radius: 1.875rem; height: 97%;
   color: var(--btn-bg);
   background: #f3f3f3;
 }
+.section-disabled { opacity: 0.6; pointer-events: none; user-select: none;}
+.section-disabled .edit-hint { color: #999; font-size: 12px; font-weight: normal; margin-left: 8px;}
+.card-disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(100%);}
+/* Активная карточка в режиме редактирования — подсвечиваем */
+.section-disabled .category-card.active { opacity: 1;filter: none;box-shadow: 0 0 0 2px #4CAF50;}
 </style>

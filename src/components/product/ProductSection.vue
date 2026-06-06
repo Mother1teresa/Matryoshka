@@ -27,7 +27,8 @@ const authStore = useAuthStore()
 const route = useRoute()
 
 const loadData = () => {
-  const category = route.params.category 
+  const category = route.params.category  // ← undefined на главной
+  console.log('loadData, category:', category)  // ← проверьте
   productStore.fetchAdverts({ category: category })
 }
 
@@ -68,9 +69,15 @@ watch(() => route.params.category,() => { loadData() })
 watch(() => authStore.isAuthenticated,(isAuth) => { if (!isAuth) {productStore.resetLikes() } else {loadLikes()} })
 
 onMounted(() => {
-  loadData() 
+  console.log('ProductSection mounted, allProducts:', productStore.allProducts.length)
+  if (productStore.allProducts.length === 0) {
+    console.log('Loading data...')
+    loadData()
+  }
   if (authStore.isAuthenticated) {
-loadLikes()}})
+    loadLikes()
+  }
+})
 </script>
 <style scoped>
 .products {

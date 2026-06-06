@@ -168,31 +168,44 @@ export const useAuthStore = defineStore("auth", {
     async createAdvert(payload) {
       try {
         const res = await api.post('/advert/create', payload);
-        notify("Объявление успешно опубликовано!", "success");
+        notify("Объявление опубликовано!", "success");
         return res.data;
       } catch (e) {
-        console.error("Ошибка создания объявления:", e);
-        notify(e.response?.data?.message || "Не удалось опубликовать объявление", "error");
+        console.error("Ошибка создания:", e);
+        notify(e.response?.data?.message || "Не удалось опубликовать", "error");
         throw e;
       }
     },
     async fetchMyAdverts() {
-      if (!this.isAuthenticated) {
-        console.warn("Нужна авторизация для загрузки объявлений");
+      if (!this.isAuthenticated || !this.user?.id) {
+        notify("Нужна авторизация для загрузки объявлений");
         return [];
       }
       try {
-        const res = await api.get('/advert', { withCredentials: true });
+        const res = await api.get('/advert', {
+          params: { userId: this.user.id }
+        });
         return Array.isArray(res.data) ? res.data : [];
       } catch (e) {
-        console.error("Ошибка загрузки объявлений:", e);
+        console.error("Ошибка загрузки:", e);
         notify("Не удалось загрузить объявления", "error");
         return [];
       }
     },
+    async updateAdvert(payload) {
+      try {
+        const res = await api.patch('/advert/update', payload);
+        notify("Объявление обновлено!", "success");
+        return res.data;
+      } catch (e) {
+        console.error("Ошибка обновления:", e);
+        notify(e.response?.data?.message || "Не удалось обновить объявление", "error");
+        throw e;
+      }
+    },
     async updateAdvertStatus(id, status) {
       try {
-        await api.patch(`/advert/${id}`, { status });
+        await api.patch('/advert/update', { id, status });
         notify(status === 'archive' ? "В архив" : "Опубликовано", "success");
         return true;
       } catch (e) {
@@ -201,15 +214,26 @@ export const useAuthStore = defineStore("auth", {
         return false;
       }
     },
-    async deleteAdvert(id) {
+    async deleteAdvert(id, s3Key = null) {
       try {
-        await api.delete(`/advert/${id}`);
+        const params = { id };
+        if (s3Key) params.s3Key = s3Key;
+        await api.delete('/advert', { params });
         notify("Объявление удалено", "success");
         return true;
       } catch (e) {
         console.error("Ошибка удаления:", e);
-        notify("Не удалось удалить объявление", "error");
+        notify("Не удалось удалить", "error");
         return false;
+      }
+    },
+    async getAdvertById(id) {
+      try {
+        const res = await api.get(`/advert/${id}`);
+        return res.data;
+      } catch (e) {
+        console.error("Ошибка загрузки объявления:", e);
+        throw e;
       }
     },
     saveToStorage() {
