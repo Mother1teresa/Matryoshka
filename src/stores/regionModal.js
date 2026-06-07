@@ -1,10 +1,13 @@
 import { defineStore } from "pinia"
+const isClient = typeof window !== 'undefined';
 
 export const useRegionModalStore = defineStore("regionModal", {
   state: () => ({
     isOpen: false,
-    selectedRegion: localStorage.getItem("region") || null, 
-    coordinates: JSON.parse(localStorage.getItem("regionCoords")) || [37.6173, 55.7558]
+    selectedRegion: isClient ? localStorage.getItem("region") || null : null,
+    coordinates: isClient 
+      ? JSON.parse(localStorage.getItem("regionCoords")) || [37.6173, 55.7558]
+      : [37.6173, 55.7558]
   }),
   actions: {
     open(){

@@ -191,11 +191,13 @@
 import { computed } from 'vue';
 import Multiselect from 'vue-multiselect';
 import 'vue-multiselect/dist/vue-multiselect.css';
+import { carModels } from '/src/data/sharedFieldOptions.js';
 
 const props = defineProps({
   field: { type: Object, required: true },
   modelValue: { type: [String, Number, Array, Object], default: '' },
-  subSubCategory: { type: String, default: '' } 
+  subSubCategory: { type: String, default: '' },
+  parentAttributes: { type: Object, default: () => ({}) }  // ← ДОБАВЛЕНО: для доступа к brand и другим полям
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -206,9 +208,18 @@ const isVisible = computed(() => {
   return props.subSubCategory === props.field.showIf;
 });
 
-// Options для select
+// Options для select — с поддержкой dynamic (модели авто)
 const fieldOptions = computed(() => {
-  if (props.field.dynamic) return []; // загрузить из API
+  // Если поле dynamic и это model — берём модели по выбранной марке
+  if (props.field.dynamic && props.field.key === 'model') {
+    const brand = props.parentAttributes?.brand;
+    if (brand && carModels[brand]) {
+      return carModels[brand];
+    }
+    return ['Сначала выберите марку'];
+  }
+  
+  // Обычные options
   return props.field.options || [];
 });
 

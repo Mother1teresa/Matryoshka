@@ -90,6 +90,7 @@
               :field="field"
               :model-value="getFieldValue(field.key)"
               :sub-sub-category="form.subSubCategory"
+              :parent-attributes="form.attributes"
               @update:model-value="setFieldValue(field.key, $event)"
             />
           </div>
@@ -718,11 +719,13 @@ const removePhoto = (index) => {
 // ═══════════════════════════════════════════════════════════
 // КАРТА — исправленная версия
 // ═══════════════════════════════════════════════════════════
+const isClient = typeof window !== 'undefined';
 let map = null;
 let placemark = null;
 let searchTimeout = null;
 
 function destroyMap() {
+  if (!isClient) return;
   if (map) {
     try {
       map.destroy();
@@ -735,8 +738,8 @@ function destroyMap() {
 }
 
 function initMap(coords = [55.7558, 37.6173]) {
-  if (!window.ymaps) {
-    console.warn('Yandex Maps API не загружен');
+  if (!isClient || !window.ymaps) {
+    console.warn('Yandex Maps API не загружен или SSR');
     return;
   }
   destroyMap();
@@ -747,15 +750,15 @@ function initMap(coords = [55.7558, 37.6173]) {
   }
   container.innerHTML = '';
   
-  ymaps.ready(() => {
+  window.ymaps.ready(() => {
     try {
-      map = new ymaps.Map("map-container-ad", { 
+      map = new window.ymaps.Map("map-container-ad", { 
         center: coords, 
         zoom: 14, 
         controls: ['zoomControl'] 
       });
       
-      placemark = new ymaps.Placemark(coords, {}, { 
+      placemark = new window.ymaps.Placemark(coords, {}, { 
         preset: "islands#redIcon", 
         draggable: true 
       });
@@ -774,9 +777,9 @@ function initMap(coords = [55.7558, 37.6173]) {
 }
 
 async function reverseGeocode(coords) {
-  if (!window.ymaps) return;
+  if (!isClient || !window.ymaps) return;
   try {
-    const res = await ymaps.geocode(coords);
+    const res = await window.ymaps.geocode(coords);
     const firstGeoObject = res.geoObjects.get(0);
     if (firstGeoObject) {
       const address = firstGeoObject.getAddressLine();
@@ -789,6 +792,8 @@ async function reverseGeocode(coords) {
 }
 
 async function initMapWithUserCity() {
+  if (!isClient || !window.ymaps) return;
+  
   let coords = [55.7558, 37.6173];
   
   if (auth.user?.city) {
@@ -796,7 +801,7 @@ async function initMapWithUserCity() {
     form.address = auth.user.city;
     
     try {
-      const res = await ymaps.geocode(auth.user.city);
+      const res = await window.ymaps.geocode(auth.user.city);
       const firstGeoObject = res.geoObjects.get(0);
       if (firstGeoObject) {
         coords = firstGeoObject.geometry.getCoordinates();
@@ -812,6 +817,8 @@ async function initMapWithUserCity() {
 }
 
 watch(searchQuery, (query) => {
+  if (!isClient) return;
+  
   form.address = query;
   clearTimeout(searchTimeout);
   
@@ -821,7 +828,7 @@ watch(searchQuery, (query) => {
     if (!window.ymaps) return;
     
     try {
-      const res = await ymaps.geocode(query, { results: 1 });
+      const res = await window.ymaps.geocode(query, { results: 1 });
       const obj = res.geoObjects.get(0);
       
       if (obj) {
@@ -1051,6 +1058,13 @@ onMounted(() => {
 })
 onBeforeUnmount(() => {
   destroyMap();
+  clearTimeout(searchTimeout);
+});
+watch(() => form.attributes.brand, (newBrand) => {
+  if (newBrand && carModels[newBrand]) {
+    // Модели доступны — можно обновить опции для поля model
+    // Но лучше это делать в FormField.vue
+  }
 });
 </script>
 

@@ -33,7 +33,8 @@ export const adCreateConfig = {
   // ТОВАРЫ — простая категория
   // ═══════════════════════════════════════════════════════════
   tovary: {
-    default: {
+    // ───────── ОДЕЖДА, ОБУВЬ, АКСЕССУАРЫ ─────────
+    fashion: {
       sections: [
         {
           title: 'Основная информация',
@@ -47,20 +48,151 @@ export const adCreateConfig = {
               bindToTitle: true
             },
             { 
-              key: 'category', 
-              label: 'Категория товара', 
+              key: 'subcategory', 
+              label: 'Подкатегория', 
               type: 'select', 
               required: true,
-              placeholder: 'Выберите из списка категорию',
-              dynamic: true
+              options: ['Женская одежда', 'Женская обувь', 'Мужская одежда', 'Мужская обувь', 'Сумки', 'Аксессуары']
             },
             { 
               key: 'price', 
-              label: 'Цена товара', 
+              label: 'Цена', 
               type: 'number', 
-              required: true, 
-              placeholder: 'Введите цену товара',
+              required: true,
               suffix: '₽'
+            },
+            { 
+              key: 'condition', 
+              label: 'Состояние', 
+              type: 'chips', 
+              options: ['Новое', 'Б/у'], 
+              gridClass: 'chips-2' 
+            },
+            { 
+              key: 'size', 
+              label: 'Размер', 
+              type: 'text', 
+              placeholder: 'Введите размер'
+            }
+          ]
+        }
+      ]
+    },
+
+    // ───────── РЕМОНТ И СТРОИТЕЛЬСТВО ─────────
+    repair_build: {
+      sections: [
+        {
+          title: 'Основная информация',
+          fields: [
+            { 
+              key: 'title', 
+              label: 'Название товара', 
+              type: 'text', 
+              required: true, 
+              placeholder: 'Введите название товара',
+              bindToTitle: true
+            },
+            { 
+              key: 'subcategory', 
+              label: 'Подкатегория', 
+              type: 'select', 
+              required: true,
+              options: ['Двери', 'Инструменты', 'Камины', 'Потолки', 'Окна']
+            },
+            { 
+              key: 'price', 
+              label: 'Цена', 
+              type: 'number', 
+              required: true,
+              suffix: '₽'
+            },
+            { 
+              key: 'condition', 
+              label: 'Состояние', 
+              type: 'chips', 
+              options: ['Новое', 'Б/у'], 
+              gridClass: 'chips-2' 
+            }
+          ]
+        }
+      ]
+    },
+
+    // ───────── КРАСОТА И ЗДОРОВЬЕ ─────────
+    beauty_health: {
+      sections: [
+        {
+          title: 'Основная информация',
+          fields: [
+            { 
+              key: 'title', 
+              label: 'Название товара', 
+              type: 'text', 
+              required: true, 
+              placeholder: 'Введите название товара',
+              bindToTitle: true
+            },
+            { 
+              key: 'subcategory', 
+              label: 'Подкатегория', 
+              type: 'select', 
+              required: true,
+              options: ['Косметика', 'Парфюм', 'Массажеры', 'Мед техника']
+            },
+            { 
+              key: 'price', 
+              label: 'Цена', 
+              type: 'number', 
+              required: true,
+              suffix: '₽'
+            },
+            { 
+              key: 'condition', 
+              label: 'Состояние', 
+              type: 'chips', 
+              options: ['Новое', 'Б/у'], 
+              gridClass: 'chips-2' 
+            }
+          ]
+        }
+      ]
+    },
+
+    // ───────── МЕБЕЛЬ И ИНТЕРЬЕР ─────────
+    furniture: {
+      sections: [
+        {
+          title: 'Основная информация',
+          fields: [
+            { 
+              key: 'title', 
+              label: 'Название товара', 
+              type: 'text', 
+              required: true, 
+              placeholder: 'Введите название товара',
+              bindToTitle: true
+            },
+            { 
+              key: 'subcategory', 
+              label: 'Подкатегория', 
+              type: 'select', 
+              required: true,
+              options: ['Ремонт техники', 'Уборка', 'Фотосъёмка', 'Дизайн']
+            },
+            { 
+              key: 'price', 
+              label: 'Цена', 
+              type: 'number', 
+              required: true,
+              suffix: '₽'
+            },
+            { 
+              key: 'condition', 
+              label: 'Состояние', 
+              type: 'chips', 
+              options: ['Новое', 'Б/у'], 
+              gridClass: 'chips-2' 
             }
           ]
         }
@@ -179,6 +311,13 @@ export const adCreateConfig = {
               bindToTitle: true
             },
             { 
+              key: 'price', 
+              label: 'Цена', 
+              type: 'number', 
+              required: true,
+              suffix: '₽'
+            },
+            { 
               key: 'brand', 
               label: 'Марка', 
               type: 'select', 
@@ -193,7 +332,7 @@ export const adCreateConfig = {
               type: 'select', 
               required: true,
               placeholder: 'Введите или выберите модель автомобиля',
-              dynamicOptions: 'carModels',
+              dynamic: true,
               searchable: true
             },
             { 
@@ -300,6 +439,13 @@ export const adCreateConfig = {
               required: true, 
               placeholder: 'Введите название объявления',
               bindToTitle: true
+            },
+            { 
+              key: 'price', 
+              label: 'Цена', 
+              type: 'number', 
+              required: true,
+              suffix: '₽'
             },
             { 
               key: 'country', 
@@ -422,6 +568,13 @@ export const adCreateConfig = {
                 placeholder: 'Введите название объявления',
                 bindToTitle: true
               },
+              { 
+              key: 'price', 
+              label: 'Цена', 
+              type: 'number', 
+              required: true,
+              suffix: '₽'
+            },
               { 
                 key: 'country', 
                 label: 'Страна производитель', 
@@ -604,6 +757,13 @@ export const adCreateConfig = {
               bindToTitle: true
             },
             { 
+              key: 'price', 
+              label: 'Цена', 
+              type: 'number', 
+              required: true,
+              suffix: '₽'
+            },
+            { 
               key: 'tech_type', 
               label: 'Тип техники', 
               type: 'select', 
@@ -698,6 +858,13 @@ export const adCreateConfig = {
               bindToTitle: true
             },
             { 
+              key: 'price', 
+              label: 'Цена', 
+              type: 'number', 
+              required: true,
+              suffix: '₽'
+            },
+            { 
               key: 'category', 
               label: 'Категория', 
               type: 'select', 
@@ -719,13 +886,6 @@ export const adCreateConfig = {
               options: ['Новое', 'Б/у'], 
               gridClass: 'chips-2' 
             },
-            { 
-              key: 'price', 
-              label: 'Цена', 
-              type: 'number', 
-              required: true, 
-              suffix: '₽' 
-            }
           ]
         }
       ]
@@ -945,6 +1105,13 @@ export const adCreateConfig = {
                 bindToTitle: true
               },
               { 
+                key: 'price', 
+                label: 'Цена', 
+                type: 'number', 
+                required: true,
+                suffix: '₽'
+              },
+              { 
                 key: 'land_purpose', 
                 label: 'Назначение земли', 
                 type: 'chips', 
@@ -1023,6 +1190,13 @@ export const adCreateConfig = {
                 required: true, 
                 placeholder: 'Введите название объявления',
                 bindToTitle: true
+              },
+              { 
+                key: 'price', 
+                label: 'Цена', 
+                type: 'number', 
+                required: true,
+                suffix: '₽'
               },
               { 
                 key: 'land_area', 
@@ -1111,6 +1285,13 @@ export const adCreateConfig = {
                 placeholder: 'Введите название объявления',
                 bindToTitle: true
               },
+              { 
+                key: 'price', 
+                label: 'Цена', 
+                type: 'number', 
+                required: true,
+                suffix: '₽'
+              },
               { key: 'area', label: 'Площадь', type: 'number', suffix: 'м²' },
               { key: 'floors', label: 'Кол-во этажей', type: 'number' },
               { key: 'ceiling_height', label: 'Высота потолков', type: 'number', suffix: 'м' },
@@ -1135,6 +1316,13 @@ export const adCreateConfig = {
                 required: true, 
                 placeholder: 'Введите название объявления',
                 bindToTitle: true
+              },
+              { 
+                key: 'price', 
+                label: 'Цена', 
+                type: 'number', 
+                required: true,
+                suffix: '₽'
               },
               { key: 'area', label: 'Площадь', type: 'number', suffix: 'м²' },
               { key: 'floors', label: 'Кол-во этажей', type: 'number' },
@@ -1161,6 +1349,13 @@ export const adCreateConfig = {
                 placeholder: 'Введите название объявления',
                 bindToTitle: true
               },
+              { 
+                key: 'price', 
+                label: 'Цена', 
+                type: 'number', 
+                required: true,
+                suffix: '₽'
+              },
               { key: 'warehouse_type', label: 'Тип склада', type: 'chips', options: ['Сухой', 'Холодильный', 'Открытая площадка'], gridClass: 'chips-3' },
               { key: 'area', label: 'Площадь', type: 'number', suffix: 'м²' },
               { key: 'floor', label: 'Этаж', type: 'number' },
@@ -1184,6 +1379,13 @@ export const adCreateConfig = {
                 required: true, 
                 placeholder: 'Введите название объявления',
                 bindToTitle: true
+              },
+              { 
+                key: 'price', 
+                label: 'Цена', 
+                type: 'number', 
+                required: true,
+                suffix: '₽'
               },
               { key: 'area', label: 'Площадь', type: 'number', suffix: 'м²' },
               { key: 'ceiling_height', label: 'Высота потолков', type: 'number', suffix: 'м' },
@@ -1211,6 +1413,13 @@ export const adCreateConfig = {
                 required: true, 
                 placeholder: 'Введите название объявления',
                 bindToTitle: true
+              },
+              { 
+                key: 'price', 
+                label: 'Цена', 
+                type: 'number', 
+                required: true,
+                suffix: '₽'
               },
               { key: 'purpose', label: 'Назначение помещения', type: 'chips', options: ['Офис', 'Магазин', 'Производство легкое', 'Свободное'], gridClass: 'chips-4' },
               { key: 'area', label: 'Площадь', type: 'number', suffix: 'м²' },
@@ -1240,6 +1449,13 @@ export const adCreateConfig = {
                 placeholder: 'Введите название объявления',
                 bindToTitle: true
               },
+              { 
+                key: 'price', 
+                label: 'Цена', 
+                type: 'number', 
+                required: true,
+                suffix: '₽'
+              },
               { key: 'area', label: 'Площадь', type: 'number', suffix: 'м²' },
               { key: 'material', label: 'Материал', type: 'chips', options: ['Металл', 'Кирпич', 'Бетон', 'ЖБИ'], gridClass: 'chips-4' },
               { key: 'ceiling_height', label: 'Высота потолков', type: 'number', suffix: 'м' },
@@ -1263,6 +1479,13 @@ export const adCreateConfig = {
                 required: true, 
                 placeholder: 'Введите название объявления',
                 bindToTitle: true
+              },
+              { 
+                key: 'price', 
+                label: 'Цена', 
+                type: 'number', 
+                required: true,
+                suffix: '₽'
               },
               { key: 'area', label: 'Площадь', type: 'number', suffix: 'м²' },
               { key: 'parking_type', label: 'Тип паркинга', type: 'chips', options: ['Открытый', 'Подземный', 'Крытый'], gridClass: 'chips-3' },
@@ -1498,7 +1721,20 @@ export const adCreateConfig = {
               placeholder: 'Введите название объявления',
               bindToTitle: true
             },
-            // УБРАНО: category — уже определено через form.subCategory
+            { 
+              key: 'price', 
+              label: 'Цена', 
+              type: 'number', 
+              required: true, 
+              suffix: '₽' 
+            },
+            { 
+              key: 'subcategory', 
+              label: 'Вид животного', 
+              type: 'select', 
+              required: true,
+              options: ['Собаки', 'Кошки', 'Птицы', 'Грызуны', 'Рыбы и амфибии', 'Сельскохозяйственные', 'Другие']
+            },
             // УБРАНО: animal_type — уже определено через form.subSubCategory (dogs, cats...)
             { 
               key: 'breed', 
@@ -1551,6 +1787,13 @@ export const adCreateConfig = {
               bindToTitle: true
             },
             { 
+              key: 'price', 
+              label: 'Цена', 
+              type: 'number', 
+              required: true, 
+              suffix: '₽' 
+            },
+            { 
               key: 'subcategory', 
               label: 'Подкатегория', 
               type: 'select', 
@@ -1568,6 +1811,7 @@ export const adCreateConfig = {
               label: 'Тип корма', 
               type: 'select',
               options: ['Влажный корм', 'Сухой корм', 'Натуральный', 'Лакомства'],
+              showIf: 'pet_food'
               // Показываем только если subSubCategory === 'pet_food'
               // На фронте можно через v-if на основе form.subSubCategory
             }
@@ -1593,6 +1837,13 @@ export const adCreateConfig = {
               required: true, 
               placeholder: 'Введите название объявления',
               bindToTitle: true
+            },
+            { 
+              key: 'price', 
+              label: 'Цена', 
+              type: 'number', 
+              required: true, 
+              suffix: '₽' 
             },
             { 
               key: 'deal_goal', 
@@ -1650,7 +1901,7 @@ export const adCreateConfig = {
               type: 'select', 
               required: true, 
               placeholder: 'Выберите тип оборудования',
-              dynamic: true
+              options: ['Станки','Торговое','Пищевое','Промышленное','Строительное','Производственное','Офисное','Медицинское','Кухонное','Холодильное','Клининговое','Парикмахерское','Автомобильное','Сварочное','Серверное','Сетевое','Телекоммуникационное','Печатное','Фотографическое','Электротехническое','Измерительное','Насосы','Компрессоры','Генераторы','Вентиляция','Отопление','Водоснабжение','Канализация','Подъемное','Погрузочное']
             },
             { 
               key: 'price', 
