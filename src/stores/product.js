@@ -286,66 +286,70 @@
 // });
 // /src/stores/product.js
 import { defineStore } from "pinia"
-import { ref } from "vue"
+import { ref, computed } from "vue"
 import { api } from "/src/api/api.js"
 
 export const useProductStore = defineStore("product", () => {
-  const allProducts = ref([])
   const products = ref([])
   const isLoading = ref(false)
+  const lastFetchTime = ref(0)
 
-  const fetchAdverts = async (filters = {}) => {
+  // Фильтрованные товары для каталога (computed)
+  const filteredProducts = computed(() => {
+    return products.value
+  })
+
+  const fetchAdverts = async (force = false) => {
+    // Не грузим если уже есть товары и не force
+    if (!force && products.value.length > 0 && Date.now() - lastFetchTime.value < 60000) {
+      console.log('Products already loaded, count:', products.value.length)
+      return
+    }
+
     isLoading.value = true
-    console.log('=== fetchAdverts START ===', filters)
-    
+    console.log('=== fetchAdverts START ===')
+
     try {
-      const res = await api.get('/advert', {
-        params: {
-          category: filters.category || undefined,
-          section: filters.section || undefined,
-        }
-      })
-      
-      console.log('API status:', res.status)
-      console.log('API data type:', typeof res.data)
-      console.log('API data isArray:', Array.isArray(res.data))
-      console.log('API data length:', res.data?.length || res.data?.items?.length || 0)
+      const res = await api.get('/advert')
       const ads = Array.isArray(res.data) ? res.data : res.data?.items || []
-      console.log('Ads count:', ads.length)
-      
-      allProducts.value = ads.map(ad => {
-        console.log('Mapping ad:', ad.id, ad.title, ad.category)
-        return {
-          id: ad.id,
-          title: ad.title || 'Без названия',
-          price: Number(ad.price) || 0,
-          city: ad.city || ad.address || '',
-          category: ad.category || 'tovary',
-          section: ad.subCategory || 'default',
-          images: ad.pictures?.map(p => p.pictureUrl || p.url) || [],
-          isLiked: false,
-        }
-      })
-      
-      console.log('allProducts:', allProducts.value.length)
-      
-      // Фильтрация на фронте
-      products.value = allProducts.value.filter(p => {
-        if (filters.category && p.category !== filters.category) return false
-        if (filters.section && p.section !== filters.section) return false
-        return true
-      })
-      
-      console.log('products after filter:', products.value.length)
-      console.log('=== fetchAdverts END ===')
-      
+      console.log('API returned ads:', ads.length)
+
+      products.value = ads.map(ad => ({
+        id: ad.id,
+        title: ad.title || 'Без названия',
+        price: Number(ad.price) || 0,
+        city: ad.address || ad.city || '',
+        category: ad.category || 'tovary',
+        section: ad.section || ad.subCategory || 'default',
+        subcategory: ad.subCategory || ad.subcategory || '',
+        sellerId: ad.userId || ad.sellerId,
+        images: ad.pictures?.map(p => p.pictureUrl || p.url) || [],
+        image: ad.pictures?.[0]?.pictureUrl || ad.thumbnailUrl || '/src/assets/img/placeholder.png',
+        attributes: ad.attributes || {},
+        description: ad.description || '',
+        isLiked: false,
+        // сохраняем всё остальное на всякий случай
+        ...ad
+      }))
+
+      lastFetchTime.value = Date.now()
+      console.log('Products loaded:', products.value.length)
+
     } catch (e) {
       console.error("Ошибка загрузки:", e.response?.status, e.response?.data)
-      allProducts.value = []
       products.value = []
     } finally {
       isLoading.value = false
     }
+  }
+
+  // Фильтрация для каталога (если нужно)
+  const getProductsByCategory = (category, section) => {
+    return products.value.filter(p => {
+      if (category && p.category !== category) return false
+      if (section && p.section !== section) return false
+      return true
+    })
   }
 
   const toggleLike = (id) => {
@@ -359,9 +363,10 @@ export const useProductStore = defineStore("product", () => {
 
   return {
     products,
-    allProducts,
+    filteredProducts,
     isLoading,
     fetchAdverts,
+    getProductsByCategory,
     toggleLike,
     resetLikes
   }

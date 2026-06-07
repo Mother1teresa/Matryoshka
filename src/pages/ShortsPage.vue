@@ -251,7 +251,6 @@ const copyToClipboard = async () => {
   }
 };
 // Если нужен fallback для HTTP:
-
 // const copyToClipboard = async () => {
 //   try {
 //     const text = shareLink.value;

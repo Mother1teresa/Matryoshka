@@ -39,30 +39,6 @@
               /></div></div>
           <!-- Подробности -->
           <div class="product-details">
-            <h3>Подробности</h3>
-            <div class="details-grid">
-              <div
-                v-for="field in fields"
-                :key="field.key"
-                :class="['detail-row', { 'full-width-row': field.type === 'chips' }]">
-                
-                <span class="label">{{ field.label }}</span>
-                
-                <div v-if="field.type === 'chips' && Array.isArray(product.attributes?.[field.key])" class="details-chips-group">
-                  <span 
-                    v-for="(chip, index) in product.attributes[field.key]" 
-                    :key="index" 
-                    class="detail-chip-item">
-                    {{ chip }}
-                  </span>
-                </div>
-                <span v-else class="value">
-                  {{ product.attributes?.[field.key] || "—" }}
-                </span>
-              </div>
-            </div>
-          </div>
-          <!-- <div class="product-details">
             <div 
               v-for="(group, groupIndex) in fieldGroups" 
               :key="groupIndex"
@@ -77,6 +53,7 @@
                 >
                   <span class="label">{{ getLabel(field.key, field.label) }}</span>
                   
+                  <!-- Чипсы (коммуникации, удобства) -->
                   <div v-if="field.type === 'chips'" class="details-chips-group">
                     <span 
                       v-for="(chip, index) in formatValue(product.attributes?.[field.key], 'chips')" 
@@ -88,13 +65,14 @@
                     </span>
                   </div>
                   
+                  <!-- Обычное значение -->
                   <span v-else class="value">
                     {{ formatValue(product.attributes?.[field.key], 'text', field.suffix) }}
                   </span>
                 </div>
               </div>
             </div>
-          </div> -->
+          </div>
           <!-- Описание -->
           <div class="product-description">
             <h3>Описание</h3>
@@ -153,17 +131,14 @@
             </Transition>
 </div></section>
   
-  <div v-else-if="!isReady" class="block__loading">
-    Загрузка...
-  </div>
+  <div v-else-if="!isReady" class="block__loading">Загрузка...</div>
   <NotFound v-else />
 </template>
 <script setup>
 import { ref, computed, watch, onMounted } from "vue" 
 import { useRoute, useRouter } from "vue-router"
 import { useProductStore } from "/src/stores/product.js"
-// import { productLabels } from "/src/stores/productLabels.js"
-import { getLabel, formatValue } from "/src/stores/productLabels.js";
+import { productLabels, getLabel, formatValue, getFieldGroups, isChipActive } from "/src/stores/productLabels.js";
 import { categories } from "/src/data/categories.js"
 import { Fancybox } from "@fancyapps/ui";
 import "@fancyapps/ui/dist/fancybox/fancybox.css";
@@ -178,7 +153,7 @@ import { useAuthStore } from "/src/stores/authStore.js";
 import { useModalStore } from "/src/stores/modal.js";
 import { useReviewStore } from '/src/stores/reviews.js';
 import { useSellerStore } from "/src/stores/sellers.js";
-// Иконки
+
 import heart from "/src/assets/img/icons/heart.svg";
 import heartFilled from "/src/assets/img/icons/heart-filled.svg";
 const route = useRoute();
@@ -192,23 +167,87 @@ const reviewStore = useReviewStore();
 const sellerStore = useSellerStore();
 const isReady = ref(false);
 const isNumberShown = ref(false);
+const showCallModal = ref(false);
 const activeImage = ref("");
-const product = computed(() => {
-  const routeId = route.params.id;
-  return productStore.products.find(p => String(p.id) === String(routeId));
+const product = ref(null);
+
+// === ОПРЕДЕЛЕНИЕ ТИПА ТОВАРА ===
+const productSection = computed(() => {
+  const section = product.value?.section;
+  const subcategory = product.value?.subcategory;
+  
+  const subToSection = {
+    'uchastok': 'uchastok', 'land': 'uchastok',
+    'office': 'office', 'commercial': 'office',
+    'apartments': 'apartments', 'flat': 'apartments',
+    'house': 'house', 'cottage': 'house',
+    'cars': 'cars', 'auto': 'cars',
+    'yachts': 'yachts', 'boats': 'yachts',
+    'jobs': 'jobs', 'vacancy': 'jobs', 'resume': 'resume',
+    'pets': 'pets', 'animals': 'pets',
+    'ready_business': 'ready_business', 'business': 'ready_business',
+    'tours': 'tours', 'travel': 'tours',
+  };
+  
+  return subToSection[subcategory] || subToSection[section] || section || 'apartments';
 });
+// === ГРУППЫ ПОЛЕЙ ===
+const fieldGroups = computed(() => {
+  if (!product.value) return [];
+  return getFieldGroups(productSection.value);
+});
+// === ЗАГРУЗКА ОДНОГО ТОВАРА ===
+const loadProduct = async (id) => {
+  isReady.value = false;
+  product.value = null;
+  
+  try {
+    const cached = productStore.products.find(p => String(p.id) === String(id));
+    if (cached) {
+      product.value = cached;
+    } else {
+      const data = await auth.getAdvertById(id);
+      product.value = {
+        id: data.id,
+        title: data.title,
+        price: Number(data.price) || 0,
+        description: data.description || '',
+        city: data.address || data.city || '',
+        category: data.category,
+        section: data.section,
+        subcategory: data.subCategory || data.subcategory,
+        sellerId: data.userId || data.sellerId,
+        images: data.pictures?.map(p => p.pictureUrl) || [],
+        image: data.pictures?.[0]?.pictureUrl || data.thumbnailUrl || '/src/assets/img/placeholder.png',
+        attributes: data.attributes || data,
+        ...data
+      };
+    }
+    if (product.value?.sellerId) {
+      await sellerStore.ensureSellers();
+      await reviewStore.fetchReviewsBySeller(product.value.sellerId);
+    }
+    activeImage.value = product.value.images?.[0] || product.value.image || '';
+  } catch (err) {
+    console.error("Ошибка загрузки товара:", err);
+    product.value = null;
+  } finally {
+    isReady.value = true;
+  }
+};
+
 const seller = computed(() => {
-  if (!product.value) return null;
+  if (!product.value?.sellerId) return null;
   return sellerStore.getSellerById(product.value.sellerId);
 });
 const currentCategory = computed(() => {
-  if (!product.value) return null; 
+  if (!product.value) return null;
   return categories.find((c) => c.slug === product.value.category);
 });
 const activeTabItem = computed(() => {
   if (!currentCategory.value || !product.value) return null;
   return (
-     currentCategory.value.sections.find((s) => s.slug === product.value.section) ||
+    currentCategory.value.sections.find((s) => s.slug === product.value.section) ||
     currentCategory.value.sections.flatMap((s) => s.links || []).find((l) => l.slug === product.value.section)
   );
 });
@@ -224,13 +263,6 @@ const breadcrumbSubName = computed(() => {
   const deepLink = link.subLinks?.find(sl => sl.slug === subSlug);
   if (deepLink) return deepLink.name;}}}return null;
 });
-const fields = computed(() => {
-  const p = product.value;
-  if (!p || !p.attributes) return [];
-  return Object.keys(p.attributes)
-    .map(key => ({ key, label: productLabels[key] || key, value: p.attributes[key] }))
-    .filter(f => !f.key.includes('price')); 
-});
 
 const previewImages = computed(() => product.value?.images?.slice(0, 8) || []);
 const formatPrice = (price) => price ? price.toLocaleString("ru-RU") : "0";
@@ -240,15 +272,6 @@ const openFullGallery = (index = 0) => {
   Fancybox.show(allImages, { startIndex: index });
 };
 
-const loadAllData = async () => {
-  if (productStore.products.length === 0) await productStore.fetchAdverts();
-  await sellerStore.ensureSellers();
-  
-  if (product.value?.sellerId) {
-    await reviewStore.fetchReviewsBySeller(product.value.sellerId);
-  }
-  isReady.value = true;
-};
 const checkAuthAndRun = (action, message = "Авторизуйтесь, чтобы продолжить") => {
   if (!auth.isAuthenticated) {
     modal.openLogin();
@@ -292,37 +315,19 @@ const onWriteClick = async () => {
   }, "Войдите, чтобы написать сообщение");
 };
 
-const showCallModal = ref(false);
 const handleCall = (phone) => {
   window.location.href = `tel:${phone}`;
   showCallModal.value = false;
 };
 
 watch(() => route.params.id, (newId) => {
-  if (newId) loadAllData();
-}, { immediate: true });
-
-watch(product, (newVal) => {
-  if (newVal) {
-    activeImage.value = newVal.images?.length ? newVal.images[0] : newVal.image;
-  }
+  if (newId) loadProduct(newId);
 }, { immediate: true });
 
 onMounted(() => {
   Fancybox.bind("[data-fancybox='gallery']", { Hash: false });
 });
-// const fieldGroups = computed(() => {
-//   if (!product.value) return [];
-//   return getFieldGroups(product.value.section, product.value.subcategory);
-// });
-
-// Опционально: подсветка активных чипсов (если есть фильтр)
-function isChipActive(chip, key) {
-  // Логика подсветки, если нужно
-  return true;
-}
 </script>
-
 <style scoped>
 .product-layout {
   display: grid;
@@ -607,14 +612,6 @@ color: var(--btn-bg);
   width: 100%;
 }
 
-.detail-chip-item {
-  background-color: #5b9279;
-  color: white;
-  padding: 0.4rem 1rem;
-  border-radius: 0.5rem;
-  font-size: 0.9rem;
-  font-weight: 500;
-}
 @media (max-width: 77rem) {
   .product-left {
     width: 47.75rem;
@@ -663,11 +660,11 @@ color: var(--btn-bg);
 }
 
 /* Чипсы */
-.details-chips-group {
+/* .details-chips-group {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-}
+} */
 
 .detail-chip-item {
   background-color: #e8e8e8;
@@ -683,14 +680,4 @@ color: var(--btn-bg);
   color: white;
 }
 
-/* Подписи */
-.label {
-  color: #888;
-  font-size: 1rem;
-}
-
-.value {
-  font-weight: 500;
-  color: #333;
-}
 </style>

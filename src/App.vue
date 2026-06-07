@@ -56,16 +56,13 @@ const startGlobalPolling = () => {
 onMounted(() => {
   console.log('App.vue onMounted')
   loadVideos();
-  console.log('Calling fetchAdverts...')
-  productStore.fetchAdverts().then(() => {
-    console.log('fetchAdverts done, products:', productStore.products.length)
-  })
+  // Загружаем товары ОДИН РАЗ при старте
+  productStore.fetchAdverts();
 });
 watch(
   () => auth.isAuthenticated,
   async (isAuth) => {
     if (isAuth) {
-      // Только для авторизованных: профиль, чаты, уведомления
       await auth.fetchProfile();
       auth.fetchUserChats();
       auth.fetchUserNotifications();
@@ -75,7 +72,6 @@ watch(
       }
       startGlobalPolling();
     } else {
-      // Очищаем polling при выходе
       if (globalPolling) clearInterval(globalPolling);
       globalPolling = null;
     }

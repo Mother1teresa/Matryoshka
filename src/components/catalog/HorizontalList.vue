@@ -226,9 +226,7 @@ const emptyStateText = computed(() => {
         <div class="card-content__rigth">
           <div class="card-content__rigth-btns">
             <a class="btn card-btn" @click="onWriteClick(item)">Написать</a>
-            <button class="btn card-btn" @click="onShowNumberClick">
-              Показать номер
-            </button>
+            <button class="btn card-btn" @click="onShowNumberClick(item)">Показать номер</button>
           </div>
         </div>
       </div>

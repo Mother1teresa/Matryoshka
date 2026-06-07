@@ -124,16 +124,14 @@
   У этого продавца пока нет отзывов.
 </div></div></div></div></section></template>
 <script setup>
-import { ref, reactive, computed, watch, onUnmounted } from "vue";
-import { useRoute, useRouter  } from "vue-router";
-import { useProductStore } from "/src/stores/product.js";
+import { ref, computed, watch, onUnmounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "/src/stores/authStore.js";
 import { useModalStore } from "/src/stores/modal.js";
 import { notify } from "/src/utils/notify";
 import { useReviewStore } from "/src/stores/reviews.js";
 import { useSubscriptionStore } from "../stores/subscriptionStore.js";
 import { useSellerStore } from "/src/stores/sellers.js";
-import { formatDate } from "/src/utils/formatters.js";
 
 import Header from '../components/layout/Header.vue';
 import ProductCard from "/src/components/product/ProductCard.vue";
@@ -143,70 +141,75 @@ const router = useRouter();
 const auth = useAuthStore();
 const modal = useModalStore();
 const subStore = useSubscriptionStore();
-const productStore = useProductStore();
 const reviewStore = useReviewStore();
 const sellerStore = useSellerStore();
 
-const videoRefs = ref({});
-const canvasRefs = ref({});
-const videoThumbnails = reactive({});
-const setVideoRef = (el, id) => { if (el) videoRefs.value[id] = el; };
-
-const captureFrame = (videoId) => {
-  const video = videoRefs.value[videoId];
-  if (!video) return;
-  video.currentTime = 0.5;
-  video.onseeked = () => {
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 360;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    videoThumbnails[videoId] = canvas.toDataURL('image/jpeg', 0.8);
-  };
-};
-
-const playVideo = (video) => {
-  router.push({
-    name: 'shorts',
-    query: { 
-      videoId: video.id,
-      sellerId: route.params.id
-    }
-  });
-};
-
 const currentTab = ref("announcements");
 const isDescExpanded = ref(false);
+const isLoading = ref(false);
 
-const sellerReviews = computed(() => reviewStore.reviews);
+// === ТОВАРЫ ПРОДАВЦА ===
+const sellerProducts = ref([]);
 
-const seller = computed(() => {
-  return sellerStore.getSellerById(route.params.id) || { name: "Загрузка...", id: route.params.id };
-});
-
-const sellerProducts = computed(() => {
-  const targetId = String(route.params.id);
-  return productStore.products.filter(p => String(p.sellerId) === targetId);
-});
-const sellerVideos = ref([
-  { id: 1, title: "Дождевик чугунный", date: "17 дней назад", duration: "0:26", thumbnail: "/src/assets/img/video-plug.jpg" },
-]);
-const loadSellerData = async (sellerId) => {
-  if (!sellerId) return;
+const loadSellerProducts = async (sellerId) => {
   try {
-    await productStore.fetchAdverts();
-    await sellerStore.fetchSellerById(sellerId);
-    await sellerStore.ensureSellers(sellerId);
-    await reviewStore.fetchReviewsBySeller(sellerId);
-    
-    // Вызываем метод из стора авторизации (или где у вас лежит fetchVideos)
-    // И записываем результат в sellerVideos.value
-    sellerVideos.value = await auth.fetchVideosBySeller(sellerId);
+    const products = await auth.fetchAdvertsBySeller(sellerId);
+    sellerProducts.value = products.map(ad => ({
+      id: ad.id,
+      title: ad.title,
+      price: Number(ad.price) || 0,
+      images: ad.pictures?.map(p => p.pictureUrl) || [],
+      image: ad.pictures?.[0]?.pictureUrl || ad.thumbnailUrl || '/src/assets/img/placeholder.png',
+      city: ad.address || ad.city || '',
+      category: ad.category,
+      section: ad.section,
+      subcategory: ad.subCategory || ad.subcategory,
+      sellerId: ad.userId || ad.sellerId,
+      attributes: ad.attributes || {},
+      description: ad.description || '',
+      createdAt: ad.createdAt,
+    }));
   } catch (err) {
-    console.error("Ошибка загрузки данных продавца:", err);
+    console.error("Ошибка загрузки товаров:", err);
+    sellerProducts.value = [];
   }
 };
+
+const sellerVideos = ref([]);
+const loadSellerVideos = async (sellerId) => {
+  try {
+    if (auth.fetchVideosBySeller) {
+      sellerVideos.value = await auth.fetchVideosBySeller(sellerId);
+    }
+  } catch (err) {
+    console.error("Ошибка загрузки видео:", err);
+    sellerVideos.value = [];
+  }
+};
+const loadSellerData = async (sellerId) => {
+  if (!sellerId) return;
+  isLoading.value = true;
+  try {
+    await Promise.all([
+      sellerStore.fetchSellerById(sellerId),
+      sellerStore.ensureSellers(sellerId),
+      reviewStore.fetchReviewsBySeller(sellerId),
+      loadSellerProducts(sellerId),
+      loadSellerVideos(sellerId),
+    ]);
+  } catch (err) {
+    console.error("Ошибка загрузки данных продавца:", err);
+  } finally {
+    isLoading.value = false;
+  }
+};
+const seller = computed(() => {
+  return sellerStore.getSellerById(route.params.id) || { 
+    name: "Загрузка...", 
+    id: route.params.id 
+  };
+});
+const sellerReviews = computed(() => reviewStore.reviews);
 
 const membershipText = computed(() => {
   if (!seller.value?.createdAt) return 'На Матрёшке недавно';
@@ -218,7 +221,6 @@ const membershipText = computed(() => {
   
   if (diffMonth < 1) return 'На Матрёшке меньше месяца';
   
-  // Склонение
   const lastDigit = diffMonth % 10;
   const lastTwo = diffMonth % 100;
   let suffix = 'месяцев';
@@ -259,6 +261,15 @@ const onSubscribeClick = () => {
   });
 };
 
+const playVideo = (video) => {
+  router.push({
+    name: 'shorts',
+    query: { 
+      videoId: video.id,
+      sellerId: route.params.id
+    }
+  });
+};
 </script>
 
 <style scoped>

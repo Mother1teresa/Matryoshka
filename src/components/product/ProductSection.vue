@@ -2,9 +2,12 @@
   <section>
     <div class="container">
       <div v-if="productStore.isLoading" class="block__loading">Загрузка...</div>
+      <div v-else-if="displayProducts.length === 0" class="block__empty">
+        Нет товаров
+      </div>
       <div v-else class="products">
         <ProductCard
-          v-for="product in productStore.products"
+          v-for="product in displayProducts"
           :key="product.id"
           :product="product"
           :isAuth="authStore.isAuthenticated"
@@ -16,7 +19,7 @@
 </template>
 
 <script setup>
-import { onMounted, watch } from "vue"
+import { computed, onMounted, watch } from "vue"
 import { useRoute } from "vue-router"
 import ProductCard from "./ProductCard.vue"
 import { useProductStore } from "/src/stores/product.js"
@@ -26,11 +29,16 @@ const productStore = useProductStore()
 const authStore = useAuthStore()
 const route = useRoute()
 
-const loadData = () => {
-  const category = route.params.category  // ← undefined на главной
-  console.log('loadData, category:', category)  // ← проверьте
-  productStore.fetchAdverts({ category: category })
-}
+const displayProducts = computed(() => {
+  const category = route.params.category
+  const section = route.params.section
+  
+  if (!category && !section) {
+    return productStore.products  // все товары на главной
+  }
+  
+  return productStore.getProductsByCategory(category, section)
+})
 
 // обработка лайка
 const handleToggleLike = (productId) => {
@@ -43,36 +51,37 @@ const handleToggleLike = (productId) => {
 
 // сохранить лайки
 const saveLikes = () => {
-  localStorage.setItem(
-    "products",
-    JSON.stringify(productStore.products)
-  )
+  const likedIds = productStore.products
+    .filter(p => p.isLiked)
+    .map(p => p.id)
+  localStorage.setItem("likedProducts", JSON.stringify(likedIds))
 }
 
 // загрузить лайки
 const loadLikes = () => {
   if (!authStore.isAuthenticated) return
-  const saved = localStorage.getItem("products")
+  const saved = localStorage.getItem("likedProducts")
   if (!saved) return
-  const savedProducts = JSON.parse(saved)
+  const likedIds = JSON.parse(saved)
   
-  // Обновляем лайки в основном массиве
-  productStore.allProducts.forEach(product => {
-    const savedProduct = savedProducts.find(p => p.id === product.id)
-    if (savedProduct) {
-      product.isLiked = savedProduct.isLiked
-    }
+  // Обновляем лайки в products
+  productStore.products.forEach(product => {
+    product.isLiked = likedIds.includes(product.id)
   })
 }
-watch(() => route.params.category,() => { loadData() })
 // следим за logout
-watch(() => authStore.isAuthenticated,(isAuth) => { if (!isAuth) {productStore.resetLikes() } else {loadLikes()} })
+watch(() => authStore.isAuthenticated, (isAuth) => {
+  if (!isAuth) {
+    productStore.resetLikes()
+  } else {
+    loadLikes()
+  }
+})
 
 onMounted(() => {
-  console.log('ProductSection mounted, allProducts:', productStore.allProducts.length)
-  if (productStore.allProducts.length === 0) {
-    console.log('Loading data...')
-    loadData()
+  // Если товары ещё не загружены (редкий случай)
+  if (productStore.products.length === 0) {
+    productStore.fetchAdverts()
   }
   if (authStore.isAuthenticated) {
     loadLikes()

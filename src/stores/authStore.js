@@ -236,6 +236,22 @@ export const useAuthStore = defineStore("auth", {
         throw e;
       }
     },
+    async fetchAdvertsBySeller(sellerId) {
+      if (!sellerId) {
+        console.warn("fetchAdvertsBySeller: sellerId не передан");
+        return [];
+      }
+      try {
+        const res = await api.get('/advert', {
+          params: { userId: sellerId }
+        });
+        return Array.isArray(res.data) ? res.data : [];
+      } catch (e) {
+        console.error("Ошибка загрузки товаров продавца:", e);
+        notify("Не удалось загрузить объявления продавца", "error");
+        return [];
+      }
+    },
     saveToStorage() {
       if (!this.user && this.isAuthenticated) {
         console.error("Попытка сохранить пустой профиль!");
