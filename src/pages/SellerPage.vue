@@ -4,7 +4,7 @@
     <div class="container seller-page" v-if="seller">
       <div class="breadcrumbs">
         <router-link to="/">Главная</router-link>
-        <span> → {{ seller?.name }}</span>
+        <span> → {{ seller?.name || seller?.username || seller?.companyName || 'Продавец' }}</span>
       </div>
       <div class="seller-card-main">
         <div class="seller-header-flex">
@@ -14,7 +14,7 @@
             </div>
             <div class="seller-text">
               <div class="seller-name-row">
-                <h1>{{ seller?.name }}</h1>
+                <h1>{{ seller?.name || seller?.username || seller?.companyName || 'Продавец' }}</h1>
                 <div class="seller-type">
                   {{ seller?.type === "company" ? "Компания" : "Частное лицо" }}
                 </div>
@@ -79,7 +79,7 @@
                 <span class="duration">{{ video.duration }}</span>
               </div>
               <div class="video-info">
-                <div class="video-title">{{ video.title }}</div>
+                <div class="video-title">{{video.description}}</div>
                 <div class="video-date">{{ video.date }}</div>
               </div>
             </div>
@@ -175,17 +175,29 @@ const loadSellerProducts = async (sellerId) => {
   }
 };
 
+// === ВИДЕО ПРОДАВЦА — фильтруем из всех видео ===
 const sellerVideos = ref([]);
+
 const loadSellerVideos = async (sellerId) => {
+  if (!sellerId) return;
   try {
-    if (auth.fetchVideosBySeller) {
-      sellerVideos.value = await auth.fetchVideosBySeller(sellerId);
-    }
+    await auth.fetchVideos();
+    sellerVideos.value = auth.allVideos.filter(v => 
+      v.userId === sellerId || v.author?.id === sellerId
+    ).map(v => ({
+      ...v,
+      // ИСПРАВЛЕНИЕ: нормализуем имя автора для отображения
+      author: {
+        ...v.author,
+        name: v.author?.username || v.author?.name || 'Пользователь'
+      }
+    }));
   } catch (err) {
-    console.error("Ошибка загрузки видео:", err);
+    console.error("Ошибка загрузки видео продавца:", err);
     sellerVideos.value = [];
   }
 };
+
 const loadSellerData = async (sellerId) => {
   if (!sellerId) return;
   isLoading.value = true;
@@ -203,12 +215,14 @@ const loadSellerData = async (sellerId) => {
     isLoading.value = false;
   }
 };
+
 const seller = computed(() => {
   return sellerStore.getSellerById(route.params.id) || { 
     name: "Загрузка...", 
     id: route.params.id 
   };
 });
+
 const sellerReviews = computed(() => reviewStore.reviews);
 
 const membershipText = computed(() => {
@@ -231,6 +245,7 @@ const membershipText = computed(() => {
   
   return `На Матрёшке ${diffMonth} ${suffix}`;
 });
+
 watch(
   () => route.params.id,
   (newId) => {
@@ -241,9 +256,11 @@ watch(
   },
   { immediate: true }
 );
+
 onUnmounted(() => {
   reviewStore.reviews = [];
 });
+
 const checkAuthAndRun = (action, message = "Авторизуйтесь, чтобы продолжить") => {
   if (!auth.isAuthenticated) {
     modal.openLogin();
@@ -261,13 +278,11 @@ const onSubscribeClick = () => {
   });
 };
 
+// Переход на видео в шортс
 const playVideo = (video) => {
   router.push({
     name: 'shorts',
-    query: { 
-      videoId: video.id,
-      sellerId: route.params.id
-    }
+    params: { id: video.id }
   });
 };
 </script>

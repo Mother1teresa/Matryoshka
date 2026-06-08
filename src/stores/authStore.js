@@ -14,6 +14,7 @@ export const useAuthStore = defineStore("auth", {
         isAuthenticated: data?.isAuthenticated || false,
         user: data?.user || null,
         allVideos: [],
+        welcomeFeed: [],
         isVideosLoading: false,
         allChats: [],
         allNotifications: [],
@@ -25,6 +26,7 @@ export const useAuthStore = defineStore("auth", {
         isAuthenticated: false,
         user: null,
         allVideos: [],
+        welcomeFeed: [],
         allChats: [],
         isVideosLoading: false,
         allNotifications: [],
@@ -252,6 +254,166 @@ export const useAuthStore = defineStore("auth", {
         return [];
       }
     },
+    // лента видео
+    async fetchWelcomeFeed({ page = 0, size = 10, seed = 0.5 }) {
+      this.isVideosLoading = true;
+      try {
+        const response = await api.get('/feed/video/welcome-feed', {
+          params: { page: Number(page), size: Number(size), seed: Number(seed) }
+        });
+        
+        // Сохраняем мапу likes из welcome-feed
+        const likesMap = {};
+        response.data.forEach(v => { likesMap[v.id] = v.likes || 0; });
+        
+        const videoIds = response.data.map(v => v.id);
+        const detailedVideos = await Promise.all(
+          videoIds.map(id => this.fetchVideo(id))
+        );
+        
+        this.welcomeFeed = detailedVideos.filter(Boolean).map(v => ({
+          ...v,
+          thumbnailLoaded: false,
+          posterUrl: null,
+          // Подставляем likes из welcome-feed если в деталях нет
+          likes: v.likes || likesMap[v.id] || 0,
+          author: {
+            id: v.author?.id,
+            // ИСПРАВЛЕНИЕ: username приоритетнее name (API возвращает username)
+            name: v.author?.username || v.author?.name || 'Пользователь',
+            username: v.author?.username
+          }
+        }));
+        return this.welcomeFeed;
+      } catch (e) {
+        console.error('Ошибка загрузки ленты:', e);
+        return [];
+      } finally {
+        this.isVideosLoading = false;
+      }
+    },
+    async fetchVideo(videoId) {
+      try {
+        const response = await api.get('/feed/video/', {
+          params: { videoId }
+        });
+        const video = response.data;
+        return {
+          ...video,
+          likes: video.likes || 0,
+          commentsCount: video.commentsCount || 0,
+          author: {
+            id: video.author?.id,
+            // ИСПРАВЛЕНИЕ: username приоритетнее
+            name: video.author?.username || video.author?.name || 'Пользователь',
+            username: video.author?.username
+          }
+        };
+      } catch (e) {
+        console.error('Ошибка загрузки видео:', e);
+        return null;
+      }
+    },
+    async addView(videoId, ip) {
+      try {
+        await api.post('/feed/video/add-view', {
+          id: crypto.randomUUID(),
+          videoId,
+          ip
+        });
+      } catch (e) {
+        console.error('Ошибка просмотра:', e);
+      }
+    },
+    async likeVideo(videoId) {
+      try {
+        await api.post('/feed/like', { videoId });
+      } catch (e) {
+        console.error('Ошибка лайка:', e);
+        throw e;
+      }
+    },
+    async unlikeVideo(videoId) {
+      try {
+        await api.post('/feed/unlike', { videoId });
+      } catch (e) {
+        console.error('Ошибка удаления лайка:', e);
+        throw e;
+      }
+    },
+    async fetchLikeCount(videoId) {
+      try {
+        const response = await api.get('/feed/like-count', {
+          params: { videoId }
+        });
+        return response.data;
+      } catch (e) {
+        console.error('Ошибка получения лайков:', e);
+        return 0;
+      }
+    },
+    async markFavorite(videoId) {
+      try {
+        await api.post('/feed/video/mark-as-favorite', videoId);
+      } catch (e) {
+        console.error('Ошибка добавления в избранное:', e);
+        throw e;
+      }
+    },
+    async unmarkFavorite(videoId) {
+      try {
+        await api.post('/feed/video/unmark-as-favorite', videoId);
+      } catch (e) {
+        console.error('Ошибка удаления из избранного:', e);
+        throw e;
+      }
+    },
+    async fetchFavorites(userId) {
+      try {
+        const response = await api.get(`/feed/video/${userId}`);
+        // Возвращаем массив избранных видео
+        const data = response.data?.[0];
+        if (data?.favoriteVideos) {
+          // Загружаем детали каждого видео
+          const videos = [];
+          for (const videoId of data.favoriteVideos) {
+            const video = await this.fetchVideo(videoId);
+            if (video) videos.push(video);
+          }
+          return videos;
+        }
+        return [];
+      } catch (e) {
+        console.error('Ошибка загрузки избранного:', e);
+        return [];
+      }
+    },
+    async addComment({ userId, videoId, text, parentId }) {
+      try {
+        const response = await api.post('/feed/comments', {
+          userId,
+          videoId,
+          text,
+          parentId
+        });
+        return response.data;
+      } catch (e) {
+        console.error('Ошибка комментария:', e);
+        throw e;
+      }
+    },
+    async fetchUserViews(userId) {
+      try {
+        const response = await api.get('/feed/video/user-views', {
+          params: { userId }
+        });
+        return response.data;
+      } catch (e) {
+        console.error('Ошибка загрузки просмотров:', e);
+        return null;
+      }
+    },
+    // конец
     saveToStorage() {
       if (!this.user && this.isAuthenticated) {
         console.error("Попытка сохранить пустой профиль!");
@@ -341,7 +503,7 @@ export const useAuthStore = defineStore("auth", {
     async fetchVideos() {
       this.isVideosLoading = true;
       try {
-        const res = await api.get('/media/video', { withCredentials: true });
+        const res = await api.get('/media/video');
         const rawVideos = Array.isArray(res.data) ? res.data : [];
 
         const enrichedVideos = await Promise.all(rawVideos.map(async (v) => {
@@ -359,12 +521,14 @@ export const useAuthStore = defineStore("auth", {
 
           return {
             ...v,
-            s3Key: v.s3Key || v.fileName || v.id, 
+            s3Key: v.s3Key || v.fileName || v.id,
             thumbnail: v.thumbnailUrl || v.cdnUrl || v.url,
             description: v.description || 'Описание ролика временно недоступно',
             isArchived: v.isArchived || false,
+            likes: v.likes || v.likesCount || 0,
+            likesCount: v.likesCount || v.likes || 0,
             author: {
-              name: userData?.name || userData?.username || 'Пользователь',
+              name: userData?.username || userData?.name || 'Пользователь',
               avatar: userData?.avatar || userData?.avatarUrl || maskAvatar,
               city: userData?.city || 'Город не указан',
               rating: userData?.rating || 0,

@@ -91,17 +91,17 @@
                     <template v-if="activeTab === 'active'">
                       <div class="stats-line">
                         <!-- Исправлено на camelCase под структуру из Store -->
-                        <div class="stat" :title="formatFullNumber(video.viewsCount)">
+                        <div class="stat">
                           <img src="/src/assets/img/icons/eye.svg" />
-                          {{ formatNumber(video.viewsCount) }}
+                          {{ video.viewsCount || 0 }}
                         </div>
-                        <div class="stat" :title="formatFullNumber(video.likesCount)">
+                        <div class="stat">
                           <img src="/src/assets/img/icons/heart.svg" />
-                          {{ formatNumber(video.likesCount) }}
+                          {{ video.likes || video.likesCount || 0 }}
                         </div>
-                        <div class="stat" :title="formatFullNumber(video.commentsCount)">
+                        <div class="stat">
                           <img src="/src/assets/img/icons/comment.svg" />
-                          {{ formatNumber(video.commentsCount || 0) }}
+                          {{ video.commentsCount || 0 }}
                         </div>
                       </div>
                       <p class="video-description">

@@ -1,0 +1,11 @@
+/api/feed/video/unmark-as-favorite - Убрать видео из избранного (закладок).
+/api/feed/video/mark-as-favorite - Добавить видео в избранное (закладки).
+/api/feed/video/add-view - Засчитать просмотр видео.
+/api/feed/video/{userId} - Получить список избранных видео пользователя.
+/api/feed/video/welcome-feed - Лента видео для главной страницы.
+/api/feed/video/user-views - Получить историю просмотров пользователя.
+/api/feed/video/ - Получить одно видео по ID.
+/api/feed/like - Поставить лайк видео.
+/api/feed/unlike - Убрать лайк с видео
+/api/feed/like-count - Получить количество лайков.
+/api/feed/comments - Добавить комментарий к видео. 

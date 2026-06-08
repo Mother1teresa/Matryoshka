@@ -19,32 +19,29 @@
     </div>
     <div class="favorites-content">
       <div v-if="isLoading" class="loading-plug">Загрузка...</div>
-      <template v-else-if="currentItems.length > 0"><!-- Тип: Видео -->
+      <template v-else-if="currentItems.length > 0">
+        <!-- Тип: Видео -->
         <template v-if="selectedType === 'videos'">
           <div v-for="video in currentItems" :key="video.id" class="fav-video-card">
             <div class="fav-video-card_block">
               <div class="fav-video-preview">
-                <img :src="video.thumbnail" alt="thumbnail" />
+                <video 
+                  v-if="video.cdnUrl"
+                  :src="video.cdnUrl"
+                  preload="metadata"
+                  muted
+                  playsinline
+                ></video>
+                <img v-else :src="video.thumbnail || '/src/assets/img/video/placeholder.svg'" alt="thumbnail" />
               </div>
               <div class="fav-video-main">
-                <router-link :to="'/video/' + video.id">
-                  <h3 class="video-title">{{ video.title }}</h3>
+                <router-link :to="{ name: 'shorts', params: { id: video.id } }">
+                  <h3 class="video-title">{{ video.fileName || 'Без названия' }}</h3>
                 </router-link>
                 <div class="video-stats">
-                  <div class="stat"><img src="/src/assets/img/icons/eye.svg" /> {{ video.views }}</div>
-                  <div class="stat"><img src="/src/assets/img/icons/heart.svg" /> {{ video.likes }}</div>
-                  <div class="stat"><img src="/src/assets/img/icons/comment.svg" /> {{ video.comments_count }}</div>
-                </div>
-                <div class="linked-product-box" v-if="video.product">
-                  <img :src="video.product.image" class="prod-thumb" />
-                  <div class="prod-info">
-                    <router-link :to="'/ads/' + video.product.id">
-                      <span class="prod-name">{{ video.product.name }}</span>
-                    </router-link>
-                    <span class="prod-price">{{ video.product.price }} р</span>
-                    <button class="btn write-btn" @click="contactSeller(video.product.user_id)">Написать</button>
-                  </div>
-                  <span class="prod-city">{{ video.product.city }}</span>
+                  <div class="stat"><img src="/src/assets/img/icons/eye.svg" /> {{ video.viewsCount || 0 }}</div>
+                  <div class="stat"><img src="/src/assets/img/icons/heart.svg" /> {{ video.likes || 0 }}</div>
+                  <div class="stat"><img src="/src/assets/img/icons/comment.svg" /> {{ video.commentsCount || 0 }}</div>
                 </div>
               </div>
             </div>
@@ -53,16 +50,18 @@
                 <img src="/src/assets/img/icons/heart-filled.svg" />
               </div>
               <div class="author-info">
-                <img :src="video.author?.avatar" class="author-avatar" />
-                <span class="author-name">{{ video.author?.name }}</span>
+                <img :src="video.author?.avatar || '/src/assets/img/mask-avatar.png'" class="author-avatar" />
+                <span class="author-name">{{ video.author?.username || 'Пользователь' }}</span>
               </div>
               <div class="action-btns">
-                <button class="btn btn-green">Посмотреть видео</button>
-                <button class="btn btn-outline">Посмотреть объявление</button>
+                <router-link :to="{ name: 'shorts', params: { id: video.id } }">
+                  <button class="btn btn-green">Посмотреть видео</button>
+                </router-link>
               </div>
             </div>
           </div>
-        </template><!-- Тип: Объявления -->
+        </template>
+        <!-- Тип: Объявления -->
         <template v-else>
           <div v-for="item in currentItems" :key="item.id" class="fav-ad-horizontal">
             <div class="ad-img-container">
@@ -75,92 +74,39 @@
               </div>
               <div class="ad-price">{{ item.price }} ₽</div>
               <div class="ad-details-tags">
-                <span v-if="item.category === 'jobs'">{{ item.experience }}</span>
-                <span v-else>{{ item.params }}</span>
+                <span>{{ item.category }}</span>
               </div>
               <div class="ad-location">
                 <img src="/src/assets/img/icons/location-pin.svg" class="pin" />
-                {{ item.location }}
+                {{ item.address }}
               </div>
               <p class="ad-desc">{{ item.description }}</p>
-              <div class="ad-category-label">{{ item.category_name }}</div>
             </div>
             <div class="ad-seller-actions">
               <div class="seller-brief">
-                <img :src="item.seller?.avatar" class="seller-avatar" />
-                <span class="seller-name">{{ item.seller?.name }}</span>
+                <img :src="item.seller?.avatar || '/src/assets/img/mask-avatar.png'" class="seller-avatar" />
+                <span class="seller-name">{{ item.seller?.name || 'Продавец' }}</span>
               </div>
               <div class="action-buttons">
                 <button class="btn btn-green" @click="onWriteClick(item)">Написать</button>
                 <button class="btn btn-white" @click="onShowPhone(item)">Показать номер</button>
               </div>
-              <span class="ad-date">{{ item.created_at_formatted }}</span>
             </div>
           </div>
         </template>
-      </template><!-- Пустое состояние -->
+      </template>
+      <!-- Пустое состояние -->
       <div v-else class="empty-state">
         <p>В избранном пока ничего нет</p>
       </div>
     </div>
   </div>
 </template>
-<!-- <script setup>
-import { ref } from 'vue';
-const isDropdownOpen = ref(false);
-const selectedType = ref('videos');
-const favoriteVideos = ref([
-  {
-    id: 1,
-    title: 'Собака стоит на террасе и смотрит на панно которые сделал фонарь светодиода',
-    thumbnail: '/img/roliks/rolik.png',
-    author: { name: 'Владимир', avatar: '/src/assets/img/mask-avatar.png' },
-    product: {
-      name: 'Панно фонаря светодиода',
-      price: 79,
-      city: 'г.Краснодар',
-      image: '/img/products/img-prod.jpg'
-    }
-  },
-]);
-const favoriteAds = ref([
-  {
-    id: 1,
-    title: 'Агент-менеджер',
-    category: 'jobs',
-    categoryName: 'Продажи',
-    price: '70 000 - 90 000 ₽',
-    experience: '36 лет Опыт: 6 лет',
-    gender: 'жен.',
-    location: 'Краснодар, р-н Центральный',
-    description: 'Предлагаю своё резюме',
-    image: '/img/temp/resume-photo.jpg',
-    date: '4 января 13:52',
-    seller: { name: 'Лилия Степановна', avatar: '/src/assets/img/mask-avatar.png' }
-  },
-  {
-    id: 2,
-    title: 'Honda Partner 1,5 AT, 2002',
-    category: 'transport',
-    categoryName: 'Автомобили',
-    price: '422 000 ₽',
-    params: '1.5 AT (105 л.с.), седан, передний привод, бензин',
-    location: 'Краснодар, р-н Центральный',
-    description: 'Тачка огонь, берите не пожалеете, всё работает...',
-    image: '/img/products/car.jpg',
-    date: '4 января 13:52',
-    seller: { name: 'Павел Геннадьевич', avatar: '/src/assets/img/mask-avatar.png' }
-  }
-]);
-const selectType = (type) => {
-  selectedType.value = type;
-  isDropdownOpen.value = false;
-};
-const closeDropdown = () => isDropdownOpen.value = false;
-</script> -->
+
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useAuthStore } from "/src/stores/authStore.js";
+import { notify } from "/src/utils/notify.js";
 
 const authStore = useAuthStore();
 const isDropdownOpen = ref(false);
@@ -168,18 +114,49 @@ const selectedType = ref('videos');
 const isLoading = ref(false);
 const currentItems = ref([]);
 
-// Вызываем метод из стора
+// Загрузка избранного
 const loadData = async () => {
-  if (!authStore.isAuthenticated) return;
+  if (!authStore.isAuthenticated) {
+    notify('Войдите, чтобы увидеть избранное');
+    return;
+  }
+  
   isLoading.value = true;
-  currentItems.value = await authStore.fetchFavorites(selectedType.value);
-  isLoading.value = false;
+  try {
+    if (selectedType.value === 'videos') {
+      // Используем fetchFavorites для видео
+      const userId = authStore.user?.id;
+      if (userId) {
+        const videos = await authStore.fetchFavorites(userId);
+        currentItems.value = videos || [];
+      }
+    } else {
+      // Объявления — пока заглушка или старый метод
+      currentItems.value = [];
+    }
+  } catch (e) {
+    console.error('Ошибка загрузки избранного:', e);
+    notify('Не удалось загрузить избранное', 'error');
+  } finally {
+    isLoading.value = false;
+  }
 };
 
-const toggleFavorite = async (id) => {
-  const success = await authStore.removeFromFavorites(id);
-  if (success) {
+// Удалить из избранного
+const removeFromFavorites = async (id) => {
+  if (!authStore.isAuthenticated) return;
+  
+  try {
+    if (selectedType.value === 'videos') {
+      // POST /api/feed/video/unmark-as-favorite
+      await authStore.unmarkFavorite(id);
+    }
+    
     currentItems.value = currentItems.value.filter(item => item.id !== id);
+    notify('Удалено из избранного');
+  } catch (e) {
+    console.error('Ошибка удаления:', e);
+    notify('Не удалось удалить', 'error');
   }
 };
 
@@ -190,6 +167,15 @@ const changeType = (type) => {
 };
 
 const closeDropdown = () => isDropdownOpen.value = false;
+
+const onWriteClick = (item) => {
+  console.log('Написать продавцу:', item);
+};
+
+const onShowPhone = (item) => {
+  console.log('Телефон:', item.contacts);
+};
+
 onMounted(() => {
   loadData();
 });

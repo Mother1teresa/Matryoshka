@@ -25,14 +25,15 @@ const replyTo = ref(null);
 let copyTimeout = null;
 const isCopied = ref(false);
 
-const videos = computed(() => authStore.allVideos);
+// Все видео из ленты
+const videos = computed(() => authStore.welcomeFeed || []);
 const isLoading = computed(() => authStore.isVideosLoading);
 
+// ID видео, на которое кликнули (из URL)
+const selectedVideoId = computed(() => route.params.id);
+
 // ===== AUTH CHECK =====
-const checkAuthAndRun = (
-  action,
-  message = "Авторизуйтесь, чтобы продолжить",
-) => {
+const checkAuthAndRun = (action, message = "Авторизуйтесь, чтобы продолжить") => {
   if (!authStore.isAuthenticated) {
     modal.openLogin();
     notify(message);
@@ -41,17 +42,58 @@ const checkAuthAndRun = (
   action();
 };
 
-// ===== LIKE =====
-const onLikeClick = (video) => {
+// ===== LIKE (избранное — закладки) =====
+const onFavoriteClick = async (video) => {
   if (!video) return;
-  checkAuthAndRun(() => {
-    favStore.toggle(video.id);
-    notify(
-      favStore.isFavorite(video.id)
-        ? "Добавлено в избранное"
-        : "Удалено из избранного",
-    );
+  checkAuthAndRun(async () => {
+    try {
+      if (favStore.isFavorite(video.id)) {
+        await authStore.unmarkFavorite(video.id);
+        favStore.remove(video.id);
+        notify("Удалено из избранного");
+      } else {
+        await authStore.markFavorite(video.id);
+        favStore.add(video.id);
+        notify("Добавлено в избранное");
+      }
+    } catch (e) {
+      notify("Ошибка", "error");
+    }
   }, "Войдите, чтобы добавить в избранное");
+};
+
+// ===== LIKE (сердечко — лайк) =====
+const onLikeClick = async (video) => {
+  if (!video) return;
+  checkAuthAndRun(async () => {
+    try {
+      await authStore.likeVideo(video.id);
+      video.likes = (video.likes || 0) + 1;
+      // ИСПРАВЛЕНИЕ: обновляем и в welcomeFeed
+      const feedVideo = authStore.welcomeFeed.find(v => v.id === video.id);
+      if (feedVideo) feedVideo.likes = video.likes;
+      notify("Лайк поставлен");
+    } catch (e) {
+      notify("Ошибка лайка", "error");
+    }
+  });
+};
+
+// ===== UNLIKE =====
+const onUnlikeClick = async (video) => {
+  if (!video) return;
+  checkAuthAndRun(async () => {
+    try {
+      await authStore.unlikeVideo(video.id);
+      video.likes = Math.max(0, (video.likes || 0) - 1);
+      // ИСПРАВЛЕНИЕ: обновляем и в welcomeFeed
+      const feedVideo = authStore.welcomeFeed.find(v => v.id === video.id);
+      if (feedVideo) feedVideo.likes = video.likes;
+      notify("Лайк убран");
+    } catch (e) {
+      notify("Ошибка", "error");
+    }
+  });
 };
 
 // ===== SUBSCRIBE =====
@@ -66,6 +108,7 @@ const onSubscribeClick = (authorId) => {
 
 // ===== WRITE MESSAGE =====
 const onWriteClick = (video) => {
+  if (!video?.author?.id) return;
   checkAuthAndRun(async () => {
     try {
       const roomId = await authStore.createPrivateRoom(video.author.id);
@@ -76,17 +119,18 @@ const onWriteClick = (video) => {
   }, "Войдите, чтобы написать сообщение");
 };
 
-// ===== COMMENTS =====
-const postComment = (video, parentId = null) => {
-  if (!newComment.value.trim()) return;
+// ===== COMMENTS (API) =====
+const postComment = async (video, parentId = null) => {
+  if (!newComment.value.trim() || !video) return;
 
   checkAuthAndRun(async () => {
     try {
-      // API вызов (раскомментировать когда бэк готов)
-      // await api.post(`/api/shorts/${video.id}/comments`, {
-      //   text: newComment.value,
-      //   parentId: parentId || null
-      // });
+      await authStore.addComment({
+        userId: authStore.user?.id,
+        videoId: video.id,
+        text: newComment.value.trim(),
+        parentId: parentId || null
+      });
 
       const newItem = {
         id: `temp-${Date.now()}`,
@@ -99,6 +143,7 @@ const postComment = (video, parentId = null) => {
         replyTo: parentId ? replyTo.value?.userName : null,
         replies: [],
       };
+
       if (!video.comments) video.comments = [];
       if (parentId) {
         const findParent = (comments, id) => {
@@ -151,6 +196,21 @@ const cancelReply = () => {
   newComment.value = "";
 };
 
+// ===== ADD VIEW =====
+const addView = async (video) => {
+  if (!video) return;
+  try {
+    const ip = await fetch('https://api.ipify.org?format=json')
+      .then(r => r.json())
+      .then(data => data.ip)
+      .catch(() => 'unknown');
+    
+    await authStore.addView(video.id, ip);
+  } catch (e) {
+    console.error('Ошибка просмотра:', e);
+  }
+};
+
 // ===== VIDEO REFS =====
 const setVideoRef = (el) => {
   if (el && !videoRefs.value.includes(el)) videoRefs.value.push(el);
@@ -188,7 +248,7 @@ const scrollPrev = () => {
 
 const scrollToVideo = (id) => {
   const el = videoRefs.value.find((v) => v.dataset.id === id);
-  if (el) el.scrollIntoView();
+  if (el) el.scrollIntoView({ behavior: 'auto' });
 };
 
 // ===== OBSERVER =====
@@ -198,10 +258,15 @@ const initObserver = () => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           entry.target.play();
-          router.replace({
-            name: "shorts",
-            params: { id: entry.target.dataset.id },
-          });
+          const videoId = entry.target.dataset.id;
+          const video = videos.value.find(v => v.id === videoId);
+          if (video) {
+            addView(video);
+            router.replace({
+              name: "shorts",
+              params: { id: videoId },
+            });
+          }
         } else {
           entry.target.pause();
           entry.target.currentTime = 0;
@@ -212,15 +277,16 @@ const initObserver = () => {
   );
   videoRefs.value.forEach((v) => observer.observe(v));
 };
+
 const isOwnComment = (comment) => {
   const currentUserName = authStore.user?.username || "Вы";
   if (comment.author?.name === currentUserName) return true;
   if (comment.author?.id && authStore.user?.id) {
     return String(comment.author.id) === String(authStore.user.id);
   }
-  
   return false;
 };
+
 // ===== CLOSE =====
 const closeShorts = () => {
   if (window.history.length > 1) {
@@ -235,6 +301,7 @@ const isShareModalOpen = ref(false);
 const shareLink = ref("");
 
 const openShareModal = (video) => {
+  if (!video) return;
   const baseUrl = window.location.origin;
   shareLink.value = `${baseUrl}/shorts/${video.id}`;
   isShareModalOpen.value = true;
@@ -250,41 +317,26 @@ const copyToClipboard = async () => {
     notify("Ошибка копирования", "error");
   }
 };
-// Если нужен fallback для HTTP:
-// const copyToClipboard = async () => {
-//   try {
-//     const text = shareLink.value;
-//     if (navigator.clipboard && window.isSecureContext) {
-//       await navigator.clipboard.writeText(text);
-//     } else {
-//       // Fallback
-//       const el = document.createElement("textarea");
-//       el.value = text;
-//       el.style.cssText = 'position:fixed;left:-9999px;';
-//       document.body.appendChild(el);
-//       el.select();
-//       document.execCommand('copy');
-//       document.body.removeChild(el);
-//     }
-//     isCopied.value = true;
-//     setTimeout(() => isCopied.value = false, 2000);
-//   } catch {
-//     notify("Ошибка копирования", "error");
-//   }
-// };
+
 const isOwnVideo = (video) => {
-  return String(video.author?.id) === String(authStore.user?.id);
+  if (!video?.author?.id || !authStore.user?.id) return false;
+  return String(video.author.id) === String(authStore.user.id);
 };
+
 // ===== LIFECYCLE =====
 onMounted(async () => {
+  // Загружаем ленту если пусто
   if (videos.value.length === 0) {
-    await authStore.fetchVideos();
+    await authStore.fetchWelcomeFeed({ page: 0, size: 20, seed: 0.5 });
   }
+  
   window.addEventListener("keydown", handleKeyDown);
+  
   nextTick(() => {
     initObserver();
-    if (route.params.id) {
-      scrollToVideo(route.params.id);
+    // Скроллим к выбранному видео
+    if (selectedVideoId.value) {
+      scrollToVideo(selectedVideoId.value);
     }
   });
 });
@@ -294,10 +346,12 @@ onUnmounted(() => {
   clearTimeout(copyTimeout);
 });
 </script>
+
 <template>
   <div class="shorts-page-overlay">
     <div v-if="isLoading" class="loader">Загрузка роликов...</div>
-    <div v-else class="shorts-main-container" ref="scrollContainer">
+    
+    <div v-else-if="videos.length" class="shorts-main-container" ref="scrollContainer">
       <div v-for="video in videos" :key="video.id" class="short-snap-item">
         <div class="short-content-wrapper">
           <!-- ВИДЕО (Левая часть) -->
@@ -305,24 +359,50 @@ onUnmounted(() => {
             <button class="close-btn" @click="closeShorts">
               <img src="/src/assets/img/icons/close-white.svg" alt="close" />
             </button>
-            <video :src="video.cdnUrl || video.url" :ref="setVideoRef" :data-id="video.id" loop playsinline muted></video>
+            
+            <video 
+              :src="video.cdnUrl" 
+              :ref="setVideoRef" 
+              :data-id="video.id" 
+              loop 
+              playsinline 
+              muted
+              preload="metadata"
+            ></video>
+            
             <div class="video-actions">
+              <!-- Лайк (сердечко) -->
               <div class="v-action">
                 <button class="action-btn" @click.stop="onLikeClick(video)">
+                  <img :src="heartFilled" class="like-icon"/>
+                  <span>{{ video.likes || 0 }}</span>
+                </button>
+              </div>
+              
+              <!-- Избранное (закладка) -->
+              <div class="v-action">
+                <button class="action-btn" @click.stop="onFavoriteClick(video)">
                   <img :src="favStore.isFavorite(video.id) ? heartFilled : heart" class="like-icon"/>
                 </button>
               </div>
+              
+              <!-- Написать -->
               <div v-if="!isOwnVideo(video)" class="v-action">
                 <button class="action-btn" @click="onWriteClick(video)">
                   <img src="/src/assets/img/mes.svg" />
                 </button>
               </div>
+              
+              <!-- Поделиться -->
               <div class="v-action">
                 <button class="action-btn" @click="openShareModal(video)">
                   <img src="/src/assets/img/icons/lin.svg" alt="share" />
                 </button>
               </div>
+              
               <div class="v-divider"></div>
+              
+              <!-- Стрелки -->
               <div class="v-action scroll-arrows">
                 <button class="action-btn arrow-btn" @click="scrollPrev">
                   <img src="/src/assets/img/icons/up.svg" alt="up" />
@@ -333,6 +413,7 @@ onUnmounted(() => {
               </div>
             </div>
           </div>
+          
           <!-- ИНФОРМАЦИЯ (Правая часть) -->
           <aside class="info-side">
             <div class="info-scroll-area">
@@ -342,41 +423,14 @@ onUnmounted(() => {
                     {{ video.fileName || "Без названия" }}
                   </h2>
                   <div class="video-stats-row">
-                    <span>{{ video.likesCount || "0" }} лайков</span>
+                    <span>{{ video.likes || 0 }} лайков</span>
                     <span class="dot">.</span>
-                    <span>{{ video.viewsCount || "0" }} просмотров</span>
-                    <span class="dot">.</span>
-                    <span>{{ formatDate(video.publishedAt) }}</span>
+                    <span>{{ video.commentsCount || 0 }} комментариев</span>
                   </div>
                 </div>
+                
                 <!-- Автор -->
-                 <div class="shorts-block_avt">
-                  <!-- <div class="product-card-shorts">
-                    <div class="p-flex">
-                      <img src="/public/img/products/img-prod2.jpg" />
-                      <div class="p-text">
-                        <p class="p-name">аппвавпавап</p>
-                        <p class="p-price">354435435 ₽</p>
-                        <p class="p-city">комментарий</p>
-                      </div>
-                    </div>
-                    <button class="btn-primary" @click="onWriteClick(video)">
-                      Написать
-                    </button>
-                  </div> -->
-                  <div v-if="video.product" class="product-card-shorts">
-                    <div class="p-flex">
-                      <img :src="video.product.image" />
-                      <div class="p-text">
-                        <p class="p-name">{{ video.product.name }}</p>
-                        <p class="p-price">{{ video.product.price }} ₽</p>
-                        <p class="p-city">{{ video.product.city }}</p>
-                      </div>
-                    </div>
-                    <button class="btn-primary" @click="onWriteClick(video)">
-                      Написать
-                    </button>
-                  </div>
+                <div class="shorts-block_avt">
                   <div class="author-card">
                     <router-link 
                       :to="{ name: 'SellerPage', params: { id: video.author?.id } }"
@@ -384,96 +438,69 @@ onUnmounted(() => {
                       <div class="author-main">
                         <img :src="video.author?.avatar" class="author-ava" />
                         <div class="author-details">
-                          <p class="name">{{ video.author?.name || 'Загрузка...' }}</p>
+                          <p class="name">{{ video.author?.name || video.author?.username || 'Пользователь' }}</p>
                         </div>
                       </div>
                     </router-link>
                     <div class="rating-badge">
-                      <span class="rating-num">{{ video.author.rating}}</span>
+                      <span class="rating-num">{{ video.author?.rating || 0 }}</span>
                       <span class="stars">★★★★★</span>
-                      <button class="btn-primary" :class="{'is-active': subStore.isSubscribed(video.author?.id,),}"@click="onSubscribeClick(video.author?.id)">
-                        {{subStore.isSubscribed(video.author?.id)? "Отписаться": "Подписаться"}}
+                      <button 
+                        class="btn-primary" 
+                        :class="{'is-active': subStore.isSubscribed(video.author?.id)}"
+                        @click="onSubscribeClick(video.author?.id)"
+                      >
+                        {{ subStore.isSubscribed(video.author?.id) ? "Отписаться" : "Подписаться" }}
                       </button>
                     </div>
-                    <div class="author-meta">
-                      <p class="response">Отвечает быстро</p>
-                      <p class="deals-count">
-                        Кол-во сделок: {{ video.author?.deals || 0 }}
-                      </p>
-                    </div>
                   </div>
-                 </div>
+                </div>
               </div>
+              
               <!-- КОММЕНТАРИИ -->
               <div class="comments-block">
                 <p class="section-title">
                   <img src="/src/assets/img/icons/comment.svg" alt="" />
                   Комментарии
                 </p>
-                <div v-if="video.commentsDisabled" class="comments-locked">
-                  <p>Комментарии не доступны</p>
-                </div>
-                <div v-else-if="!video.comments?.length" class="comments-empty">
+                
+                <div v-if="!video.comments?.length" class="comments-empty">
                   <p>Комментариев нет</p>
                 </div>
+                
                 <div v-else class="comments-list">
                   <div v-for="comment in video.comments" :key="comment.id" class="comment-item">
-                    <router-link 
-                      :to="{ name: 'SellerPage', params: { id: comment.author?.id } }"
-                      class="author-link">
-                      <img :src="comment.author?.avatar || '/src/assets/img/mask-avatar.png'"/>
-                    </router-link>
+                    <img :src="comment.author?.avatar || '/src/assets/img/mask-avatar.png'"/>
                     <div class="c-body">
                       <div class="c-header">
-                        <router-link 
-                          :to="{ name: 'SellerPage', params: { id: comment.author?.id } }"
-                          class="c-user author-name">
-                          {{ comment.author?.name || "Пользователь" }}
-                        </router-link>
-                         <p class="c-text">{{ comment.text }}</p>
+                        <span class="c-user">{{ comment.author?.name || "Пользователь" }}</span>
+                        <p class="c-text">{{ comment.text }}</p>
                       </div>
                       <div class="c-header_footer">
-                        <span class="c-date">{{formatDate(comment.createdAt)}}</span>
+                        <span class="c-date">{{ formatDate(comment.createdAt) }}</span>
                         <span v-if="!isOwnComment(comment)" class="c-reply" @click="startReply(comment)">
-                          Ответить</span>
-                      </div>
-                      <!-- Ответы на комментарий -->
-                      <div v-if="comment.replies?.length" class="replies-list">
-                        <div v-for="reply in comment.replies" :key="reply.id" class="comment-item is-reply">
-                          <router-link 
-                            :to="{ name: 'SellerPage', params: { id: reply.author?.id } }"
-                            class="author-link">
-                            <img :src="reply.author?.avatar || '/src/assets/img/mask-avatar.png'"/>
-                          </router-link>
-                          <div class="c-body">
-                            <div class="c-header">
-                              <router-link 
-                                :to="{ name: 'SellerPage', params: { id: reply.author?.id } }"
-                                class="c-user author-name">
-                                {{ reply.author?.name }}
-                              </router-link>
-                              <span class="c-date">{{formatDate(reply.createdAt)}}</span>
-                            </div>
-                            <p class="c-text">
-                              <span class="reply-to">@{{ reply.replyTo }}</span>
-                              {{ reply.text }}
-                            </p>
-                          </div>
-                        </div>
+                          Ответить
+                        </span>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
+            
+            <!-- Ввод комментария -->
             <div class="footer-input">
               <div v-if="replyTo" class="reply-banner">
                 <span>Ответ {{ replyTo.userName }}</span>
                 <button @click="cancelReply">✕</button>
               </div>
-
               <div class="input-row">
-                <input type="text" v-model="newComment" :placeholder="replyTo ? `Ответ ${replyTo.userName}...` : 'Сообщение' " :disabled="video.commentsDisabled" @keyup.enter="postComment(video, replyTo?.commentId)"/>
+                <input 
+                  type="text" 
+                  v-model="newComment" 
+                  :placeholder="replyTo ? `Ответ ${replyTo.userName}...` : 'Сообщение'" 
+                  @keyup.enter="postComment(video, replyTo?.commentId)"
+                />
                 <button class="send-btn" @click="postComment(video, replyTo?.commentId)">
                   <img src="/src/assets/img/icons/send-plane.svg" />
                 </button>
@@ -483,34 +510,22 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
+    
+    <div v-else class="empty">Видео не найдены</div>
+    
+    <!-- Share Modal -->
     <div v-if="isShareModalOpen" class="modal-overlay" @click.self="isShareModalOpen = false">
       <div class="share-modal">
         <header class="modal-header">
           <h3>Поделиться</h3>
-          <button class="close-modal" @click="isShareModalOpen = false">
-            ✕
-          </button>
+          <button class="close-modal" @click="isShareModalOpen = false">✕</button>
         </header>
-        <div class="social-icons">
-          <a href="#" class="social-btn whatsapp"
-            ><img src="/src/assets/img/icons/whatsapp.svg"
-          /></a>
-          <a href="#" class="social-btn telegram"
-            ><img src="/src/assets/img/icons/telegram.svg"
-          /></a>
-          <a href="#" class="social-btn vk"
-            ><img src="/src/assets/img/icons/vk.svg"
-          /></a>
-          <a href="#" class="social-btn_block download"
-            ><img src="/src/assets/img/icons/download.svg"
-          /></a>
-        </div>
         <div class="link-section">
           <label>Ссылка на мини-видео</label>
           <div class="input-wrapper">
             <input type="text" :value="shareLink" readonly />
           </div>
-          <button class="copy-btn" :class="{ 'copied': isCopied }"@click="copyToClipboard">
+          <button class="copy-btn" :class="{ 'copied': isCopied }" @click="copyToClipboard">
             {{ isCopied ? 'Скопировано!' : 'Копировать ссылку' }}
           </button>
         </div>

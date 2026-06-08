@@ -2,36 +2,42 @@
   <section class="mini-video">
     <div class="container">
       <div v-if="videos.length" class="mini-video-section">
-        <!-- Цикл по видео из стора -->
         <router-link
           v-for="video in videos.slice(0, 10)"
           :key="video.id"
           :to="{ name: 'shorts', params: { id: video.id } }"
           class="mini-video-link"
         >
-          <video 
-            v-if="video.thumbnail && video.thumbnail.endsWith('.mp4')" 
-            :src="video.thumbnail" 
-            class="thumbnail mini-video_img" 
+          <video
+            v-if="video.cdnUrl"
+            :src="video.cdnUrl"
+            class="thumbnail mini-video_img"
             preload="metadata"
             muted
             playsinline
           ></video>
-          <img 
-            v-else 
-            :src="video.thumbnail" 
-            class="thumbnail mini-video_img" 
-            alt="Превью" 
+          
+          <img
+            v-else-if="video.thumbnail || video.posterUrl"
+            :src="video.thumbnail || video.posterUrl"
+            class="thumbnail mini-video_img"
+            alt="Превью"
           />
+          
+          <div v-else class="thumbnail mini-video_img placeholder">
+            <span>Видео</span>
+          </div>
         </router-link>
       </div>
 
-      <!-- Если видео еще грузятся или их нет -->
       <div v-else-if="isLoading" class="mini-video-section">
         <div v-for="i in 6" :key="i" class="mini-video_img skeleton"></div>
       </div>
 
-      <!-- Правая плашка с кнопкой -->
+      <div v-else class="mini-video-section empty">
+        <p>Видео пока нет</p>
+      </div>
+
       <div class="block-link">
         <router-link :to="{ name: 'shorts' }">
           Мини-видео
@@ -48,14 +54,17 @@ import { useAuthStore } from "/src/stores/authStore.js";
 
 const authStore = useAuthStore();
 
-// Берем видео из стора
-const videos = computed(() => authStore.allVideos);
+const videos = computed(() => authStore.welcomeFeed || []);
 const isLoading = computed(() => authStore.isVideosLoading);
 
 onMounted(async () => {
-  // Загружаем, если еще не загружены
   if (videos.value.length === 0) {
-    await authStore.fetchVideos();
+    // seed: number double, 2 знака после запятой
+    await authStore.fetchWelcomeFeed({ 
+      page: 0, 
+      size: 10, 
+      seed: 0.5 
+    });
   }
 });
 </script>
