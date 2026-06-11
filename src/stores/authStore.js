@@ -288,15 +288,19 @@ export const useAuthStore = defineStore("auth", {
           params: { videoId }
         });
         const video = response.data;
+        
+        // Находим видео в welcomeFeed для получения description и likes
+        const feedVideo = this.welcomeFeed.find(v => v.id === videoId) || {};
+        
         return {
           ...video,
           id: video.id,
           cdnUrl: video.cdnUrl,
-          description: video.description || '',
-          likes: video.likes || 0,
+          description: feedVideo.description || video.description || '',
+          likes: feedVideo.likes !== undefined ? feedVideo.likes : (video.likes || 0),
           commentsCount: video.commentsCount || 0,
           views: video.views || 0,
-          createdAt: video.createdAt || '',
+          createdAt: feedVideo.createdAt || video.createdAt || '',
           author: {
             id: video.author?.id,
             name: video.author?.username || 'Пользователь',
