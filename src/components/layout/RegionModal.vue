@@ -173,7 +173,7 @@ watch(
 .region-card {
   background: white;
   width: 90%;
-  max-width: 600px;
+  max-width: 37.5rem;
   border-radius: 2.5rem;
   padding: 2.5rem;
   box-shadow: 0 10px 25px rgba(0,0,0,0.1);

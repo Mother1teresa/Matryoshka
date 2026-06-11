@@ -259,31 +259,21 @@ export const useAuthStore = defineStore("auth", {
       this.isVideosLoading = true;
       try {
         const response = await api.get('/feed/video/welcome-feed', {
-          params: { page: Number(page), size: Number(size), seed: Number(seed) }
-        });
-        
-        // Сохраняем мапу likes из welcome-feed
-        const likesMap = {};
-        response.data.forEach(v => { likesMap[v.id] = v.likes || 0; });
-        
-        const videoIds = response.data.map(v => v.id);
-        const detailedVideos = await Promise.all(
-          videoIds.map(id => this.fetchVideo(id))
-        );
-        
-        this.welcomeFeed = detailedVideos.filter(Boolean).map(v => ({
-          ...v,
-          thumbnailLoaded: false,
-          posterUrl: null,
-          // Подставляем likes из welcome-feed если в деталях нет
-          likes: v.likes || likesMap[v.id] || 0,
-          author: {
-            id: v.author?.id,
-            // ИСПРАВЛЕНИЕ: username приоритетнее name (API возвращает username)
-            name: v.author?.username || v.author?.name || 'Пользователь',
-            username: v.author?.username
+          params: {
+            page: Number(page),
+            size: Number(size),
+            seed: Number(seed)
           }
+        });
+        this.welcomeFeed = response.data.map(v => ({
+          id: v.id,
+          likes: v.likes || 0,
+          description: v.description || '',
+          createdAt: v.createdAt || '',
+          cdnUrl: '',
+          author: { name: 'Загрузка...' }
         }));
+        
         return this.welcomeFeed;
       } catch (e) {
         console.error('Ошибка загрузки ленты:', e);
@@ -300,12 +290,16 @@ export const useAuthStore = defineStore("auth", {
         const video = response.data;
         return {
           ...video,
+          id: video.id,
+          cdnUrl: video.cdnUrl,
+          description: video.description || '',
           likes: video.likes || 0,
           commentsCount: video.commentsCount || 0,
+          views: video.views || 0,
+          createdAt: video.createdAt || '',
           author: {
             id: video.author?.id,
-            // ИСПРАВЛЕНИЕ: username приоритетнее
-            name: video.author?.username || video.author?.name || 'Пользователь',
+            name: video.author?.username || 'Пользователь',
             username: video.author?.username
           }
         };

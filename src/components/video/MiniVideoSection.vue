@@ -1,49 +1,65 @@
 <template>
   <section class="mini-video">
     <div class="container">
-      <div v-if="videos.length" class="mini-video-section">
-        <router-link
-          v-for="video in videos.slice(0, 10)"
-          :key="video.id"
-          :to="{ name: 'shorts', params: { id: video.id } }"
-          class="mini-video-link"
-        >
-          <video
-            v-if="video.cdnUrl"
-            :src="video.cdnUrl"
-            class="thumbnail mini-video_img"
-            preload="metadata"
-            muted
-            playsinline
-          ></video>
-          
-          <img
-            v-else-if="video.thumbnail || video.posterUrl"
-            :src="video.thumbnail || video.posterUrl"
-            class="thumbnail mini-video_img"
-            alt="Превью"
-          />
-          
-          <div v-else class="thumbnail mini-video_img placeholder">
-            <span>Видео</span>
-          </div>
-        </router-link>
+      <!-- НЕАВТОРИЗОВАННЫЙ ПОЛЬЗОВАТЕЛЬ — показываем заглушку -->
+      <div v-if="!isAuthenticated" class="auth-overlay">
+        <div class="auth-content">
+          <p class="auth-title">Для просмотра мини-видео необходимо авторизоваться</p>
+          <button class="auth-btn register" @click="openRegister">Зарегистрироваться</button>
+          <p class="auth-text">
+            Если у вас есть аккаунт, то <br><a href="#" @click.prevent="openLogin" class="auth-link">войдите</a>
+          </p>
+          <img src="/src/assets/img/arr-select.svg" alt="" class="auth-mini_arr">
+          <p class="auth-hint">(как ссылка)</p>
+        </div>
       </div>
 
-      <div v-else-if="isLoading" class="mini-video-section">
-        <div v-for="i in 6" :key="i" class="mini-video_img skeleton"></div>
-      </div>
+      <!-- АВТОРИЗОВАННЫЙ ПОЛЬЗОВАТЕЛЬ — показываем видео -->
+      <template v-else>
+        <div v-if="videos.length" class="mini-video-section">
+          <router-link
+            v-for="video in videos.slice(0, 10)"
+            :key="video.id"
+            :to="{ name: 'shorts', params: { id: video.id } }"
+            class="mini-video-link"
+          >
+            <video
+              v-if="video.cdnUrl"
+              :src="video.cdnUrl"
+              class="thumbnail mini-video_img"
+              preload="metadata"
+              muted
+              playsinline
+            ></video>
+            
+            <img
+              v-else-if="video.thumbnail || video.posterUrl"
+              :src="video.thumbnail || video.posterUrl"
+              class="thumbnail mini-video_img"
+              alt="Превью"
+            />
+            
+            <!-- <div v-else class="thumbnail mini-video_img placeholder">
+              <span>Видео</span>
+            </div> -->
+          </router-link>
+        </div>
 
-      <div v-else class="mini-video-section empty">
-        <p>Видео пока нет</p>
-      </div>
+        <div v-else-if="isLoading" class="mini-video-section">
+          <div v-for="i in 6" :key="i" class="mini-video_img skeleton"></div>
+        </div>
 
-      <div class="block-link">
-        <router-link :to="{ name: 'shorts' }">
-          Мини-видео
-          <img src="/src/assets/img/video/arrow.svg" alt="arrow" />
-        </router-link>
-      </div>
+        <div v-else class="mini-video-section empty">
+          <p>Видео пока нет</p>
+        </div>
+
+        <div class="block-link">
+          <router-link :to="{ name: 'shorts' }">
+            Мини-видео
+            <img src="/src/assets/img/video/arrow.svg" alt="arrow" />
+          </router-link>
+        </div>
+      </template>
     </div>
   </section>
 </template>
@@ -51,15 +67,25 @@
 <script setup>
 import { computed, onMounted } from "vue";
 import { useAuthStore } from "/src/stores/authStore.js";
+import { useModalStore } from "/src/stores/modal.js";
 
 const authStore = useAuthStore();
+const modalStore = useModalStore();
 
+const isAuthenticated = computed(() => authStore.isAuthenticated);
 const videos = computed(() => authStore.welcomeFeed || []);
 const isLoading = computed(() => authStore.isVideosLoading);
 
+const openLogin = () => {
+  modalStore.openLogin();
+};
+
+const openRegister = () => {
+  modalStore.openRegister();
+};
+
 onMounted(async () => {
-  if (videos.value.length === 0) {
-    // seed: number double, 2 знака после запятой
+  if (isAuthenticated.value && videos.value.length === 0) {
     await authStore.fetchWelcomeFeed({ 
       page: 0, 
       size: 10, 
@@ -83,6 +109,76 @@ onMounted(async () => {
   position: relative;
 }
 
+/* ===== AUTH OVERLAY (как на скриншоте) ===== */
+.auth-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 15.438rem; /* Такая же высота как у видео */
+  background: #fff;
+}
+
+.auth-content {
+  text-align: center;
+  max-width: 28.625rem;
+  padding: 2.513rem 0;
+  display: grid;
+  justify-items: center;
+}
+
+.auth-title {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: #1a1a1a;
+  margin-bottom: 0.688rem;
+}
+
+.auth-btn {
+  display: inline-block;
+  padding: 0.875rem 0.938rem;
+  border-radius: 0.625rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: none;
+}
+
+.auth-btn.register {
+  background-color: #64a07a;
+  color: white;
+  margin-bottom: 0.688rem;
+}
+
+.auth-btn.register:hover {
+  background-color: #558a68;
+}
+
+.auth-text {
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+}
+
+.auth-link {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.auth-link:hover {
+  text-decoration: underline;
+}
+
+.auth-hint {
+  font-size: 0.625rem;
+  margin-top: 0.25rem;
+}
+.auth-mini_arr{
+  width: 0.753rem;
+  text-align: center;
+  transform: rotate(180deg);
+}
+/* ===== VIDEO SECTION (без изменений) ===== */
 .mini-video-section {
   display: flex;
   align-items: center;
