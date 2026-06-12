@@ -262,13 +262,11 @@ export const useAuthStore = defineStore("auth", {
           params: { page: Number(page), size: Number(size), seed: Number(seed) }
         });
         
-        // API возвращает [{ id, likes, description, createdAt }]
         this.welcomeFeed = response.data.map(v => ({
           id: v.id,
           likes: v.likes || 0,
           description: v.description || '',
           createdAt: v.createdAt || '',
-          // Плейсхолдеры — заполним при загрузке деталей
           cdnUrl: '',
           views: 0,
           commentsCount: 0,
