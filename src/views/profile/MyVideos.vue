@@ -44,15 +44,15 @@
                   :class="{ 'archived-item': activeTab === 'archive' }">
                   <div class="video-card" @click="openVideo(video.id)">
                     <video 
-                      v-if="video.thumbnail && video.thumbnail.endsWith('.mp4')" 
-                      :src="video.thumbnail" 
+                      v-if="video.cdnUrl || video.url"
+                      :src="video.cdnUrl || video.url" 
                       class="thumbnail" 
                       preload="metadata"
                       muted
                       playsinline
                     ></video>
                     <img 
-                      v-else 
+                      v-else-if="video.thumbnail"
                       :src="video.thumbnail" 
                       class="thumbnail" 
                       alt="Превью" 
@@ -237,14 +237,16 @@ const closeMenu = (e) => {
   }
 };
 onMounted(() => {
-  auth.fetchVideos();
+  if (auth.isAuthenticated && auth.user?.id) {
+    auth.fetchVideos();
+  }
   window.addEventListener("click", closeMenu);
 });
 onUnmounted(() => {
   window.removeEventListener("click", closeMenu);
 });
 const handleVideoCreated = (createdMedia) => {
-  isCreating.value = false; 
+  isCreating.value = false;
   
   if (createdMedia && typeof createdMedia === 'object') {
     const fallbackVideo = {
@@ -262,10 +264,11 @@ const handleVideoCreated = (createdMedia) => {
         avatar: auth.userAvatar
       }
     };
-    auth.allVideos = [fallbackVideo, ...auth.allVideos];
+    auth.addVideoLocally(fallbackVideo);  // ← через метод
   }
+  
   setTimeout(() => {
-    auth.fetchVideos();
+    auth.fetchVideos();  // перезагрузим с сервера для актуальности
   }, 1000);
 };
 </script>

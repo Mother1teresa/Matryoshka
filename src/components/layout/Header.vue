@@ -13,14 +13,14 @@
           <span>Матрёшка</span>
         </router-link>
         <div class="header__center">
-          <a href="#" class="btn-primary btn">
+          <a href="#" class="btn-primary btn" @click.prevent="handleCreateAd">
             <img src="/src/assets/img/icon-primary.svg" />
             Объявление
           </a>
-          <router-link to="/profile/videos" class="btn-primary btn">
+          <a href="#" class="btn-primary btn" @click.prevent="handleCreateVideo">
             <img src="/src/assets/img/icon-primary.svg" />
             Мини-видео
-          </router-link>
+          </a>
         </div>
         <div class="header__right">
           <!-- НЕ авторизован -->
@@ -150,6 +150,7 @@ import { useRegionModalStore } from "/src/stores/regionModal.js";
 import { useReviewStore } from '/src/stores/reviews.js';
 import { inject } from 'vue';
 import { useRouter } from 'vue-router';
+import { notify } from "/src/utils/notify";
 
 const openMaintenance = inject('openMaintenance');
 const router = useRouter();
@@ -215,6 +216,26 @@ const handleHeaderNav = (event, path) => {
     if (typeof showProfileMenu !== 'undefined') {showProfileMenu.value = false;}
     openMaintenance();
   }
+};
+const checkAuthAndRun = (action, message = "Авторизуйтесь, чтобы продолжить") => {
+  if (!auth.isAuthenticated) {
+    modal.openLogin();
+    notify(message);
+    return;
+  }
+  action();
+};
+
+const handleCreateAd = () => {
+  checkAuthAndRun(() => {
+    router.push('/profile/create-ad');
+  }, "Войдите, чтобы создать объявление");
+};
+
+const handleCreateVideo = () => {
+  checkAuthAndRun(() => {
+    router.push('/profile/videos');
+  }, "Войдите, чтобы создать мини-видео");
 };
 watch(
   () => auth.user?.id,

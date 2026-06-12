@@ -542,23 +542,73 @@ export const useAuthStore = defineStore("auth", {
         this.isVideosLoading = false;
       }
     },
+    async fetchVideosByUser(userId) {
+      this.isVideosLoading = true;
+      try {
+        const res = await api.get('/media/video', {
+          params: { userId }  // бэкенд фильтрует по userId
+        });
+        const rawVideos = Array.isArray(res.data) ? res.data : [];
+
+        const enrichedVideos = await Promise.all(rawVideos.map(async (v) => {
+          let userData = null;
+          if (v.userId) {
+            try {
+              // const userRes = await api.get(`/users/${v.userId}`);
+              // userData = userRes.data;
+            } catch (e) {
+              console.warn(`Автор ${v.userId} не найден`);
+            }
+          }
+
+          return {
+            ...v,
+            s3Key: v.s3Key || v.fileName || v.id,
+            thumbnail: v.thumbnailUrl || v.cdnUrl || v.url,
+            description: v.description || 'Описание ролика временно недоступно',
+            isArchived: v.isArchived || false,
+            likes: v.likes || v.likesCount || 0,
+            likesCount: v.likesCount || v.likes || 0,
+            author: {
+              name: userData?.username || userData?.name || 'Пользователь',
+              avatar: userData?.avatar || userData?.avatarUrl || maskAvatar,
+              city: userData?.city || 'Город не указан',
+              rating: userData?.rating || 0,
+              deals: userData?.dealsCount || 0
+            },
+            likesCount: v.likesCount || 0,
+            viewsCount: v.viewsCount || 0,
+            commentsCount: v.commentsCount || 0, 
+            commentsDisabled: v.commentsDisabled || false
+          };
+        }));
+
+        return enrichedVideos;  // ← возвращаем, не сохраняем в allVideos
+      } catch (e) {
+        console.error("Ошибка загрузки видео пользователя:", e);
+        return [];
+      } finally {
+        this.isVideosLoading = false;
+      }
+    },
     async deleteVideo(s3Key) {
       if (!this.user?.id) return false;
       try {
-        await api.delete(`/media/${encodeURIComponent(s3Key)}`, { withCredentials: true }); 
+        await api.delete(`/media/${s3Key}`);
         this.allVideos = this.allVideos.filter(v => v.s3Key !== s3Key);
-        this.saveToStorage();
         return true;
       } catch (e) {
         console.error("Ошибка удаления:", e.response?.data || e.message);
         throw e;
       }
     },
+    addVideoLocally(video) {
+      this.allVideos = [video, ...this.allVideos];
+    },
     toggleArchiveLocal(videoId, status) {
       const video = this.allVideos.find((v) => String(v.id) === String(videoId));
       if (video) {
         video.isArchived = status;
-        this.saveToStorage();
       }
     },
     async validateAndFormatCity(query) {

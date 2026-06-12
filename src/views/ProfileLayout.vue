@@ -128,6 +128,7 @@ watch(
 }
 .profile-main {
   flex: 1;
+  margin-bottom: 5rem;
 }
 .profile-nav a {
   display: block;

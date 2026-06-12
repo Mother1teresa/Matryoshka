@@ -43,9 +43,7 @@ const reviewStore = useReviewStore();
 const maintenanceRef = ref(null);
 const productStore = useProductStore();
 let globalPolling = null;
-const loadVideos = async () => {
-  await auth.fetchVideos();
-};
+
 const startGlobalPolling = () => {
   if (globalPolling) clearInterval(globalPolling);
   globalPolling = setInterval(() => {
@@ -55,8 +53,6 @@ const startGlobalPolling = () => {
 };
 onMounted(() => {
   console.log('App.vue onMounted')
-  loadVideos();
-  // Загружаем товары ОДИН РАЗ при старте
   productStore.fetchAdverts();
 });
 watch(

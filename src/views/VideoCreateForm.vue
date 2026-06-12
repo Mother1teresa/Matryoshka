@@ -38,7 +38,7 @@
             </option>
           </select>
           <div v-else class="empty-stub">
-            У вас пока нет объявлений. <router-link to="/create">Создать?</router-link>
+            У вас пока нет объявлений. <router-link to="/profile/create-ad" @click="emit('back')">Создать?</router-link>
           </div>
         </div>
         <div class="footer_block-author">
@@ -77,6 +77,7 @@
 </template>
 <script setup>
 import { ref, reactive, onMounted, onBeforeUnmount } from 'vue';
+import { useRouter } from 'vue-router';
 import { api } from "/src/api/api.js";
 import { uploadToMediaService } from "/src/utils/uploadService.js";
 import { useAuthStore } from "/src/stores/authStore.js"; 
@@ -85,6 +86,7 @@ import { notify } from "/src/utils/notify";
 const emit = defineEmits(['back', 'success']);
 const auth = useAuthStore();
 const fileInput = ref(null);
+const router = useRouter();
 const videoPreview = ref(null);
 const status = ref('edit');
 const isFinishing = ref(false);
@@ -92,6 +94,7 @@ const uploadProgress = ref(0);
 
 const myProducts = ref([]);
 const isLoadingProducts = ref(false);
+const autoFinishTimeout = ref(null); 
 
 const form = reactive({
   title: '',
@@ -119,12 +122,25 @@ onMounted(async () => {
 
 const triggerFileInput = () => fileInput.value.click();
 
-const handleFileSelect = (e) => {
-  const file = e.target.files[0]; 
+const presignedData = ref(null);
+const handleFileSelect = async (e) => {
+  const file = e.target.files[0];
   if (file) {
     if (videoPreview.value) URL.revokeObjectURL(videoPreview.value);
     form.file = file;
     videoPreview.value = URL.createObjectURL(file);
+    
+    // Запрашиваем прессайнед сразу при выборе файла
+    try {
+      const { data } = await api.post('/media/presigned', {
+        fileName: file.name,
+        contentType: file.type || 'video/mp4'
+      }, { withCredentials: true });
+      presignedData.value = data; // { url, s3Key }
+    } catch (e) {
+      console.error('Presigned error:', e);
+      notify('Ошибка подготовки загрузки');
+    }
   }
 };
 
@@ -137,8 +153,14 @@ const onPublish = async () => {
     notify("Пожалуйста, заполните описание");
     return;
   }
+  if (!presignedData.value) {
+    notify('Ошибка подготовки загрузки, попробуйте выбрать файл заново');
+    return;
+  }
+  
   status.value = 'uploading';
   uploadProgress.value = 0;
+  
   try {
     const createdMedia = await uploadToMediaService(
       form.file, 
@@ -153,16 +175,19 @@ const onPublish = async () => {
         uploadProgress.value = progress; 
       }
     );
+    
     status.value = 'success';
     autoFinishTimeout = setTimeout(() => {
       if (isFinishing.value) return;
       isFinishing.value = true;
       emit('success', createdMedia); 
-    }, 2500); 
+    }, 250); 
   } catch (e) {
     console.error("Ошибка при публикации:", e);
     notify("Ошибка загрузки видео");
     status.value = 'edit';
+    // Сбрасываем presignedData при ошибке
+    presignedData.value = null;
   }
 };
 </script>
@@ -201,8 +226,8 @@ const onPublish = async () => {
   height: 10.938rem;
 }
 .textarea-description{
-    font-size: 0.813rem;
-    height: 20.688rem;
+  font-size: 1.2rem;
+  height: 20.688rem;
 }
 .empty-stub { background: #fdf2f2; padding: 0.75rem; border-radius: 0.625rem; color: #b91c1c; font-size: 0.875rem; border: 1px solid #fee2e2; }
 .publish-btn { background: var(--btn-bg); color: white; width: 23.563rem; height: 3.5rem; padding: 0.875rem 0; border-radius: 1.25rem; font-size: 1.5rem; border: none; cursor: pointer; text-align: center;}

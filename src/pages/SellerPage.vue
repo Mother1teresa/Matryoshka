@@ -181,12 +181,10 @@ const sellerVideos = ref([]);
 const loadSellerVideos = async (sellerId) => {
   if (!sellerId) return;
   try {
-    await auth.fetchVideos();
-    sellerVideos.value = auth.allVideos.filter(v => 
-      v.userId === sellerId || v.author?.id === sellerId
-    ).map(v => ({
+    // Загружаем видео конкретного продавца, не трогая allVideos текущего пользователя
+    const videos = await auth.fetchVideosByUser(sellerId);
+    sellerVideos.value = videos.map(v => ({
       ...v,
-      // ИСПРАВЛЕНИЕ: нормализуем имя автора для отображения
       author: {
         ...v.author,
         name: v.author?.username || v.author?.name || 'Пользователь'
