@@ -497,7 +497,11 @@ export const useAuthStore = defineStore("auth", {
     async fetchVideos() {
       this.isVideosLoading = true;
       try {
-        const res = await api.get('/media/video');
+        const res = await api.get('/media/video', {
+          params: { 
+            userId: this.user?.id
+          }
+        });
         const rawVideos = Array.isArray(res.data) ? res.data : [];
 
         const enrichedVideos = await Promise.all(rawVideos.map(async (v) => {

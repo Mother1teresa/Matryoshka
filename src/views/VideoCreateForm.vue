@@ -122,25 +122,12 @@ onMounted(async () => {
 
 const triggerFileInput = () => fileInput.value.click();
 
-const presignedData = ref(null);
-const handleFileSelect = async (e) => {
+const handleFileSelect = (e) => {
   const file = e.target.files[0];
   if (file) {
     if (videoPreview.value) URL.revokeObjectURL(videoPreview.value);
     form.file = file;
     videoPreview.value = URL.createObjectURL(file);
-    
-    // Запрашиваем прессайнед сразу при выборе файла
-    try {
-      const { data } = await api.post('/media/presigned', {
-        fileName: file.name,
-        contentType: file.type || 'video/mp4'
-      }, { withCredentials: true });
-      presignedData.value = data; // { url, s3Key }
-    } catch (e) {
-      console.error('Presigned error:', e);
-      notify('Ошибка подготовки загрузки');
-    }
   }
 };
 
@@ -153,10 +140,7 @@ const onPublish = async () => {
     notify("Пожалуйста, заполните описание");
     return;
   }
-  if (!presignedData.value) {
-    notify('Ошибка подготовки загрузки, попробуйте выбрать файл заново');
-    return;
-  }
+  // Убрали проверку presignedData — uploadService сам запросит
   
   status.value = 'uploading';
   uploadProgress.value = 0;
@@ -169,7 +153,8 @@ const onPublish = async () => {
         title: form.title || 'Без названия',
         description: form.description.trim(),
         productId: form.productId,
-        commentsDisabled: form.allowComments 
+        commentsDisabled: form.allowComments,
+        userId: auth.user?.id // ← добавьте userId сюда
       },
       (progress) => {
         uploadProgress.value = progress; 
@@ -186,8 +171,6 @@ const onPublish = async () => {
     console.error("Ошибка при публикации:", e);
     notify("Ошибка загрузки видео");
     status.value = 'edit';
-    // Сбрасываем presignedData при ошибке
-    presignedData.value = null;
   }
 };
 </script>
