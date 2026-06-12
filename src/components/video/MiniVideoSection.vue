@@ -38,21 +38,15 @@
               class="thumbnail mini-video_img"
               alt="Превью"
             />
-            
-            <!-- <div v-else class="thumbnail mini-video_img placeholder">
-              <span>Видео</span>
-            </div> -->
           </router-link>
         </div>
-
         <div v-else-if="isLoading" class="mini-video-section">
           <div v-for="i in 6" :key="i" class="mini-video_img skeleton"></div>
         </div>
-
+        
         <div v-else class="mini-video-section empty">
           <p>Видео пока нет</p>
         </div>
-
         <div class="block-link">
           <router-link :to="{ name: 'shorts' }">
             Мини-видео
@@ -65,7 +59,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from "vue";
+import { computed, onMounted, watch } from "vue";
 import { useAuthStore } from "/src/stores/authStore.js";
 import { useModalStore } from "/src/stores/modal.js";
 
@@ -84,13 +78,26 @@ const openRegister = () => {
   modalStore.openRegister();
 };
 
-onMounted(async () => {
+// Функция загрузки видео
+const loadVideos = async () => {
   if (isAuthenticated.value && videos.value.length === 0) {
     await authStore.fetchWelcomeFeed({ 
       page: 0, 
       size: 10, 
       seed: 0.5 
     });
+  }
+};
+
+// Загружаем при монтировании
+onMounted(() => {
+  loadVideos();
+});
+
+// Загружаем видео сразу после входа
+watch(isAuthenticated, (newValue, oldValue) => {
+  if (newValue && !oldValue) {
+    loadVideos();
   }
 });
 </script>

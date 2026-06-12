@@ -215,14 +215,10 @@ const replyTo = ref(null);
 let copyTimeout = null;
 const isCopied = ref(false);
 
-// Все видео из ленты
 const videos = computed(() => authStore.welcomeFeed || []);
 const isLoading = computed(() => authStore.isVideosLoading);
-
-// ID видео, на которое кликнули (из URL)
 const selectedVideoId = computed(() => route.params.id);
 
-// ===== AUTH CHECK =====
 const checkAuthAndRun = (action, message = "Авторизуйтесь, чтобы продолжить") => {
   if (!authStore.isAuthenticated) {
     modal.openLogin();
@@ -232,21 +228,17 @@ const checkAuthAndRun = (action, message = "Авторизуйтесь, чтоб
   action();
 };
 
-// ===== ADD VIEW (ПРОСМОТРЫ) — ИСПРАВЛЕНО =====
 const addView = async (video) => {
   if (!video?.id) return;
-  
   try {
     const ipRes = await fetch('https://api.ipify.org?format=json').catch(() => null);
     const ip = ipRes ? (await ipRes.json()).ip : 'unknown';
-    
     await authStore.addView(video.id, ip);
   } catch (e) {
     console.error('Ошибка просмотра:', e);
   }
 };
 
-// ===== LIKE (избранное — закладки) =====
 const onFavoriteClick = async (video) => {
   if (!video) return;
   checkAuthAndRun(async () => {
@@ -266,7 +258,6 @@ const onFavoriteClick = async (video) => {
   }, "Войдите, чтобы добавить в избранное");
 };
 
-// ===== LIKE (сердечко — лайк) =====
 const onLikeClick = async (video) => {
   if (!video) return;
   checkAuthAndRun(async () => {
@@ -282,7 +273,6 @@ const onLikeClick = async (video) => {
   });
 };
 
-// ===== UNLIKE =====
 const onUnlikeClick = async (video) => {
   if (!video) return;
   checkAuthAndRun(async () => {
@@ -298,17 +288,13 @@ const onUnlikeClick = async (video) => {
   });
 };
 
-// ===== SUBSCRIBE =====
 const onSubscribeClick = (authorId) => {
   checkAuthAndRun(async () => {
     const isNowSubscribed = await subStore.toggle(authorId);
-    notify(
-      isNowSubscribed ? "Вы подписались на автора" : "Вы отписались от автора",
-    );
+    notify(isNowSubscribed ? "Вы подписались на автора" : "Вы отписались от автора");
   });
 };
 
-// ===== WRITE MESSAGE =====
 const onWriteClick = (video) => {
   if (!video?.author?.id) return;
   checkAuthAndRun(async () => {
@@ -321,10 +307,8 @@ const onWriteClick = (video) => {
   }, "Войдите, чтобы написать сообщение");
 };
 
-// ===== COMMENTS (API) =====
 const postComment = async (video, parentId = null) => {
   if (!newComment.value.trim() || !video) return;
-
   checkAuthAndRun(async () => {
     try {
       await authStore.addComment({
@@ -333,7 +317,6 @@ const postComment = async (video, parentId = null) => {
         text: newComment.value.trim(),
         parentId: parentId || null
       });
-
       const newItem = {
         id: `temp-${Date.now()}`,
         author: {
@@ -345,7 +328,6 @@ const postComment = async (video, parentId = null) => {
         replyTo: parentId ? replyTo.value?.userName : null,
         replies: [],
       };
-
       if (!video.comments) video.comments = [];
       if (parentId) {
         const findParent = (comments, id) => {
@@ -369,7 +351,6 @@ const postComment = async (video, parentId = null) => {
       } else {
         video.comments.push(newItem);
       }
-
       newComment.value = "";
       notify(parentId ? "Ответ добавлен" : "Комментарий добавлен");
     } catch (e) {
@@ -398,12 +379,10 @@ const cancelReply = () => {
   newComment.value = "";
 };
 
-// ===== VIDEO REFS =====
 const setVideoRef = (el) => {
   if (el && !videoRefs.value.includes(el)) videoRefs.value.push(el);
 };
 
-// ===== KEYBOARD =====
 const handleKeyDown = (e) => {
   if (e.key === "ArrowDown") {
     e.preventDefault();
@@ -414,22 +393,15 @@ const handleKeyDown = (e) => {
   }
 };
 
-// ===== SCROLL =====
 const scrollNext = () => {
   if (scrollContainer.value) {
-    scrollContainer.value.scrollBy({
-      top: window.innerHeight,
-      behavior: "smooth",
-    });
+    scrollContainer.value.scrollBy({ top: window.innerHeight, behavior: "smooth" });
   }
 };
 
 const scrollPrev = () => {
   if (scrollContainer.value) {
-    scrollContainer.value.scrollBy({
-      top: -window.innerHeight,
-      behavior: "smooth",
-    });
+    scrollContainer.value.scrollBy({ top: -window.innerHeight, behavior: "smooth" });
   }
 };
 
@@ -438,7 +410,6 @@ const scrollToVideo = (id) => {
   if (el) el.scrollIntoView({ behavior: 'auto' });
 };
 
-// ===== OBSERVER =====
 const initObserver = () => {
   const observer = new IntersectionObserver(
     (entries) => {
@@ -448,12 +419,8 @@ const initObserver = () => {
           const videoId = entry.target.dataset.id;
           const video = videos.value.find(v => v.id === videoId);
           if (video) {
-            // Добавляем просмотр при просмотре видео
             addView(video);
-            router.replace({
-              name: "shorts",
-              params: { id: videoId },
-            });
+            router.replace({ name: "shorts", params: { id: videoId } });
           }
         } else {
           entry.target.pause();
@@ -475,7 +442,6 @@ const isOwnComment = (comment) => {
   return false;
 };
 
-// ===== CLOSE =====
 const closeShorts = () => {
   if (window.history.length > 1) {
     router.back();
@@ -484,7 +450,6 @@ const closeShorts = () => {
   }
 };
 
-// ===== SHARE =====
 const isShareModalOpen = ref(false);
 const shareLink = ref("");
 
@@ -511,20 +476,17 @@ const isOwnVideo = (video) => {
   return String(video.author.id) === String(authStore.user.id);
 };
 
-// ===== LIFECYCLE =====
 onMounted(async () => {
-  // Загружаем ленту если пусто
   if (videos.value.length === 0) {
     await authStore.fetchWelcomeFeed({ page: 0, size: 20, seed: 0.5 });
   }
   
-  // Загружаем детали для всех видео (чтобы получить views, author и т.д.)
+  // Загружаем детали для всех видео
   await Promise.all(
     videos.value.map(async (video) => {
       try {
         const details = await authStore.fetchVideo(video.id);
         if (details) {
-          // Обновляем поля видео
           Object.assign(video, details);
         }
       } catch (e) {

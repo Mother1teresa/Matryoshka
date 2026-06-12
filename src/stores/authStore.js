@@ -259,18 +259,19 @@ export const useAuthStore = defineStore("auth", {
       this.isVideosLoading = true;
       try {
         const response = await api.get('/feed/video/welcome-feed', {
-          params: {
-            page: Number(page),
-            size: Number(size),
-            seed: Number(seed)
-          }
+          params: { page: Number(page), size: Number(size), seed: Number(seed) }
         });
+        
+        // API возвращает [{ id, likes, description, createdAt }]
         this.welcomeFeed = response.data.map(v => ({
           id: v.id,
           likes: v.likes || 0,
           description: v.description || '',
           createdAt: v.createdAt || '',
+          // Плейсхолдеры — заполним при загрузке деталей
           cdnUrl: '',
+          views: 0,
+          commentsCount: 0,
           author: { name: 'Загрузка...' }
         }));
         
@@ -289,18 +290,15 @@ export const useAuthStore = defineStore("auth", {
         });
         const video = response.data;
         
-        // Находим видео в welcomeFeed для получения description и likes
-        const feedVideo = this.welcomeFeed.find(v => v.id === videoId) || {};
-        
         return {
           ...video,
           id: video.id,
           cdnUrl: video.cdnUrl,
-          description: feedVideo.description || video.description || '',
-          likes: feedVideo.likes !== undefined ? feedVideo.likes : (video.likes || 0),
-          commentsCount: video.commentsCount || 0,
+          description: video.description || '',
+          likes: video.likes || 0,
           views: video.views || 0,
-          createdAt: feedVideo.createdAt || video.createdAt || '',
+          commentsCount: video.commentsCount || 0,
+          createdAt: video.createdAt || '',
           author: {
             id: video.author?.id,
             name: video.author?.username || 'Пользователь',
