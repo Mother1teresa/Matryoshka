@@ -74,9 +74,7 @@
                       <button v-else @click.stop="handleArchive(video.id, false)">
                         Опубликовать заново
                       </button>
-                      <button
-                        class="delete-btn"
-                        @click.stop="handleDelete(video.s3Key)">
+                      <button class="delete-btn" @click.stop="handleDelete(video.s3Key)">
                         Удалить
                       </button>
                     </div>

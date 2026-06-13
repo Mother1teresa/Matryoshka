@@ -262,12 +262,14 @@ export const useAuthStore = defineStore("auth", {
           params: { page: Number(page), size: Number(size), seed: Number(seed) }
         });
         
+        console.log('Welcome feed raw data:', response.data); // ← проверьте это
+        
         this.welcomeFeed = response.data.map(v => ({
           id: v.id,
           likes: v.likes || 0,
           description: v.description || '',
           createdAt: v.createdAt || '',
-          cdnUrl: '',
+          cdnUrl: v.cdnUrl || v.url || v.videoUrl || v.sourceUrl || '', // ← здесь пусто?
           views: 0,
           commentsCount: 0,
           author: { name: 'Загрузка...' }
@@ -598,7 +600,9 @@ export const useAuthStore = defineStore("auth", {
     async deleteVideo(s3Key) {
       if (!this.user?.id) return false;
       try {
-        await api.delete(`/media/${s3Key}`);
+        await api.delete('/media', {
+          params: { s3Key }
+        });
         this.allVideos = this.allVideos.filter(v => v.s3Key !== s3Key);
         return true;
       } catch (e) {
