@@ -75,23 +75,6 @@ const unavailableRoutes = [
   '/profile/resume',
   '/profile/referral'
 ];
-
-const checkAccess = (event, path) => {
-  if (unavailableRoutes.includes(path)) {
-    event.preventDefault(); 
-    openMaintenance();
-  }
-};
-watch(
-  () => auth.user?.id,
-  (newId) => {
-    if (newId) {
-      // reviewStore.fetchReviewsBySeller(newId);
-    }
-  },
-  { immediate: true }
-);
-
 </script>
 
 <style scoped>

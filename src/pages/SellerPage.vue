@@ -19,8 +19,8 @@
                   {{ seller?.type === "company" ? "Компания" : "Частное лицо" }}
                 </div>
                 <div class="rating-block">
-                  <div class="rating">{{ reviewStore.getRatingById(route.params.id)}} <span>★★★★★</span>
-                    <small> ( {{ reviewStore.getReviewsCountById(route.params.id) }} )</small>
+                  <div class="rating">{{ sellerRating }} <span>★★★★★</span>
+                    <small> ( {{ sellerReviewsCount }} )</small>
                   </div>
                 </div>
               </div>
@@ -148,6 +148,8 @@ const currentTab = ref("announcements");
 const isDescExpanded = ref(false);
 const isLoading = ref(false);
 
+const sellerRating = computed(() => reviewStore.getRatingById(route.params.id));
+const sellerReviewsCount = computed(() => reviewStore.getReviewsCountById(route.params.id));
 // === ТОВАРЫ ПРОДАВЦА ===
 const sellerProducts = ref([]);
 

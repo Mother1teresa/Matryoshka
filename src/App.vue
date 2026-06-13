@@ -40,49 +40,57 @@ import { useProductStore } from "/src/stores/product.js";
 
 const auth = useAuthStore();
 const reviewStore = useReviewStore();
-const maintenanceRef = ref(null);
 const productStore = useProductStore();
+const maintenanceRef = ref(null);
 let globalPolling = null;
 
+const stopGlobalPolling = () => {
+  if (globalPolling) {
+    clearInterval(globalPolling);
+    globalPolling = null;
+  }
+};
 const startGlobalPolling = () => {
-  if (globalPolling) clearInterval(globalPolling);
+  stopGlobalPolling();
   globalPolling = setInterval(() => {
     auth.fetchUserChats();
     auth.fetchUserNotifications();
   }, 30000);
 };
-onMounted(() => {
-  console.log('App.vue onMounted')
-  productStore.fetchAdverts();
+provide('openMaintenance', () => {
+  if (maintenanceRef.value) {
+    maintenanceRef.value.open();
+  } else {
+    console.log("MaintenanceModal еще не инициализирован");
+  }
 });
 watch(
   () => auth.isAuthenticated,
   async (isAuth) => {
     if (isAuth) {
-      await auth.fetchProfile();
-      auth.fetchUserChats();
-      auth.fetchUserNotifications();
-      
-      if (auth.user?.id) {
-        await reviewStore.initUserReviews(auth.user.id);
+      try {
+        await auth.fetchProfile();
+        auth.fetchUserChats();
+        auth.fetchUserNotifications();
+        if (auth.user?.id) {
+          await reviewStore.initUserReviews(auth.user.id);
+        }
+        startGlobalPolling();
+      } catch (e) {
+        console.error('Ошибка инициализации пользователя:', e);
       }
-      startGlobalPolling();
     } else {
-      if (globalPolling) clearInterval(globalPolling);
-      globalPolling = null;
+      stopGlobalPolling();
     }
   },
   { immediate: true }
 );
 onUnmounted(() => {
-  if (globalPolling) clearInterval(globalPolling);
+  stopGlobalPolling();
 });
-provide('openMaintenance', () => {
-  if (maintenanceRef.value) {
-    maintenanceRef.value.open();
-  } else {
-    console.warn("MaintenanceModal еще не инициализирован");
-  }
+onMounted(() => {
+  console.log('App.vue onMounted')
+  productStore.fetchAdverts();
 });
 </script>
 

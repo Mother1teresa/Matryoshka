@@ -9,12 +9,12 @@
         <img :src="auth.userAvatar" class="large-avatar" />
         <div class="rating-badge">
           <span class="rating-num">{{ userRating }}</span>
-          <span class="stars">{{ reviewStore.renderStars(reviewStore.getRatingById(auth.user?.id)) }}</span>
+          <span class="stars">{{ userStars  }}</span>
+          <!-- reviewStore.renderStars(reviewStore.getRatingById(auth.user?.id)) -->
         </div>
         <p class="user-type">
           {{ (auth.user?.type === 'COMPANY') ? 'Компания' : 'Частное лицо' }}
         </p>
-        <pre>{{ auth.user?.type }}</pre>
       </div>
       <div class="user-info-list">
         <div class="info-row">
@@ -46,11 +46,7 @@
       </div>
 </div>
 </div>
-<ProfileEditModal 
-      :isOpen="isModalOpen" 
-      @close="isModalOpen = false" 
-      @refresh="fetchUserData"
-/>
+<ProfileEditModal :isOpen="isModalOpen" @close="isModalOpen = false" @refresh="fetchUserData"/>
 </template>
 <script setup>
 import { ref, onMounted, watch , computed} from 'vue';
@@ -62,6 +58,7 @@ const reviewStore = useReviewStore();
 const auth = useAuthStore();
 const isModalOpen = ref(false);
 const userRating = computed(() => reviewStore.getRatingById(auth.user?.id));
+const userStars = computed(() => reviewStore.renderStars(userRating.value));
 
 const fetchUserData = async () => {
   try {
@@ -74,15 +71,15 @@ const fetchUserData = async () => {
   }
 };
 onMounted(() => { fetchUserData(); });
-watch(
-  () => auth.user?.id,
-  (newId) => {
-    if (newId) {
-      reviewStore.fetchReviewsBySeller(newId);
-    }
-  },
-  { immediate: true }
-);
+// watch(
+//   () => auth.user?.id,
+//   (newId) => {
+//     if (newId) {
+//       reviewStore.fetchReviewsBySeller(newId);
+//     }
+//   },
+//   { immediate: true }
+// );
 watch(isModalOpen, (newVal) => {if (newVal) { document.body.classList.add("overflow-mod");} else { document.body.classList.remove("overflow-mod");}});
 </script>
 <style scoped>

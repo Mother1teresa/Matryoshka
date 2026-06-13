@@ -62,19 +62,17 @@ export const useAuthStore = defineStore("auth", {
   actions: {
     async fetchUserChats() {
       if (!this.user?.id) {
-        console.warn("Невозможно загрузить чаты: пользователь не авторизован");
+        console.log("Невозможно загрузить чаты: пользователь не авторизован");
         return;
       }
       try {
         // Делаем запрос к эндпоинту согласно OpenAPI спецификации
         const res = await api.get(`/chat/users/${this.user.id}/rooms`);
         const rooms = res.data?.rooms || [];
-
         // Преобразуем структуру бэкенда под структуру вашего компонента Vue
         this.allChats = rooms.map((room) => {
           // Ищем собеседника (пользователя, чей ID отличается от текущего)
           const opponent = room.users?.find((u) => u.id !== this.user.id) || {};
-          
           // Достаем последнее сообщение из истории комнаты
           const lastMsg = room.messages && room.messages.length > 0
             ? room.messages[room.messages.length - 1]
@@ -240,7 +238,7 @@ export const useAuthStore = defineStore("auth", {
     },
     async fetchAdvertsBySeller(sellerId) {
       if (!sellerId) {
-        console.warn("fetchAdvertsBySeller: sellerId не передан");
+        console.log("fetchAdvertsBySeller: sellerId не передан");
         return [];
       }
       try {
@@ -515,7 +513,7 @@ export const useAuthStore = defineStore("auth", {
               // userData = userRes.data;
               console.log('User data:', userData);
             } catch (e) {
-              console.warn(`Автор ${v.userId} не найден`);
+              console.log(`Автор ${v.userId} не найден`);
             }
           }
 
@@ -563,7 +561,7 @@ export const useAuthStore = defineStore("auth", {
               // const userRes = await api.get(`/users/${v.userId}`);
               // userData = userRes.data;
             } catch (e) {
-              console.warn(`Автор ${v.userId} не найден`);
+              console.log(`Автор ${v.userId} не найден`);
             }
           }
 

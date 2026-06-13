@@ -78,7 +78,7 @@
                 <!-- dropdown -->
                 <transition name="fade">
                   <div v-if="showProfileMenu" class="profile-menu">
-                    <div class="rating" v-if="auth.user?.id">{{ reviewStore.getRatingById(auth.user.id) }}
+                    <div class="rating" v-if="auth.user?.id">{{ userRating }}
                       <span>★★★★★</span></div> 
                       <div class="profile-menu_links">
                       <!-- {{ reviewStore.renderStars(reviewStore.getRatingById(auth.user.id)) }} -->
@@ -116,9 +116,9 @@
         <div class="search-input__box">
           <div class="search-img">
             <img src="/src/assets/img/Icon-search.svg" />
-            <input type="text" placeholder="Поиск" class="search-input" />
+            <input type="text" placeholder="Поиск" class="search-input" v-model="searchQuery" @keyup.enter="goToSearch"/>
           </div>
-          <button class="btn-search btn">Найти</button>
+          <button class="btn-search btn" @click="goToSearch">Найти</button>
         </div>
         <button class="btn-category btn" @click="menu.open()">
           <img src="/src/assets/img/header-catalog.svg" />
@@ -166,12 +166,30 @@ const profileWrapper = ref(null);
 const showProfileMenu = ref(false);
 const showLogoutConfirm = ref(false);
 
+const searchQuery = ref("");
+const userRating = computed(() => {
+  if (!auth.user?.id) return 0;
+  return reviewStore.getRatingById(auth.user.id);
+});
 const currentRegionName = computed(() => region.selectedRegion || "Регион");
+
+const goToSearch = () => {
+  const query = searchQuery.value.trim();
+  if (!query) return;
+  router.push({
+    name: "Search",
+    query: { q: query }
+  });
+  // Очищаем поле после перехода (опционально)
+  // searchQuery.value = "";
+};
+
 function toggleProfileMenu() {
   showProfileMenu.value = !showProfileMenu.value;
 }
 function askLogout() {
   showLogoutConfirm.value = true;
+  showProfileMenu.value = false;
 }
 function confirmLogout() {
   auth.logout();
@@ -210,13 +228,6 @@ const lockedRoutes = [
   '/profile/responses',
 ];
 
-const handleHeaderNav = (event, path) => {
-  if (lockedRoutes.includes(path)) {
-    event.preventDefault();
-    if (typeof showProfileMenu !== 'undefined') {showProfileMenu.value = false;}
-    openMaintenance();
-  }
-};
 const checkAuthAndRun = (action, message = "Авторизуйтесь, чтобы продолжить") => {
   if (!auth.isAuthenticated) {
     modal.openLogin();
@@ -237,15 +248,6 @@ const handleCreateVideo = () => {
     router.push('/profile/videos');
   }, "Войдите, чтобы создать мини-видео");
 };
-watch(
-  () => auth.user?.id,
-  (newId) => {
-    if (newId) {
-      reviewStore.fetchReviewsBySeller(newId);
-    }
-  },
-  { immediate: true }
-);
 </script>
 
 <style scoped>
@@ -320,6 +322,7 @@ watch(
   align-items: center;
   gap: 0.825rem;
   padding-top: 0.15rem;
+  width: 75%;
 }
 .search-input__box {
   flex: 0.55;

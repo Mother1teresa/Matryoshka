@@ -22,6 +22,11 @@ const routes = [
     component: () => import("../pages/SellerPage.vue"),
   },
   {
+    path: '/search',
+    name: 'Search',
+    component: () => import('../pages/SearchPage.vue')
+  },
+  {
     path: '/profile',
     component: () => import('../views/ProfileLayout.vue'),
     meta: { requiresAuth: true },

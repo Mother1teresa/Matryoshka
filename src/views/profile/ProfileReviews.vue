@@ -7,8 +7,10 @@
         <div class="summary-card">
           <img :src="auth.userAvatar" class="large-avatar" />
           <div class="rating-badge">
-            <span class="rating-num">{{ reviewStore.getRatingById(auth.user?.id) }}</span>
-            <span class="stars">{{ reviewStore.renderStars(reviewStore.getRatingById(auth.user?.id)) }}</span>
+            <span class="rating-num">{{ userRating }}</span>
+            <!-- {{ reviewStore.getRatingById(auth.user?.id) }} -->
+            <span class="stars">{{ userStars }}</span>
+            <!-- {{ reviewStore.renderStars(reviewStore.getRatingById(auth.user?.id)) }} -->
           </div>
         </div>
       </div>
@@ -24,10 +26,10 @@
                 {{ review.author?.charAt(0).toUpperCase() }}
             </div>
             <div class="user-details">
-                <div class="user-name">{{ sellerRating  }}</div>
-                <div class="review-product">{{ sellerStars }}</div>
+                <div class="user-name">{{ review.author  }}</div>
+                <div class="review-product">{{ review.productTitle }}</div>
                 <div class="review-body">
-                    {{ review.text }}
+                  {{ review.text }}
                 </div>
             </div>
             </div>
@@ -94,17 +96,9 @@ const sellerStars = computed(() => {
   return reviewStore.renderStars(sellerRating.value);
 });
 
+const userRating = computed(() => reviewStore.getRatingById(auth.user?.id));
+const userStars = computed(() => reviewStore.renderStars(userRating.value));
 const reviews = computed(() => reviewStore.reviews || []);
-
-watch(
-  () => auth.user?.id,
-  (newId) => {
-    if (newId) {
-      reviewStore.fetchReviewsBySeller(newId);
-    }
-  },
-  { immediate: true }
-);
 
 function getUserColor(name) {
   if (!name) return '#ccc';
