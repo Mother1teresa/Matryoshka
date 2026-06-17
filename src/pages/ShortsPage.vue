@@ -4,7 +4,7 @@
     
     <!-- Плейсхолдер для текущего видео пока author не загружен -->
      <div v-else-if="videos.length" class="shorts-main-container" ref="scrollContainer">
-      <div v-for="video in videos" :key="video.id" class="short-snap-item">
+      <div v-for="video in videos" :key="video.id" class="short-snap-item" :class="{ 'is-scrolling': isScrolling }">
         <div class="short-content-wrapper">
           
           <!-- ВИДЕО -->
@@ -77,6 +77,9 @@
           <!-- ИНФОРМАЦИЯ (Правая часть) -->
           <aside class="info-side">
             <div class="info-scroll-area">
+              <div 
+                class="info-content-wrapper"
+                :class="{ 'is-visible': activeVideoId === video.id && !isScrolling }">
               <div class="info-scroll-area_block">
                 <div class="video-header-info">
                   <h2 class="video-title">
@@ -124,7 +127,7 @@
                   </div>
                 </div>
               </div>
-
+              </div>
               <div class="comments-block">
                 <p class="section-title">
                   <img src="/src/assets/img/icons/comment.svg" alt="" />
@@ -153,6 +156,7 @@
                   </div>
                 </div>
               </div>
+              <!-- </div> -->
             </div>
 
             <div class="footer-input">
@@ -228,6 +232,10 @@ const replyTo = ref(null);
 let copyTimeout = null;
 const isCopied = ref(false);
 const isMuted = ref(true);
+
+const isScrolling = ref(false);
+const activeVideoId = ref(null);
+let scrollTimeout = null;
 
 const videos = computed(() => authStore.welcomeFeed || []);
 const isLoading = computed(() => authStore.isVideosLoading);
@@ -422,10 +430,17 @@ const initObserver = () => {
         const video = videos.value.find(v => v.id === videoId);
         
         if (entry.isIntersecting) {
-          // [ИЗМЕНЕНО] Проверяем hasError перед play
+          // [НОВОЕ] Показываем текст только после окончания скролла
+          isScrolling.value = true;
+          activeVideoId.value = videoId;
+          
+          clearTimeout(scrollTimeout);
+          scrollTimeout = setTimeout(() => {
+            isScrolling.value = false;
+          }, 150); // Задержка после скролла
+          
           if (!video?.hasError) {
             entry.target.play().catch(err => {
-              // Автоплей со звуком заблокирован — пробуем muted
               if (err.name === 'NotAllowedError' && !isMuted.value) {
                 isMuted.value = true;
                 entry.target.muted = true;
@@ -536,10 +551,32 @@ const preloadAdjacentVideos = () => {
 onUnmounted(() => {
   window.removeEventListener("keydown", handleKeyDown);
   clearTimeout(copyTimeout);
+  clearTimeout(scrollTimeout);
 });
 </script>
 
 <style scoped>
+/* .info-content-wrapper {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.info-content-wrapper.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+} */
+
+/* Альтернатива: blur эффект */
+.info-content-wrapper {
+  opacity: 0;
+  filter: blur(4px);
+  transition: opacity 0.25s ease, filter 0.25s ease;
+}
+
+.info-content-wrapper.is-visible {
+  opacity: 1;
+  filter: blur(0);
+}
 .mute-btn {
   position: absolute;
   bottom: 1rem;
