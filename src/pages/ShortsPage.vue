@@ -14,10 +14,10 @@
             </button>
             
             <!-- Постер/спиннер -->
-            <div v-if="!video.isVideoReady && !video.hasError" class="video-poster">
+            <div v-if="!video.isVideoReady || !video.isPlaying" class="video-poster">
               <div class="poster-spinner"></div>
             </div>
-            
+
             <!-- Ошибка загрузки -->
             <div v-if="video.hasError" class="video-error">
               <p>Формат не поддерживается</p>
@@ -33,14 +33,13 @@
               preload="auto"
               @canplaythrough="onVideoReady(video)"
               @loadeddata="onVideoReady(video)"
+              @playing="onVideoPlaying(video)"
               @error="onVideoError(video)"
             ></video>
-
-            <!-- [НОВОЕ] Кнопка звука -->
+            <!-- Кнопка звука -->
             <button class="mute-btn" @click="toggleMute">
               <img :src="isMuted ? muteIcon : unmuteIcon" alt="sound" />
             </button>
-
             <div class="video-actions">
               <div class="v-action">
                 <button class="action-btn" @click.stop="onLikeClick(video)">
@@ -60,9 +59,7 @@
                   <img src="/src/assets/img/icons/lin.svg" alt="share" />
                 </button>
               </div>
-
               <div class="v-divider"></div>
-
               <div class="v-action scroll-arrows">
                 <button class="action-btn arrow-btn" @click="scrollPrev">
                   <img src="/src/assets/img/icons/up.svg" alt="up" />
@@ -77,14 +74,10 @@
           <!-- ИНФОРМАЦИЯ (Правая часть) -->
           <aside class="info-side">
             <div class="info-scroll-area">
-              <div 
-                class="info-content-wrapper"
-                :class="{ 'is-visible': activeVideoId === video.id && !isScrolling }">
+              <div class="info-content-wrapper" :class="{ 'is-visible': activeVideoId === video.id && !isScrolling }">
               <div class="info-scroll-area_block">
                 <div class="video-header-info">
-                  <h2 class="video-title">
-                    {{ video.description || '\u00A0' }}
-                  </h2>
+                  <h2 class="video-title">{{ video.description || '\u00A0' }}</h2>
                   <div class="video-stats-row">
                     <span>{{ video.likes || 0 }} лайков</span>
                     <span class="dot"></span>
@@ -96,18 +89,9 @@
 
                 <div class="shorts-block_avt">
                   <div class="author-card">
-                    <router-link 
-                      :to="video.author?.id 
-                        ? { name: 'SellerPage', params: { id: video.author.id } } 
-                        : ''"
-                      class="author-link"
-                      :event="video.author?.id ? 'click' : ''"
-                    >
+                    <router-link :to="video.author?.id ? { name: 'SellerPage', params: { id: video.author.id } } : ''" class="author-link" :event="video.author?.id ? 'click' : ''">
                       <div class="author-main">
-                        <img 
-                          :src="video.author?.avatar || '/src/assets/img/mask-avatar.png'" 
-                          class="author-ava" 
-                        />
+                        <img  :src="video.author?.avatar || '/assets/img/mask-avatar.png'"  class="author-ava" />
                         <div class="author-details">
                           <p class="name">{{ video.author?.username || '\u00A0' }}</p>
                         </div>
@@ -116,11 +100,7 @@
                     <div class="rating-badge">
                       <span class="rating-num">{{ video.author?.rating || 0 }}</span>
                       <span class="stars">★★★★★</span>
-                      <button 
-                        class="btn-primary" 
-                        :class="{'is-active': subStore.isSubscribed(video.author?.id)}"
-                        @click="onSubscribeClick(video.author?.id)"
-                      >
+                      <button  class="btn-primary"  :class="{'is-active': subStore.isSubscribed(video.author?.id)}" @click="onSubscribeClick(video.author?.id)">
                         {{ subStore.isSubscribed(video.author?.id) ? "Отписаться" : "Подписаться" }}
                       </button>
                     </div>
@@ -133,14 +113,12 @@
                   <img src="/src/assets/img/icons/comment.svg" alt="" />
                   Комментарии
                 </p>
-
                 <div v-if="!video.comments?.length" class="comments-empty">
                   <p>Комментариев нет</p>
                 </div>
-
                 <div v-else class="comments-list">
                   <div v-for="comment in video.comments" :key="comment.id" class="comment-item">
-                    <img :src="comment.author?.avatar || '/src/assets/img/mask-avatar.png'"/>
+                    <img :src="comment.author?.avatar || '/assets/img/mask-avatar.png'"/>
                     <div class="c-body">
                       <div class="c-header">
                         <span class="c-user">{{ comment.author?.name || "Пользователь" }}</span>
@@ -156,21 +134,14 @@
                   </div>
                 </div>
               </div>
-              <!-- </div> -->
             </div>
-
             <div class="footer-input">
               <div v-if="replyTo" class="reply-banner">
                 <span>Ответ {{ replyTo.userName }}</span>
                 <button @click="cancelReply">✕</button>
               </div>
               <div class="input-row">
-                <input 
-                  type="text" 
-                  v-model="newComment" 
-                  :placeholder="replyTo ? `Ответ ${replyTo.userName}...` : 'Сообщение'" 
-                  @keyup.enter="postComment(video, replyTo?.commentId)"
-                />
+                <input type="text" v-model="newComment" :placeholder="replyTo ? `Ответ ${replyTo.userName}...` : 'Сообщение'" @keyup.enter="postComment(video, replyTo?.commentId)"/>
                 <button class="send-btn" @click="postComment(video, replyTo?.commentId)">
                   <img src="/src/assets/img/icons/send-plane.svg" />
                 </button>
@@ -182,7 +153,6 @@
     </div>
 
     <div v-else class="empty">Видео не найдены</div>
-
     <div v-if="isShareModalOpen" class="modal-overlay" @click.self="isShareModalOpen = false">
       <div class="share-modal">
         <header class="modal-header">
@@ -246,11 +216,16 @@ const onVideoReady = (video) => {
   video.isVideoReady = true;
   video.hasError = false;
 };
+const onVideoPlaying = (video) => {
+  video.isPlaying = true;
+};
 const onVideoError = (video) => {
-  console.error('Video error:', video.cdnUrl, 'mime:', video.mimeType);
+  console.error('Video error:', video.cdnUrl);
   video.hasError = true;
   video.isVideoReady = false;
+  video.isPlaying = false;
 };
+
 const toggleMute = () => {
   isMuted.value = !isMuted.value;
   videoRefs.value.forEach(el => {
@@ -430,14 +405,17 @@ const initObserver = () => {
         const video = videos.value.find(v => v.id === videoId);
         
         if (entry.isIntersecting) {
-          // [НОВОЕ] Показываем текст только после окончания скролла
-          isScrolling.value = true;
-          activeVideoId.value = videoId;
-          
+          // [ИСПРАВЛЕНО] Сбрасываем таймаут при смене видео
           clearTimeout(scrollTimeout);
+          
+          // Устанавливаем активное видео и скроллинг
+          activeVideoId.value = videoId;
+          isScrolling.value = true;
+          
+          // Сбрасываем isScrolling через 300ms
           scrollTimeout = setTimeout(() => {
             isScrolling.value = false;
-          }, 150); // Задержка после скролла
+          }, 300);
           
           if (!video?.hasError) {
             entry.target.play().catch(err => {
@@ -449,6 +427,11 @@ const initObserver = () => {
             });
           }
           
+          // Сбрасываем isPlaying у других видео
+          videos.value.forEach(v => {
+            if (v.id !== videoId) v.isPlaying = false;
+          });
+          
           if (video && !video.isDetailsLoaded) {
             authStore.enrichVideo(videoId).catch(() => {});
           }
@@ -458,6 +441,7 @@ const initObserver = () => {
         } else {
           entry.target.pause();
           entry.target.currentTime = 0;
+          if (video) video.isPlaying = false;
         }
       });
     },
@@ -497,7 +481,8 @@ const openShareModal = (video) => {
 const copyToClipboard = async () => {
   try {
     await navigator.clipboard?.writeText(shareLink.value);
-    isCopied.value = true;
+    activeVideoId.value = videoId;
+    isScrolling.value = true;
     clearTimeout(copyTimeout);
     copyTimeout = setTimeout(() => isCopied.value = false, 2000);
   } catch {
@@ -509,26 +494,30 @@ const isOwnVideo = (video) => {
   if (!video?.author?.id || !authStore.user?.id) return false;
   return String(video.author.id) === String(authStore.user.id);
 };
+const handleScroll = () => {
+  isScrolling.value = true;
+  clearTimeout(scrollTimeout);
+  scrollTimeout = setTimeout(() => {
+    isScrolling.value = false;
+  }, 150);
+};
 
 onMounted(async () => {
   if (videos.value.length === 0) {
     await authStore.fetchWelcomeFeed({ page: 0, size: 20, seed: 0.5 });
   }
-  
-  // [ИЗМЕНЕНО] Предзагружаем только соседние видео, не все
   preloadAdjacentVideos();
-  
   const preloadDetails = videos.value.slice(0, 3).map(v => 
     authStore.enrichVideo(v.id).catch(() => {})
   );
   await Promise.all(preloadDetails);
-  
   if (selectedVideoId.value) {
-    await authStore.enrichVideo(selectedVideoId.value);
+    activeVideoId.value = selectedVideoId.value;
+  } else if (videos.value.length > 0) {
+    activeVideoId.value = videos.value[0].id;
   }
-  
   window.addEventListener("keydown", handleKeyDown);
-  
+  scrollContainer.value?.addEventListener('scroll', handleScroll);
   nextTick(() => {
     initObserver();
     scrollToVideo(selectedVideoId.value);
@@ -550,33 +539,13 @@ const preloadAdjacentVideos = () => {
 };
 onUnmounted(() => {
   window.removeEventListener("keydown", handleKeyDown);
+  scrollContainer.value?.removeEventListener('scroll', handleScroll);
   clearTimeout(copyTimeout);
   clearTimeout(scrollTimeout);
 });
 </script>
 
 <style scoped>
-/* .info-content-wrapper {
-  opacity: 0;
-  transform: translateY(10px);
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-.info-content-wrapper.is-visible {
-  opacity: 1;
-  transform: translateY(0);
-} */
-
-/* Альтернатива: blur эффект */
-.info-content-wrapper {
-  opacity: 0;
-  filter: blur(4px);
-  transition: opacity 0.25s ease, filter 0.25s ease;
-}
-
-.info-content-wrapper.is-visible {
-  opacity: 1;
-  filter: blur(0);
-}
 .mute-btn {
   position: absolute;
   bottom: 1rem;
@@ -593,9 +562,7 @@ onUnmounted(() => {
   z-index: 5;
   transition: background 0.2s;
 }
-.mute-btn:hover {
-  background: rgba(0, 0, 0, 0.7);
-}
+.mute-btn:hover { background: rgba(0, 0, 0, 0.7);}
 .mute-btn img {
   width: 1.25rem;
   height: 1.25rem;
@@ -616,26 +583,25 @@ onUnmounted(() => {
 .video-poster {
   position: absolute;
   inset: 2.438rem 3.75rem 1rem 1.563rem;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
   border-radius: 0.625rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1;
+  z-index: 2;
+  backdrop-filter: blur(20px);
+  background: rgba(240, 240, 240, 0.9);
 }
 
 .poster-spinner {
   width: 2.5rem;
   height: 2.5rem;
-  border: 3px solid #e5e7eb;
+  border: 3px solid rgba(255, 255, 255, 0.3);
   border-top-color: #64a07a;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
+  z-index: 3;
 }
 
-/* Скелетон для автора */
 .author-skeleton {
   display: flex;
   align-items: center;
@@ -668,9 +634,7 @@ onUnmounted(() => {
   border-radius: 0.25rem;
 }
 
-.skeleton-line.short {
-  width: 60%;
-}
+.skeleton-line.short { width: 60%;}
 
 @keyframes shimmer {
   0% { background-position: 200% 0; }
@@ -681,7 +645,6 @@ onUnmounted(() => {
   to { transform: rotate(360deg); }
 }
 
-/* Оптимизация рендеринга */
 .short-snap-item {
   will-change: transform;
   contain: layout style paint;
@@ -690,8 +653,6 @@ onUnmounted(() => {
 .video-side video {
   will-change: opacity;
 }
-
-/* ===== СУЩЕСТВУЮЩИЕ СТИЛИ (без изменений) ===== */
 .shorts-page-overlay {
   position: fixed;
   inset: 0;
@@ -701,7 +662,17 @@ onUnmounted(() => {
   justify-content: center;
   align-items: center;
 }
+/* Альтернатива: blur эффект */
+.info-content-wrapper {
+  opacity: 0;
+  filter: blur(4px);
+  transition: opacity 0.25s ease, filter 0.25s ease;
+}
 
+.info-content-wrapper.is-visible {
+  opacity: 1;
+  filter: blur(0);
+}
 .close-btn {
   position: absolute;
   top: 1rem;
@@ -736,9 +707,7 @@ onUnmounted(() => {
   scroll-snap-type: y mandatory;
   scrollbar-width: none;
 }
-.shorts-main-container::-webkit-scrollbar {
-  display: none;
-}
+.shorts-main-container::-webkit-scrollbar { display: none;}
 
 .short-snap-item {
   height: 100vh;
@@ -806,19 +775,13 @@ onUnmounted(() => {
   transition: all 0.2s;
   padding: 0;
 }
-.action-btn:hover {
-  background: #fff;
-  transform: scale(1.05);
-}
+.action-btn:hover { background: #fff; transform: scale(1.05);}
 .action-btn img {
   width: 1.5rem;
   height: 1.5rem;
   object-fit: contain;
 }
-.like-icon {
-  width: 1.5rem;
-  height: 1.375rem;
-}
+.like-icon { width: 1.5rem; height: 1.375rem;}
 .arrow-btn img {
   width: 1.125rem;
   height: 1.125rem;
@@ -853,9 +816,7 @@ onUnmounted(() => {
   align-content: space-between;
   height: 100%;
 }
-.info-scroll-area::-webkit-scrollbar {
-  width: 0.25rem;
-}
+.info-scroll-area::-webkit-scrollbar { width: 0.25rem;}
 .info-scroll-area::-webkit-scrollbar-thumb {
   background: #ddd;
   border-radius: 0.25rem;
@@ -932,10 +893,7 @@ onUnmounted(() => {
   width: auto;
 }
 
-.stars {
-  letter-spacing: 0px;
-  font-size: 1.35rem;
-}
+.stars { letter-spacing: 0px; font-size: 1.35rem;}
 
 .btn-primary {
   width: 6.875rem;
@@ -961,9 +919,7 @@ onUnmounted(() => {
   border-radius: 0.625rem 0.625rem 0 0;
 }
 
-.comments-block::-webkit-scrollbar {
-  width: 0.25rem;
-}
+.comments-block::-webkit-scrollbar { width: 0.25rem;}
 
 .comments-block::-webkit-scrollbar-thumb {
   background: #ddd;
@@ -1014,10 +970,7 @@ onUnmounted(() => {
   object-fit: cover;
   flex-shrink: 0;
 }
-.c-body {
-  flex: 1;
-  min-width: 0;
-}
+.c-body { flex: 1; min-width: 0;}
 .c-user {
   font-size: 0.875rem;
   font-weight: 600;
@@ -1045,9 +998,7 @@ onUnmounted(() => {
   cursor: pointer;
   transition: color 0.2s;
 }
-.c-reply:hover {
-  color: #6aaa7d;
-}
+.c-reply:hover { color: #6aaa7d;}
 
 .footer-input {
   padding: 0.333rem 0.5rem 0.467rem 0.5rem;
@@ -1086,13 +1037,8 @@ onUnmounted(() => {
   transition: background 0.3s;
   flex-shrink: 0;
 }
-.send-btn:hover {
-  background: #5a9669;
-}
-.send-btn img {
-  width: 0.938rem;
-  height: 0.938rem;
-}
+.send-btn:hover { background: #5a9669;}
+.send-btn img { width: 0.938rem; height: 0.938rem;}
 
 .modal-overlay {
   position: fixed;
@@ -1143,9 +1089,7 @@ onUnmounted(() => {
   justify-content: center;
 }
 
-.close-modal:hover {
-  color: #1a1a1a;
-}
+.close-modal:hover { color: #1a1a1a;}
 
 .link-section {
   display: flex;
@@ -1189,9 +1133,7 @@ onUnmounted(() => {
   margin-top: 0.938rem;
 }
 
-.copy-btn:hover {
-  background: #5a9669;
-}
+.copy-btn:hover {background: #5a9669;}
 .shorts-block_avt{
   display: grid;
   grid-template-columns: auto 1fr;
@@ -1204,8 +1146,5 @@ onUnmounted(() => {
   margin-bottom: .5rem;
   justify-content: space-between;
 }
-.reply-banner button{
-  font-size: 1rem;
-  width: 1.3rem;
-}
+.reply-banner button{font-size: 1rem; width: 1.3rem;}
 </style>

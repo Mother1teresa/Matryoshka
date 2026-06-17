@@ -13,67 +13,26 @@
           <p class="auth-hint">(как ссылка)</p>
         </div>
       </div>
-
       <!-- АВТОРИЗОВАННЫЙ -->
       <template v-else>
-        <!-- ПЛАШКА ЗАГРУЗКИ только при первой загрузке -->
-        <div v-if="!allThumbnailsLoaded && !hasCachedThumbnails" class="thumbnails-loading">
-          <div class="loading-spinner"></div>
-          <p>Загружаем видео...</p>
-        </div>
-
-        <!-- ВИДЕО — показываем всегда, кэш берётся из браузера -->
         <div class="mini-video-section">
-          <router-link
-            v-for="video in videos.slice(0, 10)"
-            :key="video.id"
-            :to="{ name: 'shorts', params: { id: video.id } }"
-            class="mini-video-link"
-          >
-            <!-- Кэшированное превью как <img> -->
+          <router-link v-for="video in videos.slice(0, 6)" :key="video.id" :to="{ name: 'shorts', params: { id: video.id } }" class="mini-video-link">
+            <!-- Готовое превью -->
             <img
-              v-if="thumbnailCache[video.id]"
-              :src="thumbnailCache[video.id]"
+              v-if="thumbnailCache.has(video.id)"
+              :src="thumbnailCache.get(video.id)"
               class="thumbnail mini-video_img"
               alt="Превью"
-              @load="onThumbnailLoaded"
-              @error="onThumbnailError"
             />
-            
-            <!-- Fallback: видео-тег для первой загрузки кадра -->
-            <video
-              v-else-if="video.cdnUrl"
-              :src="video.cdnUrl + '#t=0.1'"
-              class="thumbnail mini-video_img"
-              preload="metadata"
-              muted
-              playsinline
-              crossorigin="anonymous"
-              @loadeddata="(e) => captureFrame(e, video.id)"
-              @error="onThumbnailError"
-            ></video>
-            
-            <!-- Fallback: готовая картинка -->
-            <img
-              v-else-if="video.thumbnail || video.posterUrl"
-              :src="video.thumbnail || video.posterUrl"
-              class="thumbnail mini-video_img"
-              alt="Превью"
-              @load="(e) => cacheImage(e, video.id)"
-              @error="onThumbnailError"
-            />
+            <div v-else class="mini-video_img skeleton"></div>
           </router-link>
         </div>
-        
-        <!-- Скелетоны пока feed грузится -->
         <div v-if="isLoading && videos.length === 0" class="mini-video-section">
           <div v-for="i in 6" :key="i" class="mini-video_img skeleton"></div>
         </div>
-        
         <div v-else-if="videos.length === 0" class="mini-video-section empty">
           <p>Видео пока нет</p>
         </div>
-        
         <div class="block-link">
           <router-link :to="{ name: 'shorts' }">
             Мини-видео
@@ -84,9 +43,8 @@
     </div>
   </section>
 </template>
-
 <script setup>
-import { computed, onMounted, watch, ref } from "vue";
+import { computed, onMounted, watch, ref, onUnmounted } from "vue";
 import { useAuthStore } from "/src/stores/authStore.js";
 import { useModalStore } from "/src/stores/modal.js";
 
@@ -97,141 +55,104 @@ const isAuthenticated = computed(() => authStore.isAuthenticated);
 const videos = computed(() => authStore.welcomeFeed || []);
 const isLoading = computed(() => authStore.isVideosLoading);
 
-// ===== КЭШ ПРЕВЬЮ =====
-// Храним blob-URL кадров: { videoId: blobUrl }
-const thumbnailCache = ref({});
+const thumbnailCache = ref(new Map());
+const processedVideos = ref(new Set());
 
-// Проверяем есть ли уже кэш
-const hasCachedThumbnails = computed(() => {
-  return Object.keys(thumbnailCache.value).length > 0;
-});
-
-// Счётчики загрузки (только для первого раза)
-const totalThumbnails = ref(0);
-const loadedThumbnails = ref(0);
-const hasErrorThumbnails = ref(0);
-
-const allThumbnailsLoaded = computed(() => {
-  if (videos.value.length === 0) return true;
-  if (totalThumbnails.value === 0) return false;
-  return (loadedThumbnails.value + hasErrorThumbnails.value) >= totalThumbnails.value;
-});
-
-const openLogin = () => {
-  modalStore.openLogin();
-};
-
-const openRegister = () => {
-  modalStore.openRegister();
-};
+const openLogin = () => modalStore.openLogin();
+const openRegister = () => modalStore.openRegister();
 
 const loadVideos = async () => {
   if (isAuthenticated.value && videos.value.length === 0) {
-    await authStore.fetchWelcomeFeed({ 
-      page: 0, 
-      size: 10, 
-      seed: 0.5 
-    });
+    await authStore.fetchWelcomeFeed({ page: 0, size: 10, seed: 0.5 });
   }
 };
 
-// ===== ЗАХВАТ КАДРА ИЗ ВИДЕО =====
-const captureFrame = (event, videoId) => {
-  const video = event.target;
-  
-  try {
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth || 187;  // 11.688rem ≈ 187px
-    canvas.height = video.videoHeight || 247; // 15.438rem ≈ 247px
-    
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
-    // Конвертируем в blob и кэшируем
-    canvas.toBlob((blob) => {
-      if (blob) {
-        const url = URL.createObjectURL(blob);
-        thumbnailCache.value[videoId] = url;
-        onThumbnailLoaded();
+const generateThumbnail = (video) => {
+  return new Promise((resolve) => {
+    if (!video.cdnUrl || processedVideos.value.has(video.id)) {
+      resolve();
+      return;
+    }
+    processedVideos.value.add(video.id);
+
+    const videoEl = document.createElement('video');
+    videoEl.src = video.cdnUrl + '#t=0.1';
+    videoEl.crossOrigin = 'anonymous';
+    videoEl.muted = true;
+    videoEl.playsInline = true;
+    videoEl.preload = 'auto';
+
+    let resolved = false;
+    const cleanup = () => {
+      if (resolved) return;
+      resolved = true;
+      videoEl.pause();
+      videoEl.src = '';
+      videoEl.load();
+    };
+
+    const onFrame = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 187;
+        canvas.height = 247;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(videoEl, 0, 0, 187, 247);
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const url = URL.createObjectURL(blob);
+            thumbnailCache.value.set(video.id, url);
+            thumbnailCache.value = new Map(thumbnailCache.value);
+          }
+          cleanup();
+          resolve();
+        }, 'image/jpeg', 0.5);
+        
+      } catch (e) {
+        console.error('Ошибка захвата:', e);
+        cleanup();
+        resolve();
       }
-    }, 'image/jpeg', 0.85);
-    
-  } catch (e) {
-    console.error('Ошибка захвата кадра:', e);
-    onThumbnailError();
-  }
-};
+    };
 
-// ===== КЭШИРОВАНИЕ ГОТОВОЙ КАРТИНКИ =====
-const cacheImage = (event, videoId) => {
-  // Если это уже blob-URL — просто считаем загруженным
-  if (thumbnailCache.value[videoId]) {
-    onThumbnailLoaded();
-    return;
-  }
-  
-  // Иначе копируем src в кэш
-  thumbnailCache.value[videoId] = event.target.src;
-  onThumbnailLoaded();
-};
-
-const resetCounters = () => {
-  totalThumbnails.value = 0;
-  loadedThumbnails.value = 0;
-  hasErrorThumbnails.value = 0;
-};
-
-const initThumbnails = () => {
-  resetCounters();
-  
-  // Считаем только те, что ещё не в кэше
-  const needLoad = videos.value.slice(0, 10).filter(v => {
-    const hasCache = thumbnailCache.value[v.id];
-    const hasSource = v.cdnUrl || v.thumbnail || v.posterUrl;
-    return !hasCache && hasSource;
+    videoEl.addEventListener('seeked', onFrame, { once: true });
+    videoEl.addEventListener('error', () => { cleanup(); resolve(); }, { once: true });
+    setTimeout(() => { cleanup(); resolve(); }, 5000);
   });
-  
-  totalThumbnails.value = needLoad.length;
-  
-  // Если всё уже в кэше — сразу считаем загруженным
-  if (needLoad.length === 0) {
-    loadedThumbnails.value = 1;
-  }
 };
-
-const onThumbnailLoaded = () => {
-  loadedThumbnails.value++;
+const generateThumbnails = async (videoList) => {
+  if (!videoList.length) return;
+  const batchSize = 3;
+  for (let i = 0; i < videoList.length; i += batchSize) {
+    const batch = videoList.slice(i, i + batchSize);
+    await Promise.all(batch.map(v => generateThumbnail(v)));
+  }
 };
 
 const onThumbnailError = () => {
-  hasErrorThumbnails.value++;
+  // Просто оставляем скелетон
 };
-
-// ===== ОЧИСТКА КЭША ПРИ УНИЧТОЖЕНИИ (опционально) =====
-// const cleanupCache = () => {
-//   Object.values(thumbnailCache.value).forEach(url => {
-//     if (url.startsWith('blob:')) URL.revokeObjectURL(url);
-//   });
-//   thumbnailCache.value = {};
-// };
 
 onMounted(() => {
   loadVideos();
 });
-
 watch(isAuthenticated, (newValue, oldValue) => {
-  if (newValue && !oldValue) {
-    loadVideos();
-  }
+  if (newValue && !oldValue) loadVideos();
 });
-
-watch(videos, () => {
-  if (videos.value.length > 0) {
-    initThumbnails();
+watch(videos, (newVideos) => {
+  if (newVideos.length > 0) {
+    processedVideos.value.clear();
+    generateThumbnails(newVideos.slice(0, 6));
   }
 }, { immediate: true });
-</script>
 
+onUnmounted(() => {
+  thumbnailCache.value.forEach(url => {
+    if (url?.startsWith('blob:')) URL.revokeObjectURL(url);
+  });
+});
+</script>
 <style scoped>
 .mini-video {
   overflow: hidden;
@@ -278,9 +199,7 @@ watch(videos, () => {
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
 /* ===== AUTH OVERLAY ===== */

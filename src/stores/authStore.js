@@ -270,9 +270,9 @@ export const useAuthStore = defineStore("auth", {
           description: v.description || '',
           createdAt: v.createdAt || '',
           cdnUrl: v.cdnUrl || '',
-          views: 0,           // догрузим
-          author: null,       // догрузим
-          comments: [],       // догрузим
+          views: 0, 
+          author: null,
+          comments: [],
           isDetailsLoaded: false,
           isVideoReady: false
         }));
