@@ -1,59 +1,68 @@
 <template>
   <div class="shorts-page-overlay">
-    <div v-if="isLoading" class="loader">Загрузка роликов...</div>
+    <div v-if="isLoading && videos.length === 0" class="loader">Загрузка роликов...</div>
     
-    <div v-else-if="videos.length" class="shorts-main-container" ref="scrollContainer">
+    <!-- Плейсхолдер для текущего видео пока author не загружен -->
+     <div v-else-if="videos.length" class="shorts-main-container" ref="scrollContainer">
       <div v-for="video in videos" :key="video.id" class="short-snap-item">
         <div class="short-content-wrapper">
-          <!-- ВИДЕО (Левая часть) -->
+          
+          <!-- ВИДЕО -->
           <div class="video-side">
             <button class="close-btn" @click="closeShorts">
               <img src="/src/assets/img/icons/close-white.svg" alt="close" />
             </button>
             
+            <!-- Постер/спиннер -->
+            <div v-if="!video.isVideoReady && !video.hasError" class="video-poster">
+              <div class="poster-spinner"></div>
+            </div>
+            
+            <!-- Ошибка загрузки -->
+            <div v-if="video.hasError" class="video-error">
+              <p>Формат не поддерживается</p>
+            </div>
+
             <video 
               :src="video.cdnUrl" 
               :ref="setVideoRef" 
               :data-id="video.id" 
               loop 
-              playsinline 
-              muted
-              preload="metadata"
+              playsinline
+              :muted="isMuted"
+              preload="auto"
+              @canplaythrough="onVideoReady(video)"
+              @loadeddata="onVideoReady(video)"
+              @error="onVideoError(video)"
             ></video>
-            
+
+            <!-- [НОВОЕ] Кнопка звука -->
+            <button class="mute-btn" @click="toggleMute">
+              <img :src="isMuted ? muteIcon : unmuteIcon" alt="sound" />
+            </button>
+
             <div class="video-actions">
-              <!-- Лайк (сердечко) -->
               <div class="v-action">
                 <button class="action-btn" @click.stop="onLikeClick(video)">
-                  <img :src="heartFilled" class="like-icon"/>
+                  <img :src="video.isLikedByMe ? heartFilled : heart" class="like-icon"/>
                   <span>{{ video.likes || 0 }}</span>
                 </button>
               </div>
-              
-              <!-- Избранное (закладка) -->
-              <div class="v-action">
-                <button class="action-btn" @click.stop="onFavoriteClick(video)">
-                  <img :src="favStore.isFavorite(video.id) ? heartFilled : heart" class="like-icon"/>
-                </button>
-              </div>
-              
-              <!-- Написать -->
+
               <div v-if="!isOwnVideo(video)" class="v-action">
                 <button class="action-btn" @click="onWriteClick(video)">
                   <img src="/src/assets/img/mes.svg" />
                 </button>
               </div>
-              
-              <!-- Поделиться -->
+
               <div class="v-action">
                 <button class="action-btn" @click="openShareModal(video)">
                   <img src="/src/assets/img/icons/lin.svg" alt="share" />
                 </button>
               </div>
-              
+
               <div class="v-divider"></div>
-              
-              <!-- Стрелки -->
+
               <div class="v-action scroll-arrows">
                 <button class="action-btn arrow-btn" @click="scrollPrev">
                   <img src="/src/assets/img/icons/up.svg" alt="up" />
@@ -64,35 +73,40 @@
               </div>
             </div>
           </div>
-          
+
           <!-- ИНФОРМАЦИЯ (Правая часть) -->
           <aside class="info-side">
             <div class="info-scroll-area">
               <div class="info-scroll-area_block">
                 <div class="video-header-info">
                   <h2 class="video-title">
-                    <!-- {{ video.author?.name || video.author?.username || "Без названия" }} -->
-                      {{ video.description || "Без названия" }}
+                    {{ video.description || '\u00A0' }}
                   </h2>
                   <div class="video-stats-row">
                     <span>{{ video.likes || 0 }} лайков</span>
-                    <span class="dot">.</span>
+                    <span class="dot"></span>
                     <span>{{ video.views || 0 }} просмотров</span>
-                    <span class="dot">.</span>
+                    <span class="dot"></span>
                     <span v-if="video.createdAt">{{ formatDate(video.createdAt) }}</span>
                   </div>
                 </div>
-                
-                <!-- Автор -->
+
                 <div class="shorts-block_avt">
                   <div class="author-card">
                     <router-link 
-                      :to="{ name: 'SellerPage', params: { id: video.author?.id } }"
-                      class="author-link">
+                      :to="video.author?.id 
+                        ? { name: 'SellerPage', params: { id: video.author.id } } 
+                        : ''"
+                      class="author-link"
+                      :event="video.author?.id ? 'click' : ''"
+                    >
                       <div class="author-main">
-                        <img :src="video.author?.avatar || '/src/assets/img/mask-avatar.png'" class="author-ava" />
+                        <img 
+                          :src="video.author?.avatar || '/src/assets/img/mask-avatar.png'" 
+                          class="author-ava" 
+                        />
                         <div class="author-details">
-                          <p class="name">{{ video.author?.name || video.author?.username || 'Пользователь' }}</p>
+                          <p class="name">{{ video.author?.username || '\u00A0' }}</p>
                         </div>
                       </div>
                     </router-link>
@@ -110,18 +124,17 @@
                   </div>
                 </div>
               </div>
-              
-              <!-- КОММЕНТАРИИ -->
+
               <div class="comments-block">
                 <p class="section-title">
                   <img src="/src/assets/img/icons/comment.svg" alt="" />
                   Комментарии
                 </p>
-                
+
                 <div v-if="!video.comments?.length" class="comments-empty">
                   <p>Комментариев нет</p>
                 </div>
-                
+
                 <div v-else class="comments-list">
                   <div v-for="comment in video.comments" :key="comment.id" class="comment-item">
                     <img :src="comment.author?.avatar || '/src/assets/img/mask-avatar.png'"/>
@@ -141,8 +154,7 @@
                 </div>
               </div>
             </div>
-            
-            <!-- Ввод комментария -->
+
             <div class="footer-input">
               <div v-if="replyTo" class="reply-banner">
                 <span>Ответ {{ replyTo.userName }}</span>
@@ -164,10 +176,9 @@
         </div>
       </div>
     </div>
-    
+
     <div v-else class="empty">Видео не найдены</div>
-    
-    <!-- Share Modal -->
+
     <div v-if="isShareModalOpen" class="modal-overlay" @click.self="isShareModalOpen = false">
       <div class="share-modal">
         <header class="modal-header">
@@ -200,6 +211,8 @@ import { formatDate } from "/src/utils/formatters.js";
 
 import heart from "/src/assets/img/icons/heart.svg";
 import heartFilled from "/src/assets/img/icons/heart-filled.svg";
+import muteIcon from "/src/assets/img/icons/mute.svg";
+import unmuteIcon from "/src/assets/img/icons/unmute.svg"; 
 
 const router = useRouter();
 const route = useRoute();
@@ -214,11 +227,28 @@ const newComment = ref("");
 const replyTo = ref(null);
 let copyTimeout = null;
 const isCopied = ref(false);
+const isMuted = ref(true);
 
 const videos = computed(() => authStore.welcomeFeed || []);
 const isLoading = computed(() => authStore.isVideosLoading);
 const selectedVideoId = computed(() => route.params.id);
 
+
+const onVideoReady = (video) => {
+  video.isVideoReady = true;
+  video.hasError = false;
+};
+const onVideoError = (video) => {
+  console.error('Video error:', video.cdnUrl, 'mime:', video.mimeType);
+  video.hasError = true;
+  video.isVideoReady = false;
+};
+const toggleMute = () => {
+  isMuted.value = !isMuted.value;
+  videoRefs.value.forEach(el => {
+    if (el) el.muted = isMuted.value;
+  });
+};
 const checkAuthAndRun = (action, message = "Авторизуйтесь, чтобы продолжить") => {
   if (!authStore.isAuthenticated) {
     modal.openLogin();
@@ -239,51 +269,13 @@ const addView = async (video) => {
   }
 };
 
-const onFavoriteClick = async (video) => {
-  if (!video) return;
-  checkAuthAndRun(async () => {
-    try {
-      if (favStore.isFavorite(video.id)) {
-        await authStore.unmarkFavorite(video.id);
-        favStore.remove(video.id);
-        notify("Удалено из избранного");
-      } else {
-        await authStore.markFavorite(video.id);
-        favStore.add(video.id);
-        notify("Добавлено в избранное");
-      }
-    } catch (e) {
-      notify("Ошибка", "error");
-    }
-  }, "Войдите, чтобы добавить в избранное");
-};
-
 const onLikeClick = async (video) => {
   if (!video) return;
   checkAuthAndRun(async () => {
     try {
-      await authStore.likeVideo(video.id);
-      video.likes = (video.likes || 0) + 1;
-      const feedVideo = authStore.welcomeFeed.find(v => v.id === video.id);
-      if (feedVideo) feedVideo.likes = video.likes;
-      notify("Лайк поставлен");
+      await authStore.toggleLike(video.id);
     } catch (e) {
       notify("Ошибка лайка", "error");
-    }
-  });
-};
-
-const onUnlikeClick = async (video) => {
-  if (!video) return;
-  checkAuthAndRun(async () => {
-    try {
-      await authStore.unlikeVideo(video.id);
-      video.likes = Math.max(0, (video.likes || 0) - 1);
-      const feedVideo = authStore.welcomeFeed.find(v => v.id === video.id);
-      if (feedVideo) feedVideo.likes = video.likes;
-      notify("Лайк убран");
-    } catch (e) {
-      notify("Ошибка", "error");
     }
   });
 };
@@ -410,18 +402,44 @@ const scrollToVideo = (id) => {
   if (el) el.scrollIntoView({ behavior: 'auto' });
 };
 
+// ===== ПРЕДЗАГРУЗКА ВИДЕО =====
+const preloadVideos = () => {
+  videos.value.forEach(video => {
+    if (!video.cdnUrl) return;
+    const preloadLink = document.createElement('link');
+    preloadLink.rel = 'preload';
+    preloadLink.href = video.cdnUrl;
+    preloadLink.as = 'video';
+    document.head.appendChild(preloadLink);
+  });
+};
+
 const initObserver = () => {
   const observer = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
+        const videoId = entry.target.dataset.id;
+        const video = videos.value.find(v => v.id === videoId);
+        
         if (entry.isIntersecting) {
-          entry.target.play();
-          const videoId = entry.target.dataset.id;
-          const video = videos.value.find(v => v.id === videoId);
-          if (video) {
-            addView(video);
-            router.replace({ name: "shorts", params: { id: videoId } });
+          // [ИЗМЕНЕНО] Проверяем hasError перед play
+          if (!video?.hasError) {
+            entry.target.play().catch(err => {
+              // Автоплей со звуком заблокирован — пробуем muted
+              if (err.name === 'NotAllowedError' && !isMuted.value) {
+                isMuted.value = true;
+                entry.target.muted = true;
+                entry.target.play();
+              }
+            });
           }
+          
+          if (video && !video.isDetailsLoaded) {
+            authStore.enrichVideo(videoId).catch(() => {});
+          }
+          
+          addView(video);
+          router.replace({ name: "shorts", params: { id: videoId } });
         } else {
           entry.target.pause();
           entry.target.currentTime = 0;
@@ -430,6 +448,7 @@ const initObserver = () => {
     },
     { threshold: 0.6 },
   );
+  
   videoRefs.value.forEach((v) => observer.observe(v));
 };
 
@@ -481,37 +500,161 @@ onMounted(async () => {
     await authStore.fetchWelcomeFeed({ page: 0, size: 20, seed: 0.5 });
   }
   
-  // Загружаем детали для всех видео
-  await Promise.all(
-    videos.value.map(async (video) => {
-      try {
-        const details = await authStore.fetchVideo(video.id);
-        if (details) {
-          Object.assign(video, details);
-        }
-      } catch (e) {
-        console.warn(`Не удалось загрузить детали для ${video.id}`);
-      }
-    })
+  // [ИЗМЕНЕНО] Предзагружаем только соседние видео, не все
+  preloadAdjacentVideos();
+  
+  const preloadDetails = videos.value.slice(0, 3).map(v => 
+    authStore.enrichVideo(v.id).catch(() => {})
   );
+  await Promise.all(preloadDetails);
+  
+  if (selectedVideoId.value) {
+    await authStore.enrichVideo(selectedVideoId.value);
+  }
   
   window.addEventListener("keydown", handleKeyDown);
   
   nextTick(() => {
     initObserver();
-    if (selectedVideoId.value) {
-      scrollToVideo(selectedVideoId.value);
-    }
+    scrollToVideo(selectedVideoId.value);
   });
 });
-
+const preloadAdjacentVideos = () => {
+  const currentIdx = videos.value.findIndex(v => v.id === selectedVideoId.value);
+  const indicesToLoad = [currentIdx - 1, currentIdx, currentIdx + 1].filter(i => i >= 0 && i < videos.value.length);
+  
+  indicesToLoad.forEach(idx => {
+    const video = videos.value[idx];
+    if (!video?.cdnUrl) return;
+    const preloadLink = document.createElement('link');
+    preloadLink.rel = 'preload';
+    preloadLink.href = video.cdnUrl;
+    preloadLink.as = 'video';
+    document.head.appendChild(preloadLink);
+  });
+};
 onUnmounted(() => {
   window.removeEventListener("keydown", handleKeyDown);
   clearTimeout(copyTimeout);
 });
 </script>
+
 <style scoped>
-/* ===== BASE ===== */
+.mute-btn {
+  position: absolute;
+  bottom: 1rem;
+  left: 1.5rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 5;
+  transition: background 0.2s;
+}
+.mute-btn:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+.mute-btn img {
+  width: 1.25rem;
+  height: 1.25rem;
+  filter: invert(1);
+}
+.video-error {
+  position: absolute;
+  inset: 2.438rem 3.75rem 1rem 1.563rem;
+  background: #1a1a1a;
+  border-radius: 0.625rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  color: #999;
+  font-size: 0.875rem;
+}
+.video-poster {
+  position: absolute;
+  inset: 2.438rem 3.75rem 1rem 1.563rem;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 0.625rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.poster-spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid #e5e7eb;
+  border-top-color: #64a07a;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Скелетон для автора */
+.author-skeleton {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+}
+
+.skeleton-ava {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  flex-shrink: 0;
+}
+
+.skeleton-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.skeleton-line {
+  height: 0.875rem;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 0.25rem;
+}
+
+.skeleton-line.short {
+  width: 60%;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Оптимизация рендеринга */
+.short-snap-item {
+  will-change: transform;
+  contain: layout style paint;
+}
+
+.video-side video {
+  will-change: opacity;
+}
+
+/* ===== СУЩЕСТВУЮЩИЕ СТИЛИ (без изменений) ===== */
 .shorts-page-overlay {
   position: fixed;
   inset: 0;
@@ -522,7 +665,6 @@ onUnmounted(() => {
   align-items: center;
 }
 
-/* ===== CLOSE BTN ===== */
 .close-btn {
   position: absolute;
   top: 1rem;
@@ -571,7 +713,6 @@ onUnmounted(() => {
   padding: 1.25rem;
 }
 
-/* ===== WRAPPER ===== */
 .short-content-wrapper {
   display: grid;
   width: 100%;
@@ -582,7 +723,6 @@ onUnmounted(() => {
   grid-template-columns: 1fr 1fr;
 }
 
-/* ===== VIDEO SIDE ===== */
 .video-side {
   flex: 1.3;
   position: relative;
@@ -599,7 +739,6 @@ onUnmounted(() => {
   border-radius: 0.625rem;
 }
 
-/* ===== VIDEO ACTIONS ===== */
 .video-actions {
   position: absolute;
   right: 0.5rem;
@@ -672,12 +811,7 @@ onUnmounted(() => {
   min-width: 0;
 }
 .info-scroll-area {
-  /* flex: 1; */
-  /* overflow-y: auto; */
-  /* padding: 1.5rem; */
   margin-top: 2.063rem;
-  /* scrollbar-width: thin;
-  scrollbar-color: #ddd transparent; */
   display: grid;
   align-content: space-between;
   height: 100%;
@@ -690,7 +824,6 @@ onUnmounted(() => {
   border-radius: 0.25rem;
 }
 
-/* ===== HEADER ===== */
 .video-header-info {
   margin-bottom: 1.25rem;
   background: white;
@@ -719,7 +852,6 @@ onUnmounted(() => {
   border-radius: 50%;
 }
 
-/* ===== AUTHOR CARD ===== */
 .author-card {
   background: white;
   border-radius: 1rem;
@@ -755,7 +887,6 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  /* flex-wrap: wrap; */
 }
 .rating-num {
   font-size: 1.125rem;
@@ -768,104 +899,7 @@ onUnmounted(() => {
   letter-spacing: 0px;
   font-size: 1.35rem;
 }
-.star.filled {
-  color: #1a1a1a;
-}
 
-/* ===== SUBSCRIBE BUTTON ===== */
-.sub-btn-green {
-  background: #6aaa7d;
-  color: white;
-  border: none;
-  padding: 0.375rem 0.875rem;
-  border-radius: 0.5rem;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.sub-btn-green:hover {
-  background: #5a9669;
-}
-.sub-btn-green.is-active {
-  background: #fff;
-  color: #6aaa7d;
-  border: 0.0625rem solid #6aaa7d;
-}
-.sub-btn-green.is-active:hover {
-  background: #f0f7f2;
-}
-
-.author-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-  margin-top: 0.563rem;
-}
-.response {
-  font-size: 0.875rem;
-  color: #8E8C8C;
-  margin: 0;
-}
-.deals-count {
-  font-size: 0.875rem;
-  color: #8E8C8C;
-  margin: 0;
-}
-
-/* ===== PRODUCT CARD ===== */
-.product-card-shorts {
-  background: #FFFFFF;
-  border-radius: 1rem;
-  padding: 0.75rem 0.625rem;
-  height: auto;
-  width: 12.563rem;
-}
-.p-flex {
-  display: grid;
-  gap: 0.625rem;
-  margin-bottom: 0.813rem;
-}
-.p-flex img {
-  width: 100%;
-  height: 8.125rem;
-  border-radius: 0.75rem;
-  object-fit: cover;
-  flex-shrink: 0;
-}
-.product-card-shorts .btn-primary{
-  width: 100%;
-  margin-left: 0;
-}
-.p-text {
-  flex: 1;
-  min-width: 0;
-}
-.p-name {
-  font-size: 0.75rem;
-  font-weight: 400;
-  color: #1a1a1a;
-  margin: 0 0 0.313rem 0;
-  /* line-height: 1.3; */
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.p-price {
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: #1a1a1a;
-  margin: 0 0 0.375rem 0;
-}
-.p-city {
-  font-size: 0.75rem;
-  /* color: #999; */
-  margin: 0;
-}
 .btn-primary {
   width: 6.875rem;
   background: #6aaa7d;
@@ -882,13 +916,8 @@ onUnmounted(() => {
   justify-content: center;
   margin-left: .5rem;
 }
-.contact-btn:hover {
-  background: #5a9669;
-}
 
-/* ===== COMMENTS ===== */
 .comments-block {
-  /* margin-bottom: 1rem; */
   padding: 0.625rem 0.875rem;
   height: 19.125rem;
   background: white;
@@ -928,12 +957,6 @@ onUnmounted(() => {
   color: #999;
   font-size: 0.875rem;
 }
-.comments-locked {
-  text-align: center;
-  padding: 2rem 0;
-  color: #999;
-  font-size: 0.875rem;
-}
 .comments-list {
   display: flex;
   flex-direction: column;
@@ -943,15 +966,9 @@ onUnmounted(() => {
   scrollbar-width: thin;
   scrollbar-color: #ddd transparent;
 }
-.comments-list
 .comment-item {
   display: flex;
   gap: 0.75rem;
-}
-.comment-item.is-reply {
-  background: #F6F6F6;
-  padding: 0.313rem;
-  border-radius: 0.625rem;
 }
 .comment-item > img {
   width: 2.25rem;
@@ -978,22 +995,12 @@ onUnmounted(() => {
   color: #444;
   margin: 0 0 0.438rem 0;
 }
-.c-reply {
-  font-size: 0.75rem;
-  color: #6aaa7d;
-  cursor: pointer;
-}
 .c-header {
   display: grid;
 }
 .c-header_footer{
   display: flex;
   gap: 5rem;
-}
-.reply-to {
-  color: #6aaa7d;
-  font-weight: 500;
-  margin-right: 0.25rem;
 }
 .c-reply {
   font-size: 0.75rem;
@@ -1004,16 +1011,7 @@ onUnmounted(() => {
 .c-reply:hover {
   color: #6aaa7d;
 }
-.replies-list {
-  margin-top: 0.75rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-.replies-list .c-header{
-  display: flex; gap: .5rem;
-}
-/* ===== FOOTER INPUT ===== */
+
 .footer-input {
   padding: 0.333rem 0.5rem 0.467rem 0.5rem;
   border-top: 0.0625rem solid #eee;
@@ -1038,10 +1036,6 @@ onUnmounted(() => {
 .footer-input input:focus {
   background: #e8e8e8;
 }
-.footer-input input:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
 .send-btn {
   width: 2rem;
   height: -webkit-fill-available;
@@ -1063,7 +1057,6 @@ onUnmounted(() => {
   height: 0.938rem;
 }
 
-/* ===== SHARE MODAL ===== */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -1088,7 +1081,7 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.125rem;
 }
 
 .modal-header h3 {
@@ -1117,56 +1110,6 @@ onUnmounted(() => {
   color: #1a1a1a;
 }
 
-/* ===== SOCIAL ICONS ===== */
-.social-icons {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
-}
-
-.social-btn {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.2s;
-  border: 0.0625rem solid #e0e0e0;
-  background: #fff;
-}
-
-.social-btn:hover {
-  transform: scale(1.05);
-}
-
-.social-btn img {
-  width: 1.25rem;
-  height: 1.25rem;
-}
-
-/* WhatsApp — зелёная обводка */
-.social-btn.whatsapp {
-  border-color: #25d366;
-}
-
-/* Telegram — голубая обводка */
-.social-btn.telegram {
-  border-color: #0088cc;
-}
-
-/* VK — синяя обводка */
-.social-btn.vk {
-  border-color: #4a76a8;
-}
-
-/* Download — серая обводка */
-.social-btn.download {
-  border-color: #ccc;
-}
-
-/* ===== LINK SECTION ===== */
 .link-section {
   display: flex;
   flex-direction: column;
@@ -1206,6 +1149,7 @@ onUnmounted(() => {
   font-weight: 500;
   cursor: pointer;
   transition: background 0.2s;
+  margin-top: 0.938rem;
 }
 
 .copy-btn:hover {

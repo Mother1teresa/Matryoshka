@@ -260,17 +260,21 @@ export const useAuthStore = defineStore("auth", {
           params: { page: Number(page), size: Number(size), seed: Number(seed) }
         });
         
-        console.log('Welcome feed raw data:', response.data); // ← проверьте это
+        const shortVideos = response.data || [];
         
-        this.welcomeFeed = response.data.map(v => ({
+        // Просто сохраняем базовые данные, author подтянем позже
+        this.welcomeFeed = shortVideos.map(v => ({
           id: v.id,
           likes: v.likes || 0,
+          commentsCount: v.commentsCount || 0,
           description: v.description || '',
           createdAt: v.createdAt || '',
-          cdnUrl: v.cdnUrl || v.url || v.videoUrl || v.sourceUrl || '', // ← здесь пусто?
-          views: 0,
-          commentsCount: 0,
-          author: { name: 'Загрузка...' }
+          cdnUrl: v.cdnUrl || '',
+          views: 0,           // догрузим
+          author: null,       // догрузим
+          comments: [],       // догрузим
+          isDetailsLoaded: false,
+          isVideoReady: false
         }));
         
         return this.welcomeFeed;
@@ -283,24 +287,23 @@ export const useAuthStore = defineStore("auth", {
     },
     async fetchVideo(videoId) {
       try {
-        const response = await api.get('/feed/video/', {
-          params: { videoId }
-        });
+        const response = await api.get(`/feed/video/${videoId}`);
         const video = response.data;
         
         return {
-          ...video,
           id: video.id,
-          cdnUrl: video.cdnUrl,
+          cdnUrl: video.cdnUrl || '',
           description: video.description || '',
           likes: video.likes || 0,
           views: video.views || 0,
-          commentsCount: video.commentsCount || 0,
+          commentsCount: video.comments?.length || video.commentsCount || 0,
           createdAt: video.createdAt || '',
+          comments: video.comments || [],
           author: {
-            id: video.author?.id,
+            id: video.author?.id || '',
             name: video.author?.username || 'Пользователь',
-            username: video.author?.username
+            username: video.author?.username || '',
+            avatar: '/src/assets/img/mask-avatar.png'
           }
         };
       } catch (e) {
@@ -308,10 +311,27 @@ export const useAuthStore = defineStore("auth", {
         return null;
       }
     },
+    async enrichVideo(videoId) {
+      const video = this.welcomeFeed.find(v => v.id === videoId);
+      if (!video || video.isDetailsLoaded) return video;
+      
+      const details = await this.fetchVideo(videoId);
+      if (!details) return video;
+      
+      // Обновляем реактивно
+      Object.assign(video, {
+        views: details.views,
+        author: details.author,
+        comments: details.comments,
+        commentsCount: details.commentsCount,
+        isDetailsLoaded: true
+      });
+      
+      return video;
+    },
     async addView(videoId, ip) {
       try {
         await api.post('/feed/video/add-view', {
-          id: crypto.randomUUID(),
           videoId,
           ip
         });
@@ -320,19 +340,50 @@ export const useAuthStore = defineStore("auth", {
       }
     },
     async likeVideo(videoId) {
+      const video = this.welcomeFeed.find(v => v.id === videoId);
+      if (video?.isLikedByMe) return;
+      
       try {
         await api.post('/feed/like', { videoId });
+        await api.post('/feed/video/mark-as-favorite', { videoId });
+        
+        if (video) {
+          video.isLikedByMe = true;
+          video.likes = (video.likes || 0) + 1;
+        }
       } catch (e) {
         console.error('Ошибка лайка:', e);
         throw e;
       }
     },
+
     async unlikeVideo(videoId) {
+      const video = this.welcomeFeed.find(v => v.id === videoId);
+      if (video && !video.isLikedByMe) return;
+      
       try {
         await api.post('/feed/unlike', { videoId });
+        await api.post('/feed/video/unmark-as-favorite', { videoId });
+        
+        if (video) {
+          video.isLikedByMe = false;
+          video.likes = Math.max(0, (video.likes || 0) - 1);
+        }
       } catch (e) {
         console.error('Ошибка удаления лайка:', e);
         throw e;
+      }
+    },
+    async toggleLike(videoId) {
+      const video = this.welcomeFeed.find(v => v.id === videoId);
+      if (!video) return;
+      
+      if (video.isLikedByMe) {
+        await this.unlikeVideo(videoId);
+        notify("Лайк убран");
+      } else {
+        await this.likeVideo(videoId);
+        notify("Лайк поставлен");
       }
     },
     async fetchLikeCount(videoId) {
@@ -344,22 +395,6 @@ export const useAuthStore = defineStore("auth", {
       } catch (e) {
         console.error('Ошибка получения лайков:', e);
         return 0;
-      }
-    },
-    async markFavorite(videoId) {
-      try {
-        await api.post('/feed/video/mark-as-favorite', videoId);
-      } catch (e) {
-        console.error('Ошибка добавления в избранное:', e);
-        throw e;
-      }
-    },
-    async unmarkFavorite(videoId) {
-      try {
-        await api.post('/feed/video/unmark-as-favorite', videoId);
-      } catch (e) {
-        console.error('Ошибка удаления из избранного:', e);
-        throw e;
       }
     },
     async fetchFavorites(userId) {
@@ -408,6 +443,7 @@ export const useAuthStore = defineStore("auth", {
       }
     },
     // конец
+    
     saveToStorage() {
       if (!this.user && this.isAuthenticated) {
         console.error("Попытка сохранить пустой профиль!");
@@ -635,108 +671,21 @@ export const useAuthStore = defineStore("auth", {
       if (!this.user?.id) return;
       this.isNotificationsLoading = true;
       try {
-        // const res = await api.get('/notifications');
-        // this.allNotifications = res.data.notifications || [];
+        const res = await api.get('/notifications');  // ← новый эндпоинт
+        this.allNotifications = (res.data || []).map(n => ({
+          id: n.id,
+          title: 'Уведомление',           // API не отдаёт title, можно захардкодить или парсить из message
+          message: n.message,
+          date: n.createdAt ? new Date(n.createdAt).toLocaleDateString('ru-RU') : '',
+          time: n.createdAt ? new Date(n.createdAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : '',
+          is_read: false,                  // API не отдаёт статус прочтения — пока все как непрочитанные
+          createdAt: n.createdAt
+        }));
       } catch (e) {
         console.error("Ошибка уведомлений:", e);
-        // Если API пока нет, можно оставить моки прямо здесь для тестов:
-        this.allNotifications = [
-          {
-            id: 1,
-            title: "Объявление опубликовано",
-            message: "Ваш товар 'Дождевик чугунный' успешно прошел модерацию.",
-            date: "15 нояб.",
-            time: "12:30",
-            is_read: true,
-          },
-          {
-            id: 2,
-            title: "Новый отзыв",
-            message: "Пользователь Иван оставил отзыв о вашем товаре.",
-            date: "14 нояб.",
-            time: "10:15",
-            is_read: false,
-          },
-          {
-            id: 3,
-            title: "Объявление отклонено",
-            message: "Ваше объявление не соответствует правилам площадки.",
-            reason: "Некорректная категория",
-            date: "13 нояб.",
-            time: "09:00",
-            is_read: false,
-          },
-        ];
+        this.allNotifications = [];
       } finally {
         this.isNotificationsLoading = false;
-      }
-    },
-    async fetchFavorites(type) {
-      // Выбираем эндпоинт: видео или айтемы (вместо ads)
-      const endpoint =
-        type === "videos" ? "/favorites/videos" : "/favorites/items";
-      try {
-        // const res = await api.get(endpoint);
-        return res.data.data || [];
-      } catch (e) {
-        console.error("Ошибка загрузки избранного:", e);
-        return [];
-      }
-    },
-    async removeFromFavorites(id) {
-      try {
-        // await api.delete(`/favorites/${id}`);
-        return true;
-      } catch (e) {
-        console.error("Ошибка удаления из избранного:", e);
-        return false;
-      }
-    },
-    async fetchUserChats() {
-      try {
-        // const res = await api.get('/chats');
-        // Предполагаем, что бэкенд возвращает { chats: [...] }
-        // this.allChats = res.data.chats || [];
-        return this.allChats;
-      } catch (e) {
-        console.error("Ошибка загрузки списка чатов:", e);
-        throw e;
-      }
-    },
-    async getOrCreateChat(sellerId, productId) {
-      if (!this.isAuthenticated) throw new Error("UNAUTHORIZED");
-      try {
-        // const res = await api.post('/chats/get-or-create', { sellerId, productId });
-
-        // Возвращаем ID чата (проверь, как именно бэк отдает: res.data.id или res.data.chatId)
-        return res.data.chatId || res.data.id;
-      } catch (e) {
-        console.error("Ошибка при создании чата в Store:", e);
-        throw e;
-      }
-    },
-    async fetchChatMessages(chatId) {
-      try {
-        // const res = await api.get(`/chats/${chatId}`);
-        return res.data; // Ожидаем { chat: {...}, messages: [...] }
-      } catch (e) {
-        console.error("Ошибка загрузки сообщений:", e);
-        throw e;
-      }
-    },
-    async sendMessage(chatId, text) {
-      try {
-        // await api.post(`/chats/${chatId}/send`, { text });
-      } catch (e) {
-        console.error("Ошибка отправки:", e);
-        throw e;
-      }
-    },
-    async markChatAsRead(chatId) {
-      try {
-        // await api.post(`/chats/${chatId}/read`);
-      } catch (e) {
-        console.error("Ошибка прочтения:", e);
       }
     },
     async logout() {

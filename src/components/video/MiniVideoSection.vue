@@ -1,7 +1,7 @@
 <template>
   <section class="mini-video">
     <div class="container">
-      <!-- НЕАВТОРИЗОВАННЫЙ ПОЛЬЗОВАТЕЛЬ — показываем заглушку -->
+      <!-- НЕАВТОРИЗОВАННЫЙ -->
       <div v-if="!isAuthenticated" class="auth-overlay">
         <div class="auth-content">
           <p class="auth-title">Для просмотра мини-видео необходимо авторизоваться</p>
@@ -14,39 +14,66 @@
         </div>
       </div>
 
-      <!-- АВТОРИЗОВАННЫЙ ПОЛЬЗОВАТЕЛЬ — показываем видео -->
+      <!-- АВТОРИЗОВАННЫЙ -->
       <template v-else>
-        <div v-if="videos.length" class="mini-video-section">
+        <!-- ПЛАШКА ЗАГРУЗКИ только при первой загрузке -->
+        <div v-if="!allThumbnailsLoaded && !hasCachedThumbnails" class="thumbnails-loading">
+          <div class="loading-spinner"></div>
+          <p>Загружаем видео...</p>
+        </div>
+
+        <!-- ВИДЕО — показываем всегда, кэш берётся из браузера -->
+        <div class="mini-video-section">
           <router-link
             v-for="video in videos.slice(0, 10)"
             :key="video.id"
             :to="{ name: 'shorts', params: { id: video.id } }"
             class="mini-video-link"
           >
+            <!-- Кэшированное превью как <img> -->
+            <img
+              v-if="thumbnailCache[video.id]"
+              :src="thumbnailCache[video.id]"
+              class="thumbnail mini-video_img"
+              alt="Превью"
+              @load="onThumbnailLoaded"
+              @error="onThumbnailError"
+            />
+            
+            <!-- Fallback: видео-тег для первой загрузки кадра -->
             <video
-              v-if="video.cdnUrl"
-              :src="video.cdnUrl"
+              v-else-if="video.cdnUrl"
+              :src="video.cdnUrl + '#t=0.1'"
               class="thumbnail mini-video_img"
               preload="metadata"
               muted
               playsinline
+              crossorigin="anonymous"
+              @loadeddata="(e) => captureFrame(e, video.id)"
+              @error="onThumbnailError"
             ></video>
             
+            <!-- Fallback: готовая картинка -->
             <img
               v-else-if="video.thumbnail || video.posterUrl"
               :src="video.thumbnail || video.posterUrl"
               class="thumbnail mini-video_img"
               alt="Превью"
+              @load="(e) => cacheImage(e, video.id)"
+              @error="onThumbnailError"
             />
           </router-link>
         </div>
-        <div v-else-if="isLoading" class="mini-video-section">
+        
+        <!-- Скелетоны пока feed грузится -->
+        <div v-if="isLoading && videos.length === 0" class="mini-video-section">
           <div v-for="i in 6" :key="i" class="mini-video_img skeleton"></div>
         </div>
         
-        <div v-else class="mini-video-section empty">
+        <div v-else-if="videos.length === 0" class="mini-video-section empty">
           <p>Видео пока нет</p>
         </div>
+        
         <div class="block-link">
           <router-link :to="{ name: 'shorts' }">
             Мини-видео
@@ -59,7 +86,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, watch } from "vue";
+import { computed, onMounted, watch, ref } from "vue";
 import { useAuthStore } from "/src/stores/authStore.js";
 import { useModalStore } from "/src/stores/modal.js";
 
@@ -70,6 +97,26 @@ const isAuthenticated = computed(() => authStore.isAuthenticated);
 const videos = computed(() => authStore.welcomeFeed || []);
 const isLoading = computed(() => authStore.isVideosLoading);
 
+// ===== КЭШ ПРЕВЬЮ =====
+// Храним blob-URL кадров: { videoId: blobUrl }
+const thumbnailCache = ref({});
+
+// Проверяем есть ли уже кэш
+const hasCachedThumbnails = computed(() => {
+  return Object.keys(thumbnailCache.value).length > 0;
+});
+
+// Счётчики загрузки (только для первого раза)
+const totalThumbnails = ref(0);
+const loadedThumbnails = ref(0);
+const hasErrorThumbnails = ref(0);
+
+const allThumbnailsLoaded = computed(() => {
+  if (videos.value.length === 0) return true;
+  if (totalThumbnails.value === 0) return false;
+  return (loadedThumbnails.value + hasErrorThumbnails.value) >= totalThumbnails.value;
+});
+
 const openLogin = () => {
   modalStore.openLogin();
 };
@@ -78,7 +125,6 @@ const openRegister = () => {
   modalStore.openRegister();
 };
 
-// Функция загрузки видео
 const loadVideos = async () => {
   if (isAuthenticated.value && videos.value.length === 0) {
     await authStore.fetchWelcomeFeed({ 
@@ -89,17 +135,101 @@ const loadVideos = async () => {
   }
 };
 
-// Загружаем при монтировании
+// ===== ЗАХВАТ КАДРА ИЗ ВИДЕО =====
+const captureFrame = (event, videoId) => {
+  const video = event.target;
+  
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 187;  // 11.688rem ≈ 187px
+    canvas.height = video.videoHeight || 247; // 15.438rem ≈ 247px
+    
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Конвертируем в blob и кэшируем
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        thumbnailCache.value[videoId] = url;
+        onThumbnailLoaded();
+      }
+    }, 'image/jpeg', 0.85);
+    
+  } catch (e) {
+    console.error('Ошибка захвата кадра:', e);
+    onThumbnailError();
+  }
+};
+
+// ===== КЭШИРОВАНИЕ ГОТОВОЙ КАРТИНКИ =====
+const cacheImage = (event, videoId) => {
+  // Если это уже blob-URL — просто считаем загруженным
+  if (thumbnailCache.value[videoId]) {
+    onThumbnailLoaded();
+    return;
+  }
+  
+  // Иначе копируем src в кэш
+  thumbnailCache.value[videoId] = event.target.src;
+  onThumbnailLoaded();
+};
+
+const resetCounters = () => {
+  totalThumbnails.value = 0;
+  loadedThumbnails.value = 0;
+  hasErrorThumbnails.value = 0;
+};
+
+const initThumbnails = () => {
+  resetCounters();
+  
+  // Считаем только те, что ещё не в кэше
+  const needLoad = videos.value.slice(0, 10).filter(v => {
+    const hasCache = thumbnailCache.value[v.id];
+    const hasSource = v.cdnUrl || v.thumbnail || v.posterUrl;
+    return !hasCache && hasSource;
+  });
+  
+  totalThumbnails.value = needLoad.length;
+  
+  // Если всё уже в кэше — сразу считаем загруженным
+  if (needLoad.length === 0) {
+    loadedThumbnails.value = 1;
+  }
+};
+
+const onThumbnailLoaded = () => {
+  loadedThumbnails.value++;
+};
+
+const onThumbnailError = () => {
+  hasErrorThumbnails.value++;
+};
+
+// ===== ОЧИСТКА КЭША ПРИ УНИЧТОЖЕНИИ (опционально) =====
+// const cleanupCache = () => {
+//   Object.values(thumbnailCache.value).forEach(url => {
+//     if (url.startsWith('blob:')) URL.revokeObjectURL(url);
+//   });
+//   thumbnailCache.value = {};
+// };
+
 onMounted(() => {
   loadVideos();
 });
 
-// Загружаем видео сразу после входа
 watch(isAuthenticated, (newValue, oldValue) => {
   if (newValue && !oldValue) {
     loadVideos();
   }
 });
+
+watch(videos, () => {
+  if (videos.value.length > 0) {
+    initThumbnails();
+  }
+}, { immediate: true });
 </script>
 
 <style scoped>
@@ -116,12 +246,49 @@ watch(isAuthenticated, (newValue, oldValue) => {
   position: relative;
 }
 
-/* ===== AUTH OVERLAY (как на скриншоте) ===== */
+/* ===== ПЛАШКА ЗАГРУЗКИ ===== */
+.thumbnails-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.95);
+  z-index: 5;
+  gap: 1rem;
+}
+
+.loading-spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid #e5e7eb;
+  border-top-color: #64a07a;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.thumbnails-loading p {
+  font-size: 1rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ===== AUTH OVERLAY ===== */
 .auth-overlay {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 15.438rem; /* Такая же высота как у видео */
+  min-height: 15.438rem;
   background: #fff;
 }
 
@@ -185,7 +352,8 @@ watch(isAuthenticated, (newValue, oldValue) => {
   text-align: center;
   transform: rotate(180deg);
 }
-/* ===== VIDEO SECTION (без изменений) ===== */
+
+/* ===== VIDEO SECTION ===== */
 .mini-video-section {
   display: flex;
   align-items: center;

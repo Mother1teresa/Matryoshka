@@ -11,7 +11,7 @@ watch(
   () => auth.user?.id,
   (newId) => {
     if (newId) {
-      // auth.fetchUserNotifications();
+      auth.fetchUserNotifications();  // ← раскомментировано
     } else {
       auth.allNotifications = [];
     }
@@ -32,11 +32,11 @@ watch(
         <div class="notification-content">
           <h3 class="notification-title">{{ item.title }}</h3>
           <p class="notification-text">{{ item.message }}</p>
-          <p v-if="item.reason" class="reason">
+          <!-- <p v-if="item.reason" class="reason">
             Причина: {{ item.reason }}
-          </p>
+          </p> -->
+
         </div>
-        
         <div class="notification-meta">
           <span class="date">{{ item.date }}</span>
           <span class="time">{{ item.time }}</span>

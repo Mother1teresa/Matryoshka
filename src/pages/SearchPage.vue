@@ -2,52 +2,50 @@
   <Header />
   <section class="search-page">
     <div class="container">
-      <!-- Заголовок результатов -->
-      <div v-if="lastQuery" class="results-title">
-        <h1>Результаты по «{{ lastQuery }}»</h1>
-        <span v-if="!loading">{{ videos.length }} {{ declension(videos.length) }}</span>
-      </div>
-
-      <!-- Загрузка -->
-      <div v-if="loading" class="loading">
-        <div class="spinner"></div>
-        <p>Поиск...</p>
-      </div>
-
-      <!-- Нет результатов -->
-      <div v-else-if="searched && !videos.length" class="empty">
-        <p class="empty-title">Ничего не найдено</p>
-        <p class="empty-text">По запросу «{{ lastQuery }}» видео не найдены</p>
-      </div>
-
-      <!-- Сетка видео -->
-      <div v-else-if="videos.length" class="videos-grid">
-        <div
-          v-for="video in videos"
-          :key="video.id"
-          class="video-card"
-          @click="goToVideo(video.id)"
-        >
-          <div class="video-thumb">
-            <video
-              :src="video.cdnUrl"
-              preload="metadata"
-              muted
-              playsinline
-            ></video>
-            <div class="play-overlay">
-              <svg width="2.5rem" height="2.5rem" viewBox="0 0 24 24" fill="white">
-                <path d="M8 5v14l11-7z"/>
-              </svg>
+        <div class="search-page_content">
+            <!-- Заголовок результатов -->
+            <div v-if="lastQuery" class="results-title">
+                <h1>Результаты по «{{ lastQuery }}»</h1>
+                <span v-if="!loading">{{ videos.length }} {{ declension(videos.length) }}</span>
             </div>
-          </div>
-          <p class="video-title">{{ video.description || 'Без названия' }}</p>
-          <div class="video-author">
-            <img :src="video.author?.avatar || '/src/assets/img/mask-avatar.png'" />
-            <span>{{ video.author?.name || video.author?.username || 'Пользователь' }}</span>
-          </div>
+
+            <!-- Загрузка -->
+            <div v-if="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Поиск...</p>
+            </div>
+
+            <!-- Нет результатов -->
+            <div v-else-if="searched && !videos.length" class="empty">
+                <p class="empty-title">Ничего не найдено</p>
+                <p class="empty-text">По запросу «{{ lastQuery }}» видео не найдены</p>
+            </div>
+
+            <!-- Сетка видео -->
+            <div v-else-if="videos.length" class="videos-grid">
+                <div
+                v-for="video in videos"
+                :key="video.id"
+                class="video-card"
+                @click="goToVideo(video.id)"
+                >
+                <div class="video-thumb">
+                    <video
+                    :src="video.cdnUrl"
+                    preload="metadata"
+                    muted
+                    playsinline
+                    ></video>
+                    <div class="play-overlay">
+                    <svg width="2.5rem" height="2.5rem" viewBox="0 0 24 24" fill="white">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
+                    </div>
+                </div>
+                <p class="video-title">{{ video.description || 'Без названия' }}</p>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
   </section>
 </template>
@@ -90,8 +88,9 @@ const doSearch = async (q) => {
   videos.value = [];
 
   try {
-    await auth.fetchVideos();
-    const all = auth.allVideos || [];
+    // Загружаем welcomeFeed — это видео ВСЕХ пользователей
+    await auth.fetchWelcomeFeed({ page: 0, size: 50, seed: 0.5 });
+    const all = auth.welcomeFeed || [];
 
     const qLow = q.toLowerCase();
     videos.value = all.filter((v) => {
@@ -142,7 +141,11 @@ watch(
   margin: 0 auto;
   padding: 0 1rem;
 }
-
+.search-page_content{
+    padding: 1.563rem 1.375rem;
+    background: #FFFFFF;
+    border-radius: 0.625rem;
+}
 /* Заголовок */
 .results-title {
   display: flex;
@@ -206,8 +209,8 @@ watch(
 /* Сетка */
 .videos-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(17.5rem, 1fr));
-  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr));
+  gap: 0.8rem;
 }
 
 .video-card {
@@ -226,9 +229,10 @@ watch(
 
 .video-thumb {
   position: relative;
-  aspect-ratio: 9 / 16;
+  aspect-ratio: 9 / 12;
   background: #000;
   overflow: hidden;
+  height: 22.813rem;
 }
 
 .video-thumb video {
@@ -253,7 +257,7 @@ watch(
 }
 
 .video-title {
-  padding: 0.875rem 1rem 0.25rem;
+  padding: 0.625rem 1rem 0.625rem 1rem;
   font-size: 0.9375rem;
   font-weight: 500;
   margin: 0;
