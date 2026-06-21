@@ -66,14 +66,10 @@ export const useAuthStore = defineStore("auth", {
         return;
       }
       try {
-        // Делаем запрос к эндпоинту согласно OpenAPI спецификации
         const res = await api.get(`/chat/users/${this.user.id}/rooms`);
         const rooms = res.data?.rooms || [];
-        // Преобразуем структуру бэкенда под структуру вашего компонента Vue
         this.allChats = rooms.map((room) => {
-          // Ищем собеседника (пользователя, чей ID отличается от текущего)
           const opponent = room.users?.find((u) => u.id !== this.user.id) || {};
-          // Достаем последнее сообщение из истории комнаты
           const lastMsg = room.messages && room.messages.length > 0
             ? room.messages[room.messages.length - 1]
             : null;
@@ -301,9 +297,10 @@ export const useAuthStore = defineStore("auth", {
           comments: video.comments || [],
           author: {
             id: video.author?.id || '',
-            name: video.author?.username || 'Пользователь',
-            username: video.author?.username || '',
-            avatar: '/src/assets/img/mask-avatar.png'
+            name: video.author?.name || 'Пользователь',
+            username: video.author?.name || '',
+            avatar: video.author?.avatar || './assets/img/mask-avatar.png',
+            rating: video.author?.rating
           }
         };
       } catch (e) {
@@ -356,7 +353,6 @@ export const useAuthStore = defineStore("auth", {
         throw e;
       }
     },
-
     async unlikeVideo(videoId) {
       const video = this.welcomeFeed.find(v => v.id === videoId);
       if (video && !video.isLikedByMe) return;
@@ -399,13 +395,13 @@ export const useAuthStore = defineStore("auth", {
     },
     async fetchFavorites(userId) {
       try {
-        const response = await api.get(`/feed/video/${userId}`);
-        // Возвращаем массив избранных видео
-        const data = response.data?.[0];
-        if (data?.favoriteVideos) {
-          // Загружаем детали каждого видео
+        const response = await api.get(`/feed/video/favorites/${userId}`);  // ← исправлено
+        const data = response.data || [];
+        // favorites возвращает массив объектов с favoriteVideos
+        const favoritesData = Array.isArray(data) ? data[0] : data;
+        if (favoritesData?.favoriteVideos?.length) {
           const videos = [];
-          for (const videoId of data.favoriteVideos) {
+          for (const videoId of favoritesData.favoriteVideos) {
             const video = await this.fetchVideo(videoId);
             if (video) videos.push(video);
           }
@@ -616,7 +612,6 @@ export const useAuthStore = defineStore("auth", {
               rating: userData?.rating || 0,
               deals: userData?.dealsCount || 0
             },
-            likesCount: v.likesCount || 0,
             viewsCount: v.viewsCount || 0,
             commentsCount: v.commentsCount || 0, 
             commentsDisabled: v.commentsDisabled || false

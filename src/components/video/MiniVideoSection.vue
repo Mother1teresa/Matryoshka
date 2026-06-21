@@ -63,7 +63,13 @@ const openRegister = () => modalStore.openRegister();
 
 const loadVideos = async () => {
   if (isAuthenticated.value && videos.value.length === 0) {
-    await authStore.fetchWelcomeFeed({ page: 0, size: 10, seed: 0.5 });
+    await authStore.fetchWelcomeFeed({ page: 0, size: 10, seed: Math.random() });
+    
+    // Обогатить первые видео данными автора
+    const enrichPromises = videos.value.slice(0, 6).map(v => 
+      authStore.enrichVideo(v.id).catch(() => {})
+    );
+    await Promise.all(enrichPromises);
   }
 };
 

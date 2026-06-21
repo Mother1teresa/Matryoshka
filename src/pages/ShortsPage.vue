@@ -91,16 +91,16 @@
                   <div class="author-card">
                     <router-link :to="video.author?.id ? { name: 'SellerPage', params: { id: video.author.id } } : ''" class="author-link" :event="video.author?.id ? 'click' : ''">
                       <div class="author-main">
-                        <img  :src="video.author?.avatar || '/assets/img/mask-avatar.png'"  class="author-ava" />
+                        <img  :src="video.author?.avatar || './img/users/mask-avatar.png'"  class="author-ava" />
                         <div class="author-details">
-                          <p class="name">{{ video.author?.username || '\u00A0' }}</p>
+                          <p class="name">{{ video.author?.name || '\u00A0' }}</p>
                         </div>
                       </div>
                     </router-link>
                     <div class="rating-badge">
                       <span class="rating-num">{{ video.author?.rating || 0 }}</span>
                       <span class="stars">★★★★★</span>
-                      <button  class="btn-primary"  :class="{'is-active': subStore.isSubscribed(video.author?.id)}" @click="onSubscribeClick(video.author?.id)">
+                      <button  class="btn-primary" v-if="video.author?.id" :class="{'is-active': subStore.isSubscribed(video.author?.id)}" @click="onSubscribeClick(video.author?.id)">
                         {{ subStore.isSubscribed(video.author?.id) ? "Отписаться" : "Подписаться" }}
                       </button>
                     </div>
@@ -118,7 +118,7 @@
                 </div>
                 <div v-else class="comments-list">
                   <div v-for="comment in video.comments" :key="comment.id" class="comment-item">
-                    <img :src="comment.author?.avatar || '/assets/img/mask-avatar.png'"/>
+                    <img :src="comment.author?.avatar || './img/users/mask-avatar.png'"/>
                     <div class="c-body">
                       <div class="c-header">
                         <span class="c-user">{{ comment.author?.name || "Пользователь" }}</span>
@@ -126,7 +126,7 @@
                       </div>
                       <div class="c-header_footer">
                         <span class="c-date">{{ formatDate(comment.createdAt) }}</span>
-                        <span v-if="!isOwnComment(comment)" class="c-reply" @click="startReply(comment)">
+                        <span v-if="!isOwnComment(comment)" class="c-reply" @click.stop.prevent="startReply(comment)"">
                           Ответить
                         </span>
                       </div>
@@ -210,8 +210,6 @@ let scrollTimeout = null;
 const videos = computed(() => authStore.welcomeFeed || []);
 const isLoading = computed(() => authStore.isVideosLoading);
 const selectedVideoId = computed(() => route.params.id);
-
-
 const onVideoReady = (video) => {
   video.isVideoReady = true;
   video.hasError = false;
@@ -225,7 +223,6 @@ const onVideoError = (video) => {
   video.isVideoReady = false;
   video.isPlaying = false;
 };
-
 const toggleMute = () => {
   isMuted.value = !isMuted.value;
   videoRefs.value.forEach(el => {
@@ -240,7 +237,6 @@ const checkAuthAndRun = (action, message = "Авторизуйтесь, чтоб
   }
   action();
 };
-
 const addView = async (video) => {
   if (!video?.id) return;
   try {
@@ -251,7 +247,6 @@ const addView = async (video) => {
     console.error('Ошибка просмотра:', e);
   }
 };
-
 const onLikeClick = async (video) => {
   if (!video) return;
   checkAuthAndRun(async () => {
@@ -262,14 +257,12 @@ const onLikeClick = async (video) => {
     }
   });
 };
-
 const onSubscribeClick = (authorId) => {
   checkAuthAndRun(async () => {
     const isNowSubscribed = await subStore.toggle(authorId);
     notify(isNowSubscribed ? "Вы подписались на автора" : "Вы отписались от автора");
   });
 };
-
 const onWriteClick = (video) => {
   if (!video?.author?.id) return;
   checkAuthAndRun(async () => {
@@ -281,7 +274,6 @@ const onWriteClick = (video) => {
     }
   }, "Войдите, чтобы написать сообщение");
 };
-
 const postComment = async (video, parentId = null) => {
   if (!newComment.value.trim() || !video) return;
   checkAuthAndRun(async () => {
@@ -295,7 +287,7 @@ const postComment = async (video, parentId = null) => {
       const newItem = {
         id: `temp-${Date.now()}`,
         author: {
-          name: authStore.user?.username || "Вы",
+          name: authStore.user?.name || "Вы",
           avatar: authStore.userAvatar || "/src/assets/img/mask-avatar.png",
         },
         text: newComment.value.trim(),
@@ -333,32 +325,39 @@ const postComment = async (video, parentId = null) => {
     }
   });
 };
-
+const isReplyMode = ref(false);
 const startReply = (comment) => {
-  const currentUserName = authStore.user?.username || "Вы";
+  const currentUserName = authStore.user?.name || "Вы";
   if (comment.author?.name === currentUserName) {
     notify("Нельзя ответить на своё сообщение");
     return;
   }
+  isReplyMode.value = true;
   replyTo.value = {
     commentId: comment.id,
     userName: comment.author?.name || "Пользователь",
   };
+  if (scrollContainer.value) {
+    scrollContainer.value.style.scrollSnapType = 'none';
+  }
   nextTick(() => {
-    document.querySelector(".footer-input input")?.focus();
+    const input = document.querySelector(".footer-input input");
+    if (input) input.focus({ preventScroll: true });  // без скролла
   });
 };
-
 const cancelReply = () => {
   replyTo.value = null;
   newComment.value = "";
+  isReplyMode.value = false;
+  if (scrollContainer.value) {
+    scrollContainer.value.style.scrollSnapType = 'y mandatory';
+  }
 };
-
 const setVideoRef = (el) => {
   if (el && !videoRefs.value.includes(el)) videoRefs.value.push(el);
 };
-
 const handleKeyDown = (e) => {
+  if (isReplyMode.value) return;
   if (e.key === "ArrowDown") {
     e.preventDefault();
     scrollNext();
@@ -367,24 +366,20 @@ const handleKeyDown = (e) => {
     scrollPrev();
   }
 };
-
 const scrollNext = () => {
   if (scrollContainer.value) {
     scrollContainer.value.scrollBy({ top: window.innerHeight, behavior: "smooth" });
   }
 };
-
 const scrollPrev = () => {
   if (scrollContainer.value) {
     scrollContainer.value.scrollBy({ top: -window.innerHeight, behavior: "smooth" });
   }
 };
-
 const scrollToVideo = (id) => {
   const el = videoRefs.value.find((v) => v.dataset.id === id);
   if (el) el.scrollIntoView({ behavior: 'auto' });
 };
-
 // ===== ПРЕДЗАГРУЗКА ВИДЕО =====
 const preloadVideos = () => {
   videos.value.forEach(video => {
@@ -396,27 +391,21 @@ const preloadVideos = () => {
     document.head.appendChild(preloadLink);
   });
 };
-
 const initObserver = () => {
   const observer = new IntersectionObserver(
     (entries) => {
+      if (isReplyMode.value) return;
       entries.forEach((entry) => {
         const videoId = entry.target.dataset.id;
         const video = videos.value.find(v => v.id === videoId);
         
         if (entry.isIntersecting) {
-          // [ИСПРАВЛЕНО] Сбрасываем таймаут при смене видео
           clearTimeout(scrollTimeout);
-          
-          // Устанавливаем активное видео и скроллинг
           activeVideoId.value = videoId;
           isScrolling.value = true;
-          
-          // Сбрасываем isScrolling через 300ms
           scrollTimeout = setTimeout(() => {
             isScrolling.value = false;
           }, 300);
-          
           if (!video?.hasError) {
             entry.target.play().catch(err => {
               if (err.name === 'NotAllowedError' && !isMuted.value) {
@@ -426,16 +415,12 @@ const initObserver = () => {
               }
             });
           }
-          
-          // Сбрасываем isPlaying у других видео
           videos.value.forEach(v => {
             if (v.id !== videoId) v.isPlaying = false;
           });
-          
           if (video && !video.isDetailsLoaded) {
-            authStore.enrichVideo(videoId).catch(() => {});
+            authStore.enrichVideo(videoId);
           }
-          
           addView(video);
           router.replace({ name: "shorts", params: { id: videoId } });
         } else {
@@ -447,12 +432,11 @@ const initObserver = () => {
     },
     { threshold: 0.6 },
   );
-  
   videoRefs.value.forEach((v) => observer.observe(v));
 };
 
 const isOwnComment = (comment) => {
-  const currentUserName = authStore.user?.username || "Вы";
+  const currentUserName = authStore.user?.name || "Вы";
   if (comment.author?.name === currentUserName) return true;
   if (comment.author?.id && authStore.user?.id) {
     return String(comment.author.id) === String(authStore.user.id);
@@ -481,8 +465,9 @@ const openShareModal = (video) => {
 const copyToClipboard = async () => {
   try {
     await navigator.clipboard?.writeText(shareLink.value);
-    activeVideoId.value = videoId;
-    isScrolling.value = true;
+    // activeVideoId.value = videoId;
+    // isScrolling.value = true;
+    isCopied.value = true;
     clearTimeout(copyTimeout);
     copyTimeout = setTimeout(() => isCopied.value = false, 2000);
   } catch {
@@ -495,6 +480,7 @@ const isOwnVideo = (video) => {
   return String(video.author.id) === String(authStore.user.id);
 };
 const handleScroll = () => {
+  if (isReplyMode.value) return;
   isScrolling.value = true;
   clearTimeout(scrollTimeout);
   scrollTimeout = setTimeout(() => {
