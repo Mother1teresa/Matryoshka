@@ -23,27 +23,27 @@
           </div>
         </div>
       </div>
-      <nav class="profile-nav" :class="{ 'hidden-content': isCollapsed }">
-        <router-link to="/profile/info">Мои данные</router-link>
-        <router-link to="/profile/advertisements">Мои объявления</router-link>
-        <router-link to="/profile/videos">Мои ролики</router-link>
-        <router-link to="/profile/create-ad">Создать объявление</router-link>
-        <a class="locked-link" @click="openMaintenance">Заказы</a>
-        <a class="locked-link" @click="openMaintenance">Отклики</a>
-        <a class="locked-link" @click="openMaintenance">Резюме</a>
-        <router-link to="/profile/favorites">Избранное</router-link>
-        <a class="locked-link" @click="openMaintenance">Приглашайте друзей</a>
-        <router-link to="/profile/messages">Сообщения
+      <nav class="profile-nav">
+        <router-link to="/profile/info" :class="{ 'hidden-content': isCollapsed }">Мои данные</router-link >
+        <router-link to="/profile/advertisements":class="{ 'hidden-content': isCollapsed }">Мои объявления</router-link>
+        <router-link to="/profile/videos":class="{ 'hidden-content': isCollapsed }">Мои ролики</router-link>
+        <router-link to="/profile/create-ad":class="{ 'hidden-content': isCollapsed }">Создать объявление</router-link>
+        <a class="locked-link" @click="openMaintenance":class="{ 'hidden-content': isCollapsed }">Заказы</a>
+        <a class="locked-link" @click="openMaintenance":class="{ 'hidden-content': isCollapsed }">Отклики</a>
+        <a class="locked-link" @click="openMaintenance":class="{ 'hidden-content': isCollapsed }">Резюме</a>
+        <router-link to="/profile/favorites":class="{ 'hidden-content': isCollapsed }">Избранное</router-link>
+        <a class="locked-link" @click="openMaintenance":class="{ 'hidden-content': isCollapsed }">Приглашайте друзей</a>
+        <router-link to="/profile/messages":class="{ 'hidden-content': isCollapsed }">Сообщения
           <span v-if="auth.unreadMessagesCount > 0" class="badge-count">
             {{ auth.unreadMessagesCount }}
           </span>
         </router-link>
-        <router-link to="/profile/notifications">Уведомления
+        <router-link to="/profile/notifications":class="{ 'hidden-content': isCollapsed }">Уведомления
           <span v-if="auth.unreadNotificationsCount > 0" class="badge-count">
             {{ auth.unreadNotificationsCount }}
           </span>
         </router-link>
-        <router-link to="/profile/reviews">Отзывы</router-link>
+        <router-link to="/profile/reviews":class="{ 'hidden-content': isCollapsed }">Отзывы</router-link>
         <div class="nav-footer">
           <button class="edu-btn" @click="handleEduClick">Обучение</button>
         </div>
@@ -79,7 +79,8 @@ const unavailableRoutes = [
 
 <style scoped>
 .profile-layout {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr;
   gap: 2.5rem;
   min-height: 100vh;
   width: 94.5rem;
@@ -101,13 +102,14 @@ const unavailableRoutes = [
 .hidden-content {
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s ease; 
+  transition: opacity 0.05s ease;
 }
 
 .profile-sidebar:not(.is-collapsed) .hidden-content {
   opacity: 1;
+  transform: translateY(0);
   pointer-events: auto;
-  transition: opacity 0.4s ease 0.1s; 
+  transition: opacity 0.4s ease-out 4s; 
 }
 .profile-main {
   flex: 1;
@@ -154,7 +156,48 @@ const unavailableRoutes = [
   width: 9.563rem;
   padding: 1.125rem 0 1.125rem 1rem;
   border-radius: 1.875rem;
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
 }
+
+.nav-footer::after {
+  content: '';
+  position: absolute;
+  top: -1.8rem;
+  right: -2rem;
+  width: 4.75rem;
+  height: 4.75rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 200 200'%3E%3Cdefs%3E%3CradialGradient id='glow' cx='50%25' cy='50%25' r='50%25'%3E%3Cstop offset='0%25' stop-color='%23ccffcc'/%3E%3Cstop offset='30%25' stop-color='%2300ff00'/%3E%3Cstop offset='100%25' stop-color='%2300ff00' stop-opacity='0'/%3E%3C/radialGradient%3E%3Cfilter id='blur'%3E%3CfeGaussianBlur in='SourceGraphic' stdDeviation='2'/%3E%3C/filter%3E%3C/defs%3E%3Ccircle cx='100' cy='100' r='60' fill='url(%23glow)' opacity='0.8'/%3E%3Cg stroke='%2333ff33' stroke-width='2' stroke-linecap='round' filter='url(%23blur)'%3E%3Cline x1='100' y1='20' x2='100' y2='180'/%3E%3Cline x1='20' y1='100' x2='180' y2='100'/%3E%3Cline x1='50' y1='50' x2='150' y2='150'/%3E%3Cline x1='150' y1='50' x2='50' y2='150'/%3E%3C/g%3E%3Cpath d='M100 85 L105 100 L100 115 L95 100 Z' fill='white'/%3E%3Cpath d='M85 100 L100 95 L115 100 L100 105 Z' fill='white'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  pointer-events: none;
+  z-index: 10;
+  transition: transform 0.3s ease;
+}
+
+/* При наведении на кнопку — звезда шевелится */
+.nav-footer:hover::after {
+  animation: starWiggle 0.6s ease-in-out infinite;
+}
+
+@keyframes starWiggle {
+  0%, 100% {
+    transform: rotate(0deg) scale(1);
+  }
+  25% {
+    transform: rotate(8deg) scale(1.05);
+  }
+  50% {
+    transform: rotate(-6deg) scale(1.08);
+  }
+  75% {
+    transform: rotate(4deg) scale(1.05);
+  }
+}
+
 .user-avatar {
   width: 3.688rem;
   height: 3.938rem;

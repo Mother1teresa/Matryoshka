@@ -47,13 +47,11 @@
                   <span>{{ video.likes || 0 }}</span>
                 </button>
               </div>
-
               <div v-if="!isOwnVideo(video)" class="v-action">
                 <button class="action-btn" @click="onWriteClick(video)">
                   <img src="/src/assets/img/mes.svg" />
                 </button>
               </div>
-
               <div class="v-action">
                 <button class="action-btn" @click="openShareModal(video)">
                   <img src="/src/assets/img/icons/lin.svg" alt="share" />
@@ -287,7 +285,7 @@ const postComment = async (video, parentId = null) => {
       const newItem = {
         id: `temp-${Date.now()}`,
         author: {
-          name: authStore.user?.name || "Вы",
+          name: authStore.user?.username || authStore.user?.name || "Пользователь",
           avatar: authStore.userAvatar || "/src/assets/img/mask-avatar.png",
         },
         text: newComment.value.trim(),
@@ -327,8 +325,8 @@ const postComment = async (video, parentId = null) => {
 };
 const isReplyMode = ref(false);
 const startReply = (comment) => {
-  const currentUserName = authStore.user?.name || "Вы";
-  if (comment.author?.name === currentUserName) {
+  if (!authStore.user?.id || !comment.author?.id) return;
+  if (String(comment.author.id) === String(authStore.user.id)) {
     notify("Нельзя ответить на своё сообщение");
     return;
   }
@@ -436,12 +434,8 @@ const initObserver = () => {
 };
 
 const isOwnComment = (comment) => {
-  const currentUserName = authStore.user?.name || "Вы";
-  if (comment.author?.name === currentUserName) return true;
-  if (comment.author?.id && authStore.user?.id) {
-    return String(comment.author.id) === String(authStore.user.id);
-  }
-  return false;
+  if (!comment.author?.id || !authStore.user?.id) return false;
+  return String(comment.author.id) === String(authStore.user.id);
 };
 
 const closeShorts = () => {

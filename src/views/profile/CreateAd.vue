@@ -1074,8 +1074,7 @@ watch(() => form.attributes.brand, (newBrand) => {
   margin: 0;
 }
 .create-ad-page { padding-bottom: 2.857rem; background: #FFFFFF; padding: 0.938rem 2.188rem 2.938rem 2.188rem;
-margin-top: 2.438rem; border-radius: 1.875rem; height: 97%;
-    margin-bottom: 2rem;}
+margin-top: 2.438rem; border-radius: 1.875rem;}
 
 .create-ad-page .page-title{
   text-align: start;
