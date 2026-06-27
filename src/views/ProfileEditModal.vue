@@ -140,7 +140,9 @@ const handleSave = async () => {
       employeeRole: (isCompany.value && showEmployee.value) ? form.employeeRole?.value : ""
     };
     const response = await api.put("/profile/update", updateData);
-    if (response.data.user){ auth.login(response.data)};
+    if (response.data?.user) {
+      auth.login(response.data.user);
+    }
 
     await auth.fetchProfile();
     emit("refresh");

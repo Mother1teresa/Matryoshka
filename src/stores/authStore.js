@@ -506,17 +506,23 @@ export const useAuthStore = defineStore("auth", {
       return await api.post("/auth/sendsms", { phone });
     },
     async fetchProfile() {
+      console.log('user:', this.user);
+      console.log('user.id:', this.user?.id);
+      
       if (!this.user?.id) {
         console.error("Нет user.id для fetchProfile");
         return;
       }
+      
       try {
-        const res = await api.get(`/profile/${this.user.id}`); // ← добавили /{userId}
+        const res = await api.get(`/profile/${this.user.id}`);
         const userData = res.data;
+        
         if (userData) {
-          this.user = { ...this.user, ...userData };
+          this.user = { ...this.user, ...userData, id: this.user.id };
           this.isAuthenticated = true;
           this.saveToStorage();
+          
           const regionStore = useRegionModalStore();
           if (userData.city) {
             regionStore.setRegion(
