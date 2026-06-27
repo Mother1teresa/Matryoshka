@@ -89,7 +89,7 @@
                   <div class="author-card">
                     <router-link :to="video.author?.id ? { name: 'SellerPage', params: { id: video.author.id } } : ''" class="author-link" :event="video.author?.id ? 'click' : ''">
                       <div class="author-main">
-                        <img  :src="video.author?.avatar || './img/users/mask-avatar.png'"  class="author-ava" />
+                        <img  :src="video.author?.avatar || '/img/users/mask-avatar.png'"  class="author-ava" />
                         <div class="author-details">
                           <p class="name">{{ video.author?.name || '\u00A0' }}</p>
                         </div>
@@ -98,9 +98,10 @@
                     <div class="rating-badge">
                       <span class="rating-num">{{ video.author?.rating || 0 }}</span>
                       <span class="stars">★★★★★</span>
-                      <button  class="btn-primary" v-if="video.author?.id" :class="{'is-active': subStore.isSubscribed(video.author?.id)}" @click="onSubscribeClick(video.author?.id)">
+                      <button v-if="!isOwnVideo(video) && video.author?.id" class="btn-primary" :class="{'is-active': subStore.isSubscribed(video.author?.id)}" @click="onSubscribeClick(video.author?.id)">
                         {{ subStore.isSubscribed(video.author?.id) ? "Отписаться" : "Подписаться" }}
                       </button>
+                      <span v-else class="own-badge">Это ваш ролик</span>
                     </div>
                   </div>
                 </div>
@@ -116,7 +117,7 @@
                 </div>
                 <div v-else class="comments-list">
                   <div v-for="comment in video.comments" :key="comment.id" class="comment-item">
-                    <img :src="comment.author?.avatar || './img/users/mask-avatar.png'"/>
+                    <img :src="comment.author?.avatar || '/public/img/users/mask-avatar.png'"/>
                     <div class="c-body">
                       <div class="c-header">
                         <span class="c-user">{{ comment.author?.name || "Пользователь" }}</span>
@@ -286,7 +287,7 @@ const postComment = async (video, parentId = null) => {
         id: `temp-${Date.now()}`,
         author: {
           name: authStore.user?.username || authStore.user?.name || "Пользователь",
-          avatar: authStore.userAvatar || "/src/assets/img/mask-avatar.png",
+          avatar: authStore.userAvatar || "/public/img/users/mask-avatar.png",
         },
         text: newComment.value.trim(),
         createdAt: new Date().toISOString(),
@@ -340,7 +341,7 @@ const startReply = (comment) => {
   }
   nextTick(() => {
     const input = document.querySelector(".footer-input input");
-    if (input) input.focus({ preventScroll: true });  // без скролла
+    if (input) input.focus({ preventScroll: true });
   });
 };
 const cancelReply = () => {
@@ -1127,4 +1128,5 @@ onUnmounted(() => {
   justify-content: space-between;
 }
 .reply-banner button{font-size: 1rem; width: 1.3rem;}
+.own-badge {font-size: 0.75rem;color: #999;padding: 0.438rem 1rem;}
 </style>

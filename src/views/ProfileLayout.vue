@@ -222,6 +222,11 @@ const unavailableRoutes = [
   font-size: 1.2rem;
   font-weight: 400;
   white-space: normal;
+  width: 7rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
 }
 .logo {
   position: relative;

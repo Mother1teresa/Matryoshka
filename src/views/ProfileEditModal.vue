@@ -133,13 +133,14 @@ const handleSave = async () => {
       phone: form.phone.replace(/\D/g, ''),
       city: form.city,
       description: form.description,
+      address: form.address || '',
       type: form.type,
       avatarUrl: finalAvatarUrl, 
       employeeName: (isCompany.value && showEmployee.value) ? form.employeeName : "",
       employeeRole: (isCompany.value && showEmployee.value) ? form.employeeRole?.value : ""
     };
     const response = await api.put("/profile/update", updateData);
-    if (response.data.user) auth.login(response.data.user);
+    if (response.data.user){ auth.login(response.data)};
 
     await auth.fetchProfile();
     emit("refresh");

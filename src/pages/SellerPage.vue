@@ -183,7 +183,6 @@ const sellerVideos = ref([]);
 const loadSellerVideos = async (sellerId) => {
   if (!sellerId) return;
   try {
-    // Загружаем видео конкретного продавца, не трогая allVideos текущего пользователя
     const videos = await auth.fetchVideosByUser(sellerId);
     sellerVideos.value = videos.map(v => ({
       ...v,

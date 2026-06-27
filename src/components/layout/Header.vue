@@ -409,7 +409,7 @@ const handleCreateVideo = () => {
 }
 .header__right-true {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.8rem;
 }
 .header__right-icons {
   display: flex;
@@ -461,7 +461,13 @@ const handleCreateVideo = () => {
 .profile-wrapper {
   position: relative;
 }
-
+.profile-wrapper .profile span{
+  width: 4.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+}
 /* стрелка */
 .arr-profil {
   transition: transform 0.3s;

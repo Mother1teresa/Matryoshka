@@ -177,7 +177,7 @@ const onPublish = async () => {
 
 <style scoped>
 .video-upload-container { padding: 1.25rem; margin: 0 auto; }
-.back-nav { cursor: pointer; display: flex; align-items: center; gap: 10px; margin-bottom: 30px; font-size: 18px; color: #333; }
+.back-nav { cursor: pointer; display: flex; align-items: center; gap: 0.625rem; margin-bottom: 1.875rem; font-size: 1.125rem; color: #333; }
 .upload-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 3.5rem; }
 .upload-zone {
   border: 2px dashed #ccc;
@@ -212,7 +212,7 @@ const onPublish = async () => {
   font-size: 1.2rem;
   height: 20.688rem;
 }
-.empty-stub { background: #fdf2f2; padding: 0.75rem; border-radius: 0.625rem; color: #b91c1c; font-size: 0.875rem; border: 1px solid #fee2e2; }
+.empty-stub { background: #fdf2f2; padding: 0.75rem; border-radius: 0.625rem; color: #b91c1c; font-size: 1rem; border: 1px solid #fee2e2; }
 .publish-btn { background: var(--btn-bg); color: white; width: 23.563rem; height: 3.5rem; padding: 0.875rem 0; border-radius: 1.25rem; font-size: 1.5rem; border: none; cursor: pointer; text-align: center;}
 .publish-btn:disabled { background: #ccc; cursor: not-allowed; }
 .status-screen { height: 60vh; display: flex; justify-content: center; align-items: center; }

@@ -299,7 +299,7 @@ export const useAuthStore = defineStore("auth", {
             id: video.author?.id || '',
             name: video.author?.name || 'Пользователь',
             username: video.author?.name || '',
-            avatar: video.author?.avatar || './assets/img/mask-avatar.png',
+            avatar: video.author?.avatar || '/public/img/users/mask-avatar.png',
             rating: video.author?.rating
           }
         };
@@ -506,9 +506,13 @@ export const useAuthStore = defineStore("auth", {
       return await api.post("/auth/sendsms", { phone });
     },
     async fetchProfile() {
+      if (!this.user?.id) {
+        console.error("Нет user.id для fetchProfile");
+        return;
+      }
       try {
-        const res = await api.get("/profile/");
-        const userData = res.data.user;
+        const res = await api.get(`/profile/${this.user.id}`); // ← добавили /{userId}
+        const userData = res.data;
         if (userData) {
           this.user = { ...this.user, ...userData };
           this.isAuthenticated = true;
