@@ -151,13 +151,12 @@ const handleSave = async () => {
       phone: form.phone.replace(/\D/g, ''),
       city: form.city,
       description: form.description || '',
-      address: form.address || '',
       avatarUrl: finalAvatarUrl,
       type: form.type,
       employeeName: (isCompany.value && showEmployee.value) ? form.employeeName : '',
       employeeRole: (isCompany.value && showEmployee.value) ? form.employeeRole?.value : ''
     };
-    
+    console.log("Отправляем:", JSON.stringify(updateData, null, 2));
     await api.put("/profile/update", updateData);
     
     await auth.fetchProfile();
