@@ -114,26 +114,20 @@ watch(() => props.isOpen, (newVal) => {
   if (newVal && auth.user) {
     Object.keys(errors).forEach(key => delete errors[key]);
     
-    // 🛠️ Очищаем данные перед копированием
     const cleanUser = { ...auth.user };
     
-    // Если avatarUrl — объект, берём строку
-    if (typeof cleanUser.avatarUrl === 'object' && cleanUser.avatarUrl !== null) {
-      cleanUser.avatarUrl = cleanUser.avatarUrl.cdnUrl || cleanUser.avatarUrl.url || null;
-    }
-    
-    // Очищаем JsonNullable мусор
+    // Очищаем JsonNullable мусор в пустую строку
     Object.keys(cleanUser).forEach(key => {
-      if (typeof cleanUser[key] === 'string' && cleanUser[key].includes('JsonNullable@')) {
-        cleanUser[key] = null;
+      if (cleanUser[key] && cleanUser[key].includes && cleanUser[key].includes('JsonNullable@')) {
+        cleanUser[key] = '';
       }
     });
     
     Object.assign(form, cleanUser);
     form.type = auth.user.type || 'PRIVATE_PERSON';
-    form.employeeRole = roleOptions.find(opt => opt.value === auth.user.employeeRole) || null;
-    form.avatarFile = null;
-    form.avatar = cleanUser.avatarUrl || cleanUser.avatar;
+    form.employeeRole = roleOptions.find(opt => opt.value === auth.user.employeeRole) || '';
+    form.avatarFile = '';
+    form.avatar = cleanUser.avatarUrl?.cdnUrl || cleanUser.avatarUrl?.url || cleanUser.avatarUrl;
     showEmployee.value = !!auth.user.employeeName;
   } else if (!newVal) {
     revokeBlob();
@@ -146,51 +140,36 @@ const handleSave = async () => {
   
   try {
     let finalAvatarUrl = auth.user?.avatarUrl;
-    if (typeof finalAvatarUrl === 'object' && finalAvatarUrl !== null) {
-      finalAvatarUrl = finalAvatarUrl.cdnUrl || finalAvatarUrl.url || null;
-    }
     if (form.avatarFile) {
-      console.log("Начинаем загрузку новой аватарки...");
       const uploadedUrl = await uploadToMediaService(form.avatarFile, "avatar", {});
-      if (uploadedUrl) {
-        finalAvatarUrl = uploadedUrl;
-        console.log("URL успешно получен:", finalAvatarUrl);
-      }
+      if (uploadedUrl) finalAvatarUrl = uploadedUrl;
     }
-    const cleanValue = (val) => {
-      if (typeof val === 'string' && val.includes('JsonNullable@')) return null;
-      if (val === '') return null;
-      return val;
-    };
-    // Обновляем данные профиля
+    
     const updateData = {
-      id: auth.user?.id,
       name: form.name,
-      email: cleanValue(form.email),
+      email: form.email || '',
       phone: form.phone.replace(/\D/g, ''),
       city: form.city,
-      description: cleanValue(form.description),
-      address: cleanValue(form.address),
+      description: form.description || '',
+      address: form.address || '',
+      avatarUrl: finalAvatarUrl,
       type: form.type,
-      avatarUrl: typeof finalAvatarUrl === 'string' ? finalAvatarUrl : null,
-      employeeName: (isCompany.value && showEmployee.value) ? form.employeeName : null,
-      employeeRole: (isCompany.value && showEmployee.value) ? form.employeeRole?.value : null
+      employeeName: (isCompany.value && showEmployee.value) ? form.employeeName : '',
+      employeeRole: (isCompany.value && showEmployee.value) ? form.employeeRole?.value : ''
     };
-    console.log("Отправляем:", JSON.stringify(updateData, null, 2));
-    const response = await api.put("/profile/update", updateData);
-    if (response.data?.user) {
-      auth.login(response.data.user);
-    }
-
+    
+    await api.put("/profile/update", updateData);
+    
     await auth.fetchProfile();
     emit("refresh");
     emit("close");
     notify("Профиль успешно обновлен!");
   } catch (e) {
-    console.error("Ошибка сохранения профиля:", e.response?.data || e.message);
+    console.error("Ошибка сохранения:", e.response?.data || e.message);
     notify(e.response?.data?.message || "Не удалось сохранить профиль", "error");
   } finally {
-    isSubmitting.value = false;}
+    isSubmitting.value = false;
+  }
 };
 watch(() => form.city, (val) => { if (!val) return; form.city = val.charAt(0).toUpperCase() + val.slice(1); clearTimeout(cityTimeout); cityTimeout = setTimeout(async () => { const validCity = await auth.validateAndFormatCity(val); 
   if (validCity) form.city = validCity; }, 1000);});
