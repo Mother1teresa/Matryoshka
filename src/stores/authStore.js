@@ -673,10 +673,13 @@ export const useAuthStore = defineStore("auth", {
       }
     },
     async fetchUserNotifications() {
-      if (!this.user?.id) return;
+      if (!this.user?.id) {
+        console.log("Невозможно загрузить уведомления: user.id отсутствует");
+        return;
+      }
       this.isNotificationsLoading = true;
       try {
-        const res = await api.get('/notifications');  // ← новый эндпоинт
+        const res = await api.get('/notifications');
         this.allNotifications = (res.data || []).map(n => ({
           id: n.id,
           title: 'Уведомление',           // API не отдаёт title, можно захардкодить или парсить из message

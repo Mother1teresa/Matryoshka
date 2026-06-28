@@ -69,12 +69,16 @@ watch(
   async (isAuth) => {
     if (isAuth) {
       try {
+        // Проверяем наличие user.id перед всеми запросами
+        if (!auth.user?.id) {
+          console.warn("isAuthenticated=true, но user.id отсутствует");
+          return;
+        }
+        
         await auth.fetchProfile();
         auth.fetchUserChats();
         auth.fetchUserNotifications();
-        if (auth.user?.id) {
-          await reviewStore.initUserReviews(auth.user.id);
-        }
+        await reviewStore.initUserReviews(auth.user.id);
         startGlobalPolling();
       } catch (e) {
         console.error('Ошибка инициализации пользователя:', e);

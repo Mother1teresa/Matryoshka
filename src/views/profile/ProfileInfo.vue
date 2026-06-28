@@ -61,11 +61,14 @@ const userRating = computed(() => reviewStore.getRatingById(auth.user?.id));
 const userStars = computed(() => reviewStore.renderStars(userRating.value));
 
 const fetchUserData = async () => {
+  if (!auth.user?.id) {
+    console.log("user.id ещё не загружен, пропускаем");
+    return;
+  }
+  
   try {
     await auth.fetchProfile();
-    if (auth.user?.id) {
-      await reviewStore.fetchReviewsBySeller(auth.user.id);
-    }
+    await reviewStore.fetchReviewsBySeller(auth.user.id);
   } catch (e) {
     console.error("Не удалось загрузить данные профиля:", e);
   }
