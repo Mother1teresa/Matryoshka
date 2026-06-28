@@ -67,6 +67,10 @@ provide('openMaintenance', () => {
 watch(
   () => auth.isAuthenticated,
   async (isAuth) => {
+    console.log("=== WATCH TRIGGERED ===");
+    console.log("isAuth:", isAuth);
+    console.log("auth.user:", auth.user);
+    console.log("auth.user?.id:", auth.user?.id);
     if (isAuth) {
       try {
         // Проверяем наличие user.id перед всеми запросами

@@ -8,8 +8,14 @@ import { useRegionModalStore } from "/src/stores/regionModal.js";
 export const useAuthStore = defineStore("auth", {
   state: () => {
     const saved = localStorage.getItem("auth");
+    console.log("=== AUTH STATE INIT ===");
+    console.log("Raw localStorage:", saved);
     try {
       const data = saved ? JSON.parse(saved) : null;
+      console.log("Parsed data:", data);
+      console.log("user:", data?.user);
+      console.log("user.id:", data?.user?.id);
+      console.log("isAuthenticated:", data?.isAuthenticated);
       return {
         isAuthenticated: data?.isAuthenticated || false,
         user: data?.user || null,
@@ -21,6 +27,7 @@ export const useAuthStore = defineStore("auth", {
         isNotificationsLoading: false,
       };
     } catch {
+      console.error("Auth parse error:", e);
       localStorage.removeItem("auth");
       return {
         isAuthenticated: false,
