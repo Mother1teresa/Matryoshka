@@ -114,21 +114,23 @@ watch(() => props.isOpen, (newVal) => {
   if (newVal && auth.user) {
     Object.keys(errors).forEach(key => delete errors[key]);
     
-    const cleanUser = { ...auth.user };
+    // Берём user как есть из authStore (уже очищенный от мусора в fetchProfile)
+    const user = auth.user;
     
-    // Очищаем JsonNullable мусор в пустую строку
-    Object.keys(cleanUser).forEach(key => {
-      if (cleanUser[key] && cleanUser[key].includes && cleanUser[key].includes('JsonNullable@')) {
-        cleanUser[key] = '';
-      }
+    Object.assign(form, {
+      name: user.name || '',
+      phone: user.phone || '',
+      email: user.email || '',
+      city: user.city || '',
+      type: user.type || 'PRIVATE_PERSON',
+      description: user.description || '',
+      avatar: user.avatarUrl || '',
+      avatarFile: null,
+      employeeName: user.employeeName || '',
+      employeeRole: roleOptions.find(opt => opt.value === user.employeeRole) || ''
     });
     
-    Object.assign(form, cleanUser);
-    form.type = auth.user.type || 'PRIVATE_PERSON';
-    form.employeeRole = roleOptions.find(opt => opt.value === auth.user.employeeRole) || '';
-    form.avatarFile = '';
-    form.avatar = cleanUser.avatarUrl?.cdnUrl || cleanUser.avatarUrl?.url || cleanUser.avatarUrl;
-    showEmployee.value = !!auth.user.employeeName;
+    showEmployee.value = !!user.employeeName;
   } else if (!newVal) {
     revokeBlob();
   }
@@ -139,23 +141,28 @@ const handleSave = async () => {
   isSubmitting.value = true;
   
   try {
-    let finalAvatarUrl = auth.user?.avatarUrl;
+    let finalAvatarUrl = auth.user?.avatarUrl || '';
+    
     if (form.avatarFile) {
-      const uploadedUrl = await uploadToMediaService(form.avatarFile, "avatar", {});
-      if (uploadedUrl) finalAvatarUrl = uploadedUrl;
+      const uploaded = await uploadToMediaService(form.avatarFile, "avatar", {});
+      if (uploaded) {
+        finalAvatarUrl = uploaded.cdnUrl || uploaded.url || uploaded;
+      }
     }
     
+    // Берём все поля из auth.user, заменяем только изменённые
     const updateData = {
       name: form.name,
-      email: form.email || '',
+      email: form.email,
       phone: form.phone.replace(/\D/g, ''),
       city: form.city,
-      description: form.description || '',
+      description: form.description,
       avatarUrl: finalAvatarUrl,
       type: form.type,
       employeeName: (isCompany.value && showEmployee.value) ? form.employeeName : '',
       employeeRole: (isCompany.value && showEmployee.value) ? form.employeeRole?.value : ''
     };
+    
     console.log("Отправляем:", JSON.stringify(updateData, null, 2));
     await api.put("/profile/update", updateData);
     

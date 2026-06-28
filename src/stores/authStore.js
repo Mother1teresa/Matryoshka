@@ -523,30 +523,28 @@ export const useAuthStore = defineStore("auth", {
         console.error("Нет user.id для fetchProfile");
         return;
       }
-      
       try {
         const res = await api.get(`/profile/${this.user.id}`);
         const rawData = res.data;
         
-        // 🛠️ Очищаем JsonNullable мусор
+        // 🛠️ Очищаем JsonNullable мусор в пустую строку (не null!)
         const cleanValue = (val) => {
-          if (typeof val === 'string' && val.includes('JsonNullable@')) return null;
+          if (val && val.includes && val.includes('JsonNullable@')) return '';
           return val;
         };
         
-        // 🛠️ Фикс avatarUrl: объект → строка
+        // 🛠️ Фикс avatarUrl: объект → строка (не null!)
         const cleanAvatar = (avatar) => {
+          if (avatar && avatar.cdnUrl) return avatar.cdnUrl;
+          if (avatar && avatar.url) return avatar.url;
           if (typeof avatar === 'string') return avatar;
-          if (avatar && typeof avatar === 'object') {
-            return avatar.cdnUrl || avatar.url || null;
-          }
-          return null;
+          return '';
         };
         
         const userData = {
           ...rawData,
           email: cleanValue(rawData.email),
-          address: cleanValue(rawData.address),
+          city: cleanValue(rawData.city),
           description: cleanValue(rawData.description),
           avatarUrl: cleanAvatar(rawData.avatarUrl),
           avatar: cleanAvatar(rawData.avatarUrl),
