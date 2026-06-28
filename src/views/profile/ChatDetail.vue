@@ -129,6 +129,7 @@ const sendMessage = async () => {
   try {
     await auth.sendMessage(route.params.id, text);
     await fetchMessages();
+    await auth.fetchUserChats();
   } catch (e) {
     messages.value = messages.value.filter(m => m.id !== tempMsg.id);
     newMessage.value = text;

@@ -65,7 +65,6 @@ const fetchUserData = async () => {
     console.log("user.id ещё не загружен, пропускаем");
     return;
   }
-  
   try {
     await auth.fetchProfile();
     await reviewStore.fetchReviewsBySeller(auth.user.id);

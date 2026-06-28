@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { router } from "/src/router/index.js";
-import { api } from "/src/api/api.js";
+import { api, resetRefreshCooldown  } from "/src/api/api.js";
 import { useFavoritesStore } from "/src/stores/favoritesStore.js";
 import maskAvatar from "/src/assets/img/mask-avatar.png";
 import { useRegionModalStore } from "/src/stores/regionModal.js";
@@ -26,7 +26,7 @@ export const useAuthStore = defineStore("auth", {
         allNotifications: [],
         isNotificationsLoading: false,
       };
-    } catch {
+    } catch (e){
       console.error("Auth parse error:", e);
       localStorage.removeItem("auth");
       return {
@@ -458,6 +458,7 @@ export const useAuthStore = defineStore("auth", {
       this.isAuthenticated = true;
       this.user = { ...user };
       this.saveToStorage();
+      resetRefreshCooldown();
     },
     async loginAPI({ email, password }) {
       try {
@@ -494,7 +495,12 @@ export const useAuthStore = defineStore("auth", {
     },
     async refreshToken() {
       try {
-        await api.post("/auth/refresh");
+        const res = await api.post("/auth/refresh");
+        // Если сервер возвращает новый токен:
+        if (res.data?.token) {
+          this.user = { ...this.user, token: res.data.token };
+          this.saveToStorage(); // обновляем localStorage
+        }
         return true;
       } catch (e) {
         throw e;
@@ -513,9 +519,6 @@ export const useAuthStore = defineStore("auth", {
       return await api.post("/auth/sendsms", { phone });
     },
     async fetchProfile() {
-      console.log('user:', this.user);
-      console.log('user.id:', this.user?.id);
-      
       if (!this.user?.id) {
         console.error("Нет user.id для fetchProfile");
         return;
@@ -523,11 +526,34 @@ export const useAuthStore = defineStore("auth", {
       
       try {
         const res = await api.get(`/profile/${this.user.id}`);
-        const userData = res.data;
+        const rawData = res.data;
+        
+        // 🛠️ Очищаем JsonNullable мусор
+        const cleanValue = (val) => {
+          if (typeof val === 'string' && val.includes('JsonNullable@')) return null;
+          return val;
+        };
+        
+        // 🛠️ Фикс avatarUrl: объект → строка
+        const cleanAvatar = (avatar) => {
+          if (typeof avatar === 'string') return avatar;
+          if (avatar && typeof avatar === 'object') {
+            return avatar.cdnUrl || avatar.url || null;
+          }
+          return null;
+        };
+        
+        const userData = {
+          ...rawData,
+          email: cleanValue(rawData.email),
+          address: cleanValue(rawData.address),
+          description: cleanValue(rawData.description),
+          avatarUrl: cleanAvatar(rawData.avatarUrl),
+          avatar: cleanAvatar(rawData.avatarUrl),
+        };
         
         if (userData) {
           this.user = { ...this.user, ...userData, id: this.user.id };
-          this.isAuthenticated = true;
           this.saveToStorage();
           
           const regionStore = useRegionModalStore();
@@ -713,8 +739,6 @@ export const useAuthStore = defineStore("auth", {
       ["auth", "region", "regionCoords", "products"].forEach((key) =>
         localStorage.removeItem(key),
       );
-      useFavoritesStore().clear();
-
       const favStore = useFavoritesStore();
       favStore.clear();
 

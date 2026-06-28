@@ -43,6 +43,26 @@ const reviewStore = useReviewStore();
 const productStore = useProductStore();
 const maintenanceRef = ref(null);
 let globalPolling = null;
+let isInitializing = false;
+let lastPollTime = 0;
+
+const doPoll = () => {
+  const now = Date.now();
+  
+  // Не чаще чем раз в 5 секунд, даже если вызвали из разных мест
+  if (now - lastPollTime < 5000) {
+    console.log('⏭️ Пропуск дубля, прошло', now - lastPollTime, 'мс');
+    return;
+  }
+  
+  lastPollTime = now;
+  
+  if (!document.hidden && auth.isAuthenticated && auth.user?.id) {
+    console.log('📡 Poll:', new Date().toLocaleTimeString());
+    auth.fetchUserChats().catch(console.error);
+    auth.fetchUserNotifications().catch(console.error);
+  }
+};
 
 const stopGlobalPolling = () => {
   if (globalPolling) {
@@ -50,55 +70,59 @@ const stopGlobalPolling = () => {
     globalPolling = null;
   }
 };
+
 const startGlobalPolling = () => {
-  stopGlobalPolling();
-  globalPolling = setInterval(() => {
-    auth.fetchUserChats();
-    auth.fetchUserNotifications();
-  }, 30000);
+  if (globalPolling) return;
+  
+  doPoll();
+  globalPolling = setInterval(doPoll, 300000);
 };
-provide('openMaintenance', () => {
-  if (maintenanceRef.value) {
-    maintenanceRef.value.open();
-  } else {
-    console.log("MaintenanceModal еще не инициализирован");
+
+const handleVisibilityChange = () => {
+  if (!document.hidden && auth.isAuthenticated) {
+    doPoll();
   }
+};
+
+provide('openMaintenance', () => {
+  maintenanceRef.value?.open() ?? console.log("MaintenanceModal ещё не инициализирован");
 });
 watch(
   () => auth.isAuthenticated,
   async (isAuth) => {
-    console.log("=== WATCH TRIGGERED ===");
-    console.log("isAuth:", isAuth);
-    console.log("auth.user:", auth.user);
-    console.log("auth.user?.id:", auth.user?.id);
-    if (isAuth) {
-      try {
-        // Проверяем наличие user.id перед всеми запросами
-        if (!auth.user?.id) {
-          console.warn("isAuthenticated=true, но user.id отсутствует");
-          return;
-        }
-        
-        await auth.fetchProfile();
-        auth.fetchUserChats();
-        auth.fetchUserNotifications();
-        await reviewStore.initUserReviews(auth.user.id);
-        startGlobalPolling();
-      } catch (e) {
-        console.error('Ошибка инициализации пользователя:', e);
-      }
-    } else {
+    if (!isAuth) {
       stopGlobalPolling();
+      return;
+    }
+    if (isInitializing) return;
+    isInitializing = true;
+    
+    try {
+      await auth.fetchProfile();
+      
+      if (!auth.user?.id) {
+        console.warn("isAuthenticated=true, но user.id отсутствует");
+        return;
+      }
+      startGlobalPolling();
+      await reviewStore.initUserReviews(auth.user.id);
+      
+    } catch (e) {
+      console.error('Ошибка инициализации пользователя:', e);
+    } finally {
+      isInitializing = false;
     }
   },
   { immediate: true }
 );
+onMounted(() => {
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  productStore.fetchAdverts();
+});
+
 onUnmounted(() => {
   stopGlobalPolling();
-});
-onMounted(() => {
-  console.log('App.vue onMounted')
-  productStore.fetchAdverts();
+  document.removeEventListener('visibilitychange', handleVisibilityChange);
 });
 </script>
 

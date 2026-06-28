@@ -110,7 +110,35 @@ const revokeBlob = () => { if (currentBlobUrl.value) { URL.revokeObjectURL(curre
 const onFileChange = (e) => { const file = e.target.files[0]; if (file) { revokeBlob(); form.avatar = URL.createObjectURL(file); form.avatarFile = file;}};
 const validate = () => { Object.keys(errors).forEach(key => delete errors[key]); if (!form.name?.trim()) errors.name = true; if (!form.city?.trim()) errors.city = true; if (isCompany.value && showEmployee.value) { if (!form.employeeName?.trim()) errors.employeeName = true; if (!form.employeeRole) errors.employeeRole = true;} if (Object.keys(errors).length > 0) { notify("Пожалуйста, заполните обязательные поля", "error"); return false;}return true;};
 
-watch(() => props.isOpen, (newVal) => { if (newVal && auth.user) { Object.keys(errors).forEach(key => delete errors[key]); Object.assign(form, auth.user); form.type = auth.user.type || 'PRIVATE_PERSON';  form.employeeRole = roleOptions.find(opt => opt.value === auth.user.employeeRole) || null; form.avatarFile = null; form.avatar = auth.user.avatarUrl || auth.user.avatar; showEmployee.value = !!auth.user.employeeName; } else if (!newVal) { revokeBlob();}});
+watch(() => props.isOpen, (newVal) => {
+  if (newVal && auth.user) {
+    Object.keys(errors).forEach(key => delete errors[key]);
+    
+    // 🛠️ Очищаем данные перед копированием
+    const cleanUser = { ...auth.user };
+    
+    // Если avatarUrl — объект, берём строку
+    if (typeof cleanUser.avatarUrl === 'object' && cleanUser.avatarUrl !== null) {
+      cleanUser.avatarUrl = cleanUser.avatarUrl.cdnUrl || cleanUser.avatarUrl.url || null;
+    }
+    
+    // Очищаем JsonNullable мусор
+    Object.keys(cleanUser).forEach(key => {
+      if (typeof cleanUser[key] === 'string' && cleanUser[key].includes('JsonNullable@')) {
+        cleanUser[key] = null;
+      }
+    });
+    
+    Object.assign(form, cleanUser);
+    form.type = auth.user.type || 'PRIVATE_PERSON';
+    form.employeeRole = roleOptions.find(opt => opt.value === auth.user.employeeRole) || null;
+    form.avatarFile = null;
+    form.avatar = cleanUser.avatarUrl || cleanUser.avatar;
+    showEmployee.value = !!auth.user.employeeName;
+  } else if (!newVal) {
+    revokeBlob();
+  }
+});
 const handleSave = async () => {
   if (isSubmitting.value) return;
   if (!validate()) return; 
@@ -118,6 +146,9 @@ const handleSave = async () => {
   
   try {
     let finalAvatarUrl = auth.user?.avatarUrl;
+    if (typeof finalAvatarUrl === 'object' && finalAvatarUrl !== null) {
+      finalAvatarUrl = finalAvatarUrl.cdnUrl || finalAvatarUrl.url || null;
+    }
     if (form.avatarFile) {
       console.log("Начинаем загрузку новой аватарки...");
       const uploadedUrl = await uploadToMediaService(form.avatarFile, "avatar", {});
@@ -126,19 +157,26 @@ const handleSave = async () => {
         console.log("URL успешно получен:", finalAvatarUrl);
       }
     }
+    const cleanValue = (val) => {
+      if (typeof val === 'string' && val.includes('JsonNullable@')) return null;
+      if (val === '') return null;
+      return val;
+    };
     // Обновляем данные профиля
     const updateData = {
+      id: auth.user?.id,
       name: form.name,
-      email: form.email,
+      email: cleanValue(form.email),
       phone: form.phone.replace(/\D/g, ''),
       city: form.city,
-      description: form.description,
-      address: form.address || '',
+      description: cleanValue(form.description),
+      address: cleanValue(form.address),
       type: form.type,
-      avatarUrl: finalAvatarUrl, 
-      employeeName: (isCompany.value && showEmployee.value) ? form.employeeName : "",
-      employeeRole: (isCompany.value && showEmployee.value) ? form.employeeRole?.value : ""
+      avatarUrl: typeof finalAvatarUrl === 'string' ? finalAvatarUrl : null,
+      employeeName: (isCompany.value && showEmployee.value) ? form.employeeName : null,
+      employeeRole: (isCompany.value && showEmployee.value) ? form.employeeRole?.value : null
     };
+    console.log("Отправляем:", JSON.stringify(updateData, null, 2));
     const response = await api.put("/profile/update", updateData);
     if (response.data?.user) {
       auth.login(response.data.user);
@@ -244,7 +282,7 @@ watch(() => form.name, (val) => { if (val?.trim()) delete errors.name; });
 }
 .form-group label {
   width: 9.25rem;
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   color: #333;
 }
 .form-group input,

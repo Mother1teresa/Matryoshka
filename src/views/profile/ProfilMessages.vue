@@ -4,7 +4,6 @@ import { useAuthStore } from "/src/stores/authStore.js";
 import { notify } from "/src/utils/notify";
 const auth = useAuthStore();
 const isLoading = ref(true);
-let pollingTimer = null;
 const chats = computed(() => auth.allChats);
 
 const loadChats = async (isSilent = false) => {
@@ -17,17 +16,8 @@ const loadChats = async (isSilent = false) => {
     isLoading.value = false;
   }
 };
-const startPolling = () => {
-  pollingTimer = setInterval(() => {
-    loadChats(true); 
-  }, 10000);
-};
 onMounted(() => {
   loadChats(); 
-  startPolling(); 
-});
-onUnmounted(() => {
-  if (pollingTimer) clearInterval(pollingTimer);
 });
 </script>
 
