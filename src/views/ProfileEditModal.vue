@@ -14,7 +14,6 @@
             </div>
             <span class="user-id">ID {{ auth.user?.id }}</span>
           </div>
-
           <div class="form-grid">
             <div class="form-group">
               <label>{{ isCompany ? "Название" : "Имя" }}</label>
@@ -33,7 +32,6 @@
               <input v-model="form.city" :class="{ 'error-field': errors.city }" type="text" placeholder="Ваш город" class="local-prof"/>
             </div>
           </div>
-
           <div v-if="isCompany" class="employee-section">
             <label class="checkbox-container auth-forgot__check">
               <input type="checkbox" v-model="showEmployee" />
@@ -46,7 +44,6 @@
                 <label>Имя сотрудника</label>
                 <input v-model="form.employeeName" :class="{ 'error-field': errors.employeeName }" type="text" placeholder="Введите имя"/>
               </div>
-
               <div class="form-group">
                 <label>Должность</label>
                 <div class="multiselect-container" :class="{ 'error-field': errors.employeePosition }">
@@ -66,7 +63,6 @@
               </div>
             </div>
           </div>
-
           <div class="type-toggle">
             <button :class="{ active: form.type === 'PRIVATE_PERSON' }" @click="form.type = 'PRIVATE_PERSON'">
               Частное лицо
@@ -75,12 +71,10 @@
               Компания
             </button>
           </div>
-
           <div class="about-field">
             <h3>{{ isCompany ? "О компании" : "Об исполнителе" }}</h3>
             <textarea v-model="form.description" placeholder="Расскажите почему клиенты должны выбрать именно вас..."></textarea>
           </div>
-
           <div class="block__save-button">
             <button class="save-button" @click="handleSave" :disabled="isSubmitting">
               {{ isSubmitting ? "Сохранение..." : "Сохранить" }}
@@ -110,45 +104,13 @@ let cityTimeout = null;
 const errors = reactive({});
 const currentBlobUrl = ref(null);
 
-// ID редактируемого сотрудника (null = ещё не создан)
+// ID редактируемого сотрудника
 const editingEmployeeId = ref(null);
-
-const form = reactive({
-  name: "",
-  phone: "",
-  email: "",
-  city: "",
-  type: "PRIVATE_PERSON",
-  description: "",
-  avatar: "",
-  avatarFile: null,
-  employeeName: "",
-  employeePosition: null,
-});
-
-const roleOptions = [
-  { name: "Менеджер по продажам", value: "manager" },
-  { name: "Директор", value: "director" },
-  { name: "Сотрудник", value: "employee" }
-];
-
+const form = reactive({name: "",phone: "",email: "",city: "",type: "PRIVATE_PERSON",description: "",avatar: "",avatarFile: null,employeeName: "",employeePosition: null,});
+const roleOptions = [{ name: "Менеджер по продажам", value: "manager" },{ name: "Директор", value: "director" },{ name: "Сотрудник", value: "employee" }];
 const isCompany = computed(() => form.type === "COMPANY");
-
-const revokeBlob = () => {
-  if (currentBlobUrl.value) {
-    URL.revokeObjectURL(currentBlobUrl.value);
-    currentBlobUrl.value = null;
-  }
-};
-
-const onFileChange = (e) => {
-  const file = e.target.files[0];
-  if (file) {
-    revokeBlob();
-    form.avatar = URL.createObjectURL(file);
-    form.avatarFile = file;
-  }
-};
+const revokeBlob = () => {if (currentBlobUrl.value) {URL.revokeObjectURL(currentBlobUrl.value);currentBlobUrl.value = null;}};
+const onFileChange = (e) => {const file = e.target.files[0];if (file) {revokeBlob();form.avatar = URL.createObjectURL(file);form.avatarFile = file;}};
 
 const validate = () => {
   Object.keys(errors).forEach(key => delete errors[key]);
@@ -175,7 +137,6 @@ watch(() => props.isOpen, (newVal) => {
 
     const user = auth.user;
     const firstEmployee = user.employees?.[0];
-
     // Запоминаем ID сотрудника при открытии модалки
     editingEmployeeId.value = firstEmployee?.id || null;
 
@@ -205,7 +166,7 @@ const handleSave = async () => {
   isSubmitting.value = true;
 
   try {
-    // 1. СНАЧАЛА работаем со сотрудником (если нужно)
+    //  если данные реально изменились
     if (isCompany.value && showEmployee.value && form.employeeName.trim()) {
       const employeePayload = {
         name: form.employeeName.trim(),
@@ -213,29 +174,38 @@ const handleSave = async () => {
         position: form.employeePosition?.value || null
       };
 
-      if (editingEmployeeId.value) {
-        // Обновляем существующего
-        const updateEmployeeData = {
-          id: editingEmployeeId.value,
-          name: employeePayload.name,
-          role: employeePayload.role,
-          position: employeePayload.position
-        };
-        console.log("PUT /profile/update-employee:", JSON.stringify(updateEmployeeData, null, 2));
-        await api.put("/profile/update-employee", updateEmployeeData);
+      // Провереа
+      const firstEmployee = auth.user?.employees?.[0];
+      const hasChanges = !firstEmployee || 
+        firstEmployee.name !== employeePayload.name ||
+        firstEmployee.position !== employeePayload.position;
+
+      if (hasChanges) {
+        if (editingEmployeeId.value) {
+          // Обновляем существующего
+          const updateEmployeeData = {
+            id: editingEmployeeId.value,
+            name: employeePayload.name,
+            role: employeePayload.role,
+            position: employeePayload.position
+          };
+          console.log("PUT /profile/update-employee:", JSON.stringify(updateEmployeeData, null, 2));
+          await api.put("/profile/update-employee", updateEmployeeData);
+        } else {
+          // Создаём нового
+          const addEmployeeData = {
+            name: employeePayload.name,
+            role: employeePayload.role,
+            position: employeePayload.position
+          };
+          console.log("POST /profile/add-employee:", JSON.stringify(addEmployeeData, null, 2));
+          await api.post("/profile/add-employee", addEmployeeData);
+        }
       } else {
-        // Создаём нового
-        const addEmployeeData = {
-          name: employeePayload.name,
-          role: employeePayload.role,
-          position: employeePayload.position
-        };
-        console.log("POST /profile/add-employee:", JSON.stringify(addEmployeeData, null, 2));
-        await api.post("/profile/add-employee", addEmployeeData);
+        console.log("Сотрудник не изменился, пропускаем update-employee");
       }
     }
 
-    // 2. ПОТОМ обновляем профиль пользователя
     let finalAvatarUrl = auth.user?.avatarUrl || '';
     if (form.avatarFile) {
       const uploaded = await uploadToMediaService(form.avatarFile, "avatar", {});
@@ -258,8 +228,6 @@ const handleSave = async () => {
     await api.put("/profile/update", updateData);
 
     await new Promise(r => setTimeout(r, 500));
-
-    // 3. Финальное обновление данных
     await auth.fetchProfile();
     emit("refresh");
     emit("close");
@@ -272,42 +240,12 @@ const handleSave = async () => {
   }
 };
 
-watch(() => form.city, (val) => {
-  if (!val) return;
-  form.city = val.charAt(0).toUpperCase() + val.slice(1);
-  clearTimeout(cityTimeout);
-  cityTimeout = setTimeout(async () => {
-    const validCity = await auth.validateAndFormatCity(val);
-    if (validCity) form.city = validCity;
-  }, 1000);
-});
-
-watch(showEmployee, (val) => {
-  if (!val) {
-    form.employeeName = "";
-    form.employeePosition = null;
-    delete errors.employeeName;
-    delete errors.employeePosition;
-  }
-});
-
-watch(isCompany, (newVal) => {
-  if (!newVal) {
-    showEmployee.value = false;
-  }
-});
-
-watch(() => form.employeePosition, (val) => {
-  if (val) delete errors.employeePosition;
-});
-
-watch(() => form.name, (val) => {
-  if (val?.trim()) delete errors.name;
-});
-
-onBeforeUnmount(() => {
-  clearTimeout(cityTimeout);
-});
+watch(() => form.city, (val) => {if (!val) return;form.city = val.charAt(0).toUpperCase() + val.slice(1);clearTimeout(cityTimeout);cityTimeout = setTimeout(async () => {const validCity = await auth.validateAndFormatCity(val);if (validCity) form.city = validCity;}, 1000);});
+watch(showEmployee, (val) => {if (!val) {form.employeeName = "";form.employeePosition = null;delete errors.employeeName;delete errors.employeePosition;}});
+watch(isCompany, (newVal) => {if (!newVal) {showEmployee.value = false;}});
+watch(() => form.employeePosition, (val) => {if (val) delete errors.employeePosition;});
+watch(() => form.name, (val) => {if (val?.trim()) delete errors.name;});
+onBeforeUnmount(() => {clearTimeout(cityTimeout);});
 </script>
 
 <style scoped>

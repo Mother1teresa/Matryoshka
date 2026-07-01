@@ -57,7 +57,6 @@ import ProfileEditModal from '../ProfileEditModal.vue';
 const reviewStore = useReviewStore();
 const auth = useAuthStore();
 const isModalOpen = ref(false);
-
 const userRating = computed(() => reviewStore.getRatingById(auth.user?.id));
 const userStars = computed(() => reviewStore.renderStars(userRating.value));
 
@@ -73,34 +72,16 @@ const fetchUserData = async () => {
     console.error("Не удалось загрузить данные профиля:", e);
   }
 };
-
-// === Роль строго из auth.user.role (UserResponseDTO) ===
-const userRole = computed(() => {
-  return auth.user?.role;
-});
-
+const userRole = computed(() => {return auth.user?.role;});
 const positionMap = {
   'manager': 'Менеджер по продажам',
   'director': 'Директор',
   'employee': 'Сотрудник'
 };
 
-const getPositionName = (position) => {
-  if (!position) return '';
-  return positionMap[position] ? ` ${positionMap[position]}` : ` ${position}`;
-};
-
-onMounted(() => {
-  fetchUserData();
-});
-
-watch(isModalOpen, (newVal) => {
-  if (newVal) {
-    document.body.classList.add("overflow-mod");
-  } else {
-    document.body.classList.remove("overflow-mod");
-  }
-});
+const getPositionName = (position) => {if (!position) return '';return positionMap[position] ? ` ${positionMap[position]}` : ` ${position}`;};
+onMounted(() => {fetchUserData();});
+watch(isModalOpen, (newVal) => {if (newVal) {document.body.classList.add("overflow-mod");} else {document.body.classList.remove("overflow-mod");}});
 </script>
 <style scoped>
 .profile-container {
