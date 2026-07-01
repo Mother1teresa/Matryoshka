@@ -548,6 +548,7 @@ export const useAuthStore = defineStore("auth", {
           description: cleanValue(rawData.description),
           avatarUrl: cleanAvatar(rawData.avatarUrl),
           avatar: cleanAvatar(rawData.avatarUrl),
+          employees: rawData.employees || []
         };
         
         if (userData) {

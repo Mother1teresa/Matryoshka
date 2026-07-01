@@ -13,12 +13,12 @@
           <!-- reviewStore.renderStars(reviewStore.getRatingById(auth.user?.id)) -->
         </div>
         <p class="user-type">
-          {{ (auth.user?.type === 'COMPANY') ? 'Компания' : 'Частное лицо' }}
+          {{ (userRole  === 'COMPANY') ? 'Компания' : 'Частное лицо' }}
         </p>
       </div>
       <div class="user-info-list">
         <div class="info-row">
-          <span class="label">{{ (auth.user?.type === 'COMPANY') ? 'Название компании' : 'Имя' }}</span>
+          <span class="label">{{ (userRole  === 'COMPANY') ? 'Название компании' : 'Имя' }}</span>
           <span class="value">{{ auth.user?.name }}</span>
         </div>
         <div class="info-row">
@@ -33,10 +33,11 @@
           <span class="label">Город</span>
           <span class="value">{{ auth.user?.city || 'Не указан'}}</span>
         </div>
-        <div class="info-row" v-if="auth.user?.employeeName">
+        <div class="info-row" v-if="userRole === 'COMPANY' && auth.user?.employees?.[0]?.name">
           <span class="label">Сотрудник</span>
           <span class="value">
-            {{ auth.user.employeeName }} {{ auth.user.employeeRole ? `- ${auth.user.employeeRole}` : '' }}
+            {{ auth.user.employees[0].name }} 
+            {{ getPositionName(auth.user.employees[0].position) }}
           </span>
         </div>
       </div>
@@ -71,6 +72,20 @@ const fetchUserData = async () => {
   } catch (e) {
     console.error("Не удалось загрузить данные профиля:", e);
   }
+};
+const userRole = computed(() => {
+  // Сначала проверяем role у пользователя, если нет — берём из первого сотрудника
+  return auth.user?.role || auth.user?.employees?.[0]?.role || 'PRIVATE_PERSON';
+});
+const positionMap = {
+  'manager': 'Менеджер по продажам',
+  'director': 'Директор',
+  'employee': 'Сотрудник'
+};
+
+const getPositionName = (position) => {
+  if (!position) return '';
+  return positionMap[position] ? `- ${positionMap[position]}` : `- ${position}`;
 };
 onMounted(() => { fetchUserData(); });
 // watch(
