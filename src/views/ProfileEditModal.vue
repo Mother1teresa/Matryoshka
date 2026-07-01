@@ -1,10 +1,9 @@
 <template>
-  <Transition name="fade" >
+  <Transition name="fade">
     <div v-if="isOpen" class="modal-overlay" @click.self="$emit('close')">
       <div class="edit-modal">
         <button class="close-x" @click="$emit('close')">×</button>
         <div class="modal-body">
-          <!-- Фото и ID -->
           <div class="photo-section">
             <div class="avatar-wrapper" @click="$refs.fileInput.click()">
               <input type="file" ref="fileInput" @change="onFileChange" hidden />
@@ -15,11 +14,11 @@
             </div>
             <span class="user-id">ID {{ auth.user?.id }}</span>
           </div>
-          <!-- Поля ввода -->
+
           <div class="form-grid">
             <div class="form-group">
               <label>{{ isCompany ? "Название" : "Имя" }}</label>
-              <input v-model="form.name" :class="{ 'error-field': errors.name }" type="text" :placeholder=" isCompany ? 'Введите название компании' : 'Ваше имя'"/>
+              <input v-model="form.name" :class="{ 'error-field': errors.name }" type="text" :placeholder="isCompany ? 'Введите название компании' : 'Ваше имя'"/>
             </div>
             <div class="form-group readonly-field">
               <label>Телефон <span>(нельзя изменить)</span></label>
@@ -31,26 +30,29 @@
             </div>
             <div class="form-group">
               <label>Город</label>
-              <input v-model="form.city" :class="{ 'error-field': errors.city  }" type="text" placeholder="Ваш город" class="local-prof"/>
+              <input v-model="form.city" :class="{ 'error-field': errors.city }" type="text" placeholder="Ваш город" class="local-prof"/>
             </div>
           </div>
+
           <div v-if="isCompany" class="employee-section">
             <label class="checkbox-container auth-forgot__check">
               <input type="checkbox" v-model="showEmployee" />
               <span class="checkmark"></span>
               Добавить сотрудника
             </label>
+
             <div v-if="showEmployee" class="employee-inputs">
               <div class="form-group">
                 <label>Имя сотрудника</label>
-                <input  v-model="form.employeeName" :class="{ 'error-field': errors.employeeName }" type="text"  placeholder="Введите имя"/>
+                <input v-model="form.employeeName" :class="{ 'error-field': errors.employeeName }" type="text" placeholder="Введите имя"/>
               </div>
+
               <div class="form-group">
                 <label>Должность</label>
                 <div class="multiselect-container" :class="{ 'error-field': errors.employeePosition }">
                   <multiselect
                     v-model="form.employeePosition"
-                    :options="positionOptions"
+                    :options="roleOptions"
                     label="name"
                     track-by="value"
                     placeholder="Выберите должность"
@@ -64,21 +66,25 @@
               </div>
             </div>
           </div>
+
           <div class="type-toggle">
-            <button :class="{ active: form.role === 'PRIVATE_PERSON' }" @click="form.role = 'PRIVATE_PERSON'">
+            <button :class="{ active: form.type === 'PRIVATE_PERSON' }" @click="form.type = 'PRIVATE_PERSON'">
               Частное лицо
             </button>
-            <button :class="{ active: form.role === 'COMPANY' }" @click="form.role = 'COMPANY'">
+            <button :class="{ active: form.type === 'COMPANY' }" @click="form.type = 'COMPANY'">
               Компания
             </button>
           </div>
-          <!-- Описание -->
+
           <div class="about-field">
             <h3>{{ isCompany ? "О компании" : "Об исполнителе" }}</h3>
             <textarea v-model="form.description" placeholder="Расскажите почему клиенты должны выбрать именно вас..."></textarea>
           </div>
+
           <div class="block__save-button">
-            <button class="save-button" @click="handleSave" :disabled="isSubmitting">{{ isSubmitting ? "Сохранение..." : "Сохранить" }}</button>
+            <button class="save-button" @click="handleSave" :disabled="isSubmitting">
+              {{ isSubmitting ? "Сохранение..." : "Сохранить" }}
+            </button>
           </div>
         </div>
       </div>
@@ -86,7 +92,7 @@
   </Transition>
 </template>
 <script setup>
-import { ref, reactive, computed, watch, onBeforeUnmount  } from "vue";
+import { ref, reactive, computed, watch, onBeforeUnmount } from "vue";
 import { useAuthStore } from "/src/stores/authStore.js";
 import "vue-multiselect/dist/vue-multiselect.css";
 import Multiselect from "vue-multiselect";
@@ -97,62 +103,147 @@ import { notify } from "/src/utils/notify";
 const props = defineProps({ isOpen: Boolean });
 const emit = defineEmits(["close", "refresh"]);
 const auth = useAuthStore();
+
 const isSubmitting = ref(false);
 const showEmployee = ref(false);
 let cityTimeout = null;
 const errors = reactive({});
 const currentBlobUrl = ref(null);
-const form = reactive({ name: "", phone: "", email: "", city: "", role: "PRIVATE_PERSON", description: "", avatar: "", avatarFile: null, employeeName: "", employeePosition: null,});
-const positionOptions = [{ name: "Менеджер по продажам", value: "manager" },{ name: "Директор", value: "director" },{ name: "Сотрудник", value: "employee" }];
-const isCompany = computed(() => form.role === "COMPANY");
 
-const revokeBlob = () => { if (currentBlobUrl.value) { URL.revokeObjectURL(currentBlobUrl.value);currentBlobUrl.value = null;}};
-const onFileChange = (e) => { const file = e.target.files[0]; if (file) { revokeBlob(); form.avatar = URL.createObjectURL(file); form.avatarFile = file;}};
-const validate = () => { Object.keys(errors).forEach(key => delete errors[key]); if (!form.name?.trim()) errors.name = true; if (!form.city?.trim()) errors.city = true; if (isCompany.value && showEmployee.value) { if (!form.employeeName?.trim()) errors.employeeName = true; if (!form.employeePosition) errors.employeePosition = true;} if (Object.keys(errors).length > 0) { notify("Пожалуйста, заполните обязательные поля", "error"); return false;}return true;};
+// ID редактируемого сотрудника (null = ещё не создан)
+const editingEmployeeId = ref(null);
+
+const form = reactive({
+  name: "",
+  phone: "",
+  email: "",
+  city: "",
+  type: "PRIVATE_PERSON",
+  description: "",
+  avatar: "",
+  avatarFile: null,
+  employeeName: "",
+  employeePosition: null,
+});
+
+const roleOptions = [
+  { name: "Менеджер по продажам", value: "manager" },
+  { name: "Директор", value: "director" },
+  { name: "Сотрудник", value: "employee" }
+];
+
+const isCompany = computed(() => form.type === "COMPANY");
+
+const revokeBlob = () => {
+  if (currentBlobUrl.value) {
+    URL.revokeObjectURL(currentBlobUrl.value);
+    currentBlobUrl.value = null;
+  }
+};
+
+const onFileChange = (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    revokeBlob();
+    form.avatar = URL.createObjectURL(file);
+    form.avatarFile = file;
+  }
+};
+
+const validate = () => {
+  Object.keys(errors).forEach(key => delete errors[key]);
+
+  if (!form.name?.trim()) errors.name = true;
+  if (!form.city?.trim()) errors.city = true;
+
+  if (isCompany.value && showEmployee.value) {
+    if (!form.employeeName?.trim()) errors.employeeName = true;
+    if (!form.employeePosition) errors.employeePosition = true;
+  }
+
+  if (Object.keys(errors).length > 0) {
+    notify("Пожалуйста, заполните обязательные поля", "error");
+    return false;
+  }
+  return true;
+};
 
 watch(() => props.isOpen, (newVal) => {
   if (newVal && auth.user) {
     Object.keys(errors).forEach(key => delete errors[key]);
-    
+    revokeBlob();
+
     const user = auth.user;
     const firstEmployee = user.employees?.[0];
-    
+
+    // Запоминаем ID сотрудника при открытии модалки
+    editingEmployeeId.value = firstEmployee?.id || null;
+
     Object.assign(form, {
       name: user.name || '',
       phone: user.phone || '',
       email: user.email || '',
       city: user.city || '',
-      role: user.role || 'PRIVATE_PERSON',
+      type: user.role || 'PRIVATE_PERSON',
       description: user.description || '',
       avatar: user.avatarUrl || '',
       avatarFile: null,
       employeeName: firstEmployee?.name || '',
-      employeePosition: positionOptions.find(opt => opt.value === firstEmployee?.position) || ''
+      employeePosition: roleOptions.find(opt => opt.value === firstEmployee?.position) || null
     });
-    
-    showEmployee.value = !!firstEmployee?.name;
+
+    showEmployee.value = !!(firstEmployee?.name || firstEmployee?.position);
   } else if (!newVal) {
     revokeBlob();
+    editingEmployeeId.value = null;
   }
 });
 
 const handleSave = async () => {
-  alert('handleSave started!');  // ← точно увидишь
-  
   if (isSubmitting.value) return;
-  if (!validate()) return; 
+  if (!validate()) return;
   isSubmitting.value = true;
-  
+
   try {
+    // 1. СНАЧАЛА работаем со сотрудником (если нужно)
+    if (isCompany.value && showEmployee.value && form.employeeName.trim()) {
+      const employeePayload = {
+        name: form.employeeName.trim(),
+        role: "COMPANY",
+        position: form.employeePosition?.value || null
+      };
+
+      if (editingEmployeeId.value) {
+        // Обновляем существующего
+        const updateEmployeeData = {
+          id: editingEmployeeId.value,
+          name: employeePayload.name,
+          role: employeePayload.role,
+          position: employeePayload.position
+        };
+        console.log("PUT /profile/update-employee:", JSON.stringify(updateEmployeeData, null, 2));
+        await api.put("/profile/update-employee", updateEmployeeData);
+      } else {
+        // Создаём нового
+        const addEmployeeData = {
+          name: employeePayload.name,
+          role: employeePayload.role,
+          position: employeePayload.position
+        };
+        console.log("POST /profile/add-employee:", JSON.stringify(addEmployeeData, null, 2));
+        await api.post("/profile/add-employee", addEmployeeData);
+      }
+    }
+
+    // 2. ПОТОМ обновляем профиль пользователя
     let finalAvatarUrl = auth.user?.avatarUrl || '';
-    
     if (form.avatarFile) {
       const uploaded = await uploadToMediaService(form.avatarFile, "avatar", {});
       if (uploaded) {
         finalAvatarUrl = uploaded.cdnUrl || uploaded.url || uploaded;
       }
     }
-    
+
     const updateData = {
       name: form.name,
       email: form.email,
@@ -160,50 +251,63 @@ const handleSave = async () => {
       city: form.city,
       description: form.description,
       avatarUrl: finalAvatarUrl,
-      role: form.role,
+      type: form.type,
     };
-    
-    alert('1. Отправляем: ' + JSON.stringify(updateData));  // ← проверка
+
+    console.log("PUT /profile/update:", JSON.stringify(updateData, null, 2));
     await api.put("/profile/update", updateData);
 
-    const existingEmployee = auth.user?.employees?.[0];
-    alert('2. Сотрудник: ' + JSON.stringify(existingEmployee));  // ← проверка
-    
-    if (existingEmployee?.id) {
-      const employeeUpdateData = {
-        id: existingEmployee.id,
-        name: form.employeeName || existingEmployee.name,
-        role: form.role,
-        position: form.employeePosition?.value || form.employeePosition || existingEmployee.position
-      };
-      
-      alert('3. Обновляем сотрудника: ' + JSON.stringify(employeeUpdateData));  // ← проверка
-      await api.put("/profile/update-employee", employeeUpdateData);
+    await new Promise(r => setTimeout(r, 500));
 
-      // ← ВСТАВЬ СЮДА: проверим, что вернул update-employee
-      const checkRes = await api.get(`/profile/${auth.user.id}`);
-      alert('После update-employee, ДО fetchProfile: ' + JSON.stringify(checkRes.data.employees));
-    }
-    
+    // 3. Финальное обновление данных
     await auth.fetchProfile();
-    alert('4. Готово!');
     emit("refresh");
     emit("close");
     notify("Профиль успешно обновлен!");
   } catch (e) {
-    alert('Ошибка: ' + (e.response?.data?.message || e.message));  // ← проверка
+    console.error("Ошибка сохранения:", e.response?.data || e.message);
     notify(e.response?.data?.message || "Не удалось сохранить профиль", "error");
   } finally {
     isSubmitting.value = false;
   }
 };
-watch(() => form.city, (val) => { if (!val) return; form.city = val.charAt(0).toUpperCase() + val.slice(1); clearTimeout(cityTimeout); cityTimeout = setTimeout(async () => { const validCity = await auth.validateAndFormatCity(val); 
-  if (validCity) form.city = validCity; }, 1000);});
-watch(showEmployee, (val) => { if (!val) { form.employeeName = ""; form.employeePosition = null; delete errors.employeeName; delete errors.employeePosition;}});
-onBeforeUnmount(() => { clearTimeout(cityTimeout); });
-watch(isCompany, (newVal) => { if (!newVal) { showEmployee.value = false; } });
-watch(() => form.employeePosition, (val) => { if (val) delete errors.employeePosition; });
-watch(() => form.name, (val) => { if (val?.trim()) delete errors.name; });
+
+watch(() => form.city, (val) => {
+  if (!val) return;
+  form.city = val.charAt(0).toUpperCase() + val.slice(1);
+  clearTimeout(cityTimeout);
+  cityTimeout = setTimeout(async () => {
+    const validCity = await auth.validateAndFormatCity(val);
+    if (validCity) form.city = validCity;
+  }, 1000);
+});
+
+watch(showEmployee, (val) => {
+  if (!val) {
+    form.employeeName = "";
+    form.employeePosition = null;
+    delete errors.employeeName;
+    delete errors.employeePosition;
+  }
+});
+
+watch(isCompany, (newVal) => {
+  if (!newVal) {
+    showEmployee.value = false;
+  }
+});
+
+watch(() => form.employeePosition, (val) => {
+  if (val) delete errors.employeePosition;
+});
+
+watch(() => form.name, (val) => {
+  if (val?.trim()) delete errors.name;
+});
+
+onBeforeUnmount(() => {
+  clearTimeout(cityTimeout);
+});
 </script>
 
 <style scoped>

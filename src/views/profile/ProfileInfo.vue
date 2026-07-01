@@ -9,16 +9,15 @@
         <img :src="auth.userAvatar" class="large-avatar" />
         <div class="rating-badge">
           <span class="rating-num">{{ userRating }}</span>
-          <span class="stars">{{ userStars  }}</span>
-          <!-- reviewStore.renderStars(reviewStore.getRatingById(auth.user?.id)) -->
+          <span class="stars">{{ userStars }}</span>
         </div>
         <p class="user-type">
-          {{ (userRole  === 'COMPANY') ? 'Компания' : 'Частное лицо' }}
+          {{ userRole === 'COMPANY' ? 'Компания' : 'Частное лицо' }}
         </p>
       </div>
       <div class="user-info-list">
         <div class="info-row">
-          <span class="label">{{ (userRole  === 'COMPANY') ? 'Название компании' : 'Имя' }}</span>
+          <span class="label">{{ userRole === 'COMPANY' ? 'Название компании' : 'Имя' }}</span>
           <span class="value">{{ auth.user?.name }}</span>
         </div>
         <div class="info-row">
@@ -31,33 +30,34 @@
         </div>
         <div class="info-row">
           <span class="label">Город</span>
-          <span class="value">{{ auth.user?.city || 'Не указан'}}</span>
+          <span class="value">{{ auth.user?.city || 'Не указан' }}</span>
         </div>
-        <div class="info-row" v-if="userRole === 'COMPANY' && auth.user?.employees?.[0]?.name">
+        <div class="info-row company" v-if="userRole === 'COMPANY' && auth.user?.employees?.[0]?.name">
           <span class="label">Сотрудник</span>
           <span class="value">
-            {{ auth.user.employees[0].name }} 
+            <area>{{ auth.user.employees[0].name }}</area><br>
             {{ getPositionName(auth.user.employees[0].position) }}
           </span>
         </div>
       </div>
       <div class="about-section">
-        <h3>Об исполнителе</h3>
+        <h3>{{ userRole === 'COMPANY' ? 'О компании' : 'Об исполнителе' }}</h3>
         <p>{{ auth.user?.description || 'Описание отсутствует' }}</p>
       </div>
-</div>
-</div>
-<ProfileEditModal :isOpen="isModalOpen" @close="isModalOpen = false" @refresh="fetchUserData"/>
+    </div>
+  </div>
+  <ProfileEditModal :isOpen="isModalOpen" @close="isModalOpen = false" @refresh="fetchUserData"/>
 </template>
 <script setup>
-import { ref, onMounted, watch , computed} from 'vue';
-import { useAuthStore } from '/src/stores/authStore.js'; 
+import { ref, onMounted, watch, computed } from 'vue';
+import { useAuthStore } from '/src/stores/authStore.js';
 import { useReviewStore } from '/src/stores/reviews.js';
 import ProfileEditModal from '../ProfileEditModal.vue';
 
 const reviewStore = useReviewStore();
 const auth = useAuthStore();
 const isModalOpen = ref(false);
+
 const userRating = computed(() => reviewStore.getRatingById(auth.user?.id));
 const userStars = computed(() => reviewStore.renderStars(userRating.value));
 
@@ -73,10 +73,12 @@ const fetchUserData = async () => {
     console.error("Не удалось загрузить данные профиля:", e);
   }
 };
+
+// === Роль строго из auth.user.role (UserResponseDTO) ===
 const userRole = computed(() => {
-  // Сначала проверяем role у пользователя, если нет — берём из первого сотрудника
-  return auth.user?.role || auth.user?.employees?.[0]?.role || 'PRIVATE_PERSON';
+  return auth.user?.role;
 });
+
 const positionMap = {
   'manager': 'Менеджер по продажам',
   'director': 'Директор',
@@ -85,19 +87,20 @@ const positionMap = {
 
 const getPositionName = (position) => {
   if (!position) return '';
-  return positionMap[position] ? `- ${positionMap[position]}` : `- ${position}`;
+  return positionMap[position] ? ` ${positionMap[position]}` : ` ${position}`;
 };
-onMounted(() => { fetchUserData(); });
-// watch(
-//   () => auth.user?.id,
-//   (newId) => {
-//     if (newId) {
-//       reviewStore.fetchReviewsBySeller(newId);
-//     }
-//   },
-//   { immediate: true }
-// );
-watch(isModalOpen, (newVal) => {if (newVal) { document.body.classList.add("overflow-mod");} else { document.body.classList.remove("overflow-mod");}});
+
+onMounted(() => {
+  fetchUserData();
+});
+
+watch(isModalOpen, (newVal) => {
+  if (newVal) {
+    document.body.classList.add("overflow-mod");
+  } else {
+    document.body.classList.remove("overflow-mod");
+  }
+});
 </script>
 <style scoped>
 .profile-container {

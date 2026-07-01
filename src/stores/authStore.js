@@ -527,13 +527,14 @@ export const useAuthStore = defineStore("auth", {
         const res = await api.get(`/profile/${this.user.id}`);
         const rawData = res.data;
         
-        // 🛠️ Очищаем JsonNullable мусор в пустую строку (не null!)
+        console.log('=== fetchProfile ===');
+        console.log('RAW RESPONSE:', JSON.stringify(rawData, null, 2));
+
         const cleanValue = (val) => {
           if (val && val.includes && val.includes('JsonNullable@')) return '';
-          return val;
+          return val || '';
         };
         
-        // 🛠️ Фикс avatarUrl: объект → строка (не null!)
         const cleanAvatar = (avatar) => {
           if (avatar && avatar.cdnUrl) return avatar.cdnUrl;
           if (avatar && avatar.url) return avatar.url;
@@ -541,27 +542,30 @@ export const useAuthStore = defineStore("auth", {
           return '';
         };
         
-        const userData = {
-          ...rawData,
-          email: cleanValue(rawData.email),
-          city: cleanValue(rawData.city),
-          description: cleanValue(rawData.description),
-          avatarUrl: cleanAvatar(rawData.avatarUrl),
-          avatar: cleanAvatar(rawData.avatarUrl),
-          employees: rawData.employees || []
-        };
+        // === ОБНОВЛЯЕМ СУЩЕСТВУЮЩИЙ ОБЪЕКТ, а не создаём новый ===
+        this.user.id = rawData.id;
+        this.user.email = cleanValue(rawData.email);
+        this.user.name = cleanValue(rawData.name);
+        this.user.phone = rawData.phone || '';
+        this.user.description = cleanValue(rawData.description);
+        this.user.avatarUrl = cleanAvatar(rawData.avatarUrl);
+        this.user.city = cleanValue(rawData.city);
+        this.user.role = rawData.role;
         
-        if (userData) {
-          this.user = { ...this.user, ...userData, id: this.user.id };
-          this.saveToStorage();
-          
-          const regionStore = useRegionModalStore();
-          if (userData.city) {
-            regionStore.setRegion(
-              userData.city,
-              userData.coordinates || [37.6173, 55.7558],
-            );
-          }
+        // employees — заменяем массив целиком для реактивности
+        this.user.employees = rawData.employees || [];
+        
+        console.log('this.user после обновления:', JSON.stringify(this.user, null, 2));
+        console.log('===================');
+        
+        this.saveToStorage();
+        
+        const regionStore = useRegionModalStore();
+        if (this.user.city) {
+          regionStore.setRegion(
+            this.user.city,
+            rawData.coordinates || [37.6173, 55.7558],
+          );
         }
       } catch (e) {
         console.error("Profile fetch error:", e);
