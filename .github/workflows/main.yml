@@ -3,7 +3,7 @@ name: Deploy Frontend
 on:
   push:
     branches:
-      - main  # Срабатывает при пуше в main
+      - main
 
 jobs:
   build-and-deploy:
@@ -29,6 +29,6 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 8080
-          source: "dist/*" # Убедись, что твой билд лежит в dist
+          source: "dist/*"
           target: "/var/www/html"
           strip_components: 1
