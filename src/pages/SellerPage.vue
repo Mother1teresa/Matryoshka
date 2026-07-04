@@ -245,45 +245,18 @@ const membershipText = computed(() => {
   return `На Матрёшке ${diffMonth} ${suffix}`;
 });
 
-watch(
-  () => route.params.id,
-  (newId) => {
-    if (newId) {
-      currentTab.value = "announcements";
-      loadSellerData(newId);
-    }
-  },
-  { immediate: true }
-);
-
-onUnmounted(() => {
-  reviewStore.reviews = [];
-});
-
-const checkAuthAndRun = (action, message = "Авторизуйтесь, чтобы продолжить") => {
-  if (!auth.isAuthenticated) {
-    modal.openLogin();
-    notify(message);
-    return;
-  }
-  action();
-};
-
-const onSubscribeClick = () => {
-  const sellerId = seller.value?.id;
-  checkAuthAndRun(async () => {
-    const isNowSubscribed = await subStore.toggle(sellerId);
-    notify(isNowSubscribed ? "Вы подписались" : "Вы отписались");
-  });
-};
+watch(() => route.params.id,(newId) => {if (newId) {currentTab.value = "announcements";loadSellerData(newId);}},{ immediate: true });
+onUnmounted(() => {reviewStore.reviews = [];});
+const checkAuthAndRun = (action, message = "Авторизуйтесь, чтобы продолжить") => {if (!auth.isAuthenticated) {modal.openLogin();notify(message);return;}action();};
+const onSubscribeClick = () => {const sellerId = seller.value?.id;checkAuthAndRun(async () => {const isNowSubscribed = await subStore.toggle(sellerId);notify(isNowSubscribed ? "Вы подписались" : "Вы отписались");});};
 
 // Переход на видео в шортс
-const playVideo = (video) => {
-  router.push({
-    name: 'shorts',
-    params: { id: video.id }
-  });
-};
+const playVideo = (video) => {router.push({name: 'shorts', params: { id: video.id }});};
+watch(() => seller.value?.name, (newName) => {
+  if (newName) {
+    document.title = `${newName} — продавец на Матрешка`;
+  }
+}, { immediate: true });
 </script>
 
 <style scoped>
