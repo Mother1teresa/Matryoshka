@@ -454,21 +454,22 @@ export const useAuthStore = defineStore("auth", {
       }
       localStorage.setItem("auth", JSON.stringify({ isAuthenticated: this.isAuthenticated, user: this.user,}),);
     },
-    login(user) {
+    login(userData) {
       this.isAuthenticated = true;
-      this.user = { ...user };
+      this.user = { ...userData };
       this.saveToStorage();
       resetRefreshCooldown();
     },
     async loginAPI({ email, password }) {
       try {
         const res = await api.post("/auth/login", { login: email, password });
-        if (res.data && res.data.user) {
-          this.login(res.data.user);
-          if (res.data.user.city) {
+        const userData = res.data;
+        if (userData && userData.id) {
+          this.login(userData);
+          if (userData.city) {
             useRegionModalStore().setRegion(
-              res.data.user.city,
-              res.data.user.coordinates || [37.6173, 55.7558],
+              userData.city,
+              userData.coordinates || [37.6173, 55.7558],
             );
           }
           await useFavoritesStore()
@@ -484,10 +485,11 @@ export const useAuthStore = defineStore("auth", {
     async registerAPI(userData) {
       try {
         const res = await api.post("/auth/register", userData);
-        if (res.data && res.data.user) {
-          this.login(res.data.user);
+        const responseData = res.data;
+        if (responseData && responseData.id) {
+          this.login(responseData);
         }
-        return res.data;
+        return responseData;
       } catch (e) {
         console.error("Register error:", e.response?.data || e);
         throw e;
