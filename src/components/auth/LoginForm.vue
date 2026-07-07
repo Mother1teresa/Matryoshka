@@ -28,7 +28,7 @@
 
     <button type="submit" class="auth-btn">Войти</button>
 
-    <div class="form-or">или</div>
+    <!-- <div class="form-or">или</div>
     <div class="form-using">
       <div class="form-using__title">Войти с помощью</div>
       <a class="form-using__item">
@@ -47,7 +47,7 @@
         <img src="/src/assets/img/form/tg-form.svg" alt="" />
         Telegram
       </a>
-    </div>
+    </div> -->
     <div class="form-noaccount">
       <div class="form-noaccount__text">Нет аккаунта Матрешка?</div>
       <button class="btn-noaccount btn" @click="modal.openRegister()">
@@ -111,10 +111,9 @@ async function submitLogin(){
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 0.875rem;
   width: 34.63rem;
 }
-
 .auth-title {
   font-size: 2rem;
   font-weight: 400;
@@ -129,12 +128,8 @@ async function submitLogin(){
   color: #000000;
   font-size: 1.15rem;
 }
-.auth-input__error {
-  border-color: #ee3030;
-}
-.auth-input::placeholder {
-  color: #8e8c8c;
-}
+.auth-input__error {border-color: #ee3030;}
+.auth-input::placeholder {color: #8e8c8c;}
 .auth-btn {
   width: 7.063rem;
   height: 2.5rem;
@@ -150,6 +145,7 @@ async function submitLogin(){
   align-items: center;
   justify-content: center;
 }
+.auth-form:not(:has(.form-or)) .auth-btn {margin-bottom: 2rem;}
 .auth-btn:hover,
 .auth-btn:focus {
   background: #105965;
@@ -160,11 +156,7 @@ async function submitLogin(){
   text-transform: uppercase;
   font-size: 1rem;
 }
-
-.auth-forgot {
-  cursor: pointer;
-}
-
+.auth-forgot {cursor: pointer;}
 .form-using {
   display: grid;
   justify-items: start;

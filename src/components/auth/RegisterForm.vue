@@ -28,7 +28,7 @@
       :class="{ 'auth-input__error': errors.password2 }"
     />
 
-    <div class="form-or">или</div>
+    <!-- <div class="form-or">или</div>
     <div class="form-using">
       <div class="form-using__title">Продолжить через</div>
       <div>
@@ -45,7 +45,7 @@
           <img src="/src/assets/img/form/tg-form.svg" alt="" />
         </a>
       </div>
-    </div>
+    </div> -->
     <div class="form-noaccount">
       <button type="submit" class="auth-btn">Зарегистрироваться</button>
       <div class="form-noaccount__text">
@@ -136,17 +136,15 @@ async function submitRegister(){
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 0.875rem;
   width: 34.63rem;
 }
-
 .auth-title {
   font-size: 2rem;
   font-weight: 400;
   margin-bottom: 1rem;
   text-align: center;
 }
-
 .auth-input {
   height: 2.8rem;
   border-radius: 3.375rem;
@@ -161,7 +159,6 @@ async function submitRegister(){
 .auth-input::placeholder {
   color: #8e8c8c;
 }
-
 .auth-btn {
   width: fit-content;
   height: 2.5rem;
@@ -175,6 +172,12 @@ async function submitRegister(){
   transition: all 0.3s;
   font-size: 1rem;
   margin-bottom: 0.313rem;
+}
+/* .auth-form:not(:has(.form-or)) .form-noaccount {
+  margin-bottom: 2rem;
+} */
+.auth-form:not(:has(.form-or)) .form-noaccount {
+  margin-top: 2rem;
 }
 .auth-btn:hover,
 .auth-btn:focus {

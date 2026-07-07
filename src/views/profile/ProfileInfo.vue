@@ -35,7 +35,7 @@
         <div class="info-row company" v-if="userRole === 'COMPANY' && auth.user?.employees?.[0]?.name">
           <span class="label">Сотрудник</span>
           <span class="value">
-            <area>{{ auth.user.employees[0].name }}</area><br>
+            <span class="employee-name">{{ auth.user.employees[0].name }}</span>br>
             {{ getPositionName(auth.user.employees[0].position) }}
           </span>
         </div>

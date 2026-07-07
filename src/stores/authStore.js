@@ -446,7 +446,6 @@ export const useAuthStore = defineStore("auth", {
       }
     },
     // конец
-    
     saveToStorage() {
       if (!this.user && this.isAuthenticated) {
         console.error("Попытка сохранить пустой профиль!");
@@ -456,7 +455,15 @@ export const useAuthStore = defineStore("auth", {
     },
     login(userData) {
       this.isAuthenticated = true;
-      this.user = { ...userData };
+      const cleanEmail = (email) => {
+        if (email && email.includes && email.includes('JsonNullable@')) return '';
+        return email || '';
+      };
+      this.user = { 
+        ...userData,
+        email: cleanEmail(userData.email),
+        role: userData.role || 'PRIVATE_PERSON',
+      };
       this.saveToStorage();
       resetRefreshCooldown();
     },
@@ -486,8 +493,19 @@ export const useAuthStore = defineStore("auth", {
       try {
         const res = await api.post("/auth/register", userData);
         const responseData = res.data;
+        console.log('registerAPI response:', responseData);
         if (responseData && responseData.id) {
-          this.login(responseData);
+          const userToLogin = {
+            ...responseData,
+            email: userData.email,
+            role: 'PRIVATE_PERSON',
+          };
+          this.login(userToLogin);
+        
+          // Загружаем избранное
+          await useFavoritesStore()
+            .fetchFavorites()
+            .catch(() => {});
         }
         return responseData;
       } catch (e) {
@@ -544,20 +562,32 @@ export const useAuthStore = defineStore("auth", {
           return '';
         };
         
-        // === ОБНОВЛЯЕМ СУЩЕСТВУЮЩИЙ ОБЪЕКТ, а не создаём новый ===
-        this.user.id = rawData.id;
-        this.user.email = cleanValue(rawData.email);
-        this.user.name = cleanValue(rawData.name);
-        this.user.phone = rawData.phone || '';
-        this.user.description = cleanValue(rawData.description);
-        this.user.avatarUrl = cleanAvatar(rawData.avatarUrl);
-        this.user.city = cleanValue(rawData.city);
-        this.user.role = rawData.role;
+        // === ЗАЩИТА: не затираем role и email если бэкенд вернул null ===
+        const currentRole = this.user?.role;
+        const currentEmail = this.user?.email;
         
-        // employees — заменяем массив целиком для реактивности
-        this.user.employees = rawData.employees || [];
+        const newRole = rawData.role || currentRole || 'PRIVATE_PERSON';
+        // Чистим email от JsonNullable@ и т.п.
+        const newEmail = cleanValue(rawData.email) || currentEmail || '';
         
-        console.log('this.user после обновления:', JSON.stringify(this.user, null, 2));
+        // === Создаём НОВЫЙ объект для реактивности Vue ===
+        const updatedUser = {
+          ...this.user,
+          id: rawData.id,
+          email: newEmail,           // ← теперь чистый email
+          name: cleanValue(rawData.name),
+          phone: rawData.phone || '',
+          description: cleanValue(rawData.description),
+          avatarUrl: cleanAvatar(rawData.avatarUrl),
+          city: cleanValue(rawData.city),
+          employees: rawData.employees || [],
+          role: newRole,
+        };
+        
+        this.user = updatedUser;
+        
+        console.log('this.user.role ПОСЛЕ:', this.user?.role);
+        console.log('this.user.email ПОСЛЕ:', this.user?.email);
         console.log('===================');
         
         this.saveToStorage();

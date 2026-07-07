@@ -34,11 +34,13 @@
 import { ref, computed, onMounted, nextTick, onUnmounted  } from "vue"
 import { useModalStore } from "/src/stores/modal.js"
 import { useAuthStore } from "/src/stores/authStore.js";
+import { useRouter } from "vue-router";
 import { notify } from "../../utils/notify";
 import { api } from "/src/api/api.js"
 
 const modal = useModalStore()
 const auth = useAuthStore()
+const router = useRouter()
 const inputs = ref([])
 const code = ref(["","","","","",""])
 const showError = ref(false)
@@ -120,10 +122,11 @@ async function verifyCode(){
       phone: modal.phone,
       password: modal.password
     });
-    if (res && res.user) {
-      auth.login(res.user); 
+    console.log("Register response:", res)
+    if (res && res.id) {
       notify("Регистрация завершена успешно!");
       modal.close();
+      router.push('/')
     }
   }
   catch (e) {
