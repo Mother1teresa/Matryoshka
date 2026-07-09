@@ -89,7 +89,6 @@
                     <span v-if="video.createdAt">{{ formatDate(video.createdAt) }}</span>
                   </div>
                 </div>
-
                 <div class="shorts-block_avt">
                   <div class="author-card">
                     <router-link :to="video.author?.id ? { name: 'SellerPage', params: { id: video.author.id } } : ''" class="author-link" :event="video.author?.id ? 'click' : ''">
