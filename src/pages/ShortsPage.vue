@@ -193,7 +193,7 @@ import muteIcon from "/src/assets/img/icons/mute.svg";
 import unmuteIcon from "/src/assets/img/icons/unmute.svg"; 
 
 import bookmarkIcon from "/src/assets/img/icons/bookmark.svg";
-import bookmarkFilledIcon from "/src/assets/img/icons/bookmark-filled.svg";
+import bookmarkFilledIcon from "/src/assets/img/icons/bookmark-fill.svg";
 
 const router = useRouter();
 const route = useRoute();
@@ -1063,10 +1063,10 @@ onUnmounted(() => {
 .reply-banner button{font-size: 1rem; width: 1.3rem;}
 .own-badge {font-size: 0.75rem;color: #999;padding: 0.438rem 1rem;}
 .favorite-icon {width: 1.5rem; height: 1.5rem;}
-/* .favorite-icon[src*="-filled"] {
+/* .favorite-icon[src*="-fill"] {
   filter: brightness(0) saturate(100%) invert(31%) sepia(82%) saturate(4477%) hue-rotate(340deg) brightness(92%) contrast(96%);
 } */
-.favorite-icon[src*="-filled"] {
+.favorite-icon[src*="-fill"] {
   filter: invert(27%) sepia(95%) saturate(5000%) hue-rotate(350deg) brightness(95%) contrast(100%);
 }
 </style>
