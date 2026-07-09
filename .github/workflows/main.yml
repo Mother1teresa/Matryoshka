@@ -23,7 +23,7 @@ jobs:
           npm run build
  
       - name: Deploy to server via SCP
-        uses: appleboy/scp-action@v1.2.0
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }} # Убедись, что это 'front' или пользователь с правами на запись
