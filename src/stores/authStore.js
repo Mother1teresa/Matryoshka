@@ -278,7 +278,9 @@ export const useAuthStore = defineStore("auth", {
           author: null,
           comments: [],
           isDetailsLoaded: false,
-          isVideoReady: false
+          isVideoReady: false,
+          isLikedByMe: false,
+          isFavorite: false, 
         }));
         
         return this.welcomeFeed;
@@ -303,6 +305,8 @@ export const useAuthStore = defineStore("auth", {
           commentsCount: video.comments?.length || video.commentsCount || 0,
           createdAt: video.createdAt || '',
           comments: video.comments || [],
+          isLikedByMe: false,
+          isFavorite: false,
           author: {
             id: video.author?.id || '',
             name: video.author?.name || 'Пользователь',
@@ -329,7 +333,8 @@ export const useAuthStore = defineStore("auth", {
         author: details.author,
         comments: details.comments,
         commentsCount: details.commentsCount,
-        isDetailsLoaded: true
+        isDetailsLoaded: true,
+        isFavorite: details.isFavorite ?? video.isFavorite,
       });
       
       return video;
@@ -350,7 +355,6 @@ export const useAuthStore = defineStore("auth", {
       
       try {
         await api.post('/feed/like', { videoId });
-        await api.post('/feed/video/mark-as-favorite', { videoId });
         
         if (video) {
           video.isLikedByMe = true;
@@ -367,7 +371,6 @@ export const useAuthStore = defineStore("auth", {
       
       try {
         await api.post('/feed/unlike', { videoId });
-        await api.post('/feed/video/unmark-as-favorite', { videoId });
         
         if (video) {
           video.isLikedByMe = false;
@@ -388,6 +391,49 @@ export const useAuthStore = defineStore("auth", {
       } else {
         await this.likeVideo(videoId);
         notify("Лайк поставлен");
+      }
+    },
+    async markAsFavorite(videoId) {
+      const video = this.welcomeFeed.find(v => v.id === videoId);
+      if (video?.isFavorite) return;
+      
+      try {
+        await api.post('/feed/video/mark-as-favorite', { videoId });
+        
+        if (video) {
+          video.isFavorite = true;
+        }
+      } catch (e) {
+        console.error('Ошибка добавления в избранное:', e);
+        throw e;
+      }
+    },
+
+    async unmarkAsFavorite(videoId) {
+      const video = this.welcomeFeed.find(v => v.id === videoId);
+      if (video && !video.isFavorite) return;
+      
+      try {
+        await api.post('/feed/video/unmark-as-favorite', { videoId });
+        
+        if (video) {
+          video.isFavorite = false;
+        }
+      } catch (e) {
+        console.error('Ошибка удаления из избранного:', e);
+        throw e;
+      }
+    },
+    async toggleFavorite(videoId) {
+      const video = this.welcomeFeed.find(v => v.id === videoId);
+      if (!video) return;
+      
+      if (video.isFavorite) {
+        await this.unmarkAsFavorite(videoId);
+        notify("Удалено из избранного");
+      } else {
+        await this.markAsFavorite(videoId);
+        notify("Добавлено в избранное");
       }
     },
     async fetchLikeCount(videoId) {

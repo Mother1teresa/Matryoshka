@@ -149,7 +149,7 @@ const removeFromFavorites = async (id) => {
   try {
     if (selectedType.value === 'videos') {
       // POST /api/feed/video/unmark-as-favorite
-      await authStore.unmarkFavorite(id);
+      await authStore.unmarkAsFavorite(id);
     }
     
     currentItems.value = currentItems.value.filter(item => item.id !== id);

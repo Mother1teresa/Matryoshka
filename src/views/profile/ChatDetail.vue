@@ -3,7 +3,7 @@
     <ChatsList v-if="!selectedChatId" @select="openChat" />
     <div v-else class="chat-dialog-window">
       <header class="chat-header">
-        <button class="back-btn" @click="selectedChatId = null">
+        <button class="back-btn" @click="router.back()">
           <img src="/src/assets/img/icons/arrow-back.svg" />
         </button>
         <div class="header-user-info">
@@ -73,9 +73,10 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick, computed } from "vue";
-import { useRoute } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "/src/stores/authStore.js";
 
+const router = useRouter();
 const route = useRoute();
 const auth = useAuthStore();
 const messages = ref([]);

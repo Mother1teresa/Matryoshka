@@ -42,6 +42,11 @@
             </button>
             <div class="video-actions">
               <div class="v-action">
+                <button class="action-btn" @click.stop="onFavoriteClick(video)">
+                  <img :src="video.isFavorite ? bookmarkFilledIcon : bookmarkIcon" class="favorite-icon"/>
+                </button>
+              </div>
+              <div class="v-action">
                 <button class="action-btn" @click.stop="onLikeClick(video)">
                   <img :src="video.isLikedByMe ? heartFilled : heart" class="like-icon"/>
                   <span>{{ video.likes || 0 }}</span>
@@ -187,6 +192,9 @@ import heartFilled from "/src/assets/img/icons/heart-filled.svg";
 import muteIcon from "/src/assets/img/icons/mute.svg";
 import unmuteIcon from "/src/assets/img/icons/unmute.svg"; 
 
+import bookmarkIcon from "/src/assets/img/icons/bookmark.svg";
+import bookmarkFilledIcon from "/src/assets/img/icons/bookmark-filled.svg";
+
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
@@ -245,6 +253,16 @@ const addView = async (video) => {
   } catch (e) {
     console.error('Ошибка просмотра:', e);
   }
+};
+const onFavoriteClick = async (video) => {
+  if (!video) return;
+  checkAuthAndRun(async () => {
+    try {
+      await authStore.toggleFavorite(video.id);
+    } catch (e) {
+      notify("Ошибка избранного", "error");
+    }
+  });
 };
 const onLikeClick = async (video) => {
   if (!video) return;
@@ -784,13 +802,7 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 0.5rem;
 }
-
-.info-side {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
+.info-side {flex: 1;display: flex;flex-direction: column;min-width: 0;}
 .info-scroll-area {
   margin-top: 2.063rem;
   display: grid;
@@ -798,11 +810,7 @@ onUnmounted(() => {
   height: 100%;
 }
 .info-scroll-area::-webkit-scrollbar { width: 0.25rem;}
-.info-scroll-area::-webkit-scrollbar-thumb {
-  background: #ddd;
-  border-radius: 0.25rem;
-}
-
+.info-scroll-area::-webkit-scrollbar-thumb {background: #ddd;border-radius: 0.25rem;}
 .video-header-info {
   margin-bottom: 1.25rem;
   background: white;
@@ -824,13 +832,7 @@ onUnmounted(() => {
   font-size: 0.8125rem;
   margin-top: 0.5rem;
 }
-.dot {
-  width: 0.1875rem;
-  height: 0.1875rem;
-  background: #ccc;
-  border-radius: 50%;
-}
-
+.dot {width: 0.1875rem;height: 0.1875rem;background: #ccc;border-radius: 50%;}
 .author-card {
   background: white;
   border-radius: 1rem;
@@ -851,31 +853,21 @@ onUnmounted(() => {
   object-fit: cover;
   flex-shrink: 0;
 }
-.author-details {
-  display: grid;
-  flex: 1;
-  min-width: 0;
-}
+.author-details {display: grid;flex: 1;min-width: 0;}
 .name {
   font-size: 0.9375rem;
   font-weight: 600;
   color: #1a1a1a;
   margin: 0 0 0.25rem 0;
 }
-.rating-badge {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
+.rating-badge {display: flex;align-items: center;gap: 0.5rem;}
 .rating-num {
   font-size: 1.125rem;
   font-weight: 700;
   color: #1a1a1a;
   width: auto;
 }
-
 .stars { letter-spacing: 0px; font-size: 1.35rem;}
-
 .btn-primary {
   width: 6.875rem;
   background: #6aaa7d;
@@ -892,21 +884,14 @@ onUnmounted(() => {
   justify-content: center;
   margin-left: .5rem;
 }
-
 .comments-block {
   padding: 0.625rem 0.875rem;
   height: 19.125rem;
   background: white;
   border-radius: 0.625rem 0.625rem 0 0;
 }
-
 .comments-block::-webkit-scrollbar { width: 0.25rem;}
-
-.comments-block::-webkit-scrollbar-thumb {
-  background: #ddd;
-  border-radius: 0.25rem;
-}
-
+.comments-block::-webkit-scrollbar-thumb {background: #ddd;border-radius: 0.25rem;}
 .section-title {
   display: flex;
   align-items: center;
@@ -921,10 +906,7 @@ onUnmounted(() => {
   padding-bottom: 0.5rem;
   z-index: 2;
 }
-.section-title img {
-  width: 1.5rem;
-  height: 1.5rem;
-}
+.section-title img {width: 1.5rem;height: 1.5rem;}
 .comments-empty {
   text-align: center;
   padding: 2rem 0;
@@ -940,10 +922,7 @@ onUnmounted(() => {
   scrollbar-width: thin;
   scrollbar-color: #ddd transparent;
 }
-.comment-item {
-  display: flex;
-  gap: 0.75rem;
-}
+.comment-item {display: flex;gap: 0.75rem;}
 .comment-item > img {
   width: 2.25rem;
   height: 2.25rem;
@@ -952,27 +931,11 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 .c-body { flex: 1; min-width: 0;}
-.c-user {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #1a1a1a;
-}
-.c-date {
-  font-size: 0.638rem;
-  color: #959595;
-}
-.c-text {
-  font-size: 0.875rem;
-  color: #444;
-  margin: 0 0 0.438rem 0;
-}
-.c-header {
-  display: grid;
-}
-.c-header_footer{
-  display: flex;
-  gap: 5rem;
-}
+.c-user {font-size: 0.875rem;font-weight: 600;color: #1a1a1a;}
+.c-date {font-size: 0.638rem;color: #959595;}
+.c-text {font-size: 0.875rem;color: #444;margin: 0 0 0.438rem 0;}
+.c-header {display: grid;}
+.c-header_footer{display: flex;gap: 5rem;}
 .c-reply {
   font-size: 0.75rem;
   color: #828282;
@@ -980,18 +943,13 @@ onUnmounted(() => {
   transition: color 0.2s;
 }
 .c-reply:hover { color: #6aaa7d;}
-
 .footer-input {
   padding: 0.333rem 0.5rem 0.467rem 0.5rem;
   border-top: 0.0625rem solid #eee;
   background: #fff;
   border-radius: 0 0 0.625rem 0.625rem;
 }
-.input-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
+.input-row {display: flex;align-items: center;gap: 0.5rem;}
 .footer-input input {
   flex: 1;
   background: #f1f1f1;
@@ -1002,9 +960,7 @@ onUnmounted(() => {
   outline: none;
   transition: background 0.2s;
 }
-.footer-input input:focus {
-  background: #e8e8e8;
-}
+.footer-input input:focus {background: #e8e8e8;}
 .send-btn {
   width: 2rem;
   height: -webkit-fill-available;
@@ -1020,7 +976,6 @@ onUnmounted(() => {
 }
 .send-btn:hover { background: #5a9669;}
 .send-btn img { width: 0.938rem; height: 0.938rem;}
-
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -1031,7 +986,6 @@ onUnmounted(() => {
   z-index: 10001;
   padding: 1.25rem;
 }
-
 .share-modal {
   background: #fff;
   padding: 1.5rem;
@@ -1040,21 +994,18 @@ onUnmounted(() => {
   max-width: 24rem;
   box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.15);
 }
-
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.125rem;
 }
-
 .modal-header h3 {
   font-size: 1.25rem;
   font-weight: 500;
   margin: 0;
   color: #1a1a1a;
 }
-
 .close-modal {
   background: none;
   border: none;
@@ -1069,28 +1020,15 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
 }
-
 .close-modal:hover { color: #1a1a1a;}
-
-.link-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.link-section label {
-  font-size: 0.875rem;
-  color: #999;
-  margin: 0;
-}
-
+.link-section {display: flex;flex-direction: column;gap: 0.75rem;}
+.link-section label {font-size: 0.875rem;color: #999;margin: 0;}
 .input-wrapper {
   background: #fff;
   border: 0.0625rem solid #ddd;
   border-radius: 0.5rem;
   padding: 0.625rem 0.875rem;
 }
-
 .input-wrapper input {
   width: 100%;
   border: none;
@@ -1121,12 +1059,14 @@ onUnmounted(() => {
   gap: 1rem;
   margin-bottom: 1rem;
 }
-.reply-banner{
-  display: flex;
-  gap: 2rem;
-  margin-bottom: .5rem;
-  justify-content: space-between;
-}
+.reply-banner{display: flex;gap: 2rem;margin-bottom: .5rem;justify-content: space-between;}
 .reply-banner button{font-size: 1rem; width: 1.3rem;}
 .own-badge {font-size: 0.75rem;color: #999;padding: 0.438rem 1rem;}
+.favorite-icon {width: 1.5rem; height: 1.5rem;}
+/* .favorite-icon[src*="-filled"] {
+  filter: brightness(0) saturate(100%) invert(31%) sepia(82%) saturate(4477%) hue-rotate(340deg) brightness(92%) contrast(96%);
+} */
+.favorite-icon[src*="-filled"] {
+  filter: invert(27%) sepia(95%) saturate(5000%) hue-rotate(350deg) brightness(95%) contrast(100%);
+}
 </style>
