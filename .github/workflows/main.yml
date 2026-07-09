@@ -33,4 +33,3 @@ jobs:
           target: "/var/www/html/dist"
           strip_components: 1
           overwrite: true
-          rm: true
