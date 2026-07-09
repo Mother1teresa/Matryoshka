@@ -1,7 +1,7 @@
-<<template>
+<template>
   <div class="messages-page-wrapper">
-    <ChatsList v-if="!selectedChatId" @select="openChat" />
-    <div v-else class="chat-dialog-window">
+    <!-- <ChatsList v-if="!selectedChatId" @select="openChat" /> -->
+    <div class="chat-dialog-window">
       <header class="chat-header">
         <button class="back-btn" @click="router.back()">
           <img src="/src/assets/img/icons/arrow-back.svg" />
@@ -72,7 +72,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick, computed } from "vue";
+import { ref, onMounted, onUnmounted, nextTick, computed, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "/src/stores/authStore.js";
 
@@ -199,6 +199,12 @@ onMounted(() => {
 });
 
 onUnmounted(() => clearInterval(polling));
+watch(() => route.params.id, (newId) => {
+  if (newId) {
+    loadChatInfo();
+    fetchMessages();
+  }
+});
 </script>
 
 <style scoped>
