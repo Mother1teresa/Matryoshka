@@ -1,6 +1,7 @@
 <script setup>
-import { ref, watch } from "vue";
+import { ref, watch, nextTick } from "vue";
 import { useRegionModalStore } from "/src/stores/regionModal.js";
+import { geocodeByQuery, geocodeByCoords } from "/src/utils/geocode.js";
 
 const modal = useRegionModalStore();
 const raw = modal.coordinates || [37.6173, 55.7558];
@@ -14,26 +15,18 @@ let searchTimeout = null;
 
 function initMap() {
   if (!isClient || !window.ymaps) {
-    console.warn('Yandex Maps API не загружен или SSR');
+    console.warn('Yandex Maps API не загружен');
     return;
   }
   
-  // Уничтожаем старую карту если есть
   if (map) {
-    try {
-      map.destroy();
-    } catch (e) {
-      console.warn('Ошибка уничтожения карты:', e);
-    }
+    try { map.destroy(); } catch (e) {}
     map = null;
     placemark = null;
   }
   
   const container = document.getElementById('map-container');
-  if (!container) {
-    console.warn('Контейнер карты не найден');
-    return;
-  }
+  if (!container) return;
   container.innerHTML = '';
 
   window.ymaps.ready(() => {
@@ -42,17 +35,22 @@ function initMap() {
         center: markerCoords.value,
         zoom: 12,
         controls: [],
-        suppressMapOpenBlock: true,
       }, {
         copyrightLogoVisible: false,
         copyrightProvidersVisible: false,
         copyrightUaVisible: false,
-        balloonAutoPan: false,
         suppressMapOpenBlock: true
       });
 
       placemark = new window.ymaps.Placemark(markerCoords.value, {}, {
         preset: "islands#redIcon",
+        draggable: true,
+      });
+      placemark.events.add('dragend', async () => {
+        const coords = placemark.geometry.getCoordinates();
+        markerCoords.value = coords;
+        const cityName = await geocodeByCoords(coords[1], coords[0]);
+        if (cityName) searchQuery.value = cityName;
       });
 
       map.geoObjects.add(placemark);
@@ -62,83 +60,60 @@ function initMap() {
   });
 }
 
-// Автопоиск
-let isTyping = false;
+// Автопоиск с debounce
 watch(searchQuery, (value) => {
-  if (!isClient) return;
+  if (!isClient || !value.trim()) return;
   
-  isTyping = true;
   clearTimeout(searchTimeout);
-
-  searchTimeout = setTimeout(() => {
-    isTyping = false;
-    handleSearch(value);
-  }, 900);
+  searchTimeout = setTimeout(async () => {
+    const result = await geocodeByQuery(value);
+    if (result) {
+      const [lon, lat] = result.coordinates;
+      const coords = [lat, lon];
+      markerCoords.value = coords;
+      
+      if (placemark && map) {
+        placemark.geometry.setCoordinates(coords);
+        map.setCenter(coords, 12, { duration: 300 });
+      }
+    }
+  }, 500);
 });
 
-// Поиск
-async function handleSearch(query) {
-  if (!isClient) return;
-  
-  const url = `https://geocode-maps.yandex.ru/1.x/?apikey=ab3a562f-41f9-4eb0-94ab-b982e13c7742&format=json&geocode=${encodeURIComponent(query)}`;
-
-  try {
-    const response = await fetch(url);
-    const data = await response.json();
-    const feature = data?.response?.GeoObjectCollection?.featureMember?.[0]?.GeoObject;
-    if (!feature) return;
-
-    const [lon, lat] = feature.Point.pos.split(" ").map(Number);
-    const coords = [lat, lon];
-    markerCoords.value = coords;
-    const cityName = feature.name;
-    searchQuery.value = cityName;
-
-    if (placemark && map) {
-      placemark.geometry.setCoordinates(coords);
-      map.setCenter(coords, 12, { duration: 300 });
-    }
-  } catch (e) {
-    console.error("Ошибка геокодера:", e);
-  }
-}
 function confirmSelection() {
   const [lat, lon] = markerCoords.value;
   modal.setRegion(searchQuery.value, [lon, lat]);
+  modal.close();
 }
 
-watch(
-  () => modal.isOpen,
-  (open) => {
-    if (!isClient) return;
-    
-    if (open) {
-      nextTick(() => {
-        setTimeout(() => {
-          initMap();
-          if (searchQuery.value.trim()) {
-            handleSearch(searchQuery.value);
-          }
-        }, 100);
-      });
+watch(() => modal.isOpen, (open) => {
+  if (!isClient) return;
+  
+  if (open) {
+    nextTick(() => {
+      setTimeout(() => {
+        initMap();
+        if (searchQuery.value.trim()) {
+          geocodeByQuery(searchQuery.value).then(result => {
+            if (result && map && placemark) {
+              const [lon, lat] = result.coordinates;
+              const coords = [lat, lon];
+              markerCoords.value = coords;
+              placemark.geometry.setCoordinates(coords);
+              map.setCenter(coords, 12);
+            }
+          });
+        }
+      }, 300);
+    });
+  } else {
+    if (map) {
+      try { map.destroy(); } catch (e) {}
+      map = null;
+      placemark = null;
     }
   }
-);
-watch(
-  () => modal.selectedRegion,
-  (newRegion) => {
-    if (!isClient) return;
-    
-    if (!newRegion) {
-      searchQuery.value = "";
-      markerCoords.value = [55.7558, 37.6173]; 
-      if (placemark && map) {
-        placemark.geometry.setCoordinates([55.7558, 37.6173]);
-        map.setCenter([55.7558, 37.6173], 12);
-      }
-    }
-  }
-);
+}, { immediate: true });
 </script>
 <template>
   <div v-if="modal.isOpen" class="modal-overlay" @click="modal.close()">

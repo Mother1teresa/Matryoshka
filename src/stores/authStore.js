@@ -4,6 +4,7 @@ import { api, resetRefreshCooldown  } from "/src/api/api.js";
 import { useFavoritesStore } from "/src/stores/favoritesStore.js";
 import maskAvatar from "/src/assets/img/mask-avatar.png";
 import { useRegionModalStore } from "/src/stores/regionModal.js";
+import { geocodeByQuery } from '/src/utils/geocode.js';
 
 export const useAuthStore = defineStore("auth", {
   state: () => {
@@ -727,18 +728,8 @@ export const useAuthStore = defineStore("auth", {
       }
     },
     async validateAndFormatCity(query) {
-      if (!query || query.length < 3) return null;
-      const url = `https://geocode-maps.yandex.ru/1.x/?apikey=ab3a562f-41f9-4eb0-94ab-b982e13c7742&format=json&geocode=${encodeURIComponent(query)}`;
-      try {
-        const response = await fetch(url);
-        const data = await response.json();
-        const feature =
-          data?.response?.GeoObjectCollection?.featureMember?.[0]?.GeoObject;
-        return feature ? feature.name : null;
-      } catch (e) {
-        console.error("Ошибка геокодера:", e);
-        return null;
-      }
+      const result = await geocodeByQuery(query);
+      return result ? result.name : null;
     },
     async fetchUserNotifications() {
       if (!this.user?.id) {

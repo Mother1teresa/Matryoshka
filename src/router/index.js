@@ -67,21 +67,31 @@ export const router = createRouter({
   history: createWebHistory("/"),
   routes,
   scrollBehavior(to, from, savedPosition) {
-    return { top: 0 }
+    if (savedPosition) return savedPosition;
+    if (to.hash) return { el: to.hash, behavior: 'smooth' };
+    return { top: 0, behavior: 'smooth' };
   },
 });
 router.afterEach((to) => {
-  const title = to.meta?.title || 'Матрешка';
+  console.log('=== AFTER EACH ===');
+  console.log('path:', to.path);
+  console.log('meta.title:', to.meta?.title);
+  console.log('document.title before:', document.title);
+  
+  const title = to.meta?.title || 'Матрёшка — доска объявлений';
   document.title = title;
+  console.log('document.title after:', document.title);
 });
 router.beforeEach((to, from, next) => {
   const auth = useAuthStore();
   const isLogged = auth.isAuthenticated;
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
+
   if (requiresAuth && !isLogged) {
-    next('/'); 
+    next({ path: '/', query: { redirect: to.fullPath, login: '1' } });
   } else {
     next();
   }
 });
-export default router; 
+
+export default router;

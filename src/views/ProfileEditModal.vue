@@ -93,6 +93,7 @@ import Multiselect from "vue-multiselect";
 import { uploadToMediaService } from "/src/utils/uploadService.js";
 import { api } from "/src/api/api.js";
 import { notify } from "/src/utils/notify";
+import { geocodeByQuery } from '/src/utils/geocode.js';
 
 const props = defineProps({ isOpen: Boolean });
 const emit = defineEmits(["close", "refresh"]);
@@ -240,7 +241,7 @@ const handleSave = async () => {
   }
 };
 
-watch(() => form.city, (val) => {if (!val) return;form.city = val.charAt(0).toUpperCase() + val.slice(1);clearTimeout(cityTimeout);cityTimeout = setTimeout(async () => {const validCity = await auth.validateAndFormatCity(val);if (validCity) form.city = validCity;}, 1000);});
+watch(() => form.city, (val) => { console.log('City input changed:', val); if (!val || val.length < 3) {console.log('City too short, skipping');return; }clearTimeout(cityTimeout); cityTimeout = setTimeout(async () => {console.log('Searching city:', val);const result = await geocodeByQuery(val);console.log('Geocode result:', result);if (result) {form.city = result.name;console.log('City updated to:', result.name);}}, 1000);});
 watch(showEmployee, (val) => {if (!val) {form.employeeName = "";form.employeePosition = null;delete errors.employeeName;delete errors.employeePosition;}});
 watch(isCompany, (newVal) => {if (!newVal) {showEmployee.value = false;}});
 watch(() => form.employeePosition, (val) => {if (val) delete errors.employeePosition;});
