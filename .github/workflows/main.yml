@@ -22,19 +22,6 @@ jobs:
           npm install
           npm run build
 
-      - name: Test SSH connection
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
-          debug: true
-          script: |
-            echo "SSH работает!"
-            whoami
-            ls -la /var/www/html/
-
       - name: Deploy to server via SCP
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -43,7 +30,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           source: "dist/*"
-          target: "/var/www/html"
+          target: "/home/front/www"
           strip_components: 1
           overwrite: true
           rm: true
