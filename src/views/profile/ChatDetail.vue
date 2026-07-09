@@ -191,13 +191,11 @@ const shouldShowDate = (msg, index) => {
   const currDate = new Date(msg.createdAt).toDateString();
   return prevDate !== currDate;
 };
-
 onMounted(() => {
   loadChatInfo();
   fetchMessages();
   polling = setInterval(fetchMessages, 5000);
 });
-
 onUnmounted(() => clearInterval(polling));
 watch(() => route.params.id, (newId) => {
   if (newId) {
