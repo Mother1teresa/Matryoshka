@@ -30,7 +30,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           source: "dist/*"
-          target: "/home/front/www"
+          target: "/var/www/html/dist"
           strip_components: 1
           overwrite: true
           rm: true
