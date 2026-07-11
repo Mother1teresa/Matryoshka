@@ -157,10 +157,10 @@ h4 {
 }
 /* -------- Плашка -------- */
 .notification {
-  position: absolute;
-  top: 3.45rem;
+  position: fixed;
+  top: 0;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%) translateY(100%);
   background: white;
   padding: 1.2rem 1.5rem;
   border-radius: 2.125rem;
@@ -168,6 +168,21 @@ h4 {
   font-weight: 400;
   font-size: 1.25rem;
   z-index: 15;
+}
+/* Анимация */
+.slide-enter-active,
+.slide-leave-active {
+  transition: all 0.35s ease;
+}
+
+.slide-enter-from {
+  opacity: 0;
+  transform: translate(-50%, -20px);
+}
+
+.slide-leave-to {
+  opacity: 0;
+  transform: translate(-50%, -20px);
 }
 .logo {
   position: relative;

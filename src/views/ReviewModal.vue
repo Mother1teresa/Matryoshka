@@ -63,7 +63,7 @@
             <label>Добавьте фотографии, если есть</label>
             <div class="photo-upload-grid">
               <div class="upload-slot" @click="$refs.fileInput.click()">
-                <img src="/src/assets/img/icons/camera-add.svg" />
+                <img src="/src/assets/img/icons/camera.svg" class="camera-icon" alt="upload" />
                 <input type="file" ref="fileInput" multiple hidden @change="handleFiles" />
               </div>
               <!-- Превью загруженных фото -->

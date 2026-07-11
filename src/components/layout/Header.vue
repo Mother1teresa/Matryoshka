@@ -160,8 +160,6 @@ const auth = useAuthStore();
 const region = useRegionModalStore();
 const reviewStore = useReviewStore();
 
-// const showNotification = ref(false);
-// const notificationText = ref("");
 const profileWrapper = ref(null);
 const showProfileMenu = ref(false);
 const showLogoutConfirm = ref(false);
@@ -195,9 +193,7 @@ function confirmLogout() {
   auth.logout();
   showProfileMenu.value = false;
   showLogoutConfirm.value = false;
-  notificationText.value = "Вы вышли из аккаунта";
-  showNotification.value = true;
-  setTimeout(() => { showNotification.value = false; }, 3000);
+  notify("Вы вышли из аккаунта");
 }
 function cancelLogout() {
   showLogoutConfirm.value = false;
@@ -208,19 +204,12 @@ function handleClickOutside(event) {
     showProfileMenu.value = false;
   }
 }
-// const handleNotify = (e) => {
-//   notificationText.value = e.detail;
-//   showNotification.value = true;
-//   setTimeout(() => { showNotification.value = false }, 3000);
-// };
 onMounted(() => {
   document.addEventListener("click", handleClickOutside);
-  // window.addEventListener("notify", handleNotify);
 });
 
 onBeforeUnmount(() => {
   document.removeEventListener("click", handleClickOutside);
-  // window.removeEventListener("notify", handleNotify);
 });
 const lockedRoutes = [
   '/profile/orders',
@@ -257,22 +246,6 @@ const handleCreateVideo = () => {
   padding: 1.375rem 0 1.813rem;
   /* box-shadow: 0 2px 5px rgba(0,0,0,0.05); */
   border-bottom: 6px solid #dddddd;
-}
-
-/* Анимация */
-.slide-enter-active,
-.slide-leave-active {
-  transition: all 0.4s ease;
-}
-
-.slide-enter-from {
-  opacity: 0;
-  transform: translate(-50%, -20px);
-}
-
-.slide-leave-to {
-  opacity: 0;
-  transform: translate(-50%, -20px);
 }
 
 /* -------- Layout -------- */

@@ -92,7 +92,7 @@ import { ref, onMounted, onUnmounted, nextTick, computed, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "/src/stores/authStore.js";
 import { notify } from "/src/utils/notify";
-import ReviewModal from "/src/components/ReviewModal.vue";
+import ReviewModal from "../ReviewModal.vue";
 
 const router = useRouter();
 const route = useRoute();
@@ -126,10 +126,22 @@ let roomSubscription = null;
 let typingTimeout = null;
 
 const connectStomp = () => {
-  if (!auth.user?.id || !route.params.id) return;
+  console.log('[connectStomp] START');
+  console.log('[connectStomp] user?.id:', auth.user?.id);
+  console.log('[connectStomp] route.params.id:', route.params.id);
+  // if (!auth.user?.id || !route.params.id) return;
+  if (!auth.user?.id || !route.params.id) {
+    console.log('[connectStomp] Missing params — returning');
+    return;
+  }
   stompClient = auth.initSocket();
-  if (!stompClient) return;
+  console.log('[connectStomp] stompClient:', stompClient);
+  // if (!stompClient) return;
 
+  if (!stompClient) {
+    console.log('[connectStomp] initSocket returned null');
+    return;
+  }
   if (stompClient.connected) {
     subscribeToRoom();
   } else {
@@ -316,12 +328,9 @@ const sendMessage = async () => {
       pendingTimeouts.set(localId, timeoutId);
 
     } else {
-      const res = await auth.sendMessage(route.params.id, text);
+      notify("Нет соединения с сервером", "error");
       const msg = messages.value.find(m => m.id === localId);
-      if (msg) {
-        msg.id = res?.id || localId;
-        msg.status = 'sent';
-      }
+      if (msg) msg.status = 'error';
     }
 
     await auth.fetchUserChats();
@@ -437,9 +446,17 @@ const shouldShowDate = (msg, index) => {
 // ===== Lifecycle =====
 onMounted(() => {
   loadChatInfo();
-  fetchMessages().then(() => {
-    connectStomp();
-  });
+  fetchMessages()
+    .then(() => {
+      console.log('[onMounted] Messages loaded');
+    })
+    .catch((e) => {
+      console.error('[onMounted] fetchMessages error:', e);
+    })
+    .finally(() => {
+      console.log('[onMounted] Connecting STOMP...');
+      connectStomp();  // ← Всегда вызываем, даже при ошибке
+    });
 });
 
 onUnmounted(() => {

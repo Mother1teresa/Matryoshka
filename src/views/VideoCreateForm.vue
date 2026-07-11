@@ -107,13 +107,13 @@ const form = reactive({
 const finish = () => {
   if (isFinishing.value) return;
   isFinishing.value = true;
-  if (autoFinishTimeout) clearTimeout(autoFinishTimeout);
+  if (autoFinishTimeout.value) clearTimeout(autoFinishTimeout.value);
   emit('success'); 
 };
 
 onBeforeUnmount(() => {
   if (videoPreview.value) URL.revokeObjectURL(videoPreview.value);
-  if (autoFinishTimeout) clearTimeout(autoFinishTimeout);
+  if (autoFinishTimeout.value) clearTimeout(autoFinishTimeout.value);
 });
 
 onMounted(async () => {
@@ -162,11 +162,11 @@ const onPublish = async () => {
     );
     
     status.value = 'success';
-    autoFinishTimeout = setTimeout(() => {
+    autoFinishTimeout.value = setTimeout(() => {
       if (isFinishing.value) return;
       isFinishing.value = true;
       emit('success', createdMedia); 
-    }, 250); 
+    }, 250);
   } catch (e) {
     console.error("Ошибка при публикации:", e);
     notify("Ошибка загрузки видео");

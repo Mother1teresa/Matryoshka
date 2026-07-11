@@ -55,16 +55,14 @@ let globalPolling = null;
 let isInitializing = false;
 let lastPollTime = 0;
 
-
 const handleNotify = (e) => {
   notificationText.value = e.detail;
   showNotification.value = true;
-  setTimeout(() => { showNotification.value = false }, 3000);
+  setTimeout(() => { showNotification.value = false }, 3500);
 };
 
 const doPoll = () => {
   const now = Date.now();
-  // Не чаще чем раз в 5 секунд, даже если вызвали из разных мест
   if (now - lastPollTime < 5000) {
     console.log('⏭️ Пропуск дубля, прошло', now - lastPollTime, 'мс');
     return;

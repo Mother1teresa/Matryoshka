@@ -67,29 +67,48 @@ export const useAuthStore = defineStore("auth", {
       return this._stompClient;
     },
     initSocket() {
-      if (this._stompClient?.connected) return this._stompClient;
-      if (!this.user?.id) return null;
+      console.log('[initSocket] START');
       
+      if (this._stompClient?.connected) return this._stompClient;
+      if (!this.user?.id) {
+        console.log('[initSocket] NO USER ID');
+        return null;
+      }
+      
+      // ✅ Используем Vite proxy /sockjs → /ws на сервере
+      const wsUrl = import.meta.env.DEV 
+      ? `ws://localhost:5173/ws`   // Vite proxy ws://localhost:5173/ws → ws://85.198.96.229:8080/ws
+      : `${import.meta.env.VITE_API_URL.replace(/^http/, 'ws')}/ws`;
+
+      console.log('[initSocket] Connecting to:', wsUrl);
+      fetch('http://localhost:5173/sockjs/info')
+        .then(r => r.text())
+        .then(t => console.log('✅ SockJS info test:', t))
+        .catch(e => console.log('❌ SockJS info test:', e.message));
+
+      fetch('http://85.198.96.229:8080/ws/info')
+        .then(r => r.text())
+        .then(t => console.log('✅ Direct info test:', t))
+        .catch(e => console.log('❌ Direct info test:', e.message));
+
       const client = new Client({
-        webSocketFactory: () => new SockJS(
-          `${import.meta.env.VITE_API_URL}/ws`,
-          null,
-          { withCredentials: true }
-        ),
+        webSocketFactory: () => new WebSocket(wsUrl),
+        connectHeaders: {
+          Authorization: `Bearer ${this.user?.token}`
+        },
         debug: (str) => console.log('[STOMP]', str),
         reconnectDelay: 5000,
         heartbeatIncoming: 4000,
         heartbeatOutgoing: 4000,
       });
-      
       client.onConnect = () => {
         console.log('[STOMP] Connected');
-        stompConnected.value = true; // ← Обновляем глобальный статус
+        stompConnected.value = true;
       };
       
       client.onDisconnect = () => {
         console.log('[STOMP] Disconnected');
-        stompConnected.value = false; // ← Обновляем глобальный статус
+        stompConnected.value = false;
       };
       
       client.onStompError = (frame) => {
@@ -97,7 +116,6 @@ export const useAuthStore = defineStore("auth", {
         stompConnected.value = false;
       };
       
-      // ← ДОБАВЛЕНО: обработка ошибок WebSocket
       client.onWebSocketError = (event) => {
         console.error('[STOMP] WebSocket Error:', event);
         stompConnected.value = false;
@@ -114,8 +132,19 @@ export const useAuthStore = defineStore("auth", {
     },
     
     disconnectSocket() {
+      console.log('[disconnectSocket] _stompClient:', this._stompClient);
+      console.log('[disconnectSocket] constructor:', this._stompClient?.constructor?.name);
+      
       if (this._stompClient) {
-        this._stompClient.deactivate();
+        try {
+          if (typeof this._stompClient.deactivate === 'function') {
+            this._stompClient.deactivate();
+          } else if (typeof this._stompClient.disconnect === 'function') {
+            this._stompClient.disconnect();
+          }
+        } catch (e) {
+          console.error('[disconnectSocket] Error:', e);
+        }
         this._stompClient = null;
       }
       stompConnected.value = false;
@@ -199,18 +228,18 @@ export const useAuthStore = defineStore("auth", {
         throw e;
       }
     },
-    async sendMessage(roomId, text) {
-      try {
-        const res = await api.post(`/chat/rooms/${roomId}/messages`, { 
-          message: text,
-          senderId: this.user?.id 
-        });
-        return res.data;
-      } catch (e) {
-        console.error("Ошибка отправки сообщения:", e.response?.data || e);
-        throw e;
-      }
-    },
+    // async sendMessage(roomId, text) {
+    //   try {
+    //     const res = await api.post(`/chat/rooms/${roomId}/messages`, { 
+    //       message: text,
+    //       senderId: this.user?.id 
+    //     });
+    //     return res.data;
+    //   } catch (e) {
+    //     console.error("Ошибка отправки сообщения:", e.response?.data || e);
+    //     throw e;
+    //   }
+    // },
     async createPrivateRoom(userBId) {
       if (!this.user?.id) throw new Error("Пользователь не авторизован");
       try {
