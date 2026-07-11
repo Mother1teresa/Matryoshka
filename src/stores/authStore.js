@@ -1,22 +1,20 @@
 import { defineStore } from "pinia";
-import { router } from "/src/router/index.js";
-import { api, resetRefreshCooldown  } from "/src/api/api.js";
+import { Client } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
+import { markRaw, ref } from 'vue';
+import { api, resetRefreshCooldown } from "/src/api/api.js";
 import { useFavoritesStore } from "/src/stores/favoritesStore.js";
 import maskAvatar from "/src/assets/img/mask-avatar.png";
 import { useRegionModalStore } from "/src/stores/regionModal.js";
 import { geocodeByQuery } from '/src/utils/geocode.js';
 
+const stompConnected = ref(false);
+
 export const useAuthStore = defineStore("auth", {
   state: () => {
     const saved = localStorage.getItem("auth");
-    console.log("=== AUTH STATE INIT ===");
-    console.log("Raw localStorage:", saved);
     try {
       const data = saved ? JSON.parse(saved) : null;
-      console.log("Parsed data:", data);
-      console.log("user:", data?.user);
-      console.log("user.id:", data?.user?.id);
-      console.log("isAuthenticated:", data?.isAuthenticated);
       return {
         isAuthenticated: data?.isAuthenticated || false,
         user: data?.user || null,
@@ -56,47 +54,114 @@ export const useAuthStore = defineStore("auth", {
       return phone;
     },
     unreadMessagesCount: (state) => {
-      return state.allChats.filter(
-        (chat) =>
-          chat.lastMessage &&
-          !chat.lastMessage.isRead &&
-          !chat.lastMessage.isMine,
-      ).length;
+      return state.allChats.reduce((sum, chat) => sum + (chat.unreadCount || 0), 0);
     },
     unreadNotificationsCount: (state) => {
       return state.allNotifications.filter((note) => !note.is_read).length;
     },
+    isStompConnected: () => stompConnected.value,
   },
   actions: {
+    _stompClient: null,
+    getSocket() {
+      return this._stompClient;
+    },
+    initSocket() {
+      if (this._stompClient?.connected) return this._stompClient;
+      if (!this.user?.id) return null;
+      
+      const client = new Client({
+        webSocketFactory: () => new SockJS(
+          `${import.meta.env.VITE_API_URL}/ws`,
+          null,
+          { withCredentials: true }
+        ),
+        debug: (str) => console.log('[STOMP]', str),
+        reconnectDelay: 5000,
+        heartbeatIncoming: 4000,
+        heartbeatOutgoing: 4000,
+      });
+      
+      client.onConnect = () => {
+        console.log('[STOMP] Connected');
+        stompConnected.value = true; // ← Обновляем глобальный статус
+      };
+      
+      client.onDisconnect = () => {
+        console.log('[STOMP] Disconnected');
+        stompConnected.value = false; // ← Обновляем глобальный статус
+      };
+      
+      client.onStompError = (frame) => {
+        console.error('[STOMP] Error:', frame.headers['message']);
+        stompConnected.value = false;
+      };
+      
+      // ← ДОБАВЛЕНО: обработка ошибок WebSocket
+      client.onWebSocketError = (event) => {
+        console.error('[STOMP] WebSocket Error:', event);
+        stompConnected.value = false;
+      };
+      
+      client.onWebSocketClose = (event) => {
+        console.log('[STOMP] WebSocket Closed:', event.code, event.reason);
+        stompConnected.value = false;
+      };
+      
+      client.activate();
+      this._stompClient = markRaw(client);
+      return this._stompClient;
+    },
+    
+    disconnectSocket() {
+      if (this._stompClient) {
+        this._stompClient.deactivate();
+        this._stompClient = null;
+      }
+      stompConnected.value = false;
+    },
+
+    async markMessageAsRead(messageId, roomId) {
+      try {
+        await api.patch(`/chat/messages/${messageId}/read?roomId=${roomId}`);
+      } catch (e) {
+        console.error('Ошибка markMessageAsRead:', e.response?.data || e);
+        throw e;
+      }
+    },
     async fetchUserChats() {
       if (!this.user?.id) {
         console.log("Невозможно загрузить чаты: пользователь не авторизован");
         return;
       }
       try {
-        const res = await api.get(`/chat/users/${this.user.id}/rooms`);
-        const rooms = res.data?.rooms || [];
+        const res = await api.get('/chat/user-rooms');
+        const rooms = res.data || [];
         this.allChats = rooms.map((room) => {
           const opponent = room.users?.find((u) => u.id !== this.user.id) || {};
           const lastMsg = room.messages && room.messages.length > 0
             ? room.messages[room.messages.length - 1]
             : null;
 
+          const unreadCount = room.messages?.filter(
+            m => m.senderId !== this.user.id && !m.isRead
+          ).length || 0;
+
           return {
             id: room.id,
-            productName: "Объявление",
-            productImage: "/src/assets/img/mask-avatar.png",
-            price: "",
+            productName: room.productName || "Объявление",
+            productImage: room.productImage || "/src/assets/img/mask-avatar.png",
+            price: room.price || "",
             user: {
               id: opponent.id || "",
               name: opponent.username || opponent.email || "Пользователь",
               avatar: opponent.avatar || "/src/assets/img/mask-avatar.png",
-              isOnline: false,
+              isOnline: opponent.isOnline || false,
             },
             lastMessage: {
-              text: lastMsg ? lastMsg.text : "Сообщений нет",
-              isMine: lastMsg ? lastMsg.userId === this.user.id : false,
-              isRead: false,
+              text: lastMsg ? lastMsg.message : "Сообщений нет",
+              isMine: lastMsg ? lastMsg.senderId === this.user.id : false,
+              isRead: lastMsg ? lastMsg.isRead : false,
               time: lastMsg && lastMsg.createdAt
                 ? new Date(lastMsg.createdAt).toLocaleTimeString([], {
                     hour: "2-digit",
@@ -104,23 +169,24 @@ export const useAuthStore = defineStore("auth", {
                   })
                 : "",
             },
+            unreadCount,
           };
         });
       } catch (e) {
-        console.error("Ошибка при получении чатов через API:", e.response?.data || e);
+        console.error("Ошибка при получении чатов:", e.response?.data || e);
         throw e;
       }
     },
-    async fetchChatMessages(roomId) {
+    async fetchChatMessages(roomId, signal) {
       try {
-        const res = await api.get(`/chat/rooms/${roomId}/messages`);
-        const msgs = res.data?.messages || [];
+        const res = await api.get(`/chat/room/${roomId}`, { signal });
+        const msgs = res.data || [];
         return {
           messages: msgs.map(msg => ({
             id: msg.id,
-            text: msg.text,
-            isMine: msg.userId === this.user?.id,
-            isRead: false,
+            text: msg.message,
+            isMine: msg.senderId === this.user?.id,
+            isRead: msg.isRead || false,
             time: msg.createdAt
               ? new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
               : "",
@@ -128,15 +194,16 @@ export const useAuthStore = defineStore("auth", {
           })),
         };
       } catch (e) {
+        if (e.name === 'AbortError') throw e;
         console.error("Ошибка загрузки сообщений:", e.response?.data || e);
         throw e;
       }
     },
     async sendMessage(roomId, text) {
       try {
-        const res = await api.post(`/chat/rooms/${roomId}/messages`, {
-          text,
-          userId: this.user?.id,
+        const res = await api.post(`/chat/rooms/${roomId}/messages`, { 
+          message: text,
+          senderId: this.user?.id 
         });
         return res.data;
       } catch (e) {
@@ -147,7 +214,7 @@ export const useAuthStore = defineStore("auth", {
     async createPrivateRoom(userBId) {
       if (!this.user?.id) throw new Error("Пользователь не авторизован");
       try {
-        const res = await api.post("/chat/rooms/private", {
+        const res = await api.post("/chat/create-room", {
           userA: this.user.id,
           userB: userBId,
         });
@@ -160,9 +227,7 @@ export const useAuthStore = defineStore("auth", {
     async searchMessages(roomId, query) {
       if (!query.trim()) return [];
       try {
-        const res = await api.get(
-          `/chat/rooms/${roomId}/messages/search?q=${encodeURIComponent(query)}`
-        );
+        const res = await api.get(`/chat/search-messages/${roomId}?query=${encodeURIComponent(query)}`);
         return res.data?.messages || [];
       } catch (e) {
         console.error("Ошибка поиска:", e.response?.data || e);
@@ -802,6 +867,7 @@ export const useAuthStore = defineStore("auth", {
       }
     },
     async logout() {
+      this.disconnectSocket();
       this.isAuthenticated = false;
       this.user = null;
       useRegionModalStore().$patch({

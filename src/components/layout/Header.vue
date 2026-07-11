@@ -2,11 +2,11 @@
   <header class="header">
     <div class="container">
       <!-- 🔔 уведомление -->
-      <transition name="slide">
+      <!-- <transition name="slide">
         <div v-if="showNotification" class="notification">
           {{ notificationText }}
         </div>
-      </transition>
+      </transition> -->
 
       <div class="header__top">
         <router-link to="/" class="logo">
@@ -160,8 +160,8 @@ const auth = useAuthStore();
 const region = useRegionModalStore();
 const reviewStore = useReviewStore();
 
-const showNotification = ref(false);
-const notificationText = ref("");
+// const showNotification = ref(false);
+// const notificationText = ref("");
 const profileWrapper = ref(null);
 const showProfileMenu = ref(false);
 const showLogoutConfirm = ref(false);
@@ -208,19 +208,19 @@ function handleClickOutside(event) {
     showProfileMenu.value = false;
   }
 }
-const handleNotify = (e) => {
-  notificationText.value = e.detail;
-  showNotification.value = true;
-  setTimeout(() => { showNotification.value = false }, 3000);
-};
+// const handleNotify = (e) => {
+//   notificationText.value = e.detail;
+//   showNotification.value = true;
+//   setTimeout(() => { showNotification.value = false }, 3000);
+// };
 onMounted(() => {
   document.addEventListener("click", handleClickOutside);
-  window.addEventListener("notify", handleNotify);
+  // window.addEventListener("notify", handleNotify);
 });
 
 onBeforeUnmount(() => {
   document.removeEventListener("click", handleClickOutside);
-  window.removeEventListener("notify", handleNotify);
+  // window.removeEventListener("notify", handleNotify);
 });
 const lockedRoutes = [
   '/profile/orders',

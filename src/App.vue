@@ -17,6 +17,12 @@
 
   <!-- Основной сайт -->
   <div class="desktop-content">
+    <!-- 🔔 уведомление -->
+      <transition name="slide">
+        <div v-if="showNotification" class="notification">
+          {{ notificationText }}
+        </div>
+      </transition>
     <router-view :key="$route.fullPath" />
     <MegaMenu />
     <AuthModal />
@@ -26,7 +32,7 @@
   </div>
 </template>
 <script setup>
-import { ref,watch,onUnmounted,provide,onMounted } from 'vue';
+import { ref, watch, onUnmounted, provide, onMounted } from 'vue';
 import Footer from './components/layout/Footer.vue';
 import RegionModal from "./components/layout/RegionModal.vue"
 import MegaMenu from "./components/layout/MegaMenu.vue";
@@ -37,7 +43,10 @@ import zagluhIcon from '/src/assets/img/zagluh/icon-zagluhka.svg';
 import { useAuthStore } from "/src/stores/authStore.js";
 import { useReviewStore } from "/src/stores/reviews.js";
 import { useProductStore } from "/src/stores/product.js";
+import { notify } from "/src/utils/notify";
 
+const showNotification = ref(false);
+const notificationText = ref("");
 const auth = useAuthStore();
 const reviewStore = useReviewStore();
 const productStore = useProductStore();
@@ -46,17 +55,21 @@ let globalPolling = null;
 let isInitializing = false;
 let lastPollTime = 0;
 
+
+const handleNotify = (e) => {
+  notificationText.value = e.detail;
+  showNotification.value = true;
+  setTimeout(() => { showNotification.value = false }, 3000);
+};
+
 const doPoll = () => {
   const now = Date.now();
-  
   // Не чаще чем раз в 5 секунд, даже если вызвали из разных мест
   if (now - lastPollTime < 5000) {
     console.log('⏭️ Пропуск дубля, прошло', now - lastPollTime, 'мс');
     return;
   }
-  
   lastPollTime = now;
-  
   if (!document.hidden && auth.isAuthenticated && auth.user?.id) {
     console.log('📡 Poll:', new Date().toLocaleTimeString());
     auth.fetchUserChats().catch(console.error);
@@ -118,11 +131,13 @@ watch(
 onMounted(() => {
   document.addEventListener('visibilitychange', handleVisibilityChange);
   productStore.fetchAdverts();
+  window.addEventListener("notify", handleNotify);
 });
 
 onUnmounted(() => {
   stopGlobalPolling();
   document.removeEventListener('visibilitychange', handleVisibilityChange);
+  window.removeEventListener("notify", handleNotify);
 });
 </script>
 
