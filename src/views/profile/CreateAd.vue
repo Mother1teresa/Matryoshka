@@ -296,16 +296,16 @@ function fillAttributesFromApi(ad) {
     attr.area = ad.totalArea
     attr.floor = ad.apartmentFloor
     attr.floors = ad.floorsInHouse
-    attr.house_type = ad.houseType
-    attr.payment_form = ad.paymentType
+    attr.house_type = reverseMapHouseType(ad.propertyType);
+    attr.payment_form = reverseMapPaymentType(ad.paymentType);
     attr.balcony = ad.hasBalcony ? 'Есть' : 'Нет'
     attr.elevator = ad.hasElevator ? 'Есть' : 'Нет'
     attr.parking = ad.hasParking ? 'Есть' : 'Нет'
-    attr.status = ad.houseState
+    attr.status = ad.houseState ? [reverseMapHouseState(ad.houseState)] : [];
     attr.documents = ad.hasDocuments ? ['Собственность'] : []
     attr.distance_to_metro = ad.stationDistance
     attr.infrastructure_nearby = ad.cityInfrastructure ? 'Есть' : 'Нет'
-    attr.deal_type = ad.paymentType
+    attr.deal_type = reverseMapPaymentType(ad.paymentType);
   }
   
   // Транспорт
@@ -315,15 +315,15 @@ function fillAttributesFromApi(ad) {
     attr.year = ad.yearOfManufacture
     attr.color = ad.color
     attr.body_type = ad.vehicleBodyType
-    attr.transmission = ad.vehicleKpp
+    attr.transmission = reverseMapTransmission(ad.vehicleKpp);
     attr.pts_owners = String(ad.ownersPts)
     attr.mileage = ad.milage
     attr.engine_volume = ad.engineCapacity
     attr.power = ad.horsePower
-    attr.drive = [ad.drive]
-    attr.steering = [ad.steeringWheel]
+    attr.drive = ad.drive ? [reverseMapDrive(ad.drive)] : [];
+    attr.steering = ad.steeringWheel ? [reverseMapSteering(ad.steeringWheel)] : [];
     attr.engine = ad.engineType
-    attr.cooling = [ad.cooling]
+    attr.cooling = ad.cooling ? [reverseMapCooling(ad.cooling)] : [];
     attr.condition = ad.isOnTheGo ? 'На ходу' : 'Не на ходу'
   }
   
@@ -333,8 +333,8 @@ function fillAttributesFromApi(ad) {
     attr.activity_sphere = ad.sphere
     attr.experience = { value: ad.workExperience, unit: 'лет' }
     attr.experience_required = { value: ad.workExperience, unit: 'лет' }
-    attr.employment_type = [ad.employment]
-    attr.work_format = [ad.workFormat]
+    attr.employment_type = ad.employment ? [reverseMapEmployment(ad.employment)] : [];
+    attr.work_format = ad.workFormat ? [reverseMapWorkFormat(ad.workFormat)] : [];
     attr.advantages = ad.advantages
     attr.salary = { price: Number(ad.price), unit: 'За месяц' }
     attr.desired_position = ad.profession
@@ -342,7 +342,7 @@ function fillAttributesFromApi(ad) {
   
   // Услуги
   if (ad.category === 'uslugi') {
-    attr.price = { price: String(ad.price), unit: ad.priceFor || 'За услугу' }
+    attr.price = { price: String(ad.price), unit: reverseMapPriceFor(ad.priceFor) || 'За услугу' }
     attr.service_types = ad.services?.map(s => s.text) || []
     attr.service_name = ad.title
     attr.activity = ad.description
@@ -1041,6 +1041,64 @@ const publishAd = async () => {
     isSubmitting.value = false;
   }
 };
+// ═══════════════════════════════════════════════════════════
+// МАППИНГИ: UI-значения → API enum-значения
+// ═══════════════════════════════════════════════════════════
+
+function mapTransmission(val) {
+  const map = { 'Механика': 'Manual', 'Автомат': 'Automatic', 'Робот': 'Robot', 'Вариатор': 'Variable' };
+  return map[val] || '';
+}
+
+function mapDrive(val) {
+  const map = { 'Передний': 'Front', 'Задний': 'Rear', 'Полный': 'Full' };
+  return map[val] || '';
+}
+
+function mapSteering(val) {
+  const map = { 'Левый': 'Left', 'Правый': 'Right' };
+  return map[val] || '';
+}
+
+function mapCooling(val) {
+  const map = { 'Воздушное': 'Air', 'Жидкостное': 'Liquid' };
+  return map[val] || '';
+}
+
+function mapHouseType(val) {
+  const map = { 'Кирпичный': 'Brick', 'Панельный': 'Panel', 'Монолитный': 'Monolith' };
+  return map[val] || '';
+}
+
+function mapHouseState(val) {
+  const map = { 'Под ключ': 'EuroRepairs', 'Нужен ремонт': 'NeedRepairs', 'Черновая отделка': 'RoughFinish' };
+  return map[val] || '';
+}
+
+function mapPriceFor(val) {
+  const map = { 'За услугу': 'Service', 'За час': 'Hour', 'За день': 'Day', 'По договоренности': 'Service' };
+  return map[val] || 'Service';
+}
+
+function mapPaymentType(val) {
+  const map = { 'Ипотека': 'Mortgage', 'Наличные': 'Full', 'Мат. капитал': 'Trade', 'Безналичные': 'Full' };
+  return map[val] || 'Full';
+}
+
+function mapGender(val) {
+  const map = { 'Мужской': 'Male', 'Женский': 'Female' };
+  return map[val] || '';
+}
+
+function mapBusinessForm(val) {
+  const map = { 'ИП': 'IE', 'ООО': 'LLC', 'АО': 'JSC', 'Другое': 'Other' };
+  return map[val] || '';
+}
+
+function mapTransactionScope(val) {
+  const map = { 'В аренду': 'Meet', 'Продать': 'Sell', 'Найти партнёра': 'FindPartner' };
+  return map[val] || '';
+}
 
 // ═══════════════════════════════════════════════════════════
 // MOUNTED

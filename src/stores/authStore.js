@@ -76,10 +76,7 @@ export const useAuthStore = defineStore("auth", {
         return null;
       }
       
-      const wsUrl = import.meta.env.DEV 
-        ? `/chat-websocket`
-        : `${import.meta.env.VITE_API_URL}/chat-websocket`;
-
+      const wsUrl = `http://85.198.96.229:8080/chat-websocket`;
       console.log('[initSocket] Connecting to:', wsUrl);
 
       const client = new Client({
@@ -93,9 +90,13 @@ export const useAuthStore = defineStore("auth", {
         heartbeatOutgoing: 4000,
       });
       
+      let reconnectAttempts = 0;
+      const MAX_RECONNECT_ATTEMPTS = 5;
+
       client.onConnect = () => {
         console.log('[STOMP] Connected');
         stompConnected.value = true;
+        reconnectAttempts = 0;
       };
       
       client.onDisconnect = () => {
@@ -113,9 +114,17 @@ export const useAuthStore = defineStore("auth", {
         stompConnected.value = false;
       };
       
+      // ← ТОЛЬКО ОДИН обработчик onWebSocketClose!
       client.onWebSocketClose = (event) => {
         console.log('[STOMP] WebSocket Closed:', event.code, event.reason);
         stompConnected.value = false;
+        
+        reconnectAttempts++;
+        if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+          console.error('[STOMP] Достигнут лимит попыток переподключения');
+          client.deactivate();
+          this._stompClient = null;
+        }
       };
       
       client.activate();
