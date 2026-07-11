@@ -353,10 +353,10 @@ export const categories = [
           { name: "Собаки", slug: "dogs" },
           { name: "Рыбы и амфибии", slug: "fish" },
           { name: "Кошки", slug: "cats" },
-          { name: "Сельскохозяйственные животные", slug: "remote" },
+          { name: "Сельскохозяйственные животные", slug: "farm" },
           { name: "Птицы", slug: "birds" },
-          { name: "Грызуны", slug: "seasonal" },
-          { name: "Другие животные", slug: "full" },
+          { name: "Грызуны", slug: "rodents" },
+          { name: "Другие животные", slug: "other" },
         ],
       },
       {

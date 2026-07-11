@@ -491,7 +491,7 @@ const rules = computed(() => {
       required, 
       minValue: minValue(1),
       // Добавляем проверку что это число
-      numeric: (value) => !value || Number(value) > 0
+      numeric: (value) => value === '' || value === null || value === undefined || Number(value) > 0
     };
   }
   
@@ -860,10 +860,10 @@ function mapEmployment(val) {
     'Частичная занятость': 'PartTime',
     'Временная': 'Temporary',
     'Стажировка': 'Internship',
-    'Проектная': 'Project',
-    'Волонтерство': 'Volunteer',
-    'Самозанятость': 'SelfEmployed',
-    'Подработка': 'Gig'
+    // 'Проектная': 'Project',
+    // 'Волонтерство': 'Volunteer',
+    // 'Самозанятость': 'SelfEmployed',
+    // 'Подработка': 'Gig'
   };
   return map[val] || 'FullTime';
 }
@@ -871,12 +871,9 @@ function mapEmployment(val) {
 // Маппинг workFormat для API
 function mapWorkFormat(val) {
   const map = {
-    'Удалённо': 'Remote',
-    'Удалённая работа': 'Remote',
-    'В офисе или на предприятии': 'Office',
-    'Работа в офисе': 'Office',
-    'Гибрид': 'Hybrid',
-    'Гибкий': 'Flexible'
+    'Удалённо': 'Outsource', 'Удалённая работа': 'Outsource',
+    'В офисе или на предприятии': 'Office', 'Работа в офисе': 'Office',
+    'Гибрид': 'Hybride', 'Гибкий': 'Hybride'
   };
   return map[val] || 'Office';
 }
@@ -886,10 +883,7 @@ function buildWorkSchedule(days, timeRange) {
   if (!days || days.length === 0) return [];
   if (!timeRange) return [];
   
-  const dayMap = {
-    'пн.': 1, 'вт.': 2, 'ср.': 3, 'чт.': 4, 
-    'пт.': 5, 'сб.': 6, 'вс.': 7
-  };
+  const dayMap = { 'пн.': 0, 'вт.': 1, 'ср.': 2, 'чт.': 3, 'пт.': 4, 'сб.': 5, 'вс.': 6 };
   
   const sorted = days.map(d => dayMap[d]).filter(Boolean).sort((a, b) => a - b);
   if (sorted.length === 0) return [];
@@ -982,7 +976,7 @@ const publishAd = async () => {
       workSchedule: buildWorkSchedule(attr.work_days, attr.work_time),
       
       // --- НЕДВИЖИМОСТЬ ---
-      propertyType: form.objectType || '',
+      propertyType: mapHouseType(attr.house_type) || '',
       totalArea: attr.area?.value ? Number(attr.area.value) : (attr.area ? Number(attr.area) : 0),
       livingArea: attr.house_area?.value ? Number(attr.house_area.value) : (attr.house_area ? Number(attr.house_area) : 0),
       kitchenArea: 0,

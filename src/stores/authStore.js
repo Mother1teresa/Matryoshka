@@ -7,6 +7,7 @@ import { useFavoritesStore } from "/src/stores/favoritesStore.js";
 import maskAvatar from "/src/assets/img/mask-avatar.png";
 import { useRegionModalStore } from "/src/stores/regionModal.js";
 import { geocodeByQuery } from '/src/utils/geocode.js';
+import { notify } from "/src/utils/notify";
 
 const stompConnected = ref(false);
 
@@ -75,24 +76,14 @@ export const useAuthStore = defineStore("auth", {
         return null;
       }
       
-      // ✅ Используем Vite proxy /sockjs → /ws на сервере
       const wsUrl = import.meta.env.DEV 
-      ? `ws://localhost:5173/ws`   // Vite proxy ws://localhost:5173/ws → ws://85.198.96.229:8080/ws
-      : `${import.meta.env.VITE_API_URL.replace(/^http/, 'ws')}/ws`;
+        ? `/chat-websocket`
+        : `${import.meta.env.VITE_API_URL}/chat-websocket`;
 
       console.log('[initSocket] Connecting to:', wsUrl);
-      fetch('http://localhost:5173/sockjs/info')
-        .then(r => r.text())
-        .then(t => console.log('✅ SockJS info test:', t))
-        .catch(e => console.log('❌ SockJS info test:', e.message));
-
-      fetch('http://85.198.96.229:8080/ws/info')
-        .then(r => r.text())
-        .then(t => console.log('✅ Direct info test:', t))
-        .catch(e => console.log('❌ Direct info test:', e.message));
 
       const client = new Client({
-        webSocketFactory: () => new WebSocket(wsUrl),
+        webSocketFactory: () => new SockJS(wsUrl),
         connectHeaders: {
           Authorization: `Bearer ${this.user?.token}`
         },
@@ -101,6 +92,7 @@ export const useAuthStore = defineStore("auth", {
         heartbeatIncoming: 4000,
         heartbeatOutgoing: 4000,
       });
+      
       client.onConnect = () => {
         console.log('[STOMP] Connected');
         stompConnected.value = true;

@@ -16,30 +16,14 @@ export const uploadToMediaService = async (file, type = "video", metadata = {}, 
     const { url, s3Key } = presignedData;
 
     // 2. Загружаем файл напрямую в S3
-    await new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-
-      xhr.upload.addEventListener("progress", (e) => {
-        if (e.lengthComputable && typeof onProgress === 'function') {
-          const percent = Math.round((e.loaded * 100) / e.total);
+    await axios.put(url, file, {
+      // headers: { 'Content-Type': finalContentType },
+      onUploadProgress: (progressEvent) => {
+        if (typeof onProgress === 'function') {
+          const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
           onProgress(percent);
         }
-      });
-
-      xhr.addEventListener("load", () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          resolve();
-        } else {
-          reject(new Error(`S3 upload failed: ${xhr.status} ${xhr.statusText}`));
-        }
-      });
-
-      xhr.addEventListener("error", () => reject(new Error("S3 upload network error")));
-      xhr.addEventListener("abort", () => reject(new Error("S3 upload aborted")));
-
-      xhr.open("PUT", url);
-      // ❌ НЕ вызываем xhr.setRequestHeader() — браузер сам выставит Content-Type из Blob/File
-      xhr.send(file);
+      }
     });
 
     // 3. Сохраняем метаданные в вашем сервисе

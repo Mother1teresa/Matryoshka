@@ -117,11 +117,11 @@ flex-direction: column;}
   background-image: url("/src/assets/img/arr-select.svg");
   background-repeat: no-repeat; background-size: contain; transition: transform 0.3s; z-index: 1; pointer-events: none;
 }
-:deep(.multiselect--active) .multiselect{
+:deep(.multiselect--active .multiselect){
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
 }
-:deep(.multiselect--active) .multiselect__caret { transform: rotate(180deg); }
+:deep(.multiselect--active .multiselect__caret) { transform: rotate(180deg); }
 :deep(.multiselect__select) { display: none !important; }
 /* Фикс текста */
 :deep(.multiselect__single) { 
