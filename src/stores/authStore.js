@@ -25,6 +25,9 @@ export const useAuthStore = defineStore("auth", {
         allChats: [],
         allNotifications: [],
         isNotificationsLoading: false,
+        // === POLLING ===
+        _pollingIntervals: {}, // roomId -> intervalId
+        _lastMessageIds: {}, 
       };
     } catch (e){
       console.error("Auth parse error:", e);
@@ -38,6 +41,8 @@ export const useAuthStore = defineStore("auth", {
         isVideosLoading: false,
         allNotifications: [],
         isNotificationsLoading: false,
+        _pollingIntervals: {},
+        _lastMessageIds: {},
       };
     }
   },
@@ -67,6 +72,8 @@ export const useAuthStore = defineStore("auth", {
     getSocket() {
       return this._stompClient;
     },
+
+    // ========== WEBSOCKET ==========
     initSocket() {
       console.log('[initSocket] START');
       
@@ -76,28 +83,35 @@ export const useAuthStore = defineStore("auth", {
         return null;
       }
       
-      const wsUrl = import.meta.env.DEV 
-        ? `/chat-websocket?token=${this.user?.token}`
-        : `http://85.198.96.229:8080/chat-websocket?token=${this.user?.token}`;
+      // На проде пробуем через тот же домен (nginx прокси)
+      // Если nginx настроен — заработает. Если нет — упадёт и перейдём на polling
+      let wsUrl;
+      if (import.meta.env.DEV) {
+        // Dev: через Vite прокси (SockJS)
+        wsUrl = `/chat-websocket`;
+      } else {
+        // Prod: пробуем через тот же домен (если nginx проксирует)
+        // Если nginx НЕ проксирует WebSocket — это не заработает
+        wsUrl = `/chat-websocket`;
+      }
 
       console.log('[initSocket] Connecting to:', wsUrl);
 
       const client = new Client({
         webSocketFactory: () => new SockJS(wsUrl),
         debug: (str) => console.log('[STOMP]', str),
-        reconnectDelay: 5000, // ← ВКЛЮЧАЕМ встроенный реконнект!
+        reconnectDelay: 5000,
         heartbeatIncoming: 4000,
         heartbeatOutgoing: 4000,
       });
       
-      // Счётчик попыток через замыкание
       let reconnectAttempts = 0;
       const MAX_RECONNECT_ATTEMPTS = 3;
 
       client.onConnect = (frame) => {
         console.log('[STOMP] Connected');
         stompConnected.value = true;
-        reconnectAttempts = 0; // Сбрасываем при успехе
+        reconnectAttempts = 0;
       };
       
       client.onDisconnect = () => {
@@ -110,12 +124,9 @@ export const useAuthStore = defineStore("auth", {
         stompConnected.value = false;
       };
       
-      // ВАЖНО: onWebSocketError вызывается ПЕРЕД onWebSocketClose
-      // Не деактивируем здесь — пусть встроенный реконнект работает
       client.onWebSocketError = (event) => {
         console.error('[STOMP] WebSocket Error:', event);
         stompConnected.value = false;
-        // НЕ вызываем client.deactivate()!
       };
       
       client.onWebSocketClose = (event) => {
@@ -128,7 +139,6 @@ export const useAuthStore = defineStore("auth", {
           client.deactivate();
           this._stompClient = null;
         }
-        // Иначе встроенный reconnectDelay: 5000 сам переподключится
       };
       
       try {
@@ -147,7 +157,6 @@ export const useAuthStore = defineStore("auth", {
       
       if (this._stompClient) {
         try {
-          // Отключаем реконнект ПЕРЕД деактивацией
           this._stompClient.reconnectDelay = 0;
           this._stompClient.deactivate();
         } catch (e) {
@@ -156,6 +165,95 @@ export const useAuthStore = defineStore("auth", {
         this._stompClient = null;
       }
       stompConnected.value = false;
+    },
+
+    // ========== POLLING (Fallback) ==========
+    startMessagePolling(roomId, onNewMessage) {
+      // Останавливаем предыдущий polling для этой комнаты
+      this.stopMessagePolling(roomId);
+      
+      console.log(`[Polling] Started for room ${roomId}`);
+      
+      const poll = async () => {
+        try {
+          const { messages } = await this.fetchChatMessages(roomId);
+          
+          if (messages && messages.length > 0) {
+            const lastId = this._lastMessageIds[roomId];
+            const newMessages = lastId 
+              ? messages.filter(m => m.id > lastId)
+              : messages;
+            
+            if (newMessages.length > 0) {
+              this._lastMessageIds[roomId] = messages[messages.length - 1].id;
+              newMessages.forEach(msg => onNewMessage?.(msg));
+            }
+          }
+        } catch (e) {
+          console.error(`[Polling] Error for room ${roomId}:`, e);
+        }
+      };
+      
+      // Первый запрос сразу
+      poll();
+      
+      // Затем каждые 3 секунды
+      this._pollingIntervals[roomId] = setInterval(poll, 3000);
+    },
+    
+    stopMessagePolling(roomId) {
+      if (this._pollingIntervals[roomId]) {
+        clearInterval(this._pollingIntervals[roomId]);
+        delete this._pollingIntervals[roomId];
+        console.log(`[Polling] Stopped for room ${roomId}`);
+      }
+    },
+    
+    stopAllPolling() {
+      Object.keys(this._pollingIntervals).forEach(roomId => {
+        this.stopMessagePolling(roomId);
+      });
+      this._lastMessageIds = {};
+    },
+
+    // ========== CHAT ACTIONS ==========
+    async subscribeToRoom(roomId, onMessage) {
+      // Сначала пробуем WebSocket
+      const client = this.initSocket();
+      
+      if (client && client.connected) {
+        // WebSocket подключён — подписываемся
+        client.subscribe(`/topic/room/${roomId}`, (message) => {
+          const body = JSON.parse(message.body);
+          onMessage?.(body);
+        });
+        return 'websocket';
+      } else {
+        // Fallback на polling
+        this.startMessagePolling(roomId, onMessage);
+        return 'polling';
+      }
+    },
+
+    async sendMessage(roomId, text) {
+      const client = this.getSocket();
+      
+      if (client?.connected) {
+        // Отправка через WebSocket
+        client.publish({
+          destination: `/app/chat.sendMessage/${roomId}`,
+          body: JSON.stringify({
+            senderId: this.user?.id,
+            message: text,
+          })
+        });
+      } else {
+        // Fallback — HTTP POST
+        await api.post(`/chat/rooms/${roomId}/messages`, {
+          message: text,
+          senderId: this.user?.id
+        });
+      }
     },
 
     async markMessageAsRead(messageId, roomId) {

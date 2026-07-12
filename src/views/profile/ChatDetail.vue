@@ -121,65 +121,67 @@ const isTyping = ref(false);
 const pendingTimeouts = new Map();
 
 // ===== STOMP =====
-let stompClient = null;
 let roomSubscription = null;
+let typingSubscription = null;
 let typingTimeout = null;
+let chatMode = ref('none');
 
-const connectStomp = () => {
-  console.log('[connectStomp] START');
-  console.log('[connectStomp] user?.id:', auth.user?.id);
-  console.log('[connectStomp] route.params.id:', route.params.id);
-  // if (!auth.user?.id || !route.params.id) return;
+const connectChat = async () => {
+  console.log('[connectChat] START');
   if (!auth.user?.id || !route.params.id) {
-    console.log('[connectStomp] Missing params — returning');
+    console.log('[connectChat] Missing params');
     return;
   }
-  stompClient = auth.initSocket();
-  console.log('[connectStomp] stompClient:', stompClient);
-  // if (!stompClient) return;
 
-  if (!stompClient) {
-    console.log('[connectStomp] initSocket returned null');
-    return;
-  }
-  if (stompClient.connected) {
-    subscribeToRoom();
-  } else {
-    const originalOnConnect = stompClient.onConnect;
-    stompClient.onConnect = (frame) => {
-      if (originalOnConnect) originalOnConnect(frame);
-      subscribeToRoom();
-    };
+  // Используем новый метод из authStore
+  chatMode.value = await auth.subscribeToRoom(route.params.id, handleIncomingMessage);
+  console.log('[connectChat] Mode:', chatMode.value);
+
+  // Если WebSocket — подписываемся на typing
+  if (chatMode.value === 'websocket') {
+    const client = auth.getSocket();
+    if (client?.connected) {
+      typingSubscription = client.subscribe(
+        `/topic/room/${route.params.id}/typing`,
+        (message) => {
+          const data = JSON.parse(message.body);
+          if (data.senderId !== auth.user?.id) {
+            isTyping.value = true;
+            setTimeout(() => { isTyping.value = false; }, 3000);
+          }
+        }
+      );
+    }
   }
 };
 
-const subscribeToRoom = () => {
-  if (!stompClient?.connected || !route.params.id) return;
+// const subscribeToRoom = () => {
+//   if (!stompClient?.connected || !route.params.id) return;
 
-  if (roomSubscription) {
-    roomSubscription.unsubscribe();
-    roomSubscription = null;
-  }
+//   if (roomSubscription) {
+//     roomSubscription.unsubscribe();
+//     roomSubscription = null;
+//   }
 
-  roomSubscription = stompClient.subscribe(
-    `/topic/room/${route.params.id}`,
-    (message) => {
-      const msg = JSON.parse(message.body);
-      handleIncomingMessage(msg);
-    }
-  );
+//   roomSubscription = stompClient.subscribe(
+//     `/topic/room/${route.params.id}`,
+//     (message) => {
+//       const msg = JSON.parse(message.body);
+//       handleIncomingMessage(msg);
+//     }
+//   );
 
-  stompClient.subscribe(
-    `/topic/room/${route.params.id}/typing`,
-    (message) => {
-      const data = JSON.parse(message.body);
-      if (data.senderId !== auth.user?.id) {
-        isTyping.value = true;
-        setTimeout(() => { isTyping.value = false; }, 3000);
-      }
-    }
-  );
-};
+//   stompClient.subscribe(
+//     `/topic/room/${route.params.id}/typing`,
+//     (message) => {
+//       const data = JSON.parse(message.body);
+//       if (data.senderId !== auth.user?.id) {
+//         isTyping.value = true;
+//         setTimeout(() => { isTyping.value = false; }, 3000);
+//       }
+//     }
+//   );
+// };
 
 const handleIncomingMessage = (msg) => {
   const pendingMsg = messages.value.find(m => 
@@ -238,10 +240,11 @@ const reconnectSocket = () => {
 
 // ===== Typing indicator =====
 const handleTyping = () => {
-  if (stompClient?.connected && newMessage.value.trim()) {
+  const client = auth.getSocket();
+  if (client?.connected && newMessage.value.trim()) {
     if (typingTimeout) clearTimeout(typingTimeout);
 
-    stompClient.publish({
+    client.publish({
       destination: `/app/chat.typing/${route.params.id}`,
       body: JSON.stringify({
         senderId: auth.user?.id,
@@ -461,14 +464,20 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (abortController.value) abortController.value.abort();
-
   pendingTimeouts.forEach((id) => clearTimeout(id));
   pendingTimeouts.clear();
   if (typingTimeout) clearTimeout(typingTimeout);
-
+  
+  // Останавливаем polling если был
+  auth.stopMessagePolling(route.params.id);
+  
   if (roomSubscription) {
     roomSubscription.unsubscribe();
     roomSubscription = null;
+  }
+  if (typingSubscription) {
+    typingSubscription.unsubscribe();
+    typingSubscription = null;
   }
 });
 

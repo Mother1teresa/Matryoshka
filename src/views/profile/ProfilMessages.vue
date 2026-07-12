@@ -35,7 +35,11 @@ let pollInterval = null;
 
 const connectStomp = () => {
   stompClient = auth.initSocket();
-  if (!stompClient) return;
+  if (!stompClient) {
+    // STOMP не подключился — оставляем polling
+    console.log('[MessagesList] STOMP not available, using polling');
+    return;
+  }
 
   const setupSubscription = () => {
     if (!stompClient.connected) {
@@ -43,7 +47,6 @@ const connectStomp = () => {
       return;
     }
 
-    // Подписка на обновления чатов пользователя
     userSubscription = stompClient.subscribe(
       `/topic/user/${auth.user?.id}`,
       (message) => {
@@ -67,6 +70,15 @@ const connectStomp = () => {
       if (originalOnConnect) originalOnConnect(frame);
       setupSubscription();
     };
+    
+    // Если STOMP не подключится за 10 сек — polling останется
+    setTimeout(() => {
+      if (!stompClient.connected && !pollInterval) {
+        pollInterval = setInterval(() => {
+          loadChats(true);
+        }, 15000);
+      }
+    }, 10000);
   }
 };
 
