@@ -24,7 +24,7 @@
     <div v-else-if="field.type === 'number'" class="input-with-suffix">
       <input 
         :value="modelValue" 
-        @input="$emit('update:modelValue', $event.target.valueAsNumber || $event.target.value)"
+        @input="$emit('update:modelValue', $event.target.valueAsNumber !== undefined ? $event.target.valueAsNumber : $event.target.value)"
         type="number" 
         :placeholder="field.placeholder || '0'" 
         class="f-input" 
@@ -185,7 +185,7 @@
       <p class="address-hint">Адрес указывается в секции "Местоположение" ниже</p>
     </div>
 
-    <!-- Fallback для неизвестных типов -->
+    <!-- Fallback -->
     <div v-else class="unknown-type">
       <input 
         :value="modelValue" 
@@ -197,7 +197,6 @@
     </div>
   </div>
 </template>
-
 <script setup>
 import { computed } from 'vue';
 import Multiselect from 'vue-multiselect';
@@ -208,12 +207,12 @@ const props = defineProps({
   field: { type: Object, required: true },
   modelValue: { type: [String, Number, Array, Object], default: '' },
   subSubCategory: { type: String, default: '' },
-  parentAttributes: { type: Object, default: () => ({}) }  // ← ДОБАВЛЕНО: для доступа к brand и другим полям
+  parentAttributes: { type: Object, default: () => ({}) }
 });
 
 const emit = defineEmits(['update:modelValue']);
 
-// ─── Условное отображение (showIf) ───
+// ─── Условное отображение ───
 const isVisible = computed(() => {
   if (!props.field.showIf) return true;
   return props.subSubCategory === props.field.showIf;
@@ -221,7 +220,6 @@ const isVisible = computed(() => {
 
 // Options для select — с поддержкой dynamic (модели авто)
 const fieldOptions = computed(() => {
-  // Если поле dynamic и это model — берём модели по выбранной марке
   if (props.field.dynamic && props.field.key === 'model') {
     const brand = props.parentAttributes?.brand;
     if (brand && carModels[brand]) {
@@ -229,8 +227,6 @@ const fieldOptions = computed(() => {
     }
     return ['Сначала выберите марку'];
   }
-  
-  // Обычные options
   return props.field.options || [];
 });
 
@@ -258,7 +254,7 @@ const addListItem = () => {
 
 // ─── PRICE WITH UNIT ───
 const priceValue = computed(() => props.modelValue?.price || '');
-const unitValue = computed(() => props.modelValue?.unit || props.field.unitOptions?.[0]);
+const unitValue = computed(() => props.modelValue?.unit || props.field.unitOptions?.[0] || '');
 const updatePrice = (val) => {
   emit('update:modelValue', { price: val, unit: unitValue.value });
 };
@@ -287,12 +283,11 @@ const updateTime = (key, val) => {
 
 // ─── NUMBER WITH UNIT ───
 const numericValue = computed(() => props.modelValue?.value || '');
-const currentUnit = computed(() => props.modelValue?.unit || props.field.unitOptions?.[0]);
+const currentUnit = computed(() => props.modelValue?.unit || props.field.unitOptions?.[0] || '');
 const updateNumeric = (val) => {
   emit('update:modelValue', { value: val, unit: currentUnit.value });
 };
 </script>
-
 <style scoped>
 .form-group { 
   display: flex; 

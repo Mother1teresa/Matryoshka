@@ -17,7 +17,7 @@ export const uploadToMediaService = async (file, type = "video", metadata = {}, 
 
     // 2. Загружаем файл напрямую в S3
     await axios.put(url, file, {
-      // headers: { 'Content-Type': finalContentType },
+      headers: { 'Content-Type': finalContentType },
       onUploadProgress: (progressEvent) => {
         if (typeof onProgress === 'function') {
           const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);

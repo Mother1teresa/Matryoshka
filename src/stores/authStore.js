@@ -371,14 +371,151 @@ export const useAuthStore = defineStore("auth", {
     },
     async createAdvert(payload) {
       try {
-        const res = await api.post('/advert/create', payload);
+        const normalizedPayload = this._normalizeAdvertPayload(payload);
+        const res = await api.post('/advert/create', normalizedPayload);
         notify("Объявление опубликовано!", "success");
         return res.data;
       } catch (e) {
-        console.error("Ошибка создания:", e);
-        notify(e.response?.data?.message || "Не удалось опубликовать", "error");
+        console.error("Ошибка создания объявления:", e);
+        notify(e.response?.data?.message || "Не удалось опубликовать объявление", "error");
         throw e;
       }
+    },
+    async updateAdvert(payload) {
+      try {
+        const normalizedPayload = this._normalizeAdvertPayload(payload);
+        const res = await api.patch('/advert/update', normalizedPayload);
+        notify("Объявление обновлено!", "success");
+        return res.data;
+      } catch (e) {
+        console.error("Ошибка обновления:", e);
+        notify(e.response?.data?.message || "Не удалось обновить объявление", "error");
+        throw e;
+      }
+    },
+    _normalizeAdvertPayload(payload) {
+      const result = { ...payload };
+      // ═══════════════════════════════════════════════════════════
+      // 1. Нормализация pictures: массив объектов { pictureUrl: string }
+      // ═══════════════════════════════════════════════════════════
+      if (result.pictures) {
+        if (Array.isArray(result.pictures)) {
+          result.pictures = result.pictures.map(p => {
+            if (typeof p === 'string') return { pictureUrl: p };
+            if (p?.pictureUrl) return { pictureUrl: p.pictureUrl };
+            if (p?.url) return { pictureUrl: p.url };
+            return null;
+          }).filter(Boolean);
+        } else {
+          result.pictures = [];
+        }
+      }
+
+      // ═══════════════════════════════════════════════════════════
+      // 2. Нормализация services: массив объектов { text: string }
+      // ═══════════════════════════════════════════════════════════
+      if (result.services) {
+        if (Array.isArray(result.services)) {
+          result.services = result.services.map(s => {
+            if (typeof s === 'string') return { text: s };
+            if (s?.text) return { text: s.text };
+            return null;
+          }).filter(Boolean);
+        } else {
+          result.services = [];
+        }
+      }
+
+      // ═══════════════════════════════════════════════════════════
+      // 3. Нормализация workSchedule: массив объектов WorkScheduleDTO
+      // ═══════════════════════════════════════════════════════════
+      if (result.workSchedule) {
+        if (Array.isArray(result.workSchedule)) {
+          result.workSchedule = result.workSchedule.map(ws => ({
+            fromDay: Number(ws.fromDay) || 0,
+            toDay: Number(ws.toDay) || 6,
+            fromTime: ws.fromTime || "09:00",
+            toTime: ws.toTime || "18:00",
+            is24h: Boolean(ws.is24h),
+          }));
+        } else {
+          result.workSchedule = [];
+        }
+      }
+
+      // ═══════════════════════════════════════════════════════════
+      // 4. Числовые поля — приводим к Number или удаляем пустые
+      // ═══════════════════════════════════════════════════════════
+      const numericFields = [
+        'yearOfManufacture', 'ownersPts', 'milage', 'engineCapacity', 
+        'horsePower', 'vesselLength', 'vesselWidth', 'vesselDraft',
+        'maxPassengers', 'apartmentFloor', 'floorsInHouse', 'balconyAmount',
+        'stationDistance', 'cityInfrastructureDistance', 'workExperience',
+        'totalArea', 'livingArea', 'kitchenArea'
+      ];
+      
+      numericFields.forEach(field => {
+        if (result[field] !== undefined && result[field] !== null && result[field] !== '') {
+          const num = Number(result[field]);
+          result[field] = isNaN(num) ? 0 : num;
+        } else if (result[field] === '' || result[field] === null || result[field] === undefined) {
+          delete result[field];
+        }
+      });
+
+      // ═══════════════════════════════════════════════════════════
+      // 5. Boolean поля — явно приводим к boolean
+      // ═══════════════════════════════════════════════════════════
+      const booleanFields = [
+        'isOnTheGo', 'hasBalcony', 'hasElevator', 'hasParking',
+        'cityInfrastructure', 'hasSecurity', 'hasVideoSecurity',
+        'hasChildrenPlayground', 'hasSportPlayground', 'hasDocuments', 'isProfitable'
+      ];
+      
+      booleanFields.forEach(field => {
+        if (result[field] !== undefined && result[field] !== null) {
+          result[field] = Boolean(result[field]);
+        } else {
+          delete result[field];
+        }
+      });
+
+      // ═══════════════════════════════════════════════════════════
+      // 6. String enum поля — убираем пустые строки
+      // ═══════════════════════════════════════════════════════════
+      const optionalStringFields = [
+        'subCategory', 'profession', 'sphere', 'brand', 'model', 'color',
+        'vehicleBodyType', 'vesselBodyMaterial', 'engineType', 'petBreed',
+        'petName', 'petColor', 'advantages', 'payBackPeriod', 'firstName',
+        'lastName', 'fathersName', 'gender', 'transactionScope',
+        'businessForm', 'offerType', 'propertyType', 'houseState',
+        'paymentType', 'priceFor', 'employment', 'workFormat',
+        'vehicleKpp', 'drive', 'steeringWheel', 'cooling', 'vesselType'
+      ];
+      optionalStringFields.forEach(field => {
+        if (result[field] === '' || result[field] === null || result[field] === undefined) {
+          delete result[field];
+        }
+      });
+      // ═══════════════════════════════════════════════════════════
+      // 7. price — всегда строка (API требует string)
+      // ═══════════════════════════════════════════════════════════
+      if (result.price !== undefined) {
+        result.price = String(result.price);
+      }
+      // ═══════════════════════════════════════════════════════════
+      // 8. videoId — убираем если пустой
+      // ═══════════════════════════════════════════════════════════
+      if (!result.videoId) {
+        delete result.videoId;
+      }
+      // ═══════════════════════════════════════════════════════════
+      // 9. id — только для update (patch)
+      // ═══════════════════════════════════════════════════════════
+      if (result.id === undefined || result.id === null || result.id === '') {
+        delete result.id;
+      }
+      return result;
     },
     async fetchMyAdverts() {
       if (!this.isAuthenticated || !this.user?.id) {
@@ -396,17 +533,17 @@ export const useAuthStore = defineStore("auth", {
         return [];
       }
     },
-    async updateAdvert(payload) {
-      try {
-        const res = await api.patch('/advert/update', payload);
-        notify("Объявление обновлено!", "success");
-        return res.data;
-      } catch (e) {
-        console.error("Ошибка обновления:", e);
-        notify(e.response?.data?.message || "Не удалось обновить объявление", "error");
-        throw e;
-      }
-    },
+    // async updateAdvert(payload) {
+    //   try {
+    //     const res = await api.patch('/advert/update', payload);
+    //     notify("Объявление обновлено!", "success");
+    //     return res.data;
+    //   } catch (e) {
+    //     console.error("Ошибка обновления:", e);
+    //     notify(e.response?.data?.message || "Не удалось обновить объявление", "error");
+    //     throw e;
+    //   }
+    // },
     // async updateAdvertStatus(id, status) {
     //   try {
     //     await api.patch('/advert/update', { id, status });
@@ -716,6 +853,18 @@ export const useAuthStore = defineStore("auth", {
       try {
         const res = await api.post("/auth/login", { login: email, password });
         const userData = res.data;
+
+        console.log('=== LOGIN RESPONSE ===');
+        console.log('Full response:', JSON.stringify(res.data, null, 2));
+        console.log('Token fields:', {
+          token: userData.token,
+          accessToken: userData.accessToken,
+          jwt: userData.jwt,
+          authToken: userData.authToken,
+          bearer: userData.bearer
+        });
+        console.log('======================');
+
         if (userData && userData.id) {
           this.login(userData);
           if (userData.city) {

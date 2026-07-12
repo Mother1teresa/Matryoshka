@@ -14,6 +14,17 @@ export default defineConfig({
         target: 'http://85.198.96.229:8080',
         changeOrigin: true,
         secure: false,
+        configure: (proxy, _options) => {
+          proxy.on('proxyRes', (proxyRes, _req) => {
+            // Переписываем Secure флаг для localhost (dev-режим)
+            const cookies = proxyRes.headers['set-cookie'];
+            if (cookies) {
+              proxyRes.headers['set-cookie'] = cookies.map(cookie => 
+                cookie.replace('Secure;', '').replace('Secure,', '').replace('Secure', '')
+              );
+            }
+          });
+        }
       },
       '/chat-websocket': {
         target: 'http://85.198.96.229:8080',

@@ -172,7 +172,7 @@ h4 {
 /* Анимация */
 .slide-enter-active,
 .slide-leave-active {
-  transition: all 0.2.7s ease;
+  transition: all 0.27s ease;
 }
 
 .slide-enter-from {

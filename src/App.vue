@@ -58,7 +58,7 @@ let lastPollTime = 0;
 const handleNotify = (e) => {
   notificationText.value = e.detail;
   showNotification.value = true;
-  setTimeout(() => { showNotification.value = false }, 4000);
+  setTimeout(() => { showNotification.value = false }, 3000);
 };
 
 const doPoll = () => {
