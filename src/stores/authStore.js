@@ -74,8 +74,6 @@ export const useAuthStore = defineStore("auth", {
     getSocket() {
       return this._stompClient;
     },
-
-    // ========== WEBSOCKET (Native WebSocket, no SockJS) ==========
     initSocket() {
       console.log('[initSocket] START (Native WebSocket)');
       
@@ -87,16 +85,12 @@ export const useAuthStore = defineStore("auth", {
       
       let wsUrl;
       if (import.meta.env.DEV) {
-        // Dev: через Vite proxy
         wsUrl = `ws://${window.location.host}/chat-websocket`;
       } else {
-        // Prod: напрямую к бэкенду (nginx не проксирует WS)
-        // Используем ws:// потому что бэкенд на 8080 без SSL
-        wsUrl = `ws://85.198.96.229:8080/chat-websocket`;
+        wsUrl = `wss://${window.location.host}/chat-websocket`;
       }
 
       console.log('[initSocket] Connecting to:', wsUrl);
-
       const client = new Client({
         webSocketFactory: () => new WebSocket(wsUrl),
         debug: (str) => console.log('[STOMP]', str),
@@ -141,7 +135,6 @@ export const useAuthStore = defineStore("auth", {
           this._stompClient = null;
         }
       };
-      
       try {
         client.activate();
       } catch (e) {
