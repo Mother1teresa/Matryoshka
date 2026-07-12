@@ -87,12 +87,12 @@ export const useAuthStore = defineStore("auth", {
       
       let wsUrl;
       if (import.meta.env.DEV) {
-        // Dev: через Vite proxy (ws://)
+        // Dev: через Vite proxy
         wsUrl = `ws://${window.location.host}/chat-websocket`;
       } else {
-        // Prod: тот же домен, nginx проксирует
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        wsUrl = `${protocol}//${window.location.host}/chat-websocket`;
+        // Prod: напрямую к бэкенду (nginx не проксирует WS)
+        // Используем ws:// потому что бэкенд на 8080 без SSL
+        wsUrl = `ws://85.198.96.229:8080/chat-websocket`;
       }
 
       console.log('[initSocket] Connecting to:', wsUrl);
