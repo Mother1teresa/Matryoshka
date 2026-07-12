@@ -226,7 +226,7 @@ const auth = useAuthStore();
 const isSubmitting = ref(false);
 const searchQuery = ref("");
 const photos = ref([]);
-const photoPreviews = ref([]);
+const photoPreviews = ref([]); 
 const isEditMode = computed(() => !!route.params.id)
 const advertId = computed(() => route.params.id)
 
@@ -244,7 +244,7 @@ const form = reactive({
   address: '',
   coordinates: [],
   phone: '',
-  attributes: {}         
+  attributes: {},
 });
 
 async function loadAdvertForEdit() {
@@ -269,6 +269,8 @@ async function loadAdvertForEdit() {
     // Фото
     if (ad.pictures?.length) {
       photoPreviews.value = ad.pictures.map(p => p.pictureUrl)
+      // ← ДОБАВИТЬ: очищаем photos, т.к. это уже загруженные фото, не File
+      photos.value = new Array(ad.pictures.length).fill(null)
     }
     
     nextTick(() => initMapWithUserCity())
@@ -362,16 +364,16 @@ function fillAttributesFromApi(ad) {
     attr.breed = ad.petBreed
     attr.nickname = ad.petName
     attr.color = ad.petColor
-    attr.gender = [ad.gender] // если есть
+    attr.gender = ad.gender ? [reverseMapGender(ad.gender)] : [];
     attr.age = ad.age
   }
   
   // Бизнес
   if (ad.category === 'biznes') {
-    attr.deal_goal = [ad.transactionScope]
+    attr.deal_goal = ad.transactionScope ? [reverseMapTransactionScope(ad.transactionScope)] : [];
     attr.business_status = ad.isProfitable ? ['Прибыль'] : ['Убыток']
     attr.payback_period = ad.payBackPeriod
-    attr.legal_form = [ad.businessForm]
+    attr.legal_form = ad.businessForm ? [reverseMapBusinessForm(ad.businessForm)] : [];
   }
   
   // Путешествия
@@ -486,12 +488,16 @@ const rules = computed(() => {
     phone: { required, minLength: minLength(18) }
   };
   
+  // Для работы цена НЕ обязательна (зарплата в attributes)
+  // Для остальных — обязательна
   if (form.mainCategory !== 'rabota') {
     base.price = { 
       required, 
       minValue: minValue(1),
-      // Добавляем проверку что это число
-      numeric: (value) => value === '' || value === null || value === undefined || Number(value) > 0
+      numeric: (value) => {
+        const num = Number(value);
+        return !isNaN(num) && num > 0;
+      }
     };
   }
   
@@ -697,8 +703,8 @@ function initFieldsFromConfig() {
 
 const handlePhotoUpload = (e) => {
   const files = Array.from(e.target.files)
-  if (photoPreviews.value.length + files.length > 30) {
-    notify("Максимум 30 фотографий", "error")
+  if (photoPreviews.value.length + files.length > 10) {
+    notify("Максимум 10 фотографий", "error")
     return
   }
   files.forEach(file => {
@@ -708,7 +714,6 @@ const handlePhotoUpload = (e) => {
 }
 
 const removePhoto = (index) => {
-  // Если это File (новое фото) — освобождаем URL
   if (photos.value[index] instanceof File) {
     URL.revokeObjectURL(photoPreviews.value[index])
   }
@@ -867,7 +872,15 @@ function mapEmployment(val) {
   };
   return map[val] || 'FullTime';
 }
-
+function reverseMapHouseState(val) {
+  const map = { 
+    'EuroRepairs': 'Под ключ', 
+    'NeedRepairs': 'Нужен ремонт', 
+    'RoughFinish': 'Черновая отделка',
+    'CosmeticRepairs': 'Косметический ремонт'
+  };
+  return map[val] || '';
+}
 // Маппинг workFormat для API
 function mapWorkFormat(val) {
   const map = {
@@ -885,7 +898,7 @@ function buildWorkSchedule(days, timeRange) {
   
   const dayMap = { 'пн.': 0, 'вт.': 1, 'ср.': 2, 'чт.': 3, 'пт.': 4, 'сб.': 5, 'вс.': 6 };
   
-  const sorted = days.map(d => dayMap[d]).filter(Boolean).sort((a, b) => a - b);
+  const sorted = days.map(d => dayMap[d]).filter(n => n !== undefined && n !== null).sort((a, b) => a - b);
   if (sorted.length === 0) return [];
   
   return [{
@@ -909,19 +922,21 @@ const publishAd = async () => {
     const uploadedUrls = []
     for (const file of photos.value) {
       if (file instanceof File) {
-        const url = await uploadToMediaService(file, "image", { title: "ad_photo" })
-        if (url) uploadedUrls.push({ pictureUrl: url })
+        const media = await uploadToMediaService(file, "image", { title: "ad_photo" })
+        if (media?.cdnUrl || media?.url) {
+          uploadedUrls.push({ pictureUrl: media.cdnUrl || media.url })
+        }
       }
     }
 
     // Старые фото (URL) — уже загруженные
-    for (const url of photoPreviews.value) {
-      if (typeof url === 'string' && url.startsWith('http')) {
+    for (let i = 0; i < photoPreviews.value.length; i++) {
+      const url = photoPreviews.value[i]
+      // Если это НЕ новый файл (не из photos массива)
+      if (typeof url === 'string' && url.startsWith('http') && !(photos.value[i] instanceof File)) {
         uploadedUrls.push({ pictureUrl: url })
       }
     }
-
-    // 2. Маппинг attributes → плоские поля API
     const attr = form.attributes;
     
     const payload = {
@@ -938,6 +953,10 @@ const publishAd = async () => {
       subCategory: form.subSubCategory || form.subCategory || '',
       
       // --- РАБОТА (resume / jobs) ---
+      firstName: attr.first_name || '',
+      lastName: attr.last_name || '',
+      fathersName: attr.middle_name || '',
+      gender: mapGender(attr.gender?.[0]) || '',
       profession: attr.profession || attr.desired_position || '',
       sphere: attr.activity_sphere || '',
       workExperience: attr.experience?.value ? Number(attr.experience.value) : (attr.experience_required?.value ? Number(attr.experience_required.value) : 0),
@@ -952,15 +971,15 @@ const publishAd = async () => {
       color: attr.color || '',
       isOnTheGo: attr.condition?.includes('На ходу') || false,
       vehicleBodyType: attr.body_type || '',
-      vehicleKpp: attr.transmission || '',
+      vehicleKpp: mapTransmission(attr.transmission) || '',
       ownersPts: attr.pts_owners ? Number(attr.pts_owners) : 0,
       milage: attr.mileage ? Number(attr.mileage) : 0,
       engineCapacity: attr.engine_volume ? Number(attr.engine_volume) : 0,
       horsePower: attr.power ? Number(attr.power) : 0,
-      drive: attr.drive?.[0] || '',
-      steeringWheel: attr.steering?.[0] || '',
+      drive: mapDrive(attr.drive?.[0]) || '',
+      steeringWheel: mapSteering(attr.steering?.[0]) || '',
       engineType: attr.engine || '',
-      cooling: attr.cooling?.[0] || '',
+      cooling: mapCooling(attr.cooling?.[0]) || '',
       
       // --- ВОДНЫЙ ТРАНСПОРТ ---
       vesselType: attr.vessel_type || '',
@@ -971,41 +990,42 @@ const publishAd = async () => {
       vesselBodyMaterial: attr.hull_material || '',
       
       // --- УСЛУГИ ---
-      priceFor: attr.price?.unit || 'Service',
+      priceFor: mapPriceFor(attr.price?.unit) || 'Service',
       services: (attr.service_types || []).filter(s => s).map(text => ({ text })),
       workSchedule: buildWorkSchedule(attr.work_days, attr.work_time),
       
       // --- НЕДВИЖИМОСТЬ ---
       propertyType: mapHouseType(attr.house_type) || '',
-      totalArea: attr.area?.value ? Number(attr.area.value) : (attr.area ? Number(attr.area) : 0),
+      totalArea: attr.area ? Number(attr.area) : 0,
       livingArea: attr.house_area?.value ? Number(attr.house_area.value) : (attr.house_area ? Number(attr.house_area) : 0),
-      kitchenArea: 0,
+      kitchenArea: 0, //нету в доке
       apartmentFloor: attr.floor ? Number(attr.floor) : 0,
       floorsInHouse: attr.floors ? Number(attr.floors) : 0,
-      houseState: attr.status?.[0] || '',
+      houseState: mapHouseState(attr.status?.[0]) || '',
       hasBalcony: attr.balcony?.includes('Есть') || false,
-      balconyAmount: 0,
+      balconyAmount: 0, //нету в доке
       hasElevator: attr.elevator?.includes('Есть') || false,
       hasParking: attr.parking?.includes('Есть') || attr.parking?.includes('Места на улице') || false,
       stationDistance: attr.distance_to_metro ? Number(attr.distance_to_metro) : 0,
       cityInfrastructure: attr.infrastructure_nearby?.includes('Есть') || false,
-      cityInfrastructureDistance: 0,
+      cityInfrastructureDistance: 0, //нету в доке
       hasSecurity: attr.documents?.includes('Собственность') || false,
-      hasVideoSecurity: false,
-      hasChildrenPlayground: false,
-      hasSportPlayground: false,
-      paymentType: attr.deal_type?.[0] || 'Full',
+      hasVideoSecurity: attr.infrastructure?.includes('Видеонаблюдение') || false,
+      hasChildrenPlayground: attr.infrastructure?.includes('Детская площадка') || false,
+      hasSportPlayground: attr.infrastructure?.includes('Спортивная площадка') || false,
+      paymentType: mapPaymentType(attr.deal_type?.[0]) || 'Full',
       hasDocuments: attr.documents?.length > 0 || false,
       
       // --- ЖИВОТНЫЕ ---
       petBreed: attr.breed || '',
       petName: attr.nickname || '',
       petColor: attr.color || '',
+      gender: mapGender(attr.gender?.[0]) || '',
       
       // --- БИЗНЕС ---
-      transactionScope: attr.deal_goal?.[0] || '',
+      transactionScope: mapTransactionScope(attr.deal_goal?.[0]) || '',
       isProfitable: attr.business_status?.includes('Прибыль') || false,
-      businessForm: attr.legal_form?.[0] || '',
+      businessForm: mapBusinessForm(attr.legal_form?.[0]) || '',
       payBackPeriod: attr.payback_period || '',
       
       // --- ПУТЕШЕСТВИЯ ---
@@ -1023,7 +1043,7 @@ const publishAd = async () => {
     })
 
     // 3. Отправка
-     if (isEditMode.value) {
+    if (isEditMode.value) {
       payload.id = advertId.value
       await auth.updateAdvert(payload)
       notify('Объявление обновлено!', 'success')
@@ -1071,7 +1091,7 @@ function mapHouseType(val) {
 }
 
 function mapHouseState(val) {
-  const map = { 'Под ключ': 'EuroRepairs', 'Нужен ремонт': 'NeedRepairs', 'Черновая отделка': 'RoughFinish' };
+  const map = { 'Под ключ': 'EuroRepairs', 'Нужен ремонт': 'NeedRepairs', 'Черновая отделка': 'RoughFinish', 'Косметический ремонт': 'CosmeticRepairs' };
   return map[val] || '';
 }
 

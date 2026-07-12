@@ -160,7 +160,7 @@ h4 {
   position: fixed;
   top: 0;
   left: 50%;
-  transform: translateX(-50%) translateY(100%);
+  transform: translateX(-50%) translateY(50%);
   background: white;
   padding: 1.2rem 1.5rem;
   border-radius: 2.125rem;
@@ -172,7 +172,7 @@ h4 {
 /* Анимация */
 .slide-enter-active,
 .slide-leave-active {
-  transition: all 0.2.8s ease;
+  transition: all 0.3s ease;
 }
 
 .slide-enter-from {

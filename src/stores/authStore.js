@@ -76,27 +76,28 @@ export const useAuthStore = defineStore("auth", {
         return null;
       }
       
-      const wsUrl = `http://85.198.96.229:8080/chat-websocket`;
+      const wsUrl = import.meta.env.DEV 
+        ? `/chat-websocket?token=${this.user?.token}`
+        : `http://85.198.96.229:8080/chat-websocket?token=${this.user?.token}`;
+
       console.log('[initSocket] Connecting to:', wsUrl);
 
       const client = new Client({
         webSocketFactory: () => new SockJS(wsUrl),
-        connectHeaders: {
-          Authorization: `Bearer ${this.user?.token}`
-        },
         debug: (str) => console.log('[STOMP]', str),
-        reconnectDelay: 5000,
+        reconnectDelay: 5000, // ← ВКЛЮЧАЕМ встроенный реконнект!
         heartbeatIncoming: 4000,
         heartbeatOutgoing: 4000,
       });
       
+      // Счётчик попыток через замыкание
       let reconnectAttempts = 0;
-      const MAX_RECONNECT_ATTEMPTS = 5;
+      const MAX_RECONNECT_ATTEMPTS = 3;
 
-      client.onConnect = () => {
+      client.onConnect = (frame) => {
         console.log('[STOMP] Connected');
         stompConnected.value = true;
-        reconnectAttempts = 0;
+        reconnectAttempts = 0; // Сбрасываем при успехе
       };
       
       client.onDisconnect = () => {
@@ -109,40 +110,46 @@ export const useAuthStore = defineStore("auth", {
         stompConnected.value = false;
       };
       
+      // ВАЖНО: onWebSocketError вызывается ПЕРЕД onWebSocketClose
+      // Не деактивируем здесь — пусть встроенный реконнект работает
       client.onWebSocketError = (event) => {
         console.error('[STOMP] WebSocket Error:', event);
         stompConnected.value = false;
+        // НЕ вызываем client.deactivate()!
       };
       
-      // ← ТОЛЬКО ОДИН обработчик onWebSocketClose!
       client.onWebSocketClose = (event) => {
         console.log('[STOMP] WebSocket Closed:', event.code, event.reason);
         stompConnected.value = false;
         
         reconnectAttempts++;
         if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-          console.error('[STOMP] Достигнут лимит попыток переподключения');
+          console.error('[STOMP] Лимит попыток исчерпан');
           client.deactivate();
           this._stompClient = null;
         }
+        // Иначе встроенный reconnectDelay: 5000 сам переподключится
       };
       
-      client.activate();
+      try {
+        client.activate();
+      } catch (e) {
+        console.error('[STOMP] Activate error:', e);
+        return null;
+      }
+      
       this._stompClient = markRaw(client);
       return this._stompClient;
     },
     
     disconnectSocket() {
-      console.log('[disconnectSocket] _stompClient:', this._stompClient);
-      console.log('[disconnectSocket] constructor:', this._stompClient?.constructor?.name);
+      console.log('[disconnectSocket]');
       
       if (this._stompClient) {
         try {
-          if (typeof this._stompClient.deactivate === 'function') {
-            this._stompClient.deactivate();
-          } else if (typeof this._stompClient.disconnect === 'function') {
-            this._stompClient.disconnect();
-          }
+          // Отключаем реконнект ПЕРЕД деактивацией
+          this._stompClient.reconnectDelay = 0;
+          this._stompClient.deactivate();
         } catch (e) {
           console.error('[disconnectSocket] Error:', e);
         }
@@ -302,17 +309,17 @@ export const useAuthStore = defineStore("auth", {
         throw e;
       }
     },
-    async updateAdvertStatus(id, status) {
-      try {
-        await api.patch('/advert/update', { id, status });
-        notify(status === 'archive' ? "В архив" : "Опубликовано", "success");
-        return true;
-      } catch (e) {
-        console.error("Ошибка обновления статуса:", e);
-        notify("Не удалось обновить статус", "error");
-        return false;
-      }
-    },
+    // async updateAdvertStatus(id, status) {
+    //   try {
+    //     await api.patch('/advert/update', { id, status });
+    //     notify(status === 'archive' ? "В архив" : "Опубликовано", "success");
+    //     return true;
+    //   } catch (e) {
+    //     console.error("Ошибка обновления статуса:", e);
+    //     notify("Не удалось обновить статус", "error");
+    //     return false;
+    //   }
+    // },
     async deleteAdvert(id, s3Key = null) {
       try {
         const params = { id };
@@ -335,7 +342,7 @@ export const useAuthStore = defineStore("auth", {
         throw e;
       }
     },
-    async fetchAdvertsBySeller(sellerId) {
+    async fetchAdvertsBySeller(sellerId) { //для страницы компания/пользователь 
       if (!sellerId) {
         console.log("fetchAdvertsBySeller: sellerId не передан");
         return [];
@@ -358,9 +365,7 @@ export const useAuthStore = defineStore("auth", {
         const response = await api.get('/feed/video/welcome-feed', {
           params: { page: Number(page), size: Number(size), seed: Number(seed) }
         });
-        
         const shortVideos = response.data || [];
-        
         // Просто сохраняем базовые данные, author подтянем позже
         this.welcomeFeed = shortVideos.map(v => ({
           id: v.id,
