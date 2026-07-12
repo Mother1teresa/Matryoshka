@@ -33,52 +33,53 @@ let stompClient = null;
 let userSubscription = null;
 let pollInterval = null;
 
-const connectStomp = () => {
-  stompClient = auth.initSocket();
-  if (!stompClient) {
-    // STOMP не подключился — оставляем polling
-    console.log('[MessagesList] STOMP not available, using polling');
-    return;
-  }
-
-  const setupSubscription = () => {
-    if (!stompClient.connected) {
-      setTimeout(setupSubscription, 100);
+const connectStomp = async () => {
+  try {
+    stompClient = await auth.initSocket();
+    if (!stompClient) {
+      console.log('[MessagesList] STOMP not available, using polling');
       return;
     }
 
-    userSubscription = stompClient.subscribe(
-      `/topic/user/${auth.user?.id}`,
-      (message) => {
-        const data = JSON.parse(message.body);
-        handleChatUpdate(data);
+    const setupSubscription = () => {
+      if (!stompClient.connected) {
+        setTimeout(setupSubscription, 100);
+        return;
       }
-    );
-    
-    // Отключаем polling при успешном STOMP
-    if (pollInterval) {
-      clearInterval(pollInterval);
-      pollInterval = null;
-    }
-  };
 
-  if (stompClient.connected) {
-    setupSubscription();
-  } else {
-    const originalOnConnect = stompClient.onConnect;
-    stompClient.onConnect = (frame) => {
-      if (originalOnConnect) originalOnConnect(frame);
-      setupSubscription();
-    };
-    
-    // Если STOMP не подключится за 10 сек — polling останется
-    setTimeout(() => {
-      if (!stompClient.connected && !pollInterval) {
-        pollInterval = setInterval(() => {
-          loadChats(true);
-        }, 15000);
+      userSubscription = stompClient.subscribe(
+        `/topic/user/${auth.user?.id}`,
+        (message) => {
+          const data = JSON.parse(message.body);
+          handleChatUpdate(data);
+        }
+      );
+      
+      if (pollInterval) {
+        clearInterval(pollInterval);
+        pollInterval = null;
       }
-    }, 10000);
+    };
+
+    if (stompClient.connected) {
+      setupSubscription();
+    } else {
+      const originalOnConnect = stompClient.onConnect;
+      stompClient.onConnect = (frame) => {
+        if (originalOnConnect) originalOnConnect(frame);
+        setupSubscription();
+      };
+      
+      setTimeout(() => {
+        if (!stompClient.connected && !pollInterval) {
+          pollInterval = setInterval(() => {
+            loadChats(true);
+          }, 15000);
+        }
+      }, 10000);
+    }
+  } catch (err) {  // ← ДОБАВИТЬ ЭТО
+    console.log('[MessagesList] STOMP error, using polling:', err);
   }
 };
 
@@ -111,7 +112,41 @@ const handleChatUpdate = (data) => {
     loadChats(true);
   }
 };
-
+const createTestRoom = async () => {
+  try {
+    isLoading.value = true;
+    
+    // Сначала проверяем, есть ли уже комнаты
+    await auth.fetchUserChats();
+    
+    // Если есть хоть одна комната — открываем её
+    if (auth.allChats.length > 0) {
+      const existingRoom = auth.allChats[0];
+      console.log('[createTestRoom] Using existing room:', existingRoom.id);
+      router.push({ name: 'ChatDetail', params: { id: existingRoom.id } });
+      return;
+    }
+    
+    // Если нет — создаём новую
+    const roomId = await auth.createTestRoom();
+    if (roomId) {
+      router.push({ name: 'ChatDetail', params: { id: roomId } });
+    }
+  } catch (e) {
+    if (e.response?.status === 409) {
+      // Комната уже существует — перезагружаем список и открываем
+      notify("Комната уже существует, открываю...", "success");
+      await auth.fetchUserChats();
+      if (auth.allChats.length > 0) {
+        router.push({ name: 'ChatDetail', params: { id: auth.allChats[0].id } });
+      }
+    } else {
+      notify("Не удалось создать чат: " + (e.response?.data?.message || e.message), "error");
+    }
+  } finally {
+    isLoading.value = false;
+  }
+};
 onMounted(() => {
   loadChats();
   connectStomp();
@@ -174,11 +209,17 @@ onUnmounted(() => {
       </div>
     </div>
     <!-- Пустое состояние -->
-    <div v-else class="empty-messages">
+    <!-- <div v-else class="empty-messages">
       <div class="empty-icon">✉️</div>
       <h3>У вас пока нет сообщений</h3>
       <p>Когда вы напишете продавцу или кто-то откликнется на ваше объявление, диалог появится здесь.</p>
       <router-link to="/" class="btn go-to-ads-btn">Найти объявления</router-link>
+    </div> -->
+    <div class="demo-actions">
+      <button class="btn demo-chat-btn" @click="createTestRoom">
+        💬 Создать тестовый чат
+      </button>
+      <p class="demo-hint">Создаст чат с самим собой для проверки</p>
     </div>
   </div>
 </template>

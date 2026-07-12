@@ -1,6 +1,5 @@
 import { defineStore } from "pinia";
 import { Client } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
 import { markRaw, ref } from 'vue';
 import { api, resetRefreshCooldown } from "/src/api/api.js";
 import { useFavoritesStore } from "/src/stores/favoritesStore.js";
@@ -9,7 +8,7 @@ import { useRegionModalStore } from "/src/stores/regionModal.js";
 import { geocodeByQuery } from '/src/utils/geocode.js';
 import { notify } from "/src/utils/notify";
 
-const stompConnected = ref(false);
+let stompClient = null;
 
 export const useAuthStore = defineStore("auth", {
   state: () => {
@@ -25,6 +24,8 @@ export const useAuthStore = defineStore("auth", {
         allChats: [],
         allNotifications: [],
         isNotificationsLoading: false,
+        // === STOMP ===
+        _stompConnected: false,
         // === POLLING ===
         _pollingIntervals: {}, // roomId -> intervalId
         _lastMessageIds: {}, 
@@ -41,6 +42,7 @@ export const useAuthStore = defineStore("auth", {
         isVideosLoading: false,
         allNotifications: [],
         isNotificationsLoading: false,
+        _stompConnected: false,
         _pollingIntervals: {},
         _lastMessageIds: {},
       };
@@ -65,17 +67,17 @@ export const useAuthStore = defineStore("auth", {
     unreadNotificationsCount: (state) => {
       return state.allNotifications.filter((note) => !note.is_read).length;
     },
-    isStompConnected: () => stompConnected.value,
+    isStompConnected: (state) => state._stompConnected,
   },
   actions: {
-    _stompClient: null,
+   _stompClient: null,
     getSocket() {
       return this._stompClient;
     },
 
-    // ========== WEBSOCKET ==========
+    // ========== WEBSOCKET (Native WebSocket, no SockJS) ==========
     initSocket() {
-      console.log('[initSocket] START');
+      console.log('[initSocket] START (Native WebSocket)');
       
       if (this._stompClient?.connected) return this._stompClient;
       if (!this.user?.id) {
@@ -83,26 +85,25 @@ export const useAuthStore = defineStore("auth", {
         return null;
       }
       
-      // На проде пробуем через тот же домен (nginx прокси)
-      // Если nginx настроен — заработает. Если нет — упадёт и перейдём на polling
       let wsUrl;
       if (import.meta.env.DEV) {
-        // Dev: через Vite прокси (SockJS)
-        wsUrl = `/chat-websocket`;
+        // Dev: через Vite proxy (ws://)
+        wsUrl = `ws://${window.location.host}/chat-websocket`;
       } else {
-        // Prod: пробуем через тот же домен (если nginx проксирует)
-        // Если nginx НЕ проксирует WebSocket — это не заработает
-        wsUrl = `/chat-websocket`;
+        // Prod: тот же домен, nginx проксирует
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        wsUrl = `${protocol}//${window.location.host}/chat-websocket`;
       }
 
       console.log('[initSocket] Connecting to:', wsUrl);
 
       const client = new Client({
-        webSocketFactory: () => new SockJS(wsUrl),
+        webSocketFactory: () => new WebSocket(wsUrl),
         debug: (str) => console.log('[STOMP]', str),
         reconnectDelay: 5000,
         heartbeatIncoming: 4000,
         heartbeatOutgoing: 4000,
+        connectionTimeout: 10000,
       });
       
       let reconnectAttempts = 0;
@@ -110,32 +111,32 @@ export const useAuthStore = defineStore("auth", {
 
       client.onConnect = (frame) => {
         console.log('[STOMP] Connected');
-        stompConnected.value = true;
+        this._stompConnected = true;
         reconnectAttempts = 0;
       };
       
       client.onDisconnect = () => {
         console.log('[STOMP] Disconnected');
-        stompConnected.value = false;
+        this._stompConnected = false;
       };
       
       client.onStompError = (frame) => {
         console.error('[STOMP] Error:', frame.headers['message']);
-        stompConnected.value = false;
+        this._stompConnected = false;
       };
       
       client.onWebSocketError = (event) => {
         console.error('[STOMP] WebSocket Error:', event);
-        stompConnected.value = false;
+        this._stompConnected = false;
       };
       
       client.onWebSocketClose = (event) => {
         console.log('[STOMP] WebSocket Closed:', event.code, event.reason);
-        stompConnected.value = false;
+        this._stompConnected = false;
         
         reconnectAttempts++;
         if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-          console.error('[STOMP] Лимит попыток исчерпан');
+          console.error('[STOMP] Лимит попыток исчерпан, переходим на polling');
           client.deactivate();
           this._stompClient = null;
         }
@@ -164,7 +165,7 @@ export const useAuthStore = defineStore("auth", {
         }
         this._stompClient = null;
       }
-      stompConnected.value = false;
+      this._stompConnected = false;
     },
 
     // ========== POLLING (Fallback) ==========
@@ -218,20 +219,18 @@ export const useAuthStore = defineStore("auth", {
 
     // ========== CHAT ACTIONS ==========
     async subscribeToRoom(roomId, onMessage) {
-      // Сначала пробуем WebSocket
       const client = this.initSocket();
-      
       if (client && client.connected) {
-        // WebSocket подключён — подписываемся
-        client.subscribe(`/topic/room/${roomId}`, (message) => {
+        const subscription = client.subscribe(`/topic/room/${roomId}`, (message) => {
           const body = JSON.parse(message.body);
           onMessage?.(body);
         });
-        return 'websocket';
+        console.log(`[subscribeToRoom] WebSocket subscription for room ${roomId}`);
+        return { type: 'websocket', subscription };
       } else {
-        // Fallback на polling
+        console.log(`[subscribeToRoom] Using polling for room ${roomId}`);
         this.startMessagePolling(roomId, onMessage);
-        return 'polling';
+        return { type: 'polling' };
       }
     },
 
@@ -239,7 +238,6 @@ export const useAuthStore = defineStore("auth", {
       const client = this.getSocket();
       
       if (client?.connected) {
-        // Отправка через WebSocket
         client.publish({
           destination: `/app/chat.sendMessage/${roomId}`,
           body: JSON.stringify({
@@ -247,20 +245,41 @@ export const useAuthStore = defineStore("auth", {
             message: text,
           })
         });
+        console.log('[sendMessage] Sent via STOMP');
       } else {
-        // Fallback — HTTP POST
+        console.log('[sendMessage] STOMP unavailable, using HTTP fallback');
         await api.post(`/chat/rooms/${roomId}/messages`, {
           message: text,
           senderId: this.user?.id
         });
       }
     },
-
     async markMessageAsRead(messageId, roomId) {
       try {
         await api.patch(`/chat/messages/${messageId}/read?roomId=${roomId}`);
       } catch (e) {
         console.error('Ошибка markMessageAsRead:', e.response?.data || e);
+        throw e;
+      }
+    },
+    async createTestRoom() {
+      if (!this.user?.id) throw new Error("Пользователь не авторизован");
+      
+      try {
+        const res = await api.post("/chat/create-room", {
+          userA: this.user.id,
+          userB: this.user.id,
+        });
+        
+        const roomId = res.data?.roomId || res.data?.id;
+        console.log('[createTestRoom] Created room:', roomId);
+        
+        // Перезагружаем чаты, чтобы новая комната появилась в списке
+        await this.fetchUserChats();
+        
+        return roomId;
+      } catch (e) {
+        console.error("Ошибка создания тестовой комнаты:", e.response?.data || e);
         throw e;
       }
     },
@@ -334,18 +353,7 @@ export const useAuthStore = defineStore("auth", {
         throw e;
       }
     },
-    // async sendMessage(roomId, text) {
-    //   try {
-    //     const res = await api.post(`/chat/rooms/${roomId}/messages`, { 
-    //       message: text,
-    //       senderId: this.user?.id 
-    //     });
-    //     return res.data;
-    //   } catch (e) {
-    //     console.error("Ошибка отправки сообщения:", e.response?.data || e);
-    //     throw e;
-    //   }
-    // },
+   
     async createPrivateRoom(userBId) {
       if (!this.user?.id) throw new Error("Пользователь не авторизован");
       try {
