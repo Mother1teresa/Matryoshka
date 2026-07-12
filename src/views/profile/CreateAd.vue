@@ -117,14 +117,10 @@
         <section class="section fade-in">
           <h3 class="section-title">
             Фотографии <span class="required">*</span>
-            <span class="hint">Не более 30 фото</span>
+            <span class="hint">Не более 10 фото</span>
           </h3>
           <div class="photo-grid">
-            <div 
-              v-for="(url, index) in photoPreviews" 
-              :key="index" 
-              class="photo-box"
-            >
+            <div v-for="(url, index) in photoPreviews" :key="index" class="photo-box">
               <img :src="url" class="preview-img" />
               <button type="button" class="remove-photo" @click="removePhoto(index)">×</button>
             </div>
@@ -193,13 +189,13 @@
           <button 
             type="button" 
             class="btn-submit" 
-            :class="{ 'btn-disabled': v$.$invalid && v$.$dirty }" 
+            :class="{ 'btn-disabled': !canSubmit }" 
             :disabled="isSubmitting" 
             @click="publishAd"
           >
             {{ isSubmitting ? 'Сохранение...' : isEditMode ? 'Сохранить изменения' : 'Разместить объявление' }}
           </button>
-          <p v-if="v$.$invalid && v$.$dirty" class="validation-msg">Заполните все поля со звёздочкой *</p>
+          <p v-if="!canSubmit && v$.$dirty" class="validation-msg">Заполните все поля со звёздочкой *</p>
         </div>
       </template>
     </div>
@@ -218,6 +214,7 @@ import { notify } from "/src/utils/notify";
 import { uploadToMediaService } from "/src/utils/uploadService.js";
 import { useAuthStore } from "/src/stores/authStore.js";
 import FormField from '/src/views/FormField.vue';
+import { carModels } from '/src/data/sharedFieldOptions.js';
 import { useRouter,useRoute } from 'vue-router'
 
 const router = useRouter();
@@ -260,7 +257,7 @@ async function loadAdvertForEdit() {
     form.title = ad.title
     form.description = ad.description
     form.price = Number(ad.price) || ''
-    form.address = ad.address
+    // form.address = ad.address
     form.phone = ad.contacts ? formatPhoneForInput(ad.contacts) : ''
     searchQuery.value = ad.address
     initFieldsFromConfig()
@@ -385,23 +382,6 @@ function fillAttributesFromApi(ad) {
   form.attributes = attr
 }
 
-
-
-// ═══════════════════════════════════════════════════════════
-// КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Синхронизация searchQuery ↔ form.address
-// ═══════════════════════════════════════════════════════════
-
-// При любом изменении searchQuery — обновляем form.address
-watch(searchQuery, (val) => {
-  form.address = val;
-});
-
-// При изменении form.address (например, из карты) — обновляем searchQuery
-watch(() => form.address, (val) => {
-  if (val !== searchQuery.value) {
-    searchQuery.value = val;
-  }
-});
 // ═══════════════════════════════════════════════════════════
 // ВЫЧИСЛЯЕМЫЕ: Доступные подкатегории
 // ═══════════════════════════════════════════════════════════
@@ -489,7 +469,6 @@ const rules = computed(() => {
   };
   
   // Для работы цена НЕ обязательна (зарплата в attributes)
-  // Для остальных — обязательна
   if (form.mainCategory !== 'rabota') {
     base.price = { 
       required, 
@@ -503,6 +482,64 @@ const rules = computed(() => {
   
   return base;
 });
+// ═══════════════════════════════════════════════════════════
+// ВЫЧИСЛЯЕМЫЕ: Проверка заполненности ВСЕХ обязательных полей
+// ═══════════════════════════════════════════════════════════
+
+const canSubmit = computed(() => {
+  // Базовые поля
+  if (!form.title || form.title.length < 3) return false;
+  if (!form.address) return false;
+  if (!form.phone || form.phone.length < 18) return false;
+  if (!descriptionInConfig.value && !form.description) return false;
+  
+  // Для работы цена НЕ обязательна (зарплата в attributes)
+  if (form.mainCategory !== 'rabota') {
+    if (!form.price || Number(form.price) <= 0) return false;
+  }
+  
+  // Фото обязательны (хотя бы одна)
+  // if (photoPreviews.value.length === 0) return false;
+
+  // Динамические поля из конфига
+  const config = currentConfig.value;
+  if (config?.sections) {
+    for (const section of config.sections) {
+      for (const field of section.fields) {
+        if (field.required && field.key !== 'title' && field.key !== 'price' && field.key !== 'description') {
+          const value = form.attributes[field.key];
+          
+          // Для массивов (chips, days-checkbox) — проверяем что не пустой
+          if (Array.isArray(value)) {
+            if (value.length === 0) return false;
+          }
+          // Для объектов (price-with-unit, number-with-unit, time-range)
+          else if (typeof value === 'object' && value !== null) {
+            // Для price-with-unit: проверяем что price заполнен
+            if ('price' in value && (value.price === '' || value.price === null || value.price === undefined)) {
+              return false;
+            }
+            // Для number-with-unit: проверяем что value заполнен
+            if ('value' in value && (value.value === '' || value.value === null || value.value === undefined)) {
+              return false;
+            }
+            // Для time-range: оба поля обязательны (но инициализируются по умолчанию)
+            if ('from' in value && 'to' in value) {
+              if (!value.from || !value.to) return false;
+            }
+          }
+          // Для строк/чисел
+          else if (value === '' || value === null || value === undefined) {
+            return false;
+          }
+        }
+      }
+    }
+  }
+  
+  return true;
+});
+
 const v$ = useVuelidate(rules, form);
 
 // ═══════════════════════════════════════════════════════════
@@ -606,7 +643,7 @@ function selectMainCategory(cat) {
   form.title = '';
   form.description = '';
   form.price = '';
-  form.address = '';
+  // form.address = '';
   searchQuery.value = '';
   form.phone = '';
   form.attributes = {};
@@ -787,9 +824,13 @@ async function reverseGeocode(coords) {
     const res = await window.ymaps.geocode(coords);
     const firstGeoObject = res.geoObjects.get(0);
     if (firstGeoObject) {
-      const address = firstGeoObject.getAddressLine();
+      let address = firstGeoObject.getAddressLine();
+      // Автозаглавная первая буква
+      if (address && address.length > 0) {
+        address = address[0].toUpperCase() + address.slice(1);
+      }
+      // ← ПИШЕМ НАПРЯМУЮ В searchQuery — это обновит и input, и form.address через watch
       searchQuery.value = address;
-      form.address = address;
     }
   } catch (e) {
     console.error('Обратное геокодирование не удалось:', e);
@@ -801,21 +842,19 @@ async function initMapWithUserCity() {
   
   let coords = [55.7558, 37.6173];
   
-  if (auth.user?.city) {
-    searchQuery.value = auth.user.city;
-    form.address = auth.user.city;
-    
+  if (searchQuery.value && searchQuery.value.length >= 3) {
     try {
-      const res = await window.ymaps.geocode(auth.user.city);
+      const res = await window.ymaps.geocode(searchQuery.value, { results: 1 });
       const firstGeoObject = res.geoObjects.get(0);
       if (firstGeoObject) {
         coords = firstGeoObject.geometry.getCoordinates();
         form.coordinates = coords;
       }
     } catch (e) {
-      console.error('Геокодирование города не удалось:', e);
+      console.error('Геокодирование не удалось:', e);
     }
   }
+  
   nextTick(() => {
     setTimeout(() => initMap(coords), 150);
   });
@@ -825,22 +864,23 @@ watch(searchQuery, (query) => {
   if (!isClient) return;
   
   form.address = query;
-  clearTimeout(searchTimeout);
+  if (query && query.length > 0 && query[0] !== query[0].toUpperCase()) {
+    searchQuery.value = query[0].toUpperCase() + query.slice(1);
+    return; // watch сработает ещё раз с исправленным значением
+  }
   
-  if (!query || query.length < 3) return;
+  // 3. Debounce-поиск
+  clearTimeout(searchTimeout);
+  if (!searchQuery.value || searchQuery.value.length < 3) return;
   
   searchTimeout = setTimeout(async () => {
     if (!window.ymaps) return;
-    
     try {
-      const res = await window.ymaps.geocode(query, { results: 1 });
+      const res = await window.ymaps.geocode(searchQuery.value, { results: 1 });
       const obj = res.geoObjects.get(0);
-      
       if (obj) {
         const coords = obj.geometry.getCoordinates();
-        form.address = query;
         form.coordinates = coords;
-        
         if (map && placemark) {
           map.setCenter(coords, 14);
           placemark.geometry.setCoordinates(coords);
@@ -852,7 +892,7 @@ watch(searchQuery, (query) => {
       console.error('Поиск адреса не удалось:', e);
     }
   }, 600);
-});
+}, { immediate: true });
 // ═══════════════════════════════════════════════════════════
 // МЕТОДЫ: Публикация
 // ═══════════════════════════════════════════════════════════
@@ -910,9 +950,9 @@ function buildWorkSchedule(days, timeRange) {
   }];
 }
 const publishAd = async () => {
-  const isValid = await v$.value.$validate();
+  await v$.value.$validate();
   
-  if (!isValid) {
+  if (!canSubmit.value) {
     notify("Заполните все обязательные поля", "error");
     return;
   }
@@ -1139,7 +1179,6 @@ watch(() => form.attributes.brand, (newBrand) => {
   }
 });
 </script>
-
 <style scoped>
 .profile-main .container{
   width: 100%;
@@ -1316,8 +1355,8 @@ margin-top: 2.438rem; border-radius: 1.875rem;}
 }
 .validation-msg { 
   color: #ff4d4f; 
-  font-size: 12px; 
-  margin-top: 8px; 
+  font-size: 0.75rem; 
+  margin-top: 0.5rem; 
   text-align: center; 
 }
 .hint { 

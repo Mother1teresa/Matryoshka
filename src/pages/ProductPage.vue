@@ -2,42 +2,51 @@
   <Header />
   <section v-if="product" class="product-page">
     <div class="container">
-        <div class="breadcrumbs">
-          <router-link to="/">Главная</router-link>
-          <template v-if="currentCategory">
-            → <router-link :to="{ name: 'catalog', params: { type: currentCategory.slug } }">
-                {{ currentCategory.name }}
-              </router-link>
-          </template>
-          <template v-if="breadcrumbSectionName">
-            → <router-link :to="{ name: 'catalog', params: { type: product.category, section: product.section } }">
-                {{ breadcrumbSectionName }}
-              </router-link>
-          </template>
-          <span v-if="breadcrumbSubName && breadcrumbSubName !== breadcrumbSectionName">
-            → {{ breadcrumbSubName }}
-          </span>
-          <span v-if="product"> → {{ product?.title }}</span>
-        </div>
+      <div class="breadcrumbs">
+        <router-link to="/">Главная</router-link>
+        <template v-if="currentCategory">
+          → <router-link :to="{ name: 'catalog', params: { type: currentCategory.slug } }">
+              {{ currentCategory.name }}
+            </router-link>
+        </template>
+        <template v-if="breadcrumbSectionName">
+          → <router-link :to="{ name: 'catalog', params: { type: product.category, section: product.section } }">
+              {{ breadcrumbSectionName }}
+            </router-link>
+        </template>
+        <span v-if="breadcrumbSubName && breadcrumbSubName !== breadcrumbSectionName">
+          → {{ breadcrumbSubName }}
+        </span>
+        <span v-if="product"> → {{ product?.title }}</span>
+      </div>
+      
       <div class="product-layout">
+        <!-- Левая колонка -->
         <div class="product-left">
-          <h1 class="product-title">{{ product.title }}
-          <img
-          class="card-like"
-          :src="favStore.isFavorite(product.id) ? heartFilled : heart"
-          @click.stop="onLikeClick(product)"/>
+          <h1 class="product-title">
+            {{ product.title }}
+            <img
+              class="card-like"
+              :src="favStore.isFavorite(product.id) ? heartFilled : heart"
+              @click.stop="onLikeClick(product)"
+            />
           </h1>
+          
+          <!-- Галерея -->
           <div class="gallery">
-            <img class="main-image" :src="activeImage" @click="openFullGallery(0)"/>
-            <div class="thumbs">
+            <img class="main-image" :src="activeImage" @click="openFullGallery(0)" />
+            <div class="thumbs" v-if="previewImages.length > 1">
               <img
                 v-for="(img, i) in previewImages"
                 :key="i"
                 :src="img"
                 @click="activeImage = img"
                 :class="{ active: activeImage === img }"
-              /></div></div>
-          <!-- Подробности -->
+              />
+            </div>
+          </div>
+
+          <!-- Характеристики -->
           <div class="product-details">
             <div 
               v-for="(group, groupIndex) in fieldGroups" 
@@ -53,7 +62,7 @@
                 >
                   <span class="label">{{ getLabel(field.key, field.label) }}</span>
                   
-                  <!-- Чипсы (коммуникации, удобства) -->
+                  <!-- Чипсы -->
                   <div v-if="field.type === 'chips'" class="details-chips-group">
                     <span 
                       v-for="(chip, index) in formatValue(product.attributes?.[field.key], 'chips')" 
@@ -73,57 +82,79 @@
               </div>
             </div>
           </div>
+
           <!-- Описание -->
-          <div class="product-description">
+          <div v-if="product.description" class="product-description">
             <h3>Описание</h3>
             <p>{{ product.description }}</p>
           </div>
-          <div v-if="product.address || product.coordinates" class="product-address-section">
+
+          <!-- Карта -->
+          <div v-if="product.address || mapCoordinates" class="product-address-section">
             <h3>Адрес</h3>
             <p class="address-text">{{ product.address }}</p>
-            <div class="product-map">
+            <div v-if="mapCoordinates" class="product-map">
               <yandex-map
-                :settings="{ location: { center: product.coordinates, zoom: 15 } }"
+                :settings="{ 
+                  location: { 
+                    center: mapCoordinates, 
+                    zoom: 15 
+                  } 
+                }"
                 width="100%"
-                height="100%"
+                height="300px"
               >
                 <yandex-map-default-scheme-layer />
                 <yandex-map-default-features-layer />
-                <yandex-map-marker :coordinates="product.coordinates">
+                <yandex-map-marker :coordinates="mapCoordinates">
                   <div class="map-pin">📍</div>
                 </yandex-map-marker>
               </yandex-map>
             </div>
+            <div v-else-if="product.address && isGeocoding" class="no-map">
+              <p>Определяем координаты на карте...</p>
+            </div>
+            <div v-else-if="product.address" class="no-map">
+              <p>Не удалось определить местоположение на карте</p>
+            </div>
           </div>
         </div>
+
+        <!-- Правая колонка -->
         <div class="product-right">
           <div class="price-card">
             <div class="price">
-            {{ formatPrice(product.price) }} ₽
-            <div 
-              v-if="product.category === 'nedvizhimost' && product.attributes?.area" 
-              class="price-extra">
-              {{ Math.round(product.price / product.attributes.area).toLocaleString() }} ₽ за м²
+              {{ formatPrice(product.price) }} ₽
+              <div 
+                v-if="product.category === 'nedvizhimost' && product.attributes?.area" 
+                class="price-extra">
+                {{ Math.round(product.price / product.attributes.area).toLocaleString() }} ₽ за м²
+              </div>
             </div>
+            <div class="location">{{ product.city }}</div>
           </div>
-            <div class="location">
-              {{ product.city }}
-            </div></div>
+
           <!-- Продавец -->
           <div class="seller-card">
             <div class="seller">
               <router-link :to="{ name: 'SellerPage', params: { id: product?.sellerId } }">
-                <img src="/src/assets/img/mask-avatar.png" class="avatar" />
+                <img :src="seller?.avatar || '/src/assets/img/mask-avatar.png'" class="avatar" />
               </router-link>
               <div class="seller-card__block">
                 <router-link :to="{ name: 'SellerPage', params: { id: product?.sellerId } }" class="name">
-                  {{ seller?.name }}
+                  {{ sellerName }}
                 </router-link>
-                <div class="rating">{{ reviewStore.getRatingById(product?.sellerId) }} ★★★★★</div>
-                <div class="type">{{ seller?.type === 'company' ? 'Компания' : 'Частное лицо' }}</div>
-                <button class="btn subscribe" @click="onSubscribeClick" :class="{ 'is-active': subStore.isSubscribed(seller?.id) }">
+                <div class="rating">{{ sellerRating }} ★★★★★</div>
+                <div class="type">{{ sellerType }}</div>
+                <button 
+                  class="btn subscribe" 
+                  @click="onSubscribeClick" 
+                  :class="{ 'is-active': subStore.isSubscribed(product?.sellerId) }"
+                >
                   {{ subStore.isSubscribed(product?.sellerId) ? 'Отписаться' : 'Подписаться' }}
-                </button></div></div>
+                </button>
+              </div>
+            </div>
             <div class="seller-card__btns">
               <button class="btn primary" @click="onShowNumberClick">
                 Показать номер
@@ -131,95 +162,103 @@
               <button class="btn secondary" @click="onWriteClick">
                 <img src="/src/assets/img/mes.svg" />
               </button>
-            </div></div></div></div>
-              <div v-if="similarProducts.length" class="similar-products">
-                <h3 class="similar-title">Похожие товары</h3>
-                <div class="similar-list">
-                  <!-- HTML карточки скопирован из HorizontalList.vue -->
-                  <div v-for="item in similarProducts" :key="item.id" class="horizontal-card">
-                    <router-link
-                      :to="{ name: 'Product', params: { type: item.category, section: item.section || 'default', id: item.id } }"
-                      class="card-link-wrapper"
-                    >
-                      <img :src="getSimilarImageUrl(item)" class="card-img" alt="product image" />
-                    </router-link>
-                    <div class="card-content">
-                      <div class="card-header">
-                        <router-link
-                          :to="{ name: 'Product', params: { type: item.category, section: item.section || 'default', id: item.id } }"
-                        >
-                          <h3 class="card-title">{{ item.title }}</h3>
-                        </router-link>
-                      </div>
-                      <div class="card-price-row">
-                        <span class="card-price">
-                          {{ item.price?.toLocaleString() }} ₽
-                        </span>
-                      </div>
-                      <div class="card-location">
-                        <span class="city-text">{{ item.city }}</span>
-                      </div>
-                      <p class="card-description">{{ item.description }}</p>
-                      <div class="card-footer-info" v-if="item.subcategory || item.section">
-                        {{ getSubcategoryName(item) }}
-                      </div>
-                      <img
-                        class="card-like"
-                        :src="favStore.isFavorite(item.id) ? heartFilled : heart"
-                        @click.stop="onLikeClick(item)"
-                      />
-                    </div>
-                    <div class="card-content__rigth">
-                      <div class="card-content__rigth-btns">
-                        <a class="btn card-btn" @click="onWriteClick(item)">Написать</a>
-                        <button class="btn card-btn" @click="onShowNumberClick(item)">Показать номер</button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-<Transition name="fade">
-  <div v-if="showCallModal" class="modal-overlay" @click.self="showCallModal = false">
-    <div class="confirm-call-card">
-      <p class="confirm-message">
-        Действительно ли вы хотите позвонить 
-        <strong>{{ ad?.seller?.name || 'Продавцу' }}</strong> 
-        ({{ ad?.seller?.phone }}{{ ad?.seller?.ext ? ' доб ' + ad.seller.ext : '' }})?
-      </p>
-      <div class="confirm-actions">
-        <button class="btn-black" @click="handleCall(ad.seller?.phone)">Позвонить</button>
-        <button class="btn-gray" @click="showCallModal = false">Отмена</button>
+            </div>
+          </div>
+        </div>
       </div>
+
+      <!-- Похожие товары -->
+      <div v-if="similarProducts.length" class="similar-products">
+        <h3 class="similar-title">Похожие товары</h3>
+        <div class="similar-list">
+          <div v-for="item in similarProducts" :key="item.id" class="horizontal-card">
+            <router-link
+              :to="{ name: 'Product', params: { type: item.category, section: item.section || 'default', id: item.id } }"
+              class="card-link-wrapper"
+            >
+              <img :src="getSimilarImageUrl(item)" class="card-img" alt="product image" />
+            </router-link>
+            <div class="card-content">
+              <div class="card-header">
+                <router-link :to="{ name: 'Product', params: { type: item.category, section: item.section || 'default', id: item.id } }">
+                  <h3 class="card-title">{{ item.title }}</h3>
+                </router-link>
+              </div>
+              <div class="card-price-row">
+                <span class="card-price">{{ item.price?.toLocaleString() }} ₽</span>
+              </div>
+              <div class="card-location">
+                <span class="city-text">{{ item.city }}</span>
+              </div>
+              <p class="card-description">{{ item.description }}</p>
+              <div class="card-footer-info" v-if="item.subcategory || item.section">
+                {{ getSubcategoryName(item) }}
+              </div>
+              <img
+                class="card-like"
+                :src="favStore.isFavorite(item.id) ? heartFilled : heart"
+                @click.stop="onLikeClick(item)"
+              />
+            </div>
+            <div class="card-content__rigth">
+              <div class="card-content__rigth-btns">
+                <a class="btn card-btn" @click="onWriteClick(item)">Написать</a>
+                <button class="btn card-btn" @click="onShowNumberClick(item)">Показать номер</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Модалка звонка -->
+      <Transition name="fade">
+        <div v-if="showCallModal" class="modal-overlay" @click.self="showCallModal = false">
+          <div class="confirm-call-card">
+            <p class="confirm-message">
+              Позвонить <strong>{{ seller?.name || 'Продавцу' }}</strong>?
+            </p>
+            <div class="phone-display">
+              {{ formatPhone(seller?.phone) }}
+            </div>
+            <div class="confirm-actions">
+              <button class="btn-black" @click="handleCall(seller?.phone)">
+                Позвонить
+              </button>
+              <button class="btn-gray" @click="showCallModal = false">Отмена</button>
+            </div>
+          </div>
+        </div>
+      </Transition>
     </div>
-  </div>
-</Transition>
-</div></section>
+  </section>
   
-<div v-else-if="!isReady" class="block__loading">Загрузка...</div>
+  <div v-else-if="!isReady" class="block__loading">Загрузка...</div>
   <NotFound v-else />
 </template>
 <script setup>
-import { ref, computed, watch, onMounted, nextTick } from "vue" 
-import { useRoute, useRouter } from "vue-router"
-import { useProductStore } from "/src/stores/product.js"
+import { ref, computed, watch, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { useProductStore } from "/src/stores/product.js";
 import { productLabels, getLabel, formatValue, getFieldGroups, isChipActive } from "/src/stores/productLabels.js";
-import { categories } from "/src/data/categories.js"
+import { categories } from "/src/data/categories.js";
 import { Fancybox } from "@fancyapps/ui";
 import "@fancyapps/ui/dist/fancybox/fancybox.css";
 
 import Header from '../components/layout/Header.vue';
 import NotFound from "../components/common/NotFound.vue";
 import { notify } from "../utils/notify";
+import { capitalizeFirst } from '/src/utils/formatters.js';
 
 import { useFavoritesStore } from "/src/stores/favoritesStore";
-import { useSubscriptionStore } from "../stores/subscriptionStore.js"; 
+import { useSubscriptionStore } from "../stores/subscriptionStore.js";
 import { useAuthStore } from "/src/stores/authStore.js";
 import { useModalStore } from "/src/stores/modal.js";
 import { useReviewStore } from '/src/stores/reviews.js';
-import { useSellerStore } from "/src/stores/sellers.js";
+import { geocodeByQuery } from '/src/utils/geocode.js';
 
 import heart from "/src/assets/img/icons/heart.svg";
 import heartFilled from "/src/assets/img/icons/heart-filled.svg";
+
 const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
@@ -228,15 +267,80 @@ const productStore = useProductStore();
 const favStore = useFavoritesStore();
 const subStore = useSubscriptionStore();
 const reviewStore = useReviewStore();
-const sellerStore = useSellerStore();
+
 const isReady = ref(false);
 const isNumberShown = ref(false);
 const showCallModal = ref(false);
 const activeImage = ref("");
 const product = ref(null);
 const similarProducts = ref([]);
+const seller = ref(null);
+const mapCoordinates = ref(null);
+const isGeocoding = ref(false);
 
-// === ОПРЕДЕЛЕНИЕ ТИПА ТОВАРА ===
+// === КАРТА ===
+const hasCoordinatesFromApi = computed(() => {
+  return Array.isArray(product.value?.coordinates) && 
+         product.value.coordinates.length === 2 &&
+         !isNaN(product.value.coordinates[0]) &&
+         !isNaN(product.value.coordinates[1]);
+});
+
+// === ПРОДАВЕЦ ===
+const sellerName = computed(() => {
+  return seller.value?.name || seller.value?.username || 'Продавец';
+});
+
+const sellerType = computed(() => {
+  return seller.value?.type === 'company' ? 'Компания' : 'Частное лицо';
+});
+
+const sellerRating = computed(() => {
+  return reviewStore.getRatingById(product.value?.sellerId) || 0;
+});
+
+// === ГЕОКОДИРОВАНИЕ ===
+// === ГЕОКОДИРОВАНИЕ ===
+const resolveCoordinates = async () => {
+  if (hasCoordinatesFromApi.value) {
+    const [lng, lat] = product.value.coordinates;
+    mapCoordinates.value = [Number(lng), Number(lat)];
+    return;
+  }
+
+  let address = product.value?.address || product.value?.city;
+  if (!address) {
+    mapCoordinates.value = null;
+    return;
+  }
+
+  // Автозаглавная первая буква
+  if (address.length > 0 && address[0] !== address[0].toUpperCase()) {
+    address = address[0].toUpperCase() + address.slice(1);
+    // Обновляем в продукте тоже
+    product.value.address = address;
+  }
+
+  isGeocoding.value = true;
+  try {
+    const result = await geocodeByQuery(address);
+    if (result && result.coordinates) {
+      const coords = Array.isArray(result.coordinates) 
+        ? result.coordinates 
+        : [result.coordinates.lng, result.coordinates.lat];
+      mapCoordinates.value = coords;
+    } else {
+      mapCoordinates.value = null;
+    }
+  } catch (e) {
+    console.error('Ошибка геокодирования:', e);
+    mapCoordinates.value = null;
+  } finally {
+    isGeocoding.value = false;
+  }
+};
+
+// === ТИП ТОВАРА ===
 const productSection = computed(() => {
   const section = product.value?.section;
   const subcategory = product.value?.subcategory;
@@ -256,77 +360,136 @@ const productSection = computed(() => {
   
   return subToSection[subcategory] || subToSection[section] || section || 'apartments';
 });
-// === ГРУППЫ ПОЛЕЙ ===
+
 const fieldGroups = computed(() => {
   if (!product.value) return [];
   return getFieldGroups(productSection.value);
 });
-// === ЗАГРУЗКА ОДНОГО ТОВАРА ===
+
+// === ЗАГРУЗКА ПРОДАВЦА ===
+const loadSeller = async (sellerId) => {
+  if (!sellerId) {
+    seller.value = null;
+    return;
+  }
+  try {
+    const profile = await auth.fetchProfileById(sellerId);
+    seller.value = profile || {
+      id: sellerId,
+      name: 'Продавец',
+      type: 'private',
+      avatar: '/src/assets/img/mask-avatar.png',
+      phone: '',
+    };
+  } catch (e) {
+    console.error("Ошибка загрузки продавца:", e);
+    seller.value = {
+      id: sellerId,
+      name: 'Продавец',
+      type: 'private',
+      avatar: '/src/assets/img/mask-avatar.png',
+      phone: '',
+    };
+  }
+};
+
+// === ФОРМАТ ТЕЛЕФОНА ===
+const formatPhone = (phone) => {
+  if (!phone) return '';
+  const cleaned = ('' + phone).replace(/\D/g, '');
+  const match = cleaned.match(/^(\d|7|8)(\d{3})(\d{3})(\d{2})(\d{2})$/);
+  if (match) {
+    return `+7 (${match[2]}) ${match[3]}-${match[4]}-${match[5]}`;
+  }
+  return phone;
+};
+
+// === ЗАГРУЗКА ТОВАРА ===
 const loadProduct = async (id) => {
+  if (!id) {
+    product.value = null;
+    isReady.value = true;
+    return;
+  }
+
   isReady.value = false;
   product.value = null;
   similarProducts.value = [];
+  seller.value = null;
+  mapCoordinates.value = null;
 
   try {
     const cached = productStore.products.find(p => String(p.id) === String(id));
-    if (cached) {
-      product.value = cached;
+    
+    if (cached && cached.pictures?.length) {
+      product.value = {
+        ...cached,
+        images: cached.images || cached.pictures?.map(p => p.pictureUrl || p.url) || [],
+        image: cached.image || cached.pictures?.[0]?.pictureUrl || '/src/assets/img/placeholder.png',
+        attributes: cached.attributes || {},
+        coordinates: cached.coordinates || null,
+        address: cached.address || cached.city || '',
+      };
     } else {
       const data = await auth.getAdvertById(id);
+      
+      if (!data || !data.id) {
+        notify("Объявление не найдено", "error");
+        product.value = null;
+        isReady.value = true;
+        return;
+      }
+
       product.value = {
         id: data.id,
-        title: data.title,
+        title: data.title || 'Без названия',
         price: Number(data.price) || 0,
         description: data.description || '',
         city: data.address || data.city || '',
-        address: data.address, // ← адрес для карты
-        coordinates: data.coordinates, // ← координаты для карты
-        category: data.category,
-        section: data.section,
-        subcategory: data.subCategory || data.subcategory,
+        address: data.address || '',
+        coordinates: data.coordinates || null,
+        category: data.category || 'tovary',
+        section: data.section || data.subCategory || 'default',
+        subcategory: data.subCategory || data.subcategory || '',
         sellerId: data.userId || data.sellerId,
-        images: data.pictures?.map(p => p.pictureUrl) || [],
+        images: data.pictures?.map(p => p.pictureUrl || p.url) || [],
         image: data.pictures?.[0]?.pictureUrl || data.thumbnailUrl || '/src/assets/img/placeholder.png',
-        attributes: data.attributes || data,
+        attributes: data.attributes || {},
         ...data
       };
     }
 
     if (product.value?.sellerId) {
-      await sellerStore.ensureSellers();
-      await reviewStore.fetchReviewsBySeller(product.value.sellerId);
+      await Promise.all([
+        loadSeller(product.value.sellerId),
+        reviewStore.fetchReviewsBySeller(product.value.sellerId),
+      ]);
     }
 
+    await resolveCoordinates();
     activeImage.value = product.value.images?.[0] || product.value.image || '';
-
-    // Загружаем похожие товары
     await loadSimilarProducts();
 
   } catch (err) {
     console.error("Ошибка загрузки товара:", err);
+    notify("Ошибка загрузки объявления", "error");
     product.value = null;
   } finally {
     isReady.value = true;
   }
 };
+
 const loadSimilarProducts = async () => {
   if (!product.value) return;
   try {
-    // const res = await api.get('/advert/similar', {
-    //   params: {
-    //     category: product.value.category,
-    //     section: product.value.section,
-    //     city: product.value.city,
-    //     excludeId: product.value.id,
-    //     limit: 4
-    //   }
-    // });
+    // const res = await api.get('/advert/similar', { ... });
     // similarProducts.value = res.data || [];
   } catch (e) {
-    console.error('Ошибка загрузки похожих товаров:', e);
+    console.error('Ошибка загрузки похожих:', e);
     similarProducts.value = [];
   }
 };
+
 const getSimilarImageUrl = (item) => {
   if (item.images?.length) return item.images[0];
   if (item.pictures?.[0]) return item.pictures[0].url || item.pictures[0];
@@ -350,14 +513,12 @@ const getSubcategoryName = (item) => {
   }
   return "";
 };
-const seller = computed(() => {
-  if (!product.value?.sellerId) return null;
-  return sellerStore.getSellerById(product.value.sellerId);
-});
+
 const currentCategory = computed(() => {
   if (!product.value) return null;
   return categories.find((c) => c.slug === product.value.category);
 });
+
 const activeTabItem = computed(() => {
   if (!currentCategory.value || !product.value) return null;
   return (
@@ -365,7 +526,9 @@ const activeTabItem = computed(() => {
     currentCategory.value.sections.flatMap((s) => s.links || []).find((l) => l.slug === product.value.section)
   );
 });
+
 const breadcrumbSectionName = computed(() => activeTabItem.value?.title || activeTabItem.value?.name);
+
 const breadcrumbSubName = computed(() => {
   const subSlug = product.value?.subcategory;
   if (!currentCategory.value || !subSlug) return null;
@@ -373,9 +536,13 @@ const breadcrumbSubName = computed(() => {
     const directLink = section.links?.find(l => l.slug === subSlug);
     if (directLink) return directLink.name;
     if (section.links) {
-  for (const link of section.links) {
-  const deepLink = link.subLinks?.find(sl => sl.slug === subSlug);
-  if (deepLink) return deepLink.name;}}}return null;
+      for (const link of section.links) {
+        const deepLink = link.subLinks?.find(sl => sl.slug === subSlug);
+        if (deepLink) return deepLink.name;
+      }
+    }
+  }
+  return null;
 });
 
 const previewImages = computed(() => product.value?.images?.slice(0, 8) || []);
@@ -394,6 +561,7 @@ const checkAuthAndRun = (action, message = "Авторизуйтесь, чтоб
   }
   action();
 };
+
 const onLikeClick = (item) => {
   if (!item) return;
   checkAuthAndRun(() => {
@@ -401,8 +569,10 @@ const onLikeClick = (item) => {
     notify(favStore.isFavorite(item.id) ? "Добавлено в избранное" : "Удалено из избранного");
   }, "Войдите, чтобы добавить в избранное");
 };
+
 const onSubscribeClick = () => {
-  const sellerId = seller.value?.id;
+  const sellerId = product.value?.sellerId;
+  if (!sellerId) return;
   checkAuthAndRun(async () => {
     const isNowSubscribed = await subStore.toggle(sellerId);
     notify(isNowSubscribed ? "Вы подписались на продавца" : "Вы отписались от продавца");
@@ -410,9 +580,7 @@ const onSubscribeClick = () => {
 };
 
 const onShowNumberClick = () => {
-  console.log("Клик сработал");
   checkAuthAndRun(() => { 
-    console.log("Авторизация пройдена, открываю модалку");
     isNumberShown.value = true; 
     showCallModal.value = true; 
   }, "Войдите, чтобы увидеть номер телефона");
@@ -441,6 +609,7 @@ watch(() => route.params.id, (newId) => {
 onMounted(() => {
   Fancybox.bind("[data-fancybox='gallery']", { Hash: false });
 });
+
 watch(() => product.value?.title, (newTitle) => {
   if (newTitle) {
     document.title = `${newTitle} — купить на Матрешка`;

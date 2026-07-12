@@ -2,81 +2,284 @@
   <Header />
   <section class="search-page">
     <div class="container">
-        <div class="search-page_content">
-            <!-- Заголовок результатов -->
-            <div v-if="lastQuery" class="results-title">
-                <h1>Результаты по «{{ lastQuery }}»</h1>
-                <span v-if="!loading">{{ videos.length }} {{ declension(videos.length) }}</span>
-            </div>
-
-            <!-- Загрузка -->
-            <div v-if="loading" class="loading">
-                <div class="spinner"></div>
-                <p>Поиск...</p>
-            </div>
-
-            <!-- Нет результатов -->
-            <div v-else-if="searched && !videos.length" class="empty">
-                <p class="empty-title">Ничего не найдено</p>
-                <p class="empty-text">По запросу «{{ lastQuery }}» видео не найдены</p>
-            </div>
-
-            <!-- Сетка видео -->
-            <div v-else-if="videos.length" class="videos-grid">
-                <div
-                v-for="video in videos"
-                :key="video.id"
-                class="video-card"
-                @click="goToVideo(video.id)"
-                >
-                <div class="video-thumb">
-                    <video
-                    :src="video.cdnUrl"
-                    preload="metadata"
-                    muted
-                    playsinline
-                    ></video>
-                    <div class="play-overlay">
-                    <svg width="2.5rem" height="2.5rem" viewBox="0 0 24 24" fill="white">
-                        <path d="M8 5v14l11-7z"/>
-                    </svg>
-                    </div>
-                </div>
-                <p class="video-title">{{ video.description || 'Без названия' }}</p>
-                </div>
-            </div>
+      <div class="search-page_content">
+        <!-- Заголовок результатов -->
+        <div v-if="lastQuery" class="results-title">
+          <h1>Результаты по «{{ lastQuery }}»</h1>
+          <span v-if="!loading">
+            {{ totalResults }} {{ declensionResults(totalResults) }}
+          </span>
         </div>
+
+        <!-- Загрузка -->
+        <div v-if="loading" class="loading">
+          <div class="spinner"></div>
+          <p>Поиск...</p>
+        </div>
+
+        <!-- Нет результатов -->
+        <div v-else-if="searched && !totalResults" class="empty">
+          <p class="empty-title">Ничего не найдено</p>
+          <p class="empty-text">По запросу «{{ lastQuery }}» ничего не найдено</p>
+        </div>
+
+        <!-- Результаты: Товары -->
+        <div v-if="products.length" class="results-section">
+          <h2 class="section-title">Товары и объявления</h2>
+          <div class="products-grid">
+            <div
+              v-for="product in products"
+              :key="'prod-' + product.id"
+              class="product-card"
+            >
+              <router-link
+                :to="{
+                  name: 'Product',
+                  params: {
+                    type: product.category || 'tovary',
+                    section: product.section || 'default',
+                    id: product.id,
+                  },
+                }"
+              >
+                <img
+                  :src="product.image"
+                  alt=""
+                  class="product-img"
+                  @error="onImageError"
+                />
+              </router-link>
+              <div class="product-card__content">
+                <router-link
+                  :to="{
+                    name: 'Product',
+                    params: {
+                      type: product.category || 'tovary',
+                      section: product.section || 'default',
+                      id: product.id,
+                    },
+                  }"
+                  class="title"
+                >
+                  {{ product.title }}
+                </router-link>
+                <div class="price">
+                  {{ Number(product.price).toLocaleString('ru-RU') }} ₽
+                </div>
+                <div class="product-content__bottom">
+                  <div class="city">{{ product.city }}</div>
+                  <img
+                    class="card-like"
+                    :src="favStore.isFavorite(product.id) ? heartFilled : heart"
+                    @click.stop="onLikeClick(product)"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Результаты: Видео -->
+        <div v-if="videos.length" class="results-section">
+          <h2 class="section-title">Видео</h2>
+          <div class="videos-grid">
+            <div
+              v-for="video in videos"
+              :key="'vid-' + video.id"
+              class="video-card"
+              @click="goToVideo(video.id)"
+            >
+              <div class="video-thumb">
+                <video
+                  :src="video.cdnUrl"
+                  preload="metadata"
+                  muted
+                  playsinline
+                ></video>
+                <div class="play-overlay">
+                  <svg width="2.5rem" height="2.5rem" viewBox="0 0 24 24" fill="white">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                </div>
+              </div>
+              <p class="video-title">{{ video.description || 'Без названия' }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 </template>
 
 <script setup>
-import { ref, watch } from "vue";
+import { ref, computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "/src/stores/authStore.js";
+import { useFavoritesStore } from "/src/stores/favoritesStore";
+import { useModalStore } from "/src/stores/modal.js";
+import { useProductStore } from "/src/stores/product.js";
+import { notify } from "../utils/notify";
+import { api } from "/src/api/api.js";
 import Header from "../components/layout/Header.vue";
+
+import heart from "/src/assets/img/icons/heart.svg";
+import heartFilled from "/src/assets/img/icons/heart-filled.svg";
 
 const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
+const favStore = useFavoritesStore();
+const modal = useModalStore();
+const productStore = useProductStore();
 
 const loading = ref(false);
 const searched = ref(false);
 const lastQuery = ref("");
 const videos = ref([]);
+const products = ref([]);
 
-const declension = (n) => {
+const totalResults = computed(() => products.value.length + videos.value.length);
+
+const declensionResults = (n) => {
   n = Math.abs(n) % 100;
   const n1 = n % 10;
-  if (n > 10 && n < 20) return 'видео';
-  if (n1 > 1 && n1 < 5) return 'видео';
-  if (n1 === 1) return 'видео';
-  return 'видео';
+  if (n > 10 && n < 20) return 'результатов';
+  if (n1 > 1 && n1 < 5) return 'результата';
+  if (n1 === 1) return 'результат';
+  return 'результатов';
+};
+
+const onImageError = (e) => {
+  e.target.src = '/src/assets/img/placeholder.png';
+};
+
+const checkAuthAndRun = (action, message = "Авторизуйтесь, чтобы продолжить") => {
+  if (!auth.isAuthenticated) {
+    modal.openLogin();
+    notify(message);
+    return;
+  }
+  action();
+};
+
+const onLikeClick = (item) => {
+  if (!item) return;
+  checkAuthAndRun(() => {
+    favStore.toggle(item.id);
+    notify(
+      favStore.isFavorite(item.id)
+        ? "Добавлено в избранное"
+        : "Удалено из избранного"
+    );
+  }, "Войдите, чтобы добавить в избранное");
+};
+
+// === ПОИСК ТОВАРОВ: API + ЛОКАЛЬНЫЕ ===
+const searchProducts = async (q) => {
+  const qLow = q.toLowerCase();
+  let apiResults = [];
+  let localResults = [];
+
+  // 1. Поиск через API
+  try {
+    const res = await api.get('/advert', {
+      params: {
+        query: q,
+        take: 50,
+      }
+    });
+    const ads = Array.isArray(res.data) ? res.data : res.data?.items || [];
+    
+    apiResults = ads.map((ad) => ({
+      id: ad.id,
+      title: ad.title || 'Без названия',
+      price: Number(ad.price) || 0,
+      city: ad.address || ad.city || '',
+      category: ad.category || 'tovary',
+      section: ad.section || ad.subCategory || 'default',
+      image: '/src/assets/img/placeholder.png',
+      source: 'api',
+    }));
+  } catch (e) {
+    console.warn("API поиска товаров недоступен:", e);
+  }
+
+  // 2. Загружаем локальные товары если ещё нет
+  if (productStore.products.length === 0) {
+    try {
+      await productStore.fetchAdverts();
+    } catch (e) {
+      console.warn("Не удалось загрузить товары:", e);
+    }
+  }
+
+  // 3. Фильтруем локальные товары
+  const localMatches = productStore.products.filter((p) => {
+    const title = (p.title || "").toLowerCase();
+    const desc = (p.description || "").toLowerCase();
+    const city = (p.city || "").toLowerCase();
+    return title.includes(qLow) || desc.includes(qLow) || city.includes(qLow);
+  });
+
+  localResults = localMatches.map((p) => ({
+    id: p.id,
+    title: p.title,
+    price: p.price,
+    city: p.city,
+    category: p.category,
+    section: p.section,
+    image: p.image || p.images?.[0] || '/src/assets/img/placeholder.png',
+    source: 'local',
+  }));
+
+  // 4. Мержим: API + локальные без дублей
+  const apiIds = new Set(apiResults.map(r => String(r.id)));
+  const merged = [
+    ...apiResults,
+    ...localResults.filter(l => !apiIds.has(String(l.id)))
+  ];
+
+  // 5. Если API вернул ID, но нет картинки — ищем картинку в локальных
+  return merged.map(item => {
+    if (item.source === 'api') {
+      const localMatch = localResults.find(l => String(l.id) === String(item.id));
+      if (localMatch && localMatch.image !== '/src/assets/img/placeholder.png') {
+        return { ...item, image: localMatch.image };
+      }
+    }
+    return item;
+  });
+};
+
+// === ПОИСК ВИДЕО ===
+const searchVideos = async (q) => {
+  try {
+    await auth.fetchWelcomeFeed({ page: 0, size: 50, seed: 0.5 });
+    const all = auth.welcomeFeed || [];
+    const qLow = q.toLowerCase();
+    
+    return all
+      .filter((v) => {
+        const d = (v.description || "").toLowerCase();
+        const f = (v.fileName || "").toLowerCase();
+        const a = (v.author?.name || v.author?.username || "").toLowerCase();
+        return d.includes(qLow) || f.includes(qLow) || a.includes(qLow);
+      })
+      .map((v) => ({
+        id: v.id,
+        cdnUrl: v.cdnUrl || v.url || v.thumbnail,
+        description: v.description || v.fileName || "Без названия",
+      }));
+  } catch (e) {
+    console.error("Ошибка поиска видео:", e);
+    return [];
+  }
 };
 
 const doSearch = async (q) => {
-  if (!q) {
+  if (!q || !q.trim()) {
     videos.value = [];
+    products.value = [];
     searched.value = false;
     lastQuery.value = "";
     return;
@@ -84,30 +287,18 @@ const doSearch = async (q) => {
 
   loading.value = true;
   searched.value = true;
-  lastQuery.value = q;
+  lastQuery.value = q.trim();
   videos.value = [];
+  products.value = [];
 
   try {
-    // Загружаем welcomeFeed — это видео ВСЕХ пользователей
-    await auth.fetchWelcomeFeed({ page: 0, size: 50, seed: 0.5 });
-    const all = auth.welcomeFeed || [];
+    const [prodResults, vidResults] = await Promise.all([
+      searchProducts(q.trim()),
+      searchVideos(q.trim()),
+    ]);
 
-    const qLow = q.toLowerCase();
-    videos.value = all.filter((v) => {
-      const d = (v.description || "").toLowerCase();
-      const f = (v.fileName || "").toLowerCase();
-      const a = (v.author?.name || v.author?.username || "").toLowerCase();
-      return d.includes(qLow) || f.includes(qLow) || a.includes(qLow);
-    }).map((v) => ({
-      id: v.id,
-      cdnUrl: v.cdnUrl || v.url || v.thumbnail,
-      description: v.description || v.fileName || "Без названия",
-      author: {
-        name: v.author?.username || v.author?.name || "Пользователь",
-        username: v.author?.username,
-        avatar: v.author?.avatar || "/src/assets/img/mask-avatar.png",
-      },
-    }));
+    products.value = prodResults;
+    videos.value = vidResults;
   } catch (e) {
     console.error("Ошибка поиска:", e);
   } finally {
@@ -141,11 +332,13 @@ watch(
   margin: 0 auto;
   padding: 0 1rem;
 }
-.search-page_content{
-    padding: 1.563rem 1.375rem;
-    background: #FFFFFF;
-    border-radius: 0.625rem;
+
+.search-page_content {
+  padding: 1.563rem 1.375rem;
+  background: #ffffff;
+  border-radius: 0.625rem;
 }
+
 /* Заголовок */
 .results-title {
   display: flex;
@@ -163,6 +356,18 @@ watch(
 .results-title span {
   font-size: 0.9375rem;
   color: #888;
+}
+
+/* Секции результатов */
+.results-section {
+  margin-bottom: 2rem;
+}
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #333;
 }
 
 /* Загрузка */
@@ -206,7 +411,87 @@ watch(
   font-size: 0.9375rem;
 }
 
-/* Сетка */
+/* === СЕТКА ТОВАРОВ === */
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12.938rem, 1fr));
+  gap: 0.938rem;
+}
+
+.product-card {
+  border: 1px solid transparent;
+  width: 100%;
+  min-height: 16.375rem;
+  background-color: white;
+  padding: 0.875rem 0.75rem 0.813rem 0.813rem;
+  border-radius: 1.25rem;
+  transition: all 0.3s;
+}
+
+.product-card:hover {
+  border-color: var(--btn-bg);
+}
+
+.product-card .product-img {
+  width: 100%;
+  height: 9.125rem;
+  object-fit: cover;
+  border-radius: 0.625rem;
+}
+
+.product-card__content {
+  margin-top: 0.5rem;
+}
+
+.title {
+  height: 2rem;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  transition: all 0.3s;
+  border-radius: 0;
+  font-size: 0.8125rem;
+  color: #333;
+  text-decoration: none;
+  line-height: 1.3;
+}
+
+.title:hover {
+  color: var(--btn-bg);
+}
+
+.price {
+  font-size: 0.875rem;
+  font-weight: 800;
+  margin-top: 0.475rem;
+  color: #000;
+}
+
+.product-content__bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.313rem;
+}
+
+.city {
+  font-size: 0.8125rem;
+  color: #888;
+}
+
+.card-like {
+  width: 1.25rem;
+  height: 1.25rem;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.card-like:hover {
+  transform: scale(1.1);
+}
+
+/* === СЕТКА ВИДЕО === */
 .videos-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr));
@@ -257,7 +542,7 @@ watch(
 }
 
 .video-title {
-  padding: 0.625rem 1rem 0.625rem 1rem;
+  padding: 0.625rem 1rem;
   font-size: 0.9375rem;
   font-weight: 500;
   margin: 0;
@@ -267,46 +552,5 @@ watch(
   -webkit-box-orient: vertical;
   overflow: hidden;
   color: #333;
-}
-
-.video-author {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem 1rem;
-}
-
-.video-author img {
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.video-author span {
-  font-size: 0.8125rem;
-  color: #888;
-}
-
-/* Адаптив */
-@media (max-width: 48rem) {
-  .results-title {
-    padding: 1rem 0;
-  }
-
-  .results-title h1 {
-    font-size: 1.125rem;
-  }
-
-  .videos-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
-  }
-}
-
-@media (max-width: 30rem) {
-  .videos-grid {
-    grid-template-columns: 1fr;
-  }
 }
 </style>

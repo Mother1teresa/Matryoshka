@@ -849,6 +849,52 @@ export const useAuthStore = defineStore("auth", {
         if (e.response?.data?.code === "SESSION_EXPIRED") this.logout();
       }
     },
+    // В actions добавь:
+    async fetchProfileById(userId) {
+      if (!userId) {
+        console.error("fetchProfileById: userId не передан");
+        return null;
+      }
+      try {
+        const res = await api.get(`/profile/${userId}`);
+        const rawData = res.data;
+        
+        const cleanValue = (val) => {
+          if (val && val.includes && val.includes('JsonNullable@')) return '';
+          return val || '';
+        };
+        
+        const cleanAvatar = (avatar) => {
+          if (avatar && avatar.cdnUrl) return avatar.cdnUrl;
+          if (avatar && avatar.url) return avatar.url;
+          if (typeof avatar === 'string') return avatar;
+          return '';
+        };
+        
+        return {
+          id: rawData.id,
+          name: cleanValue(rawData.name) || cleanValue(rawData.username) || 'Пользователь',
+          username: cleanValue(rawData.username),
+          email: cleanValue(rawData.email),
+          phone: rawData.phone || '',
+          description: cleanValue(rawData.description) || 'Переходите на наш профиль, чтобы увидеть все актуальные предложения.',
+          avatar: cleanAvatar(rawData.avatarUrl) || maskAvatar,
+          avatarUrl: cleanAvatar(rawData.avatarUrl),
+          city: cleanValue(rawData.city),
+          type: rawData.role === 'COMPANY' ? 'company' : 'private',
+          role: rawData.role || 'PRIVATE_PERSON',
+          createdAt: rawData.createdAt,
+          website: rawData.website || '',
+          employees: rawData.employees || [],
+          // Доп поля если есть
+          companyName: rawData.companyName || '',
+          rating: rawData.rating || 0,
+        };
+      } catch (e) {
+        console.error("Ошибка загрузки профиля:", e);
+        return null;
+      }
+    },
     async fetchVideos() {
       this.isVideosLoading = true;
       try {

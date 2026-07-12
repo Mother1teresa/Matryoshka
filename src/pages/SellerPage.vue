@@ -1,34 +1,36 @@
 <template>
   <Header />
   <section class="seller-page-section">
-    <div class="container seller-page" v-if="seller">
+    <div class="container seller-page" v-if="seller && seller.id">
+      <!-- Хлебные крошки -->
       <div class="breadcrumbs">
         <router-link to="/">Главная</router-link>
-        <span> → {{ seller?.name || seller?.username || seller?.companyName || 'Продавец' }}</span>
+        <span> → {{ sellerName }}</span>
       </div>
+      <!-- Карточка продавца -->
       <div class="seller-card-main">
         <div class="seller-header-flex">
           <div class="seller-info-left">
             <div class="logo-wrapper">
-              <img :src="seller?.avatar || '/src/assets/img/mask-avatar.png'" class="seller-logo"/>
+              <img :src="seller.avatar || '/src/assets/img/mask-avatar.png'" class="seller-logo"/>
             </div>
             <div class="seller-text">
               <div class="seller-name-row">
-                <h1>{{ seller?.name || seller?.username || seller?.companyName || 'Продавец' }}</h1>
+                <h1>{{ sellerName }}</h1>
                 <div class="seller-type">
-                  {{ seller?.type === "company" ? "Компания" : "Частное лицо" }}
+                  {{ sellerType }}
                 </div>
                 <div class="rating-block">
                   <div class="rating">{{ sellerRating }} <span>★★★★★</span>
-                    <small> ( {{ sellerReviewsCount }} )</small>
+                    <small> ({{ sellerReviewsCount }})</small>
                   </div>
                 </div>
               </div>
               <div class="seller-desc">
                 <div class="desc-container">
                   <span :class="{ 'is-collapsed': !isDescExpanded }" class="desc-text">
-                    <a v-if="seller.website" :href="seller.website" target="_blank" >{{ seller.website }}</a>
-                    {{ seller.description || "Переходите на наш профиль, чтобы увидеть все актуальные предложения." }}
+                    <a v-if="seller.website" :href="seller.website" target="_blank">{{ seller.website }}</a>
+                    {{ sellerDescription }}
                   </span>
                   <button class="btn-more" @click="isDescExpanded = !isDescExpanded">
                     {{ isDescExpanded ? "Скрыть" : "Ещё" }}
@@ -39,8 +41,12 @@
           </div>
           <div class="seller-info-right">
             <div class="experience">{{ membershipText }}</div>
-            <button class="btn-subscribe-text" @click="onSubscribeClick":class="{ 'is-active': subStore.isSubscribed(seller?.id) }"> 
-              {{ subStore.isSubscribed(seller?.id) ? "Отписаться" : "Подписаться"}}
+            <button 
+              class="btn-subscribe-text" 
+              @click="onSubscribeClick"
+              :class="{ 'is-active': subStore.isSubscribed(seller?.id) }"
+            > 
+              {{ subStore.isSubscribed(seller?.id) ? "Отписаться" : "Подписаться" }}
             </button>
           </div>
         </div>
@@ -79,7 +85,7 @@
                 <span class="duration">{{ video.duration }}</span>
               </div>
               <div class="video-info">
-                <div class="video-title">{{video.description}}</div>
+                <div class="video-title">{{ video.description }}</div>
                 <div class="video-date">{{ video.date }}</div>
               </div>
             </div>
@@ -93,36 +99,47 @@
             Загрузка отзывов...
           </div>
           <template v-else-if="sellerReviews.length">
-          <div v-for="review in sellerReviews" :key="review.id" class="review-card">
-            <div class="review-header">
-              <div class="user-info">
-                <img :src="review.userAvatar" class="user-avatar" />
-                <div class="user-details">
-                  <div class="user-name">{{ review.author }}</div>
-                  <div class="review-product">{{ review.productTitle }}</div>
-                  <div class="review-body">
-                    {{ review.text }}
+            <div v-for="review in sellerReviews" :key="review.id" class="review-card">
+              <div class="review-header">
+                <div class="user-info">
+                  <img :src="review.userAvatar || '/src/assets/img/mask-avatar.png'" class="user-avatar" />
+                  <div class="user-details">
+                    <div class="user-name">{{ review.author }}</div>
+                    <div class="review-product">{{ review.productTitle }}</div>
+                    <div class="review-body">
+                      {{ review.text }}
+                    </div>
                   </div>
                 </div>
+                <div class="review-meta">
+                  <div class="deal-status">Сделка состоялась</div>
+                  <div class="stars-row">{{ '★'.repeat(review.rating) }}{{ '☆'.repeat(5 - review.rating) }}</div>
+                  <div class="review-date">{{ review.date }}</div>
+                </div>
               </div>
-              <div class="review-meta">
-                <div class="deal-status">Сделка состоялась</div>
-                <div class="stars-row">{{ '★'.repeat(review.rating) }}{{ '☆'.repeat(5 - review.rating) }}</div>
-                <div class="review-date">{{ review.date }}</div>
+              <!-- Ответ продавца -->
+              <div v-if="review.reply" class="seller-reply">
+                <img :src="seller?.avatar || '/src/assets/img/mask-avatar.png'" class="reply-avatar" />
+                <div class="reply-content">
+                  <div class="reply-label">Ответ продавца</div>
+                  <div class="reply-text">{{ review.reply }}</div>
+                </div>
               </div>
             </div>
-            
-            <!-- Ответ продавца -->
-            <div v-if="review.reply" class="seller-reply">
-              <img :src="seller?.avatar || '/src/assets/img/mask-avatar.png'" class="reply-avatar" />
-              <div class="reply-content">
-                <div class="reply-label">Ответ продавца</div>
-                <div class="reply-text">{{ review.reply }}</div>
-              </div>
-</div></div></template>
-<div v-else class="no-reviews">
-  У этого продавца пока нет отзывов.
-</div></div></div></div></section></template>
+          </template>
+          <div v-else class="no-reviews">
+            У этого продавца пока нет отзывов.
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Загрузка -->
+    <div v-else-if="isLoading" class="block__loading">Загрузка...</div>
+    <!-- Не найден -->
+    <div v-else class="block__loading">Продавец не найден</div>
+  </section>
+</template>
+
 <script setup>
 import { ref, computed, watch, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -148,8 +165,24 @@ const currentTab = ref("announcements");
 const isDescExpanded = ref(false);
 const isLoading = ref(false);
 
+// === ПРОДАВЕЦ ===
+const seller = ref(null);
+
+const sellerName = computed(() => {
+  return seller.value?.name || seller.value?.username || seller.value?.companyName || 'Продавец';
+});
+
+const sellerType = computed(() => {
+  return seller.value?.type === "company" ? "Компания" : "Частное лицо";
+});
+
+const sellerDescription = computed(() => {
+  return seller.value?.description || "Переходите на наш профиль, чтобы увидеть все актуальные предложения.";
+});
+
 const sellerRating = computed(() => reviewStore.getRatingById(route.params.id));
 const sellerReviewsCount = computed(() => reviewStore.getReviewsCountById(route.params.id));
+
 // === ТОВАРЫ ПРОДАВЦА ===
 const sellerProducts = ref([]);
 
@@ -177,7 +210,7 @@ const loadSellerProducts = async (sellerId) => {
   }
 };
 
-// === ВИДЕО ПРОДАВЦА — фильтруем из всех видео ===
+// === ВИДЕО ПРОДАВЦА ===
 const sellerVideos = ref([]);
 
 const loadSellerVideos = async (sellerId) => {
@@ -197,30 +230,54 @@ const loadSellerVideos = async (sellerId) => {
   }
 };
 
+// === ЗАГРУЗКА ВСЕХ ДАННЫХ ПРОДАВЦА ===
 const loadSellerData = async (sellerId) => {
-  if (!sellerId) return;
+  if (!sellerId) {
+    seller.value = null;
+    return;
+  }
+  
   isLoading.value = true;
+  seller.value = null;
+  sellerProducts.value = [];
+  sellerVideos.value = [];
+
   try {
+    // 1. Загружаем профиль продавца через API
+    const profile = await auth.fetchProfileById(sellerId);
+    
+    if (profile) {
+      seller.value = profile;
+    } else {
+      // Fallback: ищем в sellerStore
+      await sellerStore.ensureSellers(sellerId);
+      const storeSeller = sellerStore.getSellerById(sellerId);
+      if (storeSeller) {
+        seller.value = storeSeller;
+      } else {
+        // Последний fallback — минимальные данные
+        seller.value = {
+          id: sellerId,
+          name: "Загрузка...",
+          type: "private",
+        };
+      }
+    }
+
+    // 2. Параллельно загружаем остальное
     await Promise.all([
-      sellerStore.fetchSellerById(sellerId),
-      sellerStore.ensureSellers(sellerId),
       reviewStore.fetchReviewsBySeller(sellerId),
       loadSellerProducts(sellerId),
       loadSellerVideos(sellerId),
     ]);
+
   } catch (err) {
     console.error("Ошибка загрузки данных продавца:", err);
+    seller.value = null;
   } finally {
     isLoading.value = false;
   }
 };
-
-const seller = computed(() => {
-  return sellerStore.getSellerById(route.params.id) || { 
-    name: "Загрузка...", 
-    id: route.params.id 
-  };
-});
 
 const sellerReviews = computed(() => reviewStore.reviews);
 
@@ -245,13 +302,42 @@ const membershipText = computed(() => {
   return `На Матрёшке ${diffMonth} ${suffix}`;
 });
 
-watch(() => route.params.id,(newId) => {if (newId) {currentTab.value = "announcements";loadSellerData(newId);}},{ immediate: true });
-onUnmounted(() => {reviewStore.reviews = [];});
-const checkAuthAndRun = (action, message = "Авторизуйтесь, чтобы продолжить") => {if (!auth.isAuthenticated) {modal.openLogin();notify(message);return;}action();};
-const onSubscribeClick = () => {const sellerId = seller.value?.id;checkAuthAndRun(async () => {const isNowSubscribed = await subStore.toggle(sellerId);notify(isNowSubscribed ? "Вы подписались" : "Вы отписались");});};
+// === WATCH ===
+watch(() => route.params.id, (newId) => {
+  if (newId) {
+    currentTab.value = "announcements";
+    loadSellerData(newId);
+  }
+}, { immediate: true });
 
-// Переход на видео в шортс
-const playVideo = (video) => {router.push({name: 'shorts', params: { id: video.id }});};
+onUnmounted(() => {
+  reviewStore.reviews = [];
+});
+
+// === ACTIONS ===
+const checkAuthAndRun = (action, message = "Авторизуйтесь, чтобы продолжить") => {
+  if (!auth.isAuthenticated) {
+    modal.openLogin();
+    notify(message);
+    return;
+  }
+  action();
+};
+
+const onSubscribeClick = () => {
+  const sellerId = seller.value?.id;
+  if (!sellerId) return;
+  
+  checkAuthAndRun(async () => {
+    const isNowSubscribed = await subStore.toggle(sellerId);
+    notify(isNowSubscribed ? "Вы подписались" : "Вы отписались");
+  });
+};
+
+const playVideo = (video) => {
+  router.push({ name: 'shorts', params: { id: video.id } });
+};
+
 watch(() => seller.value?.name, (newName) => {
   if (newName) {
     document.title = `${newName} — продавец на Матрешка`;
@@ -260,7 +346,7 @@ watch(() => seller.value?.name, (newName) => {
 </script>
 
 <style scoped>
-.seller-page-section{
+.seller-page-section {
   margin-bottom: 3.188rem;
 }
 .reviews-container {
@@ -282,7 +368,7 @@ watch(() => seller.value?.name, (newName) => {
   align-items: flex-start;
 }
 /* Стили ответа продавца */
-.reply-content{
+.reply-content {
   margin-top: .3rem;
 }
 
