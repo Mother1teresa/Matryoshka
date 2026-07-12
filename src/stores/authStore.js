@@ -83,11 +83,10 @@ export const useAuthStore = defineStore("auth", {
         return null;
       }
       
-      let wsUrl;
       if (import.meta.env.DEV) {
         wsUrl = `ws://${window.location.host}/chat-websocket`;
       } else {
-        wsUrl = `wss://${window.location.host}/chat-websocket`;
+        wsUrl = `ws://85.198.96.229:8080/chat-websocket`;
       }
 
       console.log('[initSocket] Connecting to:', wsUrl);
