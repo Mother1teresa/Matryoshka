@@ -43,6 +43,12 @@
         :show-labels="false"
         open-direction="bottom">
         <template #caret><div class="multiselect__caret"></div></template>
+        <template #noResult>
+          <span>Ничего не найдено. Попробуйте изменить запрос.</span>
+        </template>
+        <template #noOptions>
+          <span>Список пуст.</span>
+        </template>
       </multiselect>
     </div>
 
@@ -102,10 +108,15 @@
           :options="field.unitOptions" 
           placeholder="За услугу" 
           :searchable="false" 
-          :show-labels="false"
-        >
+          :show-labels="false">
           <template #caret>
             <div class="multiselect__caret"></div>
+          </template>
+          <template #noResult>
+            <span>Ничего не найдено. Попробуйте изменить запрос.</span>
+          </template>
+          <template #noOptions>
+            <span>Список пуст.</span>
           </template>
         </multiselect>
       </div>

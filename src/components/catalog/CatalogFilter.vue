@@ -52,6 +52,12 @@ const toggleChip = (key, value) => {
                       :show-labels="false"
                       open-direction="bottom">
                       <template #caret><div class="multiselect__caret"></div></template>
+                      <template #noResult>
+                        <span>Ничего не найдено. Попробуйте изменить запрос.</span>
+                      </template>
+                      <template #noOptions>
+                        <span>Список пуст.</span>
+                      </template>
                     </multiselect>
                   </div>
                   <input
@@ -92,6 +98,13 @@ const toggleChip = (key, value) => {
                   :show-labels="false"
                   open-direction="bottom">
                   <template #caret><div class="multiselect__caret"></div></template>
+                  <!-- Переводы -->
+                  <template #noResult>
+                    <span>Ничего не найдено. Попробуйте изменить запрос.</span>
+                  </template>
+                  <template #noOptions>
+                    <span>Список пуст.</span>
+                  </template>
                 </multiselect>
               </div>
               <div v-else-if="field.type === 'number'" class="range-inputs">
