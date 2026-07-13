@@ -6,6 +6,10 @@ export const uploadToMediaService = async (file, type = "video", metadata = {}, 
   try {
     const fallbackContentType = type === "video" ? "video/mp4" : "image/jpeg";
     const finalContentType = file.type || fallbackContentType;
+    
+    const extension = file.name.includes('.') 
+      ? file.name.split('.').pop().toLowerCase() 
+      : (type === "video" ? "mp4" : "jpg");
 
     // 1. Получаем presigned URL
     const { data: presignedData } = await api.post("/media/presigned", {
@@ -35,6 +39,7 @@ export const uploadToMediaService = async (file, type = "video", metadata = {}, 
       type: type,
       title: metadata.title || file.name,
       description: metadata.description || '',
+      extension: extension,
     }];
 
     console.log("Отправляем Payload в /media/create:", payload);
