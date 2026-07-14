@@ -974,7 +974,6 @@ export const useAuthStore = defineStore("auth", {
               rating: userData?.rating || 0,
               deals: userData?.dealsCount || 0
             },
-            likesCount: v.likesCount || 0,
             viewsCount: v.viewsCount || 0,
             commentsCount: v.commentsCount || 0, 
             commentsDisabled: v.commentsDisabled || false
