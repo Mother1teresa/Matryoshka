@@ -103,10 +103,7 @@
                         </div>
                       </div>
                       <p class="video-description">
-                        {{
-                          video.description ||
-                          "Везем коробки со склада быстро и без проблем, звоните по номеру "
-                        }}
+                        {{ video.description || "Описание отсутствует"}}
                       </p>
                     </template>
                     <template v-else>
@@ -262,7 +259,7 @@ const handleVideoCreated = (createdMedia) => {
         avatar: auth.userAvatar
       }
     };
-    auth.addVideoLocally(fallbackVideo);  // ← через метод
+    auth.addVideoLocally(fallbackVideo);
   }
   
   setTimeout(() => {

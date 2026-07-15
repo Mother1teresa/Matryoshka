@@ -440,9 +440,9 @@ export const useAuthStore = defineStore("auth", {
     // },
     async deleteAdvert(id, s3Key = null) {
       try {
-        const params = { id };
-        if (s3Key) params.s3Key = s3Key;
-        await api.delete('/advert', { params });
+        const dto = { id };
+        if (s3Key) dto.s3Key = s3Key;
+        await api.delete('/advert', { params: {advertDeleteRequestDTO: JSON.stringify(dto)} });
         notify("Объявление удалено", "success");
         return true;
       } catch (e) {
@@ -848,19 +848,17 @@ export const useAuthStore = defineStore("auth", {
           return '';
         };
         
-        // === ЗАЩИТА: не затираем role и email если бэкенд вернул null ===
         const currentRole = this.user?.role;
         const currentEmail = this.user?.email;
-        
         const newRole = rawData.role || currentRole || 'PRIVATE_PERSON';
-        // Чистим email от JsonNullable@ и т.п.
+        // Чистим email
         const newEmail = cleanValue(rawData.email) || currentEmail || '';
         
         // === Создаём НОВЫЙ объект для реактивности Vue ===
         const updatedUser = {
           ...this.user,
           id: rawData.id,
-          email: newEmail,           // ← теперь чистый email
+          email: newEmail,
           name: cleanValue(rawData.name),
           phone: rawData.phone || '',
           description: cleanValue(rawData.description),
@@ -868,6 +866,7 @@ export const useAuthStore = defineStore("auth", {
           city: cleanValue(rawData.city),
           employees: rawData.employees || [],
           role: newRole,
+          editable: rawData.editable ?? true,
         };
         
         this.user = updatedUser;
@@ -927,9 +926,9 @@ export const useAuthStore = defineStore("auth", {
           createdAt: rawData.createdAt,
           website: rawData.website || '',
           employees: rawData.employees || [],
-          // Доп поля если есть
           companyName: rawData.companyName || '',
           rating: rawData.rating || 0,
+          editable: rawData.editable ?? true,
         };
       } catch (e) {
         console.error("Ошибка загрузки профиля:", e);

@@ -102,10 +102,11 @@
                     <div class="rating-badge">
                       <span class="rating-num">{{ video.author?.rating || 0 }}</span>
                       <span class="stars">★★★★★</span>
-                      <button v-if="!isOwnVideo(video) && video.author?.id" class="btn-primary" :class="{'is-active': subStore.isSubscribed(video.author?.id)}" @click="onSubscribeClick(video.author?.id)">
+                      <!-- <button v-if="!isOwnVideo(video) && video.author?.id" class="btn-primary" :class="{'is-active': subStore.isSubscribed(video.author?.id)}" @click="onSubscribeClick(video.author?.id)">
                         {{ subStore.isSubscribed(video.author?.id) ? "Отписаться" : "Подписаться" }}
-                      </button>
-                      <span v-else class="own-badge">Это ваш ролик</span>
+                        </button> -->
+                        <!-- v-else -->
+                      <span class="own-badge">Это ваш ролик</span>
                     </div>
                   </div>
                 </div>

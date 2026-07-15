@@ -31,7 +31,6 @@
               @click.stop="onLikeClick(product)"
             />
           </h1>
-          
           <!-- Галерея -->
           <div class="gallery">
             <img class="main-image" :src="activeImage" @click="openFullGallery(0)" />
@@ -45,7 +44,6 @@
               />
             </div>
           </div>
-
           <!-- Характеристики -->
           <div class="product-details">
             <div 
@@ -55,25 +53,15 @@
             >
               <h3>{{ group.title }}</h3>
               <div class="details-grid">
-                <div
-                  v-for="field in group.fields"
-                  :key="field.key"
-                  :class="['detail-row', { 'full-width-row': field.type === 'chips' }]"
-                >
+                <div v-for="field in group.fields" :key="field.key" :class="['detail-row', { 'full-width-row': field.type === 'chips' }]">
                   <span class="label">{{ getLabel(field.key, field.label) }}</span>
                   
                   <!-- Чипсы -->
                   <div v-if="field.type === 'chips'" class="details-chips-group">
-                    <span 
-                      v-for="(chip, index) in formatValue(product.attributes?.[field.key], 'chips')" 
-                      :key="index" 
-                      class="detail-chip-item"
-                      :class="{ 'chip-active': isChipActive(chip, field.key) }"
-                    >
+                    <span v-for="(chip, index) in formatValue(product.attributes?.[field.key], 'chips')" :key="index" class="detail-chip-item" :class="{ 'chip-active': isChipActive(chip, field.key) }">
                       {{ chip }}
                     </span>
                   </div>
-                  
                   <!-- Обычное значение -->
                   <span v-else class="value">
                     {{ formatValue(product.attributes?.[field.key], 'text', field.suffix) }}
@@ -82,28 +70,17 @@
               </div>
             </div>
           </div>
-
           <!-- Описание -->
           <div v-if="product.description" class="product-description">
             <h3>Описание</h3>
             <p>{{ product.description }}</p>
           </div>
-
           <!-- Карта -->
           <div v-if="product.address || mapCoordinates" class="product-address-section">
             <h3>Адрес</h3>
             <p class="address-text">{{ product.address }}</p>
             <div v-if="mapCoordinates" class="product-map">
-              <yandex-map
-                :settings="{ 
-                  location: { 
-                    center: mapCoordinates, 
-                    zoom: 15 
-                  } 
-                }"
-                width="100%"
-                height="300px"
-              >
+              <yandex-map :settings="{ location: { center: mapCoordinates, zoom: 15 }}" width="100%" height="300px">
                 <yandex-map-default-scheme-layer />
                 <yandex-map-default-features-layer />
                 <yandex-map-marker :coordinates="mapCoordinates">
@@ -119,7 +96,6 @@
             </div>
           </div>
         </div>
-
         <!-- Правая колонка -->
         <div class="product-right">
           <div class="price-card">
@@ -133,7 +109,6 @@
             </div>
             <div class="location">{{ product.city }}</div>
           </div>
-
           <!-- Продавец -->
           <div class="seller-card">
             <div class="seller">
@@ -146,13 +121,7 @@
                 </router-link>
                 <div class="rating">{{ sellerRating }} ★★★★★</div>
                 <div class="type">{{ sellerType }}</div>
-                <button 
-                  class="btn subscribe" 
-                  @click="onSubscribeClick" 
-                  :class="{ 'is-active': subStore.isSubscribed(product?.sellerId) }"
-                >
-                  {{ subStore.isSubscribed(product?.sellerId) ? 'Отписаться' : 'Подписаться' }}
-                </button>
+                <!-- <button class="btn subscribe" @click="onSubscribeClick" :class="{ 'is-active': subStore.isSubscribed(product?.sellerId) }">{{ subStore.isSubscribed(product?.sellerId) ? 'Отписаться' : 'Подписаться' }} </button> -->
               </div>
             </div>
             <div class="seller-card__btns">
@@ -166,16 +135,12 @@
           </div>
         </div>
       </div>
-
       <!-- Похожие товары -->
       <div v-if="similarProducts.length" class="similar-products">
         <h3 class="similar-title">Похожие товары</h3>
         <div class="similar-list">
           <div v-for="item in similarProducts" :key="item.id" class="horizontal-card">
-            <router-link
-              :to="{ name: 'Product', params: { type: item.category, section: item.section || 'default', id: item.id } }"
-              class="card-link-wrapper"
-            >
+            <router-link :to="{ name: 'Product', params: { type: item.category, section: item.section || 'default', id: item.id } }" class="card-link-wrapper">
               <img :src="getSimilarImageUrl(item)" class="card-img" alt="product image" />
             </router-link>
             <div class="card-content">
@@ -194,11 +159,7 @@
               <div class="card-footer-info" v-if="item.subcategory || item.section">
                 {{ getSubcategoryName(item) }}
               </div>
-              <img
-                class="card-like"
-                :src="favStore.isFavorite(item.id) ? heartFilled : heart"
-                @click.stop="onLikeClick(item)"
-              />
+              <img class="card-like" :src="favStore.isFavorite(item.id) ? heartFilled : heart" @click.stop="onLikeClick(item)"/>
             </div>
             <div class="card-content__rigth">
               <div class="card-content__rigth-btns">
@@ -209,7 +170,6 @@
           </div>
         </div>
       </div>
-
       <!-- Модалка звонка -->
       <Transition name="fade">
         <div v-if="showCallModal" class="modal-overlay" @click.self="showCallModal = false">
@@ -231,7 +191,6 @@
       </Transition>
     </div>
   </section>
-  
   <div v-else-if="!isReady" class="block__loading">Загрузка...</div>
   <NotFound v-else />
 </template>

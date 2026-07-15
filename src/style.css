@@ -569,6 +569,45 @@ h4 {
   opacity: 0.3;
   text-decoration: line-through !important;
 }
+
+/* ===== AUTH OVERLAY ===== */
+.auth-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 15.438rem;
+  background: #fff;
+}
+.auth-content {
+  text-align: center;
+  max-width: 28.625rem;
+  padding: 2.513rem 0;
+  display: grid;
+  justify-items: center;
+}
+.auth-title {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: #1a1a1a;
+  margin-bottom: 0.688rem;
+}
+.auth-btn {
+  display: inline-block;
+  padding: 0.875rem 0.938rem;
+  border-radius: 0.625rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: none;
+}
+.auth-btn.register {background-color: #64a07a;color: white;margin-bottom: 0.688rem;}
+.auth-btn.register:hover {background-color: #558a68;}
+.auth-text {font-size: 0.875rem; margin-bottom: 0.25rem;}
+.auth-link {color: #2563eb;text-decoration: none;font-weight: 500;}
+.auth-link:hover {text-decoration: underline;}
+.auth-hint {font-size: 0.625rem;margin-top: 0.25rem;}
+.auth-mini_arr{width: 0.753rem;text-align: center;transform: rotate(180deg);}
 @media (max-width:77rem) {
   .container {
     width: 72.5rem;

@@ -572,7 +572,7 @@ const canSubmit = computed(() => {
   }
   
   // Фото обязательны (хотя бы одна)
-  // if (photoPreviews.value.length === 0) return false;
+  if (photoPreviews.value.length === 0) return false;
 
   // Динамические поля из конфига
   const config = currentConfig.value;
@@ -991,7 +991,7 @@ function mapDrive(val) {
 }
 
 function mapSteering(val) {
-  const map = { 'Левый': 'Left', 'Правый': 'Right' };
+  const map = { 'Левый': 'Left', 'Правый': 'Right', 'Не важно': 'DoesntMatter' };
   return map[val] || '';
 }
 
@@ -1016,15 +1016,55 @@ function mapHouseState(val) {
 }
 
 function mapPriceFor(val) {
-  const map = { 'За услугу': 'Service', 'За час': 'Hour', 'За день': 'Day', 'По договоренности': 'Service' };
+  const map = { 
+    'За услугу': 'Service', 
+    'За час': 'Hour', 
+    'За день': 'Day', 
+    'За неделю': 'Week',
+    'За месяц': 'Month',
+    'По договоренности': 'Service' 
+  };
   return map[val] || 'Service';
 }
 
 function mapPaymentType(val) {
-  const map = { 'Ипотека': 'Mortgage', 'Наличные': 'Full', 'Мат. капитал': 'Trade', 'Безналичные': 'Full' };
+  const map = { 
+    'Ипотека': 'Mortgage', 
+    'Наличные': 'Full', 
+    'Мат. капитал': 'Trade', 
+    'Безналичные': 'InstallmentPlan'
+  };
   return map[val] || 'Full';
 }
 
+function mapVesselType(val) {
+  const map = { 
+    'Моторная яхта': 'MotorYacht', 
+    'Парусная яхта': 'SailingYacht', 
+    'Катамаран': 'Boat',
+    'Тримаран': 'Boat',
+    'Каютный катер': 'Boat',
+    'Рыболовное судно': 'Vessels',
+    'Другое': 'Boat'
+  };
+  return map[val] || '';
+}
+
+function mapOfferType(val) {
+  const map = { 
+    'Туры и экскурсии': 'Tour', 
+    'Авиабилеты': 'Excursion',
+    'Ж/Д и автобусные билеты': 'Transfer',
+    'Отели и жильё': 'HousingRental',
+    'Прокат транспорта': 'Transfer',
+    'Визы и документы': 'Tour',
+    'Трансферы и такси': 'Transfer',
+    'Круизы': 'Tour',
+    'Экстрим и приключения': 'SignatureTour',
+    'Путеводители и гиды': 'Excursion'
+  };
+  return map[val] || '';
+}
 function mapGender(val) {
   const map = { 'Мужской': 'Male', 'Женский': 'Female' };
   return map[val] || '';

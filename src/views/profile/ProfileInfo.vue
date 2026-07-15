@@ -2,7 +2,7 @@
   <div class="profile-container">
     <h2 class="page-title">Личный кабинет</h2>
     <div class="profile-card">
-      <button class="settings-btn" @click="isModalOpen = true">
+      <button v-if="auth.user?.editable !== false" class="settings-btn" @click="isModalOpen = true">
         <img src="/src/assets/img/icons/settings-gear.svg" alt="settings" />
       </button>
       <div class="user-header">

@@ -82,20 +82,20 @@
         <!-- Результаты: Видео -->
         <div v-if="videos.length" class="results-section">
           <h2 class="section-title">Видео</h2>
-          <div class="videos-grid">
-            <div
-              v-for="video in videos"
-              :key="'vid-' + video.id"
-              class="video-card"
-              @click="goToVideo(video.id)"
-            >
+          <div v-if="!auth.isAuthenticated" class="auth-overlay">
+            <div class="auth-content">
+              <p class="auth-title">Для просмотра мини-видео необходимо авторизоваться</p>
+              <button class="auth-btn register" @click="modal.openRegister">Зарегистрироваться</button>
+              <p class="auth-text">
+                Если у вас есть аккаунт, то <br>
+                <a href="#" @click.prevent="modal.openLogin" class="auth-link">войдите</a>
+              </p>
+            </div>
+          </div>
+          <div v-else class="videos-grid">
+            <div v-for="video in videos" :key="'vid-' + video.id" class="video-card" @click="goToVideo(video.id)">
               <div class="video-thumb">
-                <video
-                  :src="video.cdnUrl"
-                  preload="metadata"
-                  muted
-                  playsinline
-                ></video>
+                <video :src="video.cdnUrl" preload="metadata" muted playsinline></video>
                 <div class="play-overlay">
                   <svg width="2.5rem" height="2.5rem" viewBox="0 0 24 24" fill="white">
                     <path d="M8 5v14l11-7z" />
@@ -184,8 +184,7 @@ const searchProducts = async (q) => {
   try {
     const res = await api.get('/advert', {
       params: {
-        query: q,
-        take: 50,
+        dto: JSON.stringify({ query: q, take: 50 })
       }
     });
     const ads = Array.isArray(res.data) ? res.data : res.data?.items || [];

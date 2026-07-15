@@ -82,7 +82,7 @@ export const genders = ['Мужской', 'Женский'];
 export const employmentTypes = ['Полная', 'Частичная', 'Временная', 'Стажировка'];
 export const workFormats = ['Удалённо', 'В офисе или на предприятии', 'Гибрид'];
 
-export const servicePriceUnits = ['За услугу', 'За час', 'За день', 'По договоренности'];
+export const servicePriceUnits = ['За услугу', 'За час', 'За день', 'За неделю', 'За месяц', 'По договоренности'];
 export const salaryUnits = ['За месяц', 'За день', 'За час'];
 
 export const activitySpheres = [

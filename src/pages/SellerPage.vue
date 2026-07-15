@@ -41,13 +41,7 @@
           </div>
           <div class="seller-info-right">
             <div class="experience">{{ membershipText }}</div>
-            <button 
-              class="btn-subscribe-text" 
-              @click="onSubscribeClick"
-              :class="{ 'is-active': subStore.isSubscribed(seller?.id) }"
-            > 
-              {{ subStore.isSubscribed(seller?.id) ? "Отписаться" : "Подписаться" }}
-            </button>
+            <!-- <button class="btn-subscribe-text" @click="onSubscribeClick" :class="{ 'is-active': subStore.isSubscribed(seller?.id) }"> {{ subStore.isSubscribed(seller?.id) ? "Отписаться" : "Подписаться" }}</button> -->
           </div>
         </div>
       </div>
@@ -72,27 +66,40 @@
           </div>
         </div>
         <div v-if="currentTab === 'video'" class="video-grid">
-          <div v-if="sellerVideos.length" class="video-grid_block">
-            <div v-for="video in sellerVideos" :key="video.id" class="video-card">
-              <div class="video-preview" @click="playVideo(video)">
-                <video 
-                  :src="video.thumbnail || video.cdnUrl || video.url"
-                  class="video-thumb"
-                  preload="metadata"
-                  muted
-                  playsinline
-                ></video>
-                <span class="duration">{{ video.duration }}</span>
-              </div>
-              <div class="video-info">
-                <div class="video-title">{{ video.description }}</div>
-                <div class="video-date">{{ video.date }}</div>
-              </div>
+          <div v-if="!auth.isAuthenticated" class="auth-overlay">
+            <div class="auth-content">
+              <p class="auth-title">Для просмотра мини-видео необходимо авторизоваться</p>
+              <button class="auth-btn register" @click="openRegister">Зарегистрироваться</button>
+              <p class="auth-text">
+                Если у вас есть аккаунт, то <br>
+                <a href="#" @click.prevent="openLogin" class="auth-link">войдите</a>
+              </p>
             </div>
           </div>
-          <div v-else class="no-reviews">
-            <p>У продавца пока нет видео</p>
-          </div>
+          <!-- Контент для авторизованных -->
+          <template v-else>
+            <div v-if="sellerVideos.length" class="video-grid_block">
+              <div v-for="video in sellerVideos" :key="video.id" class="video-card">
+                <div class="video-preview" @click="playVideo(video)">
+                  <video 
+                    :src="video.thumbnail || video.cdnUrl || video.url"
+                    class="video-thumb"
+                    preload="metadata"
+                    muted
+                    playsinline
+                  ></video>
+                  <span class="duration">{{ video.duration }}</span>
+                </div>
+                <div class="video-info">
+                  <div class="video-title">{{ video.description }}</div>
+                  <div class="video-date">{{ video.date }}</div>
+                </div>
+              </div>
+            </div>
+            <div v-else class="no-reviews">
+              <p>У продавца пока нет видео</p>
+            </div>
+          </template>
         </div>
         <div v-if="currentTab === 'reviews'" class="reviews-container">
           <div v-if="reviewStore.isLoading" class="block__loading">
@@ -212,7 +219,6 @@ const loadSellerProducts = async (sellerId) => {
 
 // === ВИДЕО ПРОДАВЦА ===
 const sellerVideos = ref([]);
-
 const loadSellerVideos = async (sellerId) => {
   if (!sellerId) return;
   try {
