@@ -98,6 +98,13 @@ const handleVisibilityChange = () => {
 provide('openMaintenance', () => {
   maintenanceRef.value?.open() ?? console.log("MaintenanceModal ещё не инициализирован");
 });
+window.addEventListener("storage", (event) => {
+  // Проверяем, что удален именно ключ авторизации
+  if (event.key === "auth" && !event.newValue) {
+    const auth = useAuthStore();
+    auth.logout();
+  }
+});
 watch(
   () => auth.isAuthenticated,
   async (isAuth) => {
@@ -107,7 +114,6 @@ watch(
     }
     if (isInitializing) return;
     isInitializing = true;
-    
     try {
       await auth.fetchProfile();
       

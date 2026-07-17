@@ -4,15 +4,25 @@ import { notify } from "/src/utils/notify.js";
 export const api = axios.create({
   baseURL: "/api",
   withCredentials: true,
-  headers: {
-    "Content-Type": "application/json",
-  },
+  // headers: {
+  //   "Content-Type": "application/json",
+  // },
 });
 
 let isRefreshing = false;
 let failedQueue = [];
 let refreshAttempts = 0;
 const MAX_REFRESH_ATTEMPTS = 3;
+
+// Эндпоинты, на которых не нужен ни Bearer, ни рефреш
+const AUTH_URLS = [
+  "/auth/login",
+  "/auth/register",
+  "/auth/refresh",
+  "/auth/check-code",
+  "/auth/sendsms",
+];
+const isAuthUrl = (url = "") => AUTH_URLS.some((p) => url.includes(p));
 
 const processQueue = (error) => {
   failedQueue.forEach((prom) => {
@@ -24,18 +34,19 @@ const processQueue = (error) => {
 
 api.interceptors.request.use(
   (config) => {
-    if (config.headers.Authorization) return config;
-    const savedAuth = localStorage.getItem("auth");
-    if (savedAuth) {
-      try {
-        const { user } = JSON.parse(savedAuth);
-        if (user?.token) {
-          config.headers.Authorization = `Bearer ${user.token}`;
-        }
-      } catch (e) {
-        console.error("Ошибка парсинга токена для заголовков", e);
-      }
-    }
+    // if (config.headers.Authorization) return config;
+    // if (isAuthUrl(config.url)) return config;
+    // const savedAuth = localStorage.getItem("auth");
+    // if (savedAuth) {
+    //   try {
+    //     const { user } = JSON.parse(savedAuth);
+    //     if (user?.token) {
+    //       config.headers.Authorization = `Bearer ${user.token}`;
+    //     }
+    //   } catch (e) {
+    //     console.error("Ошибка парсинга токена для заголовков", e);
+    //   }
+    // }
     return config;
   },
   (error) => Promise.reject(error),
@@ -49,22 +60,24 @@ api.interceptors.response.use(
     const originalRequest = error.config;
     const status = error.response?.status;
     const data = error.response?.data;
+    const url = originalRequest.url || "";
 
-    // SESSION_EXPIRED — сразу logout
     if (data?.code === "SESSION_EXPIRED") {
       auth.logout();
       notify("Сессия истекла. Войдите заново.", "error");
       return Promise.reject(error);
     }
-
-    const isRefreshRequest = originalRequest.url.includes("/auth/refresh");
-
-    // Не 401 или уже ретраили или это сам запрос на рефреш
-    if (status !== 401 || originalRequest._retry || isRefreshRequest) {
+    if (isAuthUrl(url)) {
+      if (url.includes("/auth/refresh")) {
+        auth.logout();
+        notify("Сессия истекла. Войдите заново.", "error");
+      }
+      return Promise.reject(error);
+    }
+    if ((status !== 401 && status !== 403) || originalRequest._retry) {
       return Promise.reject(error);
     }
 
-    // Защита от бесконечного цикла: не более 3 попыток рефреша подряд
     if (refreshAttempts >= MAX_REFRESH_ATTEMPTS) {
       console.warn("⛔ Слишком много попыток рефреша");
       refreshAttempts = 0;
@@ -73,13 +86,13 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Очередь: другой запрос уже рефрешит — ждём
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
         failedQueue.push({ resolve, reject });
-      })
-        .then(() => api(originalRequest))
-        .catch((err) => Promise.reject(err));
+      }).then(() => {
+        originalRequest._retry = true;
+        return api(originalRequest);
+      });
     }
 
     originalRequest._retry = true;
@@ -90,12 +103,11 @@ api.interceptors.response.use(
       const success = await auth.refreshToken();
 
       if (success) {
-        refreshAttempts = 0; // сбрасываем при успехе
+        refreshAttempts = 0;
         processQueue(null);
         return api(originalRequest);
-      } else {
-        throw new Error("Refresh returned false");
       }
+      throw new Error("Refresh returned false");
     } catch (refreshError) {
       processQueue(refreshError);
       auth.logout();
@@ -106,8 +118,6 @@ api.interceptors.response.use(
     }
   },
 );
-
-// Сброс счётчика при логине
 export const resetRefreshCooldown = () => {
   refreshAttempts = 0;
 };

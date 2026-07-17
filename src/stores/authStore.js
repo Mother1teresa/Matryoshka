@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { Client } from '@stomp/stompjs';
 import { markRaw, ref } from 'vue';
+import router from "/src/router/index.js";
 import { api, resetRefreshCooldown } from "/src/api/api.js";
 import { useFavoritesStore } from "/src/stores/favoritesStore.js";
 import maskAvatar from "/src/assets/img/mask-avatar.png";
@@ -802,14 +803,11 @@ export const useAuthStore = defineStore("auth", {
     async refreshToken() {
       try {
         const res = await api.post("/auth/refresh");
-        // Если сервер возвращает новый токен:
-        if (res.data?.token) {
-          this.user = { ...this.user, token: res.data.token };
-          this.saveToStorage(); // обновляем localStorage
-        }
-        return true;
-      } catch (e) {
-        throw e;
+        // Если сервер вернул 204 (как в логах) или 200 OK — рефреш успешен
+        return res.status === 204 || res.status === 200;
+      } catch (err) {
+        // Любой статус ошибки (401, 500 и т.д.) вернет false
+        return false;
       }
     },
     async verifyCodeAPI(payload) {
@@ -1070,18 +1068,21 @@ export const useAuthStore = defineStore("auth", {
         const res = await api.get('/notifications');
         this.allNotifications = (res.data || []).map(n => ({
           id: n.id,
-          title: 'Уведомление',           // API не отдаёт title, можно захардкодить или парсить из message
+          title: 'Уведомление',
           message: n.message,
           date: n.createdAt ? new Date(n.createdAt).toLocaleDateString('ru-RU') : '',
           time: n.createdAt ? new Date(n.createdAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : '',
-          is_read: false,                  // API не отдаёт статус прочтения — пока все как непрочитанные
+          is_read: false,
           createdAt: n.createdAt
         }));
       } catch (e) {
         console.error("Ошибка уведомлений:", e);
         this.allNotifications = [];
+        if (!this.isAuthenticated) return; 
       } finally {
-        this.isNotificationsLoading = false;
+        if (this.isAuthenticated) {
+          this.isNotificationsLoading = false;
+        }
       }
     },
     async logout() {
