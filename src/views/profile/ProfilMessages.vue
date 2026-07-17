@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from "/src/stores/authStore.js";
 import { notify } from "/src/utils/notify";
@@ -7,6 +7,8 @@ import { notify } from "/src/utils/notify";
 const auth = useAuthStore();
 const router = useRouter();
 const isLoading = ref(true);
+
+// Ссылка на чаты из Pinia
 const chats = computed(() => auth.allChats);
 
 const unreadCount = computed(() =>
@@ -28,65 +30,37 @@ const openChat = (chatId) => {
   router.push({ name: 'ChatDetail', params: { id: chatId } });
 };
 
-// ← ДОБАВЛЕНО: STOMP подписка на обновления чатов
+// --- STOMP & Polling Logic ---
 let stompClient = null;
 let userSubscription = null;
 let pollInterval = null;
 
-const connectStomp = async () => {
-  try {
-    stompClient = await auth.initSocket();
-    if (!stompClient) {
-      console.log('[MessagesList] STOMP not available, using polling');
-      return;
-    }
+// Единый метод для безопасного старта фоллбек-поллинга
+const startPolling = () => {
+  if (pollInterval) return; // Если уже запущен — игнорируем
+  console.log('[MessagesList] Activation of fallback polling');
+  pollInterval = setInterval(() => {
+    loadChats(true);
+  }, 15000);
+};
 
-    const setupSubscription = () => {
-      if (!stompClient.connected) {
-        setTimeout(setupSubscription, 100);
-        return;
-      }
-
-      userSubscription = stompClient.subscribe(
-        `/topic/user/${auth.user?.id}`,
-        (message) => {
-          const data = JSON.parse(message.body);
-          handleChatUpdate(data);
-        }
-      );
-      
-      if (pollInterval) {
-        clearInterval(pollInterval);
-        pollInterval = null;
-      }
-    };
-
-    if (stompClient.connected) {
-      setupSubscription();
-    } else {
-      const originalOnConnect = stompClient.onConnect;
-      stompClient.onConnect = (frame) => {
-        if (originalOnConnect) originalOnConnect(frame);
-        setupSubscription();
-      };
-      
-      setTimeout(() => {
-        if (!stompClient.connected && !pollInterval) {
-          pollInterval = setInterval(() => {
-            loadChats(true);
-          }, 15000);
-        }
-      }, 10000);
-    }
-  } catch (err) {  // ← ДОБАВИТЬ ЭТО
-    console.log('[MessagesList] STOMP error, using polling:', err);
+// Единый метод очистки таймеров
+const stopPolling = () => {
+  if (pollInterval) {
+    clearInterval(pollInterval);
+    pollInterval = null;
   }
 };
 
 const handleNewMessage = (msg) => {
-  const chat = auth.allChats.find(c => c.id === msg.roomId);
-  if (chat) {
-    chat.lastMessage = {
+  // Находим индекс чата для обновления
+  const chatIndex = auth.allChats.findIndex(c => c.id === msg.roomId);
+  
+  if (chatIndex !== -1) {
+    // Создаем глубокую копию объекта, чтобы Vue зафиксировал изменения (реактивность)
+    const updatedChat = { ...auth.allChats[chatIndex] };
+    
+    updatedChat.lastMessage = {
       text: msg.message,
       isMine: msg.senderId === auth.user?.id,
       isRead: msg.senderId === auth.user?.id,
@@ -94,11 +68,15 @@ const handleNewMessage = (msg) => {
         ? new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
         : "",
     };
+
     if (msg.senderId !== auth.user?.id) {
-      chat.unreadCount = (chat.unreadCount || 0) + 1;
+      updatedChat.unreadCount = (updatedChat.unreadCount || 0) + 1;
     }
+
+    // Обновляем массив в Pinia реактивно через замену элемента
+    auth.allChats[chatIndex] = updatedChat;
   } else {
-    // Новый чат — перезагружаем список
+    // Новый чат, которого не было в списке — запрашиваем список заново
     loadChats(true);
   }
 };
@@ -112,29 +90,68 @@ const handleChatUpdate = (data) => {
     loadChats(true);
   }
 };
+
+const connectStomp = async () => {
+  try {
+    stompClient = await auth.initSocket();
+    if (!stompClient) {
+      startPolling();
+      return;
+    }
+
+    const subscribeTopic = () => {
+      userSubscription = stompClient.subscribe(
+        `/topic/user/${auth.user?.id}`,
+        (message) => {
+          const data = JSON.parse(message.body);
+          handleChatUpdate(data);
+        }
+      );
+      // Успешно подписались по веб-сокетам — отключаем фоновый поллинг бэкенда
+      stopPolling();
+    };
+
+    if (stompClient.connected) {
+      subscribeTopic();
+    } else {
+      // Вместо деструктивной перезаписи onConnect, запускаем таймер проверки статуса
+      let attempts = 0;
+      const checkConnection = setInterval(() => {
+        attempts++;
+        if (stompClient?.connected) {
+          subscribeTopic();
+          clearInterval(checkConnection);
+        }
+        // Если за 5 секунд сокет не завелся — включаем поллинг
+        if (attempts > 50) { 
+          clearInterval(checkConnection);
+          startPolling();
+        }
+      }, 100);
+    }
+  } catch (err) {
+    console.error('[MessagesList] STOMP error, fallback to polling:', err);
+    startPolling();
+  }
+};
+
 const createTestRoom = async () => {
   try {
     isLoading.value = true;
-    
-    // Сначала проверяем, есть ли уже комнаты
     await auth.fetchUserChats();
     
-    // Если есть хоть одна комната — открываем её
     if (auth.allChats.length > 0) {
       const existingRoom = auth.allChats[0];
-      console.log('[createTestRoom] Using existing room:', existingRoom.id);
       router.push({ name: 'ChatDetail', params: { id: existingRoom.id } });
       return;
     }
     
-    // Если нет — создаём новую
     const roomId = await auth.createTestRoom();
     if (roomId) {
       router.push({ name: 'ChatDetail', params: { id: roomId } });
     }
   } catch (e) {
     if (e.response?.status === 409) {
-      // Комната уже существует — перезагружаем список и открываем
       notify("Комната уже существует, открываю...", "success");
       await auth.fetchUserChats();
       if (auth.allChats.length > 0) {
@@ -147,27 +164,17 @@ const createTestRoom = async () => {
     isLoading.value = false;
   }
 };
-onMounted(() => {
-  loadChats();
-  connectStomp();
-  
-  // Fallback: polling если STOMP не подключился
-  pollInterval = setInterval(() => {
-    if (!auth.isStompConnected) {
-      loadChats(true);
-    }
-  }, 15000);
+
+onMounted(async () => {
+  await loadChats();
+  await connectStomp();
 });
 
 onUnmounted(() => {
   if (userSubscription) {
     userSubscription.unsubscribe();
-    userSubscription = null;
   }
-  if (pollInterval) {
-    clearInterval(pollInterval);
-    pollInterval = null;
-  }
+  stopPolling();
 });
 </script>
 
@@ -178,17 +185,15 @@ onUnmounted(() => {
       <span v-if="unreadCount > 0" class="unread-badge">{{ unreadCount }}</span>
     </h2>
     <div v-if="isLoading" class="loading-state">Загрузка чатов...</div>
-    <!-- Список чатов -->
     <div v-else-if="chats.length > 0" class="chats-list">
       <div v-for="chat in chats" :key="chat.id" class="chat-card" @click="openChat(chat.id)">
         <div class="chat-main-info">
           <div class="avatar-block">
-            <img :src="chat.user.avatar || '/src/assets/img/mask-avatar.png'" class="user-avatar" />
-            <span v-if="chat.user.isOnline" class="online-badge"></span>
+            <img :src="chat.user?.avatar || '/src/assets/img/mask-avatar.png'" class="user-avatar" />
+            <span v-if="chat.user?.isOnline" class="online-badge"></span>
           </div>
-
           <div class="chat-text-details">
-            <div class="user-name">{{ chat.user.name }}</div>
+            <div class="user-name">{{ chat.user?.name || 'Пользователь' }}</div>
             <div class="product-title">{{ chat.productName }}</div>
             <div class="last-message" :class="{ 'my-message': chat.lastMessage?.isMine, 'unread': chat.unreadCount > 0 }">
               <span v-if="chat.lastMessage?.isMine" class="you-label">Вы: </span>
@@ -199,7 +204,7 @@ onUnmounted(() => {
         <div class="chat-meta">
           <div class="price-info" v-if="chat.price">
             <span class="price">{{ chat.price }}</span>
-            <img :src="chat.productImage" class="mini-product-thumb" />
+            <img v-if="chat.productImage" :src="chat.productImage" class="mini-product-thumb" />
           </div>
           <div class="status-time">
             <span v-if="chat.unreadCount > 0" class="unread-count">{{ chat.unreadCount }}</span>
@@ -208,18 +213,14 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
-    <!-- Пустое состояние -->
-    <!-- <div v-else class="empty-messages">
-      <div class="empty-icon">✉️</div>
+    <div v-else class="empty-messages">
       <h3>У вас пока нет сообщений</h3>
-      <p>Когда вы напишете продавцу или кто-то откликнется на ваше объявление, диалог появится здесь.</p>
-      <router-link to="/" class="btn go-to-ads-btn">Найти объявления</router-link>
-    </div> -->
+    </div>
     <div class="demo-actions">
       <button class="btn demo-chat-btn" @click="createTestRoom">
         💬 Создать тестовый чат
       </button>
-      <p class="demo-hint">Создаст чат с самим собой для проверки</p>
+      <p class="demo-hint">Создаст чат для проверки</p>
     </div>
   </div>
 </template>
