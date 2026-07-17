@@ -134,28 +134,33 @@ const connectStomp = async () => {
     startPolling();
   }
 };
-
+const TARGET_USER_ID = "322451797836";
 const createTestRoom = async () => {
   try {
     isLoading.value = true;
     await auth.fetchUserChats();
-    
-    if (auth.allChats.length > 0) {
-      const existingRoom = auth.allChats[0];
-      router.push({ name: 'ChatDetail', params: { id: existingRoom.id } });
+    const existingChat = auth.allChats.find(c => String(c.user?.id) === TARGET_USER_ID);
+    if (existingChat) {
+      console.log('[createTestRoom] Найдена существующая комната с пользователем:', TARGET_USER_ID);
+      router.push({ name: 'ChatDetail', params: { id: existingChat.id } });
       return;
     }
-    
-    const roomId = await auth.createTestRoom();
+    const roomId = await auth.createTestRoom(TARGET_USER_ID);
     if (roomId) {
+      notify("Чат успешно создан!", "success");
       router.push({ name: 'ChatDetail', params: { id: roomId } });
     }
   } catch (e) {
     if (e.response?.status === 409) {
-      notify("Комната уже существует, открываю...", "success");
+      notify("Чат уже существует, открываю...", "success");
       await auth.fetchUserChats();
-      if (auth.allChats.length > 0) {
-        router.push({ name: 'ChatDetail', params: { id: auth.allChats[0].id } });
+      const existingChat = auth.allChats.find(c => String(c.user?.id) === TARGET_USER_ID);
+      if (existingChat) {
+        router.push({ name: 'ChatDetail', params: { id: existingChat.id } });
+      } else {
+        if (auth.allChats.length > 0) {
+          router.push({ name: 'ChatDetail', params: { id: auth.allChats[0].id } });
+        }
       }
     } else {
       notify("Не удалось создать чат: " + (e.response?.data?.message || e.message), "error");
