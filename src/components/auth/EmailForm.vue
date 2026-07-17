@@ -83,7 +83,7 @@ async function submit(){
 }
 .auth-btn {
   width: 7.063rem;
-  height: 2.5rem;
+  /* height: 2.5rem; */
   border-radius: 0.75rem;
   border: none;
   background: white;
