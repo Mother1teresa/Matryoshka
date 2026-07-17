@@ -346,11 +346,15 @@ export const useAuthStore = defineStore("auth", {
    
     async createPrivateRoom(userBId) {
       if (!this.user?.id) throw new Error("Пользователь не авторизован");
+      if (String(userBId) === String(this.user.id)) {
+        throw new Error("Нельзя создать чат с самим собой");
+      }
       try {
         const res = await api.post("/chat/create-room", {
           userA: this.user.id,
           userB: userBId,
         });
+        await this.fetchUserChats();
         return res.data?.roomId;
       } catch (e) {
         console.error("Ошибка создания комнаты:", e.response?.data || e);
