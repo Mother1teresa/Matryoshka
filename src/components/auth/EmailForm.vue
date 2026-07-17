@@ -61,6 +61,7 @@ async function submit(){
   margin-bottom: 2.25rem;
   margin-top: .75rem;
   text-align: center;
+  color: #fff;
 }
 .auth-input {
   height: 2.8rem;

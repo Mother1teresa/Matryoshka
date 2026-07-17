@@ -63,8 +63,10 @@ api.interceptors.response.use(
     const url = originalRequest.url || "";
 
     if (data?.code === "SESSION_EXPIRED") {
-      auth.logout();
-      notify("Сессия истекла. Войдите заново.", "error");
+      if (auth.isAuthenticated) {
+        auth.logout();
+        notify("Сессия истекла. Войдите заново.", "error");
+      }
       return Promise.reject(error);
     }
     if (isAuthUrl(url)) {
@@ -81,18 +83,22 @@ api.interceptors.response.use(
     if (refreshAttempts >= MAX_REFRESH_ATTEMPTS) {
       console.warn("⛔ Слишком много попыток рефреша");
       refreshAttempts = 0;
-      auth.logout();
-      notify("Сессия истекла. Войдите заново.", "error");
+      if (auth.isAuthenticated) {
+        auth.logout();
+        notify("Сессия истекла. Войдите заново.", "error");
+      }
       return Promise.reject(error);
     }
 
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
         failedQueue.push({ resolve, reject });
-      }).then(() => {
-        originalRequest._retry = true;
-        return api(originalRequest);
-      });
+      })
+        .then(() => {
+          originalRequest._retry = true;
+          return api(originalRequest);
+        })
+        .catch((err) => Promise.reject(err));
     }
 
     originalRequest._retry = true;
@@ -101,7 +107,6 @@ api.interceptors.response.use(
 
     try {
       const success = await auth.refreshToken();
-
       if (success) {
         refreshAttempts = 0;
         processQueue(null);
@@ -110,8 +115,10 @@ api.interceptors.response.use(
       throw new Error("Refresh returned false");
     } catch (refreshError) {
       processQueue(refreshError);
-      auth.logout();
-      notify("Сессия истекла. Войдите заново.", "error");
+      if (auth.isAuthenticated) {
+        auth.logout();
+        notify("Сессия истекла. Войдите заново.", "error");
+      }
       return Promise.reject(refreshError);
     } finally {
       isRefreshing = false;

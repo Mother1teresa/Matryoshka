@@ -17,7 +17,6 @@
 
   <!-- Основной сайт -->
   <div class="desktop-content">
-    <!-- 🔔 уведомление -->
       <transition name="slide">
         <div v-if="showNotification" class="notification">
           {{ notificationText }}
@@ -94,17 +93,16 @@ const handleVisibilityChange = () => {
     doPoll();
   }
 };
+const handleStorageChange = (event) => {
+  if (event.key === "auth" && !event.newValue) {
+    auth.logout();
+  }
+};
 
 provide('openMaintenance', () => {
   maintenanceRef.value?.open() ?? console.log("MaintenanceModal ещё не инициализирован");
 });
-window.addEventListener("storage", (event) => {
-  // Проверяем, что удален именно ключ авторизации
-  if (event.key === "auth" && !event.newValue) {
-    const auth = useAuthStore();
-    auth.logout();
-  }
-});
+
 watch(
   () => auth.isAuthenticated,
   async (isAuth) => {
@@ -134,6 +132,7 @@ watch(
 );
 onMounted(() => {
   document.addEventListener('visibilitychange', handleVisibilityChange);
+  window.addEventListener("storage", handleStorageChange); // Добавлен контролируемый слушатель
   productStore.fetchAdverts();
   window.addEventListener("notify", handleNotify);
 });
@@ -141,10 +140,10 @@ onMounted(() => {
 onUnmounted(() => {
   stopGlobalPolling();
   document.removeEventListener('visibilitychange', handleVisibilityChange);
+  window.removeEventListener("storage", handleStorageChange); // Своевременная очистка при размонтировании
   window.removeEventListener("notify", handleNotify);
 });
 </script>
-
 <style scoped>
 .mobile-block {
   display: none;

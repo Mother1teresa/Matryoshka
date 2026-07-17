@@ -56,6 +56,7 @@ async function submitForgot(){
   font-weight: 400;
   margin-bottom: 2.563rem;
   text-align: center;
+  color: #fff;
 }
 .auth-input {
   height: 3.5rem;

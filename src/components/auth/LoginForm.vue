@@ -119,6 +119,7 @@ async function submitLogin(){
   font-weight: 400;
   margin-bottom: .5rem;
   text-align: center;
+  color: #fff;
 }
 .auth-input {
   height: 2.8rem;

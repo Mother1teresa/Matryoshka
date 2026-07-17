@@ -144,6 +144,7 @@ async function submitRegister(){
   font-weight: 400;
   margin-bottom: 1rem;
   text-align: center;
+  color: #fff;
 }
 .auth-input {
   height: 2.8rem;
