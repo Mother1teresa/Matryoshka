@@ -131,8 +131,12 @@ watch(
   { immediate: true }
 );
 onMounted(() => {
+  // === SILENT REFRESH — проверяем cookies при старте ===
+  if (auth.isAuthenticated) {
+    auth.refreshToken().catch(() => {});
+  }
   document.addEventListener('visibilitychange', handleVisibilityChange);
-  window.addEventListener("storage", handleStorageChange); // Добавлен контролируемый слушатель
+  window.addEventListener("storage", handleStorageChange);
   productStore.fetchAdverts();
   window.addEventListener("notify", handleNotify);
 });
@@ -140,7 +144,7 @@ onMounted(() => {
 onUnmounted(() => {
   stopGlobalPolling();
   document.removeEventListener('visibilitychange', handleVisibilityChange);
-  window.removeEventListener("storage", handleStorageChange); // Своевременная очистка при размонтировании
+  window.removeEventListener("storage", handleStorageChange);
   window.removeEventListener("notify", handleNotify);
 });
 </script>

@@ -11,7 +11,6 @@ let failedQueue = [];
 let refreshAttempts = 0;
 const MAX_REFRESH_ATTEMPTS = 3;
 
-// Эндпоинты, на которых не нужен ни Bearer, ни рефреш
 const AUTH_URLS = [
   "/auth/login",
   "/auth/register",
@@ -29,31 +28,12 @@ const processQueue = (error) => {
   failedQueue = [];
 };
 
-// 1. ПОДКЛЮЧАЕМ ПРОВЕРКУ И ПОДСТАНОВКУ ТОКЕНА ДЛЯ КАЖДОГО ЗАПРОСА
-api.interceptors.request.use(
-  (config) => {
-    if (config.headers.Authorization) return config;
-    if (isAuthUrl(config.url)) return config;
+// Проверяем, является ли токен anonymous (для диагностики)
+const isAnonymousToken = () => {
+  return false; // Заглушка, реальная проверка через API
+};
 
-    const savedAuth = localStorage.getItem("auth");
-    if (savedAuth) {
-      try {
-        const parsed = JSON.parse(savedAuth);
-        const token = parsed?.token || parsed?.user?.token;
-        
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-      } catch (e) {
-        console.error("Ошибка парсинга токена для заголовков", e);
-      }
-    }
-    return config;
-  },
-  (error) => Promise.reject(error),
-);
-
-// 2. ОБРАБОТКА ИСТЕЧЕНИЯ ТОКЕНА И REFRESH
+// ОБРАБОТКА REFRESH КУК
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -65,6 +45,32 @@ api.interceptors.response.use(
     const status = error.response?.status;
     const data = error.response?.data;
     const url = originalRequest.url || "";
+
+    // Перехват 500 ошибки из-за зависшей анонимной сессии
+    if (status === 500 && url.includes('/media/create')) {
+      const hasAnonymousPayload = originalRequest.data && 
+        JSON.stringify(originalRequest.data).includes("anonymousUser");
+      
+      if (hasAnonymousPayload) {
+        console.warn("⚠️ anonymousUser detected in payload, logging out");
+        auth.logout();
+        notify("Ошибка авторизации. Войдите заново.", "error");
+        return Promise.reject(error);
+      }
+    }
+
+    // проверка на anonymous токен в ответе
+    if (status === 403 || status === 401) {
+      const responseData = error.response?.data;
+      if (responseData?.message?.includes('anonymous') || 
+          responseData?.error?.includes('anonymous') ||
+          responseData?.sub === 'anonymousUser') {
+        console.warn("⚠️ Anonymous token detected, logging out");
+        auth.logout();
+        notify("Ошибка авторизации. Войдите заново.", "error");
+        return Promise.reject(error);
+      }
+    }
 
     if (data?.code === "SESSION_EXPIRED") {
       auth.logout();
@@ -83,7 +89,7 @@ api.interceptors.response.use(
     }
 
     if (refreshAttempts >= MAX_REFRESH_ATTEMPTS) {
-      console.warn("⛔ Слишком много попыток рефреша. Принудительный выход.");
+      console.warn("⛔ Слишком много попыток рефреша кук.");
       refreshAttempts = 0;
       auth.logout();
       notify("Сессия истекла. Войдите заново.", "error");
@@ -95,12 +101,6 @@ api.interceptors.response.use(
       })
         .then(() => {
           originalRequest._retry = true;
-          const savedAuth = localStorage.getItem("auth");
-          if (savedAuth) {
-            const parsed = JSON.parse(savedAuth);
-            const token = parsed?.token || parsed?.user?.token;
-            if (token) originalRequest.headers.Authorization = `Bearer ${token}`;
-          }
           return api(originalRequest);
         })
         .catch((err) => Promise.reject(err));
@@ -108,22 +108,14 @@ api.interceptors.response.use(
     originalRequest._retry = true;
     isRefreshing = true;
     refreshAttempts++;
-
     try {
       const success = await auth.refreshToken();
       if (success) {
         refreshAttempts = 0;
-        const savedAuth = localStorage.getItem("auth");
-        if (savedAuth) {
-          const parsed = JSON.parse(savedAuth);
-          const token = parsed?.token || parsed?.user?.token;
-          if (token) originalRequest.headers.Authorization = `Bearer ${token}`;
-        }
-
         processQueue(null);
         return api(originalRequest);
       }
-      throw new Error("Refresh returned false");
+      throw new Error("Refresh failed");
     } catch (refreshError) {
       processQueue(refreshError);
       auth.logout();

@@ -799,10 +799,15 @@ export const useAuthStore = defineStore("auth", {
     async refreshToken() {
       try {
         const res = await api.post("/auth/refresh");
-        // Если сервер вернул 204 (как в логах) или 200 OK — рефреш успешен
-        return res.status === 204 || res.status === 200;
+        const isSuccess = res.status === 204 || res.status === 200;
+        if (isSuccess) {
+          this.isAuthenticated = true;
+          this.saveToStorage();
+        }
+        return isSuccess;
       } catch (err) {
-        // Любой статус ошибки (401, 500 и т.д.) вернет false
+        console.error("[Pinia Auth] Ошибка обновления сессии:", err);
+        this.logout();
         return false;
       }
     },
@@ -845,10 +850,12 @@ export const useAuthStore = defineStore("auth", {
         const currentRole = this.user?.role;
         const currentEmail = this.user?.email;
         const newRole = rawData.role || currentRole || 'PRIVATE_PERSON';
-        // Чистим email
         const newEmail = cleanValue(rawData.email) || currentEmail || '';
         
-        // === Создаём НОВЫЙ объект для реактивности Vue ===
+        // === ОБЪЯВЛЯЕМ editable ===
+        const isMyProfile = String(rawData.id) === String(this.user?.id);
+        const editable = isMyProfile ? true : (rawData.editable ?? false);
+        
         const updatedUser = {
           ...this.user,
           id: rawData.id,
@@ -860,13 +867,12 @@ export const useAuthStore = defineStore("auth", {
           city: cleanValue(rawData.city),
           employees: rawData.employees || [],
           role: newRole,
-          editable: rawData.editable ?? true,
+          editable: editable,
         };
         
         this.user = updatedUser;
         
-        console.log('this.user.role ПОСЛЕ:', this.user?.role);
-        console.log('this.user.email ПОСЛЕ:', this.user?.email);
+        console.log('this.user.editable ПОСЛЕ:', this.user?.editable);
         console.log('===================');
         
         this.saveToStorage();
