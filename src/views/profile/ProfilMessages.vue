@@ -8,6 +8,7 @@ const auth = useAuthStore();
 const router = useRouter();
 const isLoading = ref(true);
 
+const TARGET_USER_ID = "322451797836";
 // Ссылка на чаты из Pinia
 const chats = computed(() => auth.allChats);
 
@@ -35,9 +36,8 @@ let stompClient = null;
 let userSubscription = null;
 let pollInterval = null;
 
-// Единый метод для безопасного старта фоллбек-поллинга
 const startPolling = () => {
-  if (pollInterval) return; // Если уже запущен — игнорируем
+  if (pollInterval) return; 
   console.log('[MessagesList] Activation of fallback polling');
   pollInterval = setInterval(() => {
     loadChats(true);
@@ -53,30 +53,24 @@ const stopPolling = () => {
 };
 
 const handleNewMessage = (msg) => {
-  // Находим индекс чата для обновления
-  const chatIndex = auth.allChats.findIndex(c => c.id === msg.roomId);
+  const targetRoomId = msg.roomId || msg.chatRoomId;
+  const chatIndex = auth.allChats.findIndex(c => c.id === targetRoomId);
   
   if (chatIndex !== -1) {
-    // Создаем глубокую копию объекта, чтобы Vue зафиксировал изменения (реактивность)
     const updatedChat = { ...auth.allChats[chatIndex] };
-    
     updatedChat.lastMessage = {
-      text: msg.message,
+      text: msg.message || "Сообщений нет",
       isMine: msg.senderId === auth.user?.id,
-      isRead: msg.senderId === auth.user?.id,
+      isRead: msg.isRead || msg.senderId === auth.user?.id,
       time: msg.createdAt
         ? new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
         : "",
     };
-
-    if (msg.senderId !== auth.user?.id) {
+    if (msg.senderId !== auth.user?.id && !msg.isRead) {
       updatedChat.unreadCount = (updatedChat.unreadCount || 0) + 1;
     }
-
-    // Обновляем массив в Pinia реактивно через замену элемента
     auth.allChats[chatIndex] = updatedChat;
   } else {
-    // Новый чат, которого не было в списке — запрашиваем список заново
     loadChats(true);
   }
 };
@@ -107,14 +101,11 @@ const connectStomp = async () => {
           handleChatUpdate(data);
         }
       );
-      // Успешно подписались по веб-сокетам — отключаем фоновый поллинг бэкенда
       stopPolling();
     };
-
     if (stompClient.connected) {
       subscribeTopic();
     } else {
-      // Вместо деструктивной перезаписи onConnect, запускаем таймер проверки статуса
       let attempts = 0;
       const checkConnection = setInterval(() => {
         attempts++;
@@ -122,7 +113,6 @@ const connectStomp = async () => {
           subscribeTopic();
           clearInterval(checkConnection);
         }
-        // Если за 5 секунд сокет не завелся — включаем поллинг
         if (attempts > 50) { 
           clearInterval(checkConnection);
           startPolling();
@@ -134,14 +124,14 @@ const connectStomp = async () => {
     startPolling();
   }
 };
-const TARGET_USER_ID = "322451797836";
+
 const createTestRoom = async () => {
   try {
     isLoading.value = true;
     await auth.fetchUserChats();
     const existingChat = auth.allChats.find(c => String(c.user?.id) === TARGET_USER_ID);
     if (existingChat) {
-      console.log('[createTestRoom] Найдена существующая комната с пользователем:', TARGET_USER_ID);
+      console.log('[createTestRoom] Найдена комната с пользователем:', TARGET_USER_ID);
       router.push({ name: 'ChatDetail', params: { id: existingChat.id } });
       return;
     }
@@ -157,10 +147,6 @@ const createTestRoom = async () => {
       const existingChat = auth.allChats.find(c => String(c.user?.id) === TARGET_USER_ID);
       if (existingChat) {
         router.push({ name: 'ChatDetail', params: { id: existingChat.id } });
-      } else {
-        if (auth.allChats.length > 0) {
-          router.push({ name: 'ChatDetail', params: { id: auth.allChats[0].id } });
-        }
       }
     } else {
       notify("Не удалось создать чат: " + (e.response?.data?.message || e.message), "error");

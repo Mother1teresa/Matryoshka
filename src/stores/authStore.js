@@ -256,13 +256,16 @@ export const useAuthStore = defineStore("auth", {
         throw e;
       }
     },
-    async createTestRoom() {
+    async createTestRoom(targetUserId = null) {
       if (!this.user?.id) throw new Error("Пользователь не авторизован");
       
       try {
+        // Если targetUserId передан, создаем чат с ним. Если нет — с самим собой.
+        const finalUserB = targetUserId || this.user.id;
+
         const res = await api.post("/chat/create-room", {
           userA: this.user.id,
-          userB: this.user.id,
+          userB: finalUserB, // ← Теперь здесь будет ID собеседника
         });
         
         const roomId = res.data?.roomId || res.data?.id;
