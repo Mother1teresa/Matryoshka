@@ -28,24 +28,24 @@
       :class="{ 'auth-input__error': errors.password2 }"
     />
 
-    <!-- <div class="form-or">или</div>
+    <div class="form-or">или</div>
     <div class="form-using">
       <div class="form-using__title">Продолжить через</div>
       <div>
-        <a class="form-using__item">
+        <!-- <a class="form-using__item">
           <img src="/src/assets/img/form/go-form.svg" alt="" />
-        </a>
+        </a> -->
         <a class="form-using__item">
           <img src="/src/assets/img/form/vk-form.svg" alt="" />
         </a>
-        <a class="form-using__item">
+        <!-- <a class="form-using__item">
           <img src="/src/assets/img/form/max-form.svg" alt="" />
         </a>
         <a class="form-using__item">
           <img src="/src/assets/img/form/tg-form.svg" alt="" />
-        </a>
+        </a> -->
       </div>
-    </div> -->
+    </div> 
     <div class="form-noaccount">
       <button type="submit" class="auth-btn">Зарегистрироваться</button>
       <div class="form-noaccount__text">

@@ -28,26 +28,26 @@
 
     <button type="submit" class="auth-btn">Войти</button>
 
-    <!-- <div class="form-or">или</div>
+    <div class="form-or">или</div>
     <div class="form-using">
       <div class="form-using__title">Войти с помощью</div>
-      <a class="form-using__item">
+      <!-- <a class="form-using__item">
         <img src="/src/assets/img/form/go-form.svg" alt="" />
         Google
-      </a>
+      </a> -->
       <a class="form-using__item">
         <img src="/src/assets/img/form/vk-form.svg" alt="" />
         Вконтакте
       </a>
-      <a class="form-using__item">
+      <!-- <a class="form-using__item">
         <img src="/src/assets/img/form/max-form.svg" alt="" />
         MAX
       </a>
       <a class="form-using__item">
         <img src="/src/assets/img/form/tg-form.svg" alt="" />
         Telegram
-      </a>
-    </div> -->
+      </a> -->
+    </div>
     <div class="form-noaccount">
       <div class="form-noaccount__text">Нет аккаунта Матрешка?</div>
       <button class="btn-noaccount btn" @click="modal.openRegister()">
