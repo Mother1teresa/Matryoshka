@@ -810,14 +810,14 @@ export const useAuthStore = defineStore("auth", {
         if (isSuccess) {
           this.isAuthenticated = true;
           this.saveToStorage();
-          console.log(`[Pinia Auth] Сессия успешно продлена бэкендом (Статус: ${res.status}).`);
-        } else {
-          notify("Бэкенд вернул статус 200, но ответ не равен true:", res.data);
         }
         return isSuccess;
       } catch (err) {
         console.error("[Pinia Auth] Ошибка обновления сессии:", err.response?.data || err);
-        this.logout();
+        notify("Сессия истекла. Войдите заново.", "error");
+        setTimeout(() => {
+          this.logout();
+        }, 1500);
         return false;
       } finally {
         this.isAuthLoading = false;

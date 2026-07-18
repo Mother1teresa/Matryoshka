@@ -88,8 +88,11 @@ router.beforeEach((to, from, next) => {
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
   const verifyAccess = () => {
     if (requiresAuth && !auth.isAuthenticated) {
-      auth.logout(); 
-      next({ path: '/' }); 
+      notify("Сессия истекла. Войдите заново.", "error");
+      setTimeout(() => {
+        auth.logout();
+        next({ path: '/' });
+      }, 1500);
     } else {
       next();
     }
