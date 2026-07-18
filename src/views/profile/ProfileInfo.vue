@@ -28,7 +28,7 @@
           <span class="label">E-mail</span>
           <span class="value email">{{ auth.user?.email }}</span>
         </div>
-        <div class="info-row">
+        <div class="info-row tyk">
           <span class="label">Город</span>
           <span class="value">{{ auth.user?.city || 'Не указан' }}</span>
         </div>
@@ -143,6 +143,7 @@ watch(isModalOpen, (newVal) => {if (newVal) {document.body.classList.add("overfl
   gap: 1.5rem;
   font-size: 1.5rem; 
 }
+.tyk{text-transform: capitalize;}
 .label {
   font-weight: 700;
   color: #000;

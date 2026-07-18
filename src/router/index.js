@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { useAuthStore } from "/src/stores/authStore.js";
+import { watch } from "vue";
 const routes = [
   {
     path: "/",
@@ -84,13 +85,27 @@ router.afterEach((to) => {
 });
 router.beforeEach((to, from, next) => {
   const auth = useAuthStore();
-  const isLogged = auth.isAuthenticated;
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
-
-  if (requiresAuth && !isLogged) {
-    next({ path: '/', query: { redirect: to.fullPath, login: '1' } });
+  const verifyAccess = () => {
+    if (requiresAuth && !auth.isAuthenticated) {
+      auth.logout(); 
+      next({ path: '/' }); 
+    } else {
+      next();
+    }
+  };
+  if (auth.isAuthLoading && auth.isAuthenticated) {
+    const unwatch = watch(
+      () => auth.isAuthLoading,
+      (isLoading) => {
+        if (!isLoading) {
+          unwatch();
+          verifyAccess();
+        }
+      }
+    );
   } else {
-    next();
+    verifyAccess();
   }
 });
 

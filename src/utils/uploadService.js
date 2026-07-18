@@ -38,10 +38,7 @@ export const uploadToMediaService = async (file, type = "video", metadata = {}, 
       contentType: mimeType
     });
     const { url, s3Key } = presignedData;
-
     const cleanUrl = new URL(url).origin + new URL(url).pathname;
-
-    // 2. Загружаем файл напрямую в S3
     await axios.put(url, file, {
       headers: { 'Content-Type': mimeType },
       onUploadProgress: (progressEvent) => {
@@ -51,15 +48,18 @@ export const uploadToMediaService = async (file, type = "video", metadata = {}, 
         }
       }
     });
+    const { useAuthStore } = await import("/src/stores/authStore.js");
+    const auth = useAuthStore();
+    if (auth.isAuthenticated) {
+      await auth.refreshToken().catch(() => {});
+    }
 
-    // 3. Сохраняем метаданные в сервисе
     const payload = [{
       filename: file.name,
       s3Key: s3Key,
       url: cleanUrl,
       mimeType: mimeType,
       type: type,
-      title: metadata.title || file.name,
       description: metadata.description || '',
       extension: extension
     }];

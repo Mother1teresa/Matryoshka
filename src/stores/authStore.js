@@ -2,7 +2,7 @@ import { defineStore } from "pinia";
 import { Client } from '@stomp/stompjs';
 import { markRaw, ref } from 'vue';
 import router from "/src/router/index.js";
-import { api, resetRefreshCooldown } from "/src/api/api.js";
+import { api, authApi, resetRefreshCooldown } from "/src/api/api.js";
 import { useFavoritesStore } from "/src/stores/favoritesStore.js";
 import maskAvatar from "/src/assets/img/mask-avatar.png";
 import { useRegionModalStore } from "/src/stores/regionModal.js";
@@ -19,6 +19,7 @@ export const useAuthStore = defineStore("auth", {
       return {
         isAuthenticated: data?.isAuthenticated || false,
         user: data?.user || null,
+        isAuthLoading: !!data?.isAuthenticated,
         allVideos: [],
         welcomeFeed: [],
         isVideosLoading: false,
@@ -37,6 +38,7 @@ export const useAuthStore = defineStore("auth", {
       return {
         isAuthenticated: false,
         user: null,
+        isAuthLoading: false,
         allVideos: [],
         welcomeFeed: [],
         allChats: [],
@@ -751,6 +753,7 @@ export const useAuthStore = defineStore("auth", {
         email: cleanEmail(userData.email),
         role: userData.role || 'PRIVATE_PERSON',
       };
+      this.isAuthLoading = false;
       this.saveToStorage();
       resetRefreshCooldown();
     },
@@ -802,17 +805,22 @@ export const useAuthStore = defineStore("auth", {
     },
     async refreshToken() {
       try {
-        const res = await api.post("/auth/refresh");
-        const isSuccess = res.status === 204 || res.status === 200;
+        const res = await authApi.post("/auth/refresh");
+        const isSuccess = res.status === 204 || (res.status === 200 && res.data === true);
         if (isSuccess) {
           this.isAuthenticated = true;
           this.saveToStorage();
+          console.log(`[Pinia Auth] Сессия успешно продлена бэкендом (Статус: ${res.status}).`);
+        } else {
+          notify("Бэкенд вернул статус 200, но ответ не равен true:", res.data);
         }
         return isSuccess;
       } catch (err) {
-        console.error("[Pinia Auth] Ошибка обновления сессии:", err);
+        console.error("[Pinia Auth] Ошибка обновления сессии:", err.response?.data || err);
         this.logout();
         return false;
+      } finally {
+        this.isAuthLoading = false;
       }
     },
     async verifyCodeAPI(payload) {
@@ -843,19 +851,16 @@ export const useAuthStore = defineStore("auth", {
           if (val && val.includes && val.includes('JsonNullable@')) return '';
           return val || '';
         };
-        
         const cleanAvatar = (avatar) => {
           if (avatar && avatar.cdnUrl) return avatar.cdnUrl;
           if (avatar && avatar.url) return avatar.url;
           if (typeof avatar === 'string') return avatar;
           return '';
         };
-        
         const currentRole = this.user?.role;
         const currentEmail = this.user?.email;
         const newRole = rawData.role || currentRole || 'PRIVATE_PERSON';
         const newEmail = cleanValue(rawData.email) || currentEmail || '';
-        
         // === ОБЪЯВЛЯЕМ editable ===
         const isMyProfile = String(rawData.id) === String(this.user?.id);
         const editable = isMyProfile ? true : (rawData.editable ?? false);
@@ -873,14 +878,12 @@ export const useAuthStore = defineStore("auth", {
           role: newRole,
           editable: editable,
         };
-        
         this.user = updatedUser;
         
         console.log('this.user.editable ПОСЛЕ:', this.user?.editable);
         console.log('===================');
         
         this.saveToStorage();
-        
         const regionStore = useRegionModalStore();
         if (this.user.city) {
           regionStore.setRegion(
@@ -1095,6 +1098,7 @@ export const useAuthStore = defineStore("auth", {
       this.disconnectSocket();
       this.isAuthenticated = false;
       this.user = null;
+      this.isAuthLoading = false;
       useRegionModalStore().$patch({
         selectedRegion: null,
         coordinates: [37.6173, 55.7558],

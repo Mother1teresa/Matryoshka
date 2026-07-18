@@ -83,7 +83,6 @@ const stopGlobalPolling = () => {
 
 const startGlobalPolling = () => {
   if (globalPolling) return;
-  
   doPoll();
   globalPolling = setInterval(doPoll, 300000);
 };
@@ -93,6 +92,7 @@ const handleVisibilityChange = () => {
     doPoll();
   }
 };
+
 const handleStorageChange = (event) => {
   if (event.key === "auth" && !event.newValue) {
     auth.logout();
@@ -103,9 +103,13 @@ provide('openMaintenance', () => {
   maintenanceRef.value?.open() ?? console.log("MaintenanceModal ещё не инициализирован");
 });
 
+// Наблюдатель за авторизацией (отрабатывает при ручном входе/выходе на сайте)
 watch(
   () => auth.isAuthenticated,
   async (isAuth) => {
+    // 🔥 Защита: пока стор выполняет стартовый рефреш, вотчер полностью спит
+    if (auth.isAuthLoading) return;
+
     if (!isAuth) {
       stopGlobalPolling();
       return;
@@ -114,31 +118,54 @@ watch(
     isInitializing = true;
     try {
       await auth.fetchProfile();
-      
-      if (!auth.user?.id) {
-        console.warn("isAuthenticated=true, но user.id отсутствует");
-        return;
-      }
+      if (!auth.user?.id) return;
       startGlobalPolling();
       await reviewStore.initUserReviews(auth.user.id);
-      
     } catch (e) {
       console.error('Ошибка инициализации пользователя:', e);
     } finally {
       isInitializing = false;
     }
-  },
-  { immediate: true }
-);
-onMounted(() => {
-  // === SILENT REFRESH — проверяем cookies при старте ===
-  if (auth.isAuthenticated) {
-    auth.refreshToken().catch(() => {});
   }
+);
+
+onMounted(async () => {
   document.addEventListener('visibilitychange', handleVisibilityChange);
   window.addEventListener("storage", handleStorageChange);
   productStore.fetchAdverts();
   window.addEventListener("notify", handleNotify);
+
+  // === ОБНОВЛЕНИЕ ДЛЯ НАЧАЛА ===
+  if (auth.isAuthenticated) {
+    try {
+      console.log("🔄 Старт приложения: фоновое обновление токена...");
+      // Запускаем рефреш. Флаг auth.isAuthLoading станет false в блоке finally внутри метода стора
+      await auth.refreshToken(); 
+    } catch (err) {
+      console.error("Ошибка при стартовом обновлении токена:", err);
+      auth.isAuthLoading = false;
+    } finally {
+      // Когда стартовый рефреш завершился, проверяем, остался ли пользователь авторизован
+      if (auth.isAuthenticated) {
+        isInitializing = true;
+        try {
+          // Последовательно и безопасно запрашиваем профиль
+          await auth.fetchProfile();
+          if (auth.user?.id) {
+            startGlobalPolling();
+            await reviewStore.initUserReviews(auth.user.id);
+          }
+        } catch (e) {
+          console.error('Ошибка загрузки профиля после стартового рефреша:', e);
+        } finally {
+          isInitializing = false;
+        }
+      }
+    }
+  } else {
+    // Если пользователь изначально зашел как гость, мгновенно снимаем состояние загрузки авторизации
+    auth.isAuthLoading = false;
+  }
 });
 
 onUnmounted(() => {
