@@ -229,49 +229,27 @@ export const useAuthStore = defineStore("auth", {
         return { type: 'polling' };
       }
     },
-
     async sendMessage(roomId, text) {
       const client = this.getSocket();
       
-      if (client?.connected) {
-        client.publish({
-          destination: `/app/chat.sendMessage/${roomId}`,
-          body: JSON.stringify({
-            senderId: this.user?.id,
-            message: text,
-          })
-        });
-        console.log('[sendMessage] Sent via STOMP');
-      } else {
-        console.log('[sendMessage] STOMP unavailable, using HTTP fallback');
-        await api.post(`/chat/rooms/${roomId}/messages`, {
-          message: text,
-          senderId: this.user?.id
-        });
+      if (!client?.connected) {
+        throw new Error('Нет соединения с сервером');
       }
+      
+      client.publish({
+        destination: `/app/chat.sendMessage/${roomId}`,
+        body: JSON.stringify({
+          senderId: this.user?.id,
+          message: text,
+        })
+      });
+      console.log('[sendMessage] Sent via STOMP');
     },
     async markMessageAsRead(messageId, roomId) {
       try {
         await api.patch(`/chat/messages/${messageId}/read?roomId=${roomId}`);
       } catch (e) {
         console.error('Ошибка markMessageAsRead:', e.response?.data || e);
-        throw e;
-      }
-    },
-    async createTestRoom(targetUserId = null) {
-      if (!this.user?.id) throw new Error("Пользователь не авторизован");
-      try {
-        const finalUserB = targetUserId || this.user.id;
-        const res = await api.post("/chat/create-room", {
-          userA: this.user.id,
-          userB: finalUserB, // ← Теперь здесь будет ID собеседника
-        });
-        const roomId = res.data?.roomId || res.data?.id;
-        console.log('[createTestRoom] Created room:', roomId);
-        await this.fetchUserChats();
-        return roomId;
-      } catch (e) {
-        console.error("Ошибка создания тестовой комнаты:", e.response?.data || e);
         throw e;
       }
     },
@@ -283,41 +261,50 @@ export const useAuthStore = defineStore("auth", {
       try {
         const res = await api.get('/chat/user-rooms');
         const rooms = res.data || [];
-        this.allChats = rooms.map((room) => {
-          const opponent = room.users?.find((u) => u.id !== this.user.id) || {};
-          const lastMsg = room.messages && room.messages.length > 0
-            ? room.messages[room.messages.length - 1]
-            : null;
+        this.allChats = rooms
+          .map((room) => {
+            const opponent = room.users?.find((u) => u.id !== this.user.id) || {};
+            const lastMsg = room.messages && room.messages.length > 0
+              ? room.messages[room.messages.length - 1]
+              : null;
 
-          const unreadCount = room.messages?.filter(
-            m => m.senderId !== this.user.id && !m.isRead
-          ).length || 0;
+            const unreadCount = room.messages?.filter(
+              m => m.senderId !== this.user.id && !m.isRead
+            ).length || 0;
 
-          return {
-            id: room.id,
-            productName: room.productName || "Объявление",
-            productImage: room.productImage || "/src/assets/img/mask-avatar.png",
-            price: room.price || "",
-            user: {
-              id: opponent.id || "",
-              name: opponent.username || opponent.email || "Пользователь",
-              avatar: opponent.avatar || "/src/assets/img/mask-avatar.png",
-              isOnline: opponent.isOnline || false,
-            },
-            lastMessage: {
-              text: lastMsg ? lastMsg.message : "Сообщений нет",
-              isMine: lastMsg ? lastMsg.senderId === this.user.id : false,
-              isRead: lastMsg ? lastMsg.isRead : false,
-              time: lastMsg && lastMsg.createdAt
-                ? new Date(lastMsg.createdAt).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
-                : "",
-            },
-            unreadCount,
-          };
-        });
+            return {
+              id: room.id,
+              productName: room.productName || "Объявление",
+              productImage: room.productImage || "/src/assets/img/mask-avatar.png",
+              price: room.price || "",
+              user: {
+                id: opponent.id || "",
+                name: opponent.username || opponent.email || "Пользователь",
+                avatar: opponent.avatar || "/src/assets/img/mask-avatar.png",
+                isOnline: opponent.isOnline || false,
+              },
+              lastMessage: {
+                text: lastMsg ? lastMsg.message : "Сообщений нет",
+                isMine: lastMsg ? lastMsg.senderId === this.user.id : false,
+                isRead: lastMsg ? lastMsg.isRead : false,
+                time: lastMsg && lastMsg.createdAt
+                  ? new Date(lastMsg.createdAt).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : "",
+              },
+              unreadCount,
+            };
+          })
+          .filter((chat) => {
+            // ФИЛЬТР: убираем чат с самим собой
+            if (!chat.user?.id || String(chat.user.id) === String(this.user.id)) {
+              console.log('[fetchUserChats] Filtering out self-chat:', chat.id);
+              return false;
+            }
+            return true;
+          });
       } catch (e) {
         console.error("Ошибка при получении чатов:", e.response?.data || e);
         throw e;
@@ -331,6 +318,7 @@ export const useAuthStore = defineStore("auth", {
           messages: msgs.map(msg => ({
             id: msg.id,
             text: msg.message,
+            senderId: msg.senderId,
             isMine: msg.senderId === this.user?.id,
             isRead: msg.isRead || false,
             time: msg.createdAt
@@ -345,7 +333,6 @@ export const useAuthStore = defineStore("auth", {
         throw e;
       }
     },
-   
     async createPrivateRoom(userBId) {
       if (!this.user?.id) throw new Error("Пользователь не авторизован");
       if (String(userBId) === String(this.user.id)) {
@@ -366,8 +353,10 @@ export const useAuthStore = defineStore("auth", {
     async searchMessages(roomId, query) {
       if (!query.trim()) return [];
       try {
-        const res = await api.get(`/chat/search-messages/${roomId}?query=${encodeURIComponent(query)}`);
-        return res.data?.messages || [];
+        const res = await api.get(`/chat/search-messages/${roomId}`, {
+          params: { query: query.trim() }
+        });
+        return res.data || [];
       } catch (e) {
         console.error("Ошибка поиска:", e.response?.data || e);
         throw e;
@@ -581,14 +570,22 @@ export const useAuthStore = defineStore("auth", {
       
       return video;
     },
-    async addView(videoId, ip) {
+    async addView(videoId) {
+      if (!this.user?.id) {
+        notify("⚠️ Попытка засчитать просмотр неавторизованным пользователем заблокирована.");
+        return;
+      }
       try {
         await api.post('/feed/video/add-view', {
-          videoId,
-          ip
+          userId: this.user.id,
+          videoId: videoId
         });
+        const video = this.welcomeFeed.find(v => v.id === videoId);
+        if (video) {
+          video.views = (video.views || 0) + 1;
+        }
       } catch (e) {
-        console.error('Ошибка просмотра:', e);
+        console.error('Ошибка отправки просмотра видео:', e.response?.data || e);
       }
     },
     async likeVideo(videoId) {
@@ -681,31 +678,28 @@ export const useAuthStore = defineStore("auth", {
     async fetchLikeCount(videoId) {
       try {
         const response = await api.get('/feed/like-count', {
-          params: { videoId }
+          data: { videoId }
         });
         return response.data;
       } catch (e) {
-        console.error('Ошибка получения лайков:', e);
+        console.error('Ошибка получения количества лайков:', e.response?.data || e);
         return 0;
       }
     },
     async fetchFavorites(userId) {
       try {
-        const response = await api.get(`/feed/video/favorites/${userId}`);  // ← исправлено
+        const response = await api.get(`/feed/video/favorites/${userId}`);
         const data = response.data || [];
-        // favorites возвращает массив объектов с favoriteVideos
         const favoritesData = Array.isArray(data) ? data[0] : data;
         if (favoritesData?.favoriteVideos?.length) {
-          const videos = [];
-          for (const videoId of favoritesData.favoriteVideos) {
-            const video = await this.fetchVideo(videoId);
-            if (video) videos.push(video);
-          }
-          return videos;
+          const promises = favoritesData.favoriteVideos.map(id => this.fetchVideo(id));
+          const results = await Promise.all(promises);
+          
+          return results.filter(video => video !== null);
         }
         return [];
       } catch (e) {
-        console.error('Ошибка загрузки избранного:', e);
+        console.error('Ошибка загрузки избранного:', e.response?.data || e);
         return [];
       }
     },

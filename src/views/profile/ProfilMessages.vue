@@ -51,6 +51,7 @@ const stopPolling = () => {
 };
 
 const handleNewMessage = (msg) => {
+  if (msg.senderId === auth.user?.id) return;
   const chatIndex = auth.allChats.findIndex(c => c.id === msg.roomId);
   
   if (chatIndex !== -1) {
@@ -58,15 +59,13 @@ const handleNewMessage = (msg) => {
     
     updatedChat.lastMessage = {
       text: msg.message,
-      isMine: msg.senderId === auth.user?.id,
-      isRead: msg.senderId === auth.user?.id,
+      isMine: false,
+      isRead: false,
       time: msg.createdAt
         ? new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
         : "",
     };
-    if (msg.senderId !== auth.user?.id) {
-      updatedChat.unreadCount = (updatedChat.unreadCount || 0) + 1;
-    }
+    updatedChat.unreadCount = (updatedChat.unreadCount || 0) + 1;
     auth.allChats[chatIndex] = updatedChat;
   } else {
     loadChats(true);
