@@ -1,292 +1,6 @@
-// import { defineStore } from "pinia"
-// import { ref } from "vue"
-// import axios from "axios";
-// export const useProductStore = defineStore("product", () => {
-//   const allProducts = ref([{
-//       id: 1,
-//       title: "Voyager 850 Cadin",
-//       price: 53333000,
-//       city: "г.Краснодар",
-//       category: "transport",
-//       section: "water",
-//       subcategory: "yachts",
-//       sellerId: "1",
-//       images: [
-//         "/img/products/voyager.png",
-//         "/img/products/voyager2.png",
-//         "/img/products/voyager3.png",
-//         "/img/products/voyager4.png",
-//         "/img/products/voyager5.png",
-//         "/img/products/voyager6.png",
-//         "/img/products/voyager7.png",
-//         "/img/products/voyager8.png",
-//         "/img/products/voyager9.png",
-//       ],
-//       attributes: {
-//         brand: "Vboats",
-//         year: 2009,
-//         length: 8.9,
-//         width: 2.5,
-//         draft: 1.5,
-//         material: "Алюминий",
-//         passengers: 8},
-//       description: "Катер стоит своих денег. Места полно, летит жестко, новый."},{
-//       id: 2,
-//       title: "Автомобиль BMW",
-//       price: 1200000,
-//       city: "г.Краснодар",
-//       category: "transport",
-//       section: "cars",
-//       subcategory: "",
-//       sellerId: "2",
-//       images: [
-//         "/img/products/img-prod.jpg",
-//         "/img/products/img-prod2.jpg"],
-//       attributes: {
-//         brand: "BMW",
-//         model: "X5",
-//         year: 2018,
-//         mileage: 120000,
-//         fuel: "Бензин"},
-//       description: "Отличное состояние, не битая."},{
-//       id: 3,
-//       title: "Квартира 2к",
-//       price: 5000000,
-//       city: "г.Краснодар",
-//       category: "nedvizhimost",
-//       section: "apartments",
-//       subcategory:"rent",
-//       sellerId: "1",
-//       images: [
-//         "/img/products/img-prod.jpg",
-//         "/img/products/img-prod2.jpg"],
-//       attributes: {
-//         rooms: 2,
-//         area: 65,
-//         floor: 5},
-//       description: "Уютная квартира в центре."},{
-//       id: 4,
-//       title: "Щенок хаски",
-//       price: 30000,
-//       city: "г.Краснодар",
-//       category: "animals",
-//       section:"pets",
-//       subcategory:"dogs",
-//       sellerId: "2",
-//       images: [
-//         "/img/products/img-prod.jpg",
-//         "/img/products/img-prod2.jpg"],
-//       attributes: {
-//         breed: "Хаски",
-//         age: "3 месяца",
-//         color: "Серый"},
-//       description: "Очень активный и дружелюбный щенок."},{
-//     id: 5,
-//     title: "Коробки 600*400*300 мм К-51 оптом",
-//     price: 79,
-//     city: "г.Краснодар",
-//     images: [
-//         "/img/products/img-prod.jpg",
-//         "/img/products/img-prod2.jpg"],
-//     isLiked: false,
-//     category: "tovary",
-//     section:"fashin",
-//     sellerId: "1",
-//   },{
-//     id: 6,
-//     title: "Коробки 600*400*300 мм К-51 оптом",
-//     price: 79,
-//     city: "г.Краснодар",
-//     images: [
-//         "/img/products/img-prod.jpg",
-//         "/img/products/img-prod2.jpg"],
-//     isLiked: false,
-//     category: "biznes",
-//     section:"ready_business",
-//     sellerId: "1",
-//   },{
-//     id: 7,
-//     title: "Коробки 600*400*300 мм К-51 оптом",
-//     price: 79,
-//     city: "г.Краснодар",
-//     images: [
-//         "/img/products/img-prod.jpg",
-//         "/img/products/img-prod2.jpg"],
-//     isLiked: false,
-//     category: "tovary",
-//     section: "beauty-health",
-//     sellerId: "1",
-//     description:"B cтабильную компaнию требуются агент-менеджeры для oбщения c клиeнтaми. Работа c тёплoй и xoлoднoй базой, консультации и прoдажи финанcoвых пpoдуктoв. Условия:"},{
-//     id: 8,
-//     title: "Тур в Турцию",
-//     price: 75000,
-//     city: "г.Краснодар",
-//     images: [
-//         "/img/products/img-prod.jpg",
-//         "/img/products/img-prod2.jpg"],
-//     isLiked: false,
-//     category: "travel",
-//     section:"tours",
-//     sellerId: "1",
-//     description:"B cтабильную компaнию требуются агент-менеджeры для oбщения c клиeнтaми. Работа c тёплoй и xoлoднoй базой, консультации и прoдажи финанcoвых пpoдуктoв. Условия:"},{
-//     id: 9,
-//     title: "Квартира 2к",
-//     price: 5000000,
-//     city: "г.Краснодар",
-//     category: "nedvizhimost",
-//     section: "apartments",
-//     subcategory:"rent",
-//     sellerId: "2",
-//     images: [
-//         "/img/products/img-prod.jpg",
-//         "/img/products/img-prod2.jpg"],
-//     isLiked: false,
-//     attributes: {
-//         rooms: 2,
-//         area: 65,
-//         floor: 5},
-//       description: "Уютная квартира в центре."
-//     },{
-//     id: 10,
-//     title: "	Yamaha YZF-R6",
-//     price: 1200000,
-//     city: "г. Краснодар",
-//     images: [
-//         "/img/products/OIP.webp",
-//         "/img/products/1058_s.jpg"],
-//     category: "transport",
-//     section: "moto",
-//     sellerId: "1",
-// },{
-//     id: 11,
-//     title: "Щенок хаски",
-//     price: 30000,
-//     city: "г.Краснодар",
-//     category: "animals",
-//     section:"pets",
-//     subcategory:"dogs",
-//     sellerId: "1",
-//     images: [
-//         "/img/products/img-prod.jpg",
-//         "/img/products/img-prod2.jpg"],},{
-//     id: 12,
-//     title: "Мытья окон",
-//     price: 1200,
-//     city: "г.Краснодар",
-//     images: [
-//         "/img/products/img-prod.jpg",
-//         "/img/products/img-prod2.jpg"],
-//     category: "uslugi",
-//     section:"all_services",
-//     sellerId: "2",
-//     description:"B cтабильную компaнию требуются агент-менеджeры для oбщения c клиeнтaми. Работа c тёплoй и xoлoднoй базой, консультации и прoдажи финанcoвых пpoдуктoв. Условия:"},{
-//     id: 13,
-//     title:"Агент менеджер", 
-//     salary:"70 000 - 90 000",
-//     price:"70 000 - 90 000", 
-//     city:"Краснодар",
-//     images: [
-//         "/img/products/img-prod.jpg",
-//         "/img/products/img-prod2.jpg"],
-//     category: "rabota",
-//     section:"jobs",
-//     subcategory: "office",
-//     sellerId: "2",
-//     description:"B cтабильную компaнию требуются агент-менеджeры для oбщения c клиeнтaми. Работа c тёплoй и xoлoднoй базой, консультации и прoдажи финанcoвых пpoдуктoв. Условия:"},{
-//     id: 14,
-//     name:"Анна", 
-//     price: 1200000,
-//     title:"Менеджер", 
-//     city:"Краснодар",
-//     images: [
-//         "/img/products/img-prod.jpg",
-//         "/img/products/img-prod2.jpg"],
-//     category: "rabota",
-//     section:"resume",
-//     sellerId: "1",
-//     subcategory: "resume-management",
-//     description:"B cтабильную компaнию требуются агент-менеджeры для oбщения c клиeнтaми. Работа c тёплoй и xoлoднoй базой, консультации и прoдажи финанcoвых пpoдуктoв. Условия:"},{
-//     id: 15,
-//     title: "Автомобиль BMW",
-//     price: 1200000,
-//     city: "г.Краснодар",
-//     images: [
-//         "/img/products/img-prod.jpg",
-//         "/img/products/img-prod2.jpg"],
-//     category: "transport",
-//     section:"car",
-//     sellerId: "1",
-//     },{
-//     id: 16,
-//     title: "Убор для хаски",
-//     price: 30000,
-//     city: "г.Краснодар",
-//     category: "animals",
-//     section:"pet_products",
-//     subcategory:"buy",
-//     sellerId: "2",
-//     images: [
-//         "/img/products/img-prod.jpg",
-//         "/img/products/img-prod2.jpg"],},{
-//     id: 17,
-//     title: "Квартира 2к",
-//     price: 5000000,
-//     city: "г.Краснодар",
-//     category: "nedvizhimost",
-//     section: "apartments",
-//     subcategory:"buy",
-//     sellerId: "1",
-//     images: [
-//       "/img/products/img-prod.jpg",
-//       "/img/products/img-prod2.jpg"],
-//     attributes: {
-//       rooms: 2,
-//       area: 65,
-//       floor: 5},
-//     description: "Уютная квартира в центре."},
-// ]);
-//   const products = ref([]);
-//   const isLoading = ref(false);
-//     const fetchAdverts = async (filters = {}) => {
-//     // isLoading.value = true;
-//     // try {
-//     //   const response = await axios.get('/api/adverts', { params: filters });
-//     //   if (response.data && response.data.length > 0) {
-//     //     products.value = response.data;
-//     //     isLoading.value = false;
-//     //     return;}
-//     // } catch (error) {
-//     //   console.warn("Бэк не отвечает — используем локальную фильтрацию");
-//     // }
-//     products.value = allProducts.value.filter(p => {
-//       if (filters.category && p.category !== filters.category) return false;
-//       // Добавьте эту строку для фильтрации по секциям (cars, water, moto и т.д.)
-//       if (filters.section && p.section !== filters.section) return false;
-
-//       if (filters.subcategory && p.subcategory !== filters.subcategory) return false;
-//       if (filters.priceFrom && Number(p.price) < filters.priceFrom) return false;
-//       if (filters.priceTo && p.price > filters.priceTo) return false;
-//       return true;});
-//     isLoading.value = false;};
-//   const toggleLike = (id) => {
-//     const product = products.value.find(p => p.id === id);
-//     if (product) product.isLiked = !product.isLiked;
-//   };
-//   const resetLikes = () => {
-//     products.value.forEach(p => p.isLiked = false);
-//   };
-//   return {
-//     products,
-//     allProducts,
-//     isLoading,
-//     fetchAdverts,
-//     toggleLike,
-//     resetLikes
-//   };
-// });
 // /src/stores/product.js
 import { defineStore } from "pinia"
-import { ref, computed } from "vue"
+import { ref } from "vue"
 import { api } from "/src/api/api.js"
 
 export const useProductStore = defineStore("product", () => {
@@ -294,23 +8,75 @@ export const useProductStore = defineStore("product", () => {
   const isLoading = ref(false)
   const lastFetchTime = ref(0)
 
-  // Фильтрованные товары для каталога (computed)
-  const filteredProducts = computed(() => {
-    return products.value
-  })
-
-  const fetchAdverts = async (force = false) => {
-    // Не грузим если уже есть товары и не force
-    if (!force && products.value.length > 0 && Date.now() - lastFetchTime.value < 60000) {
-      console.log('Products already loaded, count:', products.value.length)
+  const fetchAdverts = async (filters = {}, force = false) => {
+    const hasFilters = Object.keys(filters).length > 0
+    const cacheValid = !force && !hasFilters &&
+      products.value.length > 0 && 
+      Date.now() - lastFetchTime.value < 60000
+    
+    if (cacheValid) {
+      console.log('Products cache valid, count:', products.value.length)
       return
     }
 
     isLoading.value = true
-    console.log('=== fetchAdverts START ===')
+    console.log('=== fetchAdverts START ===', filters)
 
     try {
-      const res = await api.get('/advert')
+      const dto = {}
+      
+      if (filters.query) dto.query = filters.query
+      if (filters.category) dto.category = filters.category
+      if (filters.subcategory || filters.subCategory || filters.section) {
+        dto.subCategory = filters.subcategory || filters.subCategory || filters.section
+      }
+      if (filters.userId) dto.userId = String(filters.userId)
+      if (filters.priceFrom) dto.priceFrom = Number(filters.priceFrom)
+      if (filters.priceTo) dto.priceTo = Number(filters.priceTo)
+      if (filters.take) dto.take = Number(filters.take)
+      if (filters.profession) dto.profession = filters.profession
+      if (filters.sphere) dto.sphere = filters.sphere
+      if (filters.employment) dto.employment = filters.employment
+      if (filters.workFormat) dto.workFormat = filters.workFormat
+      if (filters.propertyType) dto.propertyType = filters.propertyType
+      if (filters.vehicleKpp) dto.vehicleKpp = filters.vehicleKpp
+      if (filters.drive) dto.drive = filters.drive
+      if (filters.vesselType) dto.vesselType = filters.vesselType
+      if (filters.paymentType) dto.paymentType = filters.paymentType
+      if (filters.businessForm) dto.businessForm = filters.businessForm
+      if (filters.offerType) dto.offerType = filters.offerType
+      if (filters.transactionScope) dto.transactionScope = filters.transactionScope
+      if (filters.hasParking != null) dto.hasParking = Boolean(filters.hasParking)
+      if (filters.hasElevator != null) dto.hasElevator = Boolean(filters.hasElevator)
+      if (filters.hasBalcony != null) dto.hasBalcony = Boolean(filters.hasBalcony)
+      if (filters.hasDocuments != null) dto.hasDocuments = Boolean(filters.hasDocuments)
+      if (filters.yearOfManufactureFrom) dto.yearOfManufactureFrom = Number(filters.yearOfManufactureFrom)
+      if (filters.yearOfManufactureTo) dto.yearOfManufactureTo = Number(filters.yearOfManufactureTo)
+      if (filters.engineCapacityFrom) dto.engineCapacityFrom = Number(filters.engineCapacityFrom)
+      if (filters.engineCapacityTo) dto.engineCapacityTo = Number(filters.engineCapacityTo)
+      if (filters.horsePowerFrom) dto.horsePowerFrom = Number(filters.horsePowerFrom)
+      if (filters.horsePowerTo) dto.horsePowerTo = Number(filters.horsePowerTo)
+      if (filters.totalAreaFrom) dto.totalAreaFrom = Number(filters.totalAreaFrom)
+      if (filters.totalAreaTo) dto.totalAreaTo = Number(filters.totalAreaTo)
+      if (filters.vesselLengthFrom) dto.vesselLengthFrom = Number(filters.vesselLengthFrom)
+      if (filters.vesselLengthTo) dto.vesselLengthTo = Number(filters.vesselLengthTo)
+      if (filters.vesselDraftFrom) dto.vesselDraftFrom = Number(filters.vesselDraftFrom)
+      if (filters.vesselDraftTo) dto.vesselDraftTo = Number(filters.vesselDraftTo)
+      if (filters.vesselWidthFrom) dto.vesselWidthFrom = Number(filters.vesselWidthFrom)
+      if (filters.vesselWidthTo) dto.vesselWidthTo = Number(filters.vesselWidthTo)
+      if (filters.maxPassengersFrom) dto.maxPassengersFrom = Number(filters.maxPassengersFrom)
+      if (filters.maxPassengersTo) dto.maxPassengersTo = Number(filters.maxPassengersTo)
+      if (filters.livingAreaFrom) dto.livingAreaFrom = Number(filters.livingAreaFrom)
+      if (filters.livingAreaTo) dto.livingAreaTo = Number(filters.livingAreaTo)
+      if (filters.heightFrom) dto.heightFrom = Number(filters.heightFrom)
+      if (filters.heightTo) dto.heightTo = Number(filters.heightTo)
+
+      const res = await api.get('/advert', {
+        params: Object.keys(dto).length > 0 
+          ? { dto: JSON.stringify(dto) } 
+          : undefined
+      })
+      
       const ads = Array.isArray(res.data) ? res.data : res.data?.items || []
       console.log('API returned ads:', ads.length)
 
@@ -319,16 +85,16 @@ export const useProductStore = defineStore("product", () => {
         title: ad.title || 'Без названия',
         price: Number(ad.price) || 0,
         city: ad.address || ad.city || '',
+        address: ad.address || '',
         category: ad.category || 'tovary',
-        section: ad.section || ad.subCategory || 'default',
+        section: ad.subCategory || ad.section || 'default',
         subcategory: ad.subCategory || ad.subcategory || '',
         sellerId: ad.userId || ad.sellerId,
         images: ad.pictures?.map(p => p.pictureUrl || p.url) || [],
         image: ad.pictures?.[0]?.pictureUrl || ad.thumbnailUrl || '/src/assets/img/placeholder.png',
-        attributes: ad.attributes || {},
+        attributes: buildAttributes(ad),
         description: ad.description || '',
-        isLiked: false,
-        // сохраняем всё остальное на всякий случай
+        createdAt: ad.createdAt,
         ...ad
       }))
 
@@ -337,17 +103,71 @@ export const useProductStore = defineStore("product", () => {
 
     } catch (e) {
       console.error("Ошибка загрузки:", e.response?.status, e.response?.data)
-      products.value = []
+      if (force || products.value.length === 0) {
+        products.value = []
+      }
     } finally {
       isLoading.value = false
     }
   }
 
-  // Фильтрация для каталога (если нужно)
+  const buildAttributes = (ad) => {
+    const attrs = { ...(ad.attributes || {}) }
+    
+    if (ad.totalArea != null) attrs.area = ad.totalArea
+    if (ad.livingArea != null) attrs.livingArea = ad.livingArea
+    if (ad.kitchenArea != null) attrs.kitchenArea = ad.kitchenArea
+    if (ad.apartmentFloor != null) attrs.floor = ad.apartmentFloor
+    if (ad.floorsInHouse != null) attrs.floorsInHouse = ad.floorsInHouse
+    if (ad.hasBalcony != null) attrs.hasBalcony = ad.hasBalcony
+    if (ad.hasElevator != null) attrs.hasElevator = ad.hasElevator
+    if (ad.hasParking != null) attrs.hasParking = ad.hasParking
+    if (ad.hasDocuments != null) attrs.hasDocuments = ad.hasDocuments
+    if (ad.propertyType) attrs.propertyType = ad.propertyType
+    if (ad.houseState) attrs.houseState = ad.houseState
+    
+    if (ad.yearOfManufacture != null) attrs.year = ad.yearOfManufacture
+    if (ad.engineCapacity != null) attrs.engineCapacity = ad.engineCapacity
+    if (ad.horsePower != null) attrs.horsePower = ad.horsePower
+    if (ad.brand) attrs.brand = ad.brand
+    if (ad.model) attrs.model = ad.model
+    if (ad.color) attrs.color = ad.color
+    if (ad.milage != null) attrs.mileage = ad.milage
+    if (ad.vehicleKpp) attrs.transmission = ad.vehicleKpp
+    if (ad.drive) attrs.drive = ad.drive
+    if (ad.vehicleBodyType) attrs.bodyType = ad.vehicleBodyType
+    if (ad.steeringWheel) attrs.steeringWheel = ad.steeringWheel
+    
+    if (ad.vesselType) attrs.vesselType = ad.vesselType
+    if (ad.vesselLength != null) attrs.length = ad.vesselLength
+    if (ad.vesselWidth != null) attrs.width = ad.vesselWidth
+    if (ad.vesselDraft != null) attrs.draft = ad.vesselDraft
+    if (ad.maxPassengers != null) attrs.passengers = ad.maxPassengers
+    if (ad.vesselBodyMaterial) attrs.material = ad.vesselBodyMaterial
+    
+    if (ad.employment) attrs.employment = ad.employment
+    if (ad.workFormat) attrs.workFormat = ad.workFormat
+    if (ad.profession) attrs.profession = ad.profession
+    if (ad.sphere) attrs.sphere = ad.sphere
+    if (ad.workExperience != null) attrs.experience = ad.workExperience
+    
+    if (ad.petBreed) attrs.breed = ad.petBreed
+    if (ad.petName) attrs.petName = ad.petName
+    if (ad.petColor) attrs.petColor = ad.petColor
+    
+    if (ad.businessForm) attrs.businessForm = ad.businessForm
+    if (ad.isProfitable != null) attrs.isProfitable = ad.isProfitable
+    if (ad.payBackPeriod) attrs.payBackPeriod = ad.payBackPeriod
+    
+    if (ad.offerType) attrs.offerType = ad.offerType
+    if (ad.transactionScope) attrs.transactionScope = ad.transactionScope
+    
+    return attrs
+  }
   const getProductsByCategory = (category, section) => {
     return products.value.filter(p => {
       if (category && p.category !== category) return false
-      if (section && p.section !== section) return false
+      if (section && p.section !== section && p.subcategory !== section) return false
       return true
     })
   }
@@ -363,11 +183,10 @@ export const useProductStore = defineStore("product", () => {
 
   return {
     products,
-    filteredProducts,
     isLoading,
     fetchAdverts,
     getProductsByCategory,
     toggleLike,
-    resetLikes
+    resetLikes,
   }
 })

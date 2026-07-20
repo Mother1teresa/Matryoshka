@@ -1,17 +1,17 @@
 <script setup>
 import { ref, computed, watch, onMounted } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useProductStore } from "../../stores/product.js";
 import { notify } from "../../utils/notify";
 import heart from "/src/assets/img/icons/heart.svg";
 import heartFilled from "/src/assets/img/icons/heart-filled.svg";
 import { categories } from "/src/data/categories.js";
-
 import { useFavoritesStore } from "/src/stores/favoritesStore";
-const favStore = useFavoritesStore();
-
 import { useAuthStore } from "/src/stores/authStore.js";
 import { useModalStore } from "/src/stores/modal.js";
+import { API_FILTER_FIELDS } from "/src/utils/filterToApiMapper.js"
+
+const favStore = useFavoritesStore();
 const auth = useAuthStore();
 const modal = useModalStore();
 const isNumberShown = ref(false);
@@ -22,33 +22,38 @@ const props = defineProps({
   subcategory: String,
   filters: Object,
 });
+
 const route = useRoute();
+const router = useRouter();
 const store = useProductStore();
+
+const apiFilters = computed(() => {
+  const result = {}
+  if (props.category) result.category = props.category
+  if (props.subcategory || props.section) {
+    result.subcategory = props.subcategory || props.section
+  }
+  if (props.filters) {
+    for (const key of API_FILTER_FIELDS) {
+      const val = props.filters[key]
+      if (val !== '' && val !== null && val !== undefined) {
+        result[key] = val
+      }
+    }
+  }
+  return result
+})
+
 const loadData = () => {
   if (route.params.id) return;
-  store.fetchAdverts({
-    category: props.category,
-    section: props.section,
-    subcategory: props.subcategory,
-    ...props.filters,
-  });
+  store.fetchAdverts(apiFilters.value);
 };
-watch(
-  () => [props.category, props.section, props.subcategory, props.filters],
-  loadData,
-  { deep: true },
-);
+
+watch(apiFilters, loadData, { deep: true });
 onMounted(loadData);
 
-const displayItems = computed(() => {
-  let items = store.products;
-  return items.filter((p) => {
-    const isSameCategory = p.category === props.category;
-    const isSameSection = !props.section || p.section === props.section;
-    const isSameSub = !props.subcategory || p.subcategory === props.subcategory;
-    return isSameCategory && isSameSection && isSameSub;
-  });
-});
+const displayItems = computed(() => store.products);
+
 const getImageUrl = (item) => {
   if (item.images && item.images.length > 0) {
     return item.images[0];
@@ -65,10 +70,8 @@ const onLikeClick = (item) => {
     return;
   }
   favStore.toggle(item.id);
-  emit("toggle-like", item.id);
 };
 
-onMounted(async () => {});
 const checkAuthAndRun = (
   action,
   message = "Авторизуйтесь, чтобы продолжить",
@@ -80,11 +83,13 @@ const checkAuthAndRun = (
   }
   action();
 };
+
 const onShowNumberClick = () => {
   checkAuthAndRun(() => {
     isNumberShown.value = true;
   }, "Войдите, чтобы увидеть номер телефона");
 };
+
 const onWriteClick = async (item) => {
   checkAuthAndRun(async () => {
     try {
@@ -95,6 +100,7 @@ const onWriteClick = async (item) => {
     }
   }, "Войдите, чтобы написать сообщение");
 };
+
 const getSubcategoryName = (item) => {
   const targetSlug = item.subcategory || item.section;
   if (!targetSlug) return "";
@@ -132,6 +138,7 @@ const getCategoryDisplayName = (catSlug, secSlug) => {
   }
   return { catName, secName };
 };
+
 const emptyStateText = computed(() => {
   const { catName, secName } = getCategoryDisplayName(props.category, props.section);
   if (secName && secName !== props.section) {
@@ -139,8 +146,8 @@ const emptyStateText = computed(() => {
   }
   return `Нет объявлений в категории "${catName}"`;
 });
-
 </script>
+
 <template>
   <div class="horizontal-list">
     <div v-if="store.isLoading">Загрузка...</div>
@@ -179,35 +186,21 @@ const emptyStateText = computed(() => {
               <template v-if="item.category === 'rabota' && item.salary">
                 {{ item.salary.toLocaleString() }} ₽
               </template>
-              <!-- Если это обычный товар или недвижимость -->
               <template v-else-if="item.price">
                 {{ item.price.toLocaleString() }} ₽
                 <span
-                  v-if="
-                    item.category === 'nedvizhimost' &&
-                    (subcategory === 'rent' ||
-                      $route.params.subcategory === 'rent')
-                  "
+                  v-if="item.category === 'nedvizhimost' && (subcategory === 'rent' || $route.params.subcategory === 'rent')"
                   class="price-period"
                 >
-                  в месяц</span
-                >
+                  в месяц
+                </span>
               </template>
             </span>
-            <!-- Доп. инфо (например, цена за м2 для недвижки) -->
             <span
               class="price-extra"
-              v-if="
-                item.category === 'nedvizhimost' &&
-                (subcategory === 'rent' ||
-                  $route.params.subcategory === 'rent') &&
-                item.attributes?.area
-              "
+              v-if="item.category === 'nedvizhimost' && (subcategory === 'rent' || $route.params.subcategory === 'rent') && item.attributes?.area"
             >
-              {{
-                Math.round(item.price / item.attributes.area).toLocaleString()
-              }}
-              ₽ за м2
+              {{ Math.round(item.price / item.attributes.area).toLocaleString() }} ₽ за м2
             </span>
           </div>
           <div class="card-location">
@@ -230,13 +223,13 @@ const emptyStateText = computed(() => {
           </div>
         </div>
       </div>
-      <!-- Сообщение, если ничего не нашли -->
       <div v-if="displayItems.length === 0" class="empty-state">
         {{ emptyStateText }}
       </div>
     </template>
   </div>
 </template>
+
 <style scoped>
 .horizontal-list {
   display: flex;
@@ -253,7 +246,6 @@ const emptyStateText = computed(() => {
   border-radius: 1.25rem;
   width: 60.875rem;
 }
-
 .card-img {
   width: 7.875rem;
   height: 11.188rem;
@@ -273,7 +265,6 @@ const emptyStateText = computed(() => {
   color: #7c7c7c;
   font-size: 0.938rem;
 }
-
 .card-btn {
   background: var(--btn-bg);
   color: white;
@@ -325,7 +316,6 @@ const emptyStateText = computed(() => {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-/* Тот самый "Офис" или "Седан" внизу */
 .card-footer-info {
   margin-top: auto;
   color: #b0b0b0;

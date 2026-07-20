@@ -1,38 +1,122 @@
 <script setup>
-import { ref, watch, computed } from 'vue'; 
-import { useRouter, useRoute } from 'vue-router';
-import Multiselect from 'vue-multiselect';
-import 'vue-multiselect/dist/vue-multiselect.css';
-import { productFields } from "/src/stores/productFields.js";
-const props = defineProps({ type: String });
-const router = useRouter();
-const route = useRoute();
-const typeParam = computed(() => route.params.type);
-const sectionParam = computed(() => route.params.section);
-const subcategoryParam = computed(() => route.params.subcategory);
-const isExpanded = ref(false);
-const isLoading = ref(false);
-const form = ref({});
+import { ref, watch, computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import Multiselect from 'vue-multiselect'
+import 'vue-multiselect/dist/vue-multiselect.css'
+import { productFields } from "/src/stores/productFields.js"
+import { buildSearchDto } from "/src/utils/filterToApiMapper.js"
 
-const normalizeQuery = (query) => {const q = { ...query };if (q.priceFrom) q.priceFrom = Number(q.priceFrom);if (q.priceTo) q.priceTo = Number(q.priceTo);return q;};
-const mapToBackend = (formData) => {return Object.fromEntries(Object.entries(formData).filter(([_, v]) => v !== '' && v !== null && !(Array.isArray(v) && v.length === 0)));};
-const currentConfig = computed(() => {const config = productFields[typeParam.value];if (!config) return { main: [], extra: [] };const section = config[sectionParam.value];if (!section) return config.default || { main: [], extra: [] };if (subcategoryParam.value && section[subcategoryParam.value]) {return section[subcategoryParam.value];}return section.default || section;});
-const mainFields = computed(() => currentConfig.value.main || []);
-const extraFields = computed(() => currentConfig.value.extra || []);
-const hasExtra = computed(() => extraFields.value.length > 0);
-watch(currentConfig, (newConfig) => {const obj = {};[...(newConfig.main || []), ...(newConfig.extra || [])].forEach(field => {obj[field.key] = field.type === 'chips' ? [] : '';});
-form.value = { ...obj, ...normalizeQuery(route.query) };}, { immediate: true });
+const router = useRouter()
+const route = useRoute()
 
-const fetchProducts = async () => {isLoading.value = true;try {const params = {...mapToBackend(form.value),type: typeParam.value,section: sectionParam.value,subcategory: subcategoryParam.value};console.log("API Request:", params);
-    // const response = await api.get('/adverts', { params });
-} catch (e) {console.error("Ошибка загрузки:", e);} finally {isLoading.value = false;}};
-watch(() => route.fullPath, () => {fetchProducts();}, { immediate: true });
+const typeParam = computed(() => route.params.type)
+const sectionParam = computed(() => route.params.section)
+const subcategoryParam = computed(() => route.params.subcategory)
+const isExpanded = ref(false)
+const form = ref({})
 
-const applyFilters = () => {const cleanData = mapToBackend(form.value);router.push({name: 'catalog',params: route.params,query: cleanData});};
+// Добавить в CatalogFilter.vue
+import { 
+  buildSearchDto, 
+  employmentMap, workFormatMap, propertyTypeMap, 
+  vehicleKppMap, driveMap, vesselTypeMap, paymentTypeMap,
+  businessFormMap, offerTypeMap, transactionScopeMap,
+  steeringWheelMap, coolingMap, genderMap, houseStateMap, engineTypeMap
+} from "/src/utils/filterToApiMapper.js"
+
+// Обратные мапперы (API -> UI)
+const REVERSE_MAPS = {
+  employment: Object.fromEntries(Object.entries(employmentMap).map(([k,v]) => [v,k])),
+  workFormat: Object.fromEntries(Object.entries(workFormatMap).map(([k,v]) => [v,k])),
+  propertyType: Object.fromEntries(Object.entries(propertyTypeMap).map(([k,v]) => [v,k])),
+  vehicleKpp: Object.fromEntries(Object.entries(vehicleKppMap).map(([k,v]) => [v,k])),
+  drive: Object.fromEntries(Object.entries(driveMap).map(([k,v]) => [v,k])),
+  vesselType: Object.fromEntries(Object.entries(vesselTypeMap).map(([k,v]) => [v,k])),
+  paymentType: Object.fromEntries(Object.entries(paymentTypeMap).map(([k,v]) => [v,k])),
+  businessForm: Object.fromEntries(Object.entries(businessFormMap).map(([k,v]) => [v,k])),
+  offerType: Object.fromEntries(Object.entries(offerTypeMap).map(([k,v]) => [v,k])),
+  transactionScope: Object.fromEntries(Object.entries(transactionScopeMap).map(([k,v]) => [v,k])),
+  steeringWheel: Object.fromEntries(Object.entries(steeringWheelMap).map(([k,v]) => [v,k])),
+  cooling: Object.fromEntries(Object.entries(coolingMap).map(([k,v]) => [v,k])),
+  gender: Object.fromEntries(Object.entries(genderMap).map(([k,v]) => [v,k])),
+  houseState: Object.fromEntries(Object.entries(houseStateMap).map(([k,v]) => [v,k])),
+  engineType: Object.fromEntries(Object.entries(engineTypeMap).map(([k,v]) => [v,k])),
+}
+
+const normalizeQuery = (query) => {
+  const q = { ...query }
+  if (q.priceFrom) q.priceFrom = Number(q.priceFrom)
+  if (q.priceTo) q.priceTo = Number(q.priceTo)
+  
+  // Обратный маппинг API-значений в UI-значения
+  for (const [key, val] of Object.entries(q)) {
+    if (REVERSE_MAPS[key] && REVERSE_MAPS[key][val]) {
+      q[key] = REVERSE_MAPS[key][val]
+    }
+  }
+  
+  return q
+}
+const normalizeQuery = (query) => {
+  const q = { ...query }
+  if (q.priceFrom) q.priceFrom = Number(q.priceFrom)
+  if (q.priceTo) q.priceTo = Number(q.priceTo)
+  return q
+}
+
+const mapToBackend = (formData) => {
+  const clean = {}
+  for (const [k, v] of Object.entries(formData)) {
+    if (v !== '' && v !== null && v !== undefined && !(Array.isArray(v) && v.length === 0)) {
+      clean[k] = v
+    }
+  }
+  return clean
+}
+
+const currentConfig = computed(() => {
+  const config = productFields[typeParam.value]
+  if (!config) return { main: [], extra: [] }
+  const section = config[sectionParam.value]
+  if (!section) return config.default || { main: [], extra: [] }
+  if (subcategoryParam.value && section[subcategoryParam.value]) {
+    return section[subcategoryParam.value]
+  }
+  return section.default || section
+})
+
+const mainFields = computed(() => currentConfig.value.main || [])
+const extraFields = computed(() => currentConfig.value.extra || [])
+const hasExtra = computed(() => extraFields.value.length > 0)
+
+watch(currentConfig, (newConfig) => {
+  const obj = {}
+  ;[...(newConfig.main || []), ...(newConfig.extra || [])].forEach(field => {
+    obj[field.key] = field.type === 'chips' ? [] : ''
+  })
+  form.value = { ...obj, ...normalizeQuery(route.query) }
+}, { immediate: true })
+
+watch(() => route.query, (newQuery) => {
+  form.value = { ...form.value, ...normalizeQuery(newQuery) }
+}, { deep: true })
+
+const applyFilters = () => {
+  const cleanData = mapToBackend(form.value)
+  const apiCategory = typeParam.value
+  const apiSubCategory = subcategoryParam.value || sectionParam.value || ''
+  const apiDto = buildSearchDto(cleanData, apiCategory, apiSubCategory)
+  router.push({
+    name: 'catalog',
+    params: route.params,
+    query: apiDto
+  })
+}
+
 const toggleChip = (key, value) => {
-  const arr = form.value[key] || [];
-  form.value[key] = arr.includes(value) ? arr.filter(v => v !== value) : [...arr, value];
-};
+  const arr = form.value[key] || []
+  form.value[key] = arr.includes(value) ? arr.filter(v => v !== value) : [...arr, value]
+}
 </script>
 <template>
   <div class="filter-wrapper">
@@ -43,30 +127,26 @@ const toggleChip = (key, value) => {
           <div class="transport-layout">
             <div class="extra-row" :class="currentConfig.extraClass">
               <template v-for="field in mainFields" :key="field.key">
-                  <div v-if="field.type === 'select'" class="multiselect-container">
-                    <multiselect
-                      v-model="form[field.key]"
-                      :options="field.options || []"
-                      :placeholder="field.label"
-                      :searchable="false"
-                      :show-labels="false"
-                      open-direction="bottom">
-                      <template #caret><div class="multiselect__caret"></div></template>
-                      <template #noResult>
-                        <span>Ничего не найдено. Попробуйте изменить запрос.</span>
-                      </template>
-                      <template #noOptions>
-                        <span>Список пуст.</span>
-                      </template>
-                    </multiselect>
-                  </div>
-                  <input
-                    v-else-if="field.type === 'number'"
+                <div v-if="field.type === 'select'" class="multiselect-container">
+                  <multiselect
                     v-model="form[field.key]"
-                    type="number"
+                    :options="field.options || []"
                     :placeholder="field.label"
-                    class="f-input"/>
-                </template>
+                    :searchable="false"
+                    :show-labels="false"
+                    open-direction="bottom">
+                    <template #caret><div class="multiselect__caret"></div></template>
+                    <template #noResult><span>Ничего не найдено</span></template>
+                    <template #noOptions><span>Список пуст</span></template>
+                  </multiselect>
+                </div>
+                <input
+                  v-else-if="field.type === 'number'"
+                  v-model="form[field.key]"
+                  type="number"
+                  :placeholder="field.label"
+                  class="f-input"/>
+              </template>
             </div>
             <button v-if="hasExtra" class="expand-btn" @click="isExpanded = !isExpanded">
               <img src="/src/assets/img/arr-select.svg" :class="{ rotate: isExpanded }">
@@ -74,46 +154,45 @@ const toggleChip = (key, value) => {
           </div>
         </div>
       </div>
-      <!-- Раскрывашка (Extra Fields) -->
       <div v-if="isExpanded && hasExtra" class="filter-extra" :class="currentConfig.extraClass">
         <div class="transport-grid-container">
-            <div v-for="field in extraFields" :key="field.key" class="extra-group" :class="[field.type, field.gridClass]">
-              <label class="field-label-top">{{ field.titlelabel || field.label }}</label>
-              <div v-if="field.type === 'chips'" class="chips-row">
-                <button
-                  v-for="opt in field.options || []"
-                  :key="opt"
-                  class="chip-item"
-                  :class="{ active: form[field.key]?.includes(opt)}"
-                  @click="toggleChip(field.key, opt)">
-                  {{ opt }}
-                </button>
-              </div>
-              <div v-else-if="field.type === 'select'" class="multiselect-container">
-                <multiselect
-                  v-model="form[field.key]"
-                  :options="field.options || []"
-                  :placeholder="field.label"
-                  :searchable="false"
-                  :show-labels="false"
-                  open-direction="bottom">
-                  <template #caret><div class="multiselect__caret"></div></template>
-                  <!-- Переводы -->
-                  <template #noResult>
-                    <span>Ничего не найдено. Попробуйте изменить запрос.</span>
-                  </template>
-                  <template #noOptions>
-                    <span>Список пуст.</span>
-                  </template>
-                </multiselect>
-              </div>
-              <div v-else-if="field.type === 'number'" class="range-inputs">
-                <input v-model="form[field.key]" type="number" :placeholder="field.label" class="f-input" />
-              </div>
+          <div v-for="field in extraFields" :key="field.key" class="extra-group" :class="[field.type, field.gridClass]">
+            <label class="field-label-top">{{ field.titlelabel || field.label }}</label>
+            <div v-if="field.type === 'chips'" class="chips-row">
+              <button
+                v-for="opt in field.options || []"
+                :key="opt"
+                class="chip-item"
+                :class="{ active: form[field.key]?.includes(opt)}"
+                @click="toggleChip(field.key, opt)">
+                {{ opt }}
+              </button>
             </div>
+            <div v-else-if="field.type === 'select'" class="multiselect-container">
+              <multiselect
+                v-model="form[field.key]"
+                :options="field.options || []"
+                :placeholder="field.label"
+                :searchable="false"
+                :show-labels="false"
+                open-direction="bottom">
+                <template #caret><div class="multiselect__caret"></div></template>
+                <template #noResult><span>Ничего не найдено</span></template>
+                <template #noOptions><span>Список пуст</span></template>
+              </multiselect>
+            </div>
+            <div v-else-if="field.type === 'number'" class="range-inputs">
+              <input v-model="form[field.key]" type="number" :placeholder="field.label" class="f-input" />
+            </div>
+          </div>
         </div>
-      </div><div class="filter-footer"><button class="apply-btn" @click="applyFilters">Показать</button></div>
-</div></div></template>
+      </div>
+      <div class="filter-footer">
+        <button class="apply-btn" @click="applyFilters">Показать</button>
+      </div>
+    </div>
+  </div>
+</template>
 <style scoped>
 .filter-title{
   font-size: 1.2rem;
@@ -190,6 +269,7 @@ flex-direction: column;}
   border-bottom-right-radius: 0;
   z-index: 50;
   -webkit-overflow-scrolling: touch;
+  transition: all .35s;
 }
 :deep(.multiselect__tag){
   padding: 0.25rem 1.2rem 0.25rem 0.425rem;

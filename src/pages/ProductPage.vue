@@ -259,7 +259,6 @@ const sellerRating = computed(() => {
 });
 
 // === ГЕОКОДИРОВАНИЕ ===
-// === ГЕОКОДИРОВАНИЕ ===
 const resolveCoordinates = async () => {
   if (hasCoordinatesFromApi.value) {
     const [lng, lat] = product.value.coordinates;
@@ -413,7 +412,7 @@ const loadProduct = async (id) => {
         sellerId: data.userId || data.sellerId,
         images: data.pictures?.map(p => p.pictureUrl || p.url) || [],
         image: data.pictures?.[0]?.pictureUrl || data.thumbnailUrl || '/src/assets/img/placeholder.png',
-        attributes: data.attributes || {},
+        attributes: productStore.buildAttributes?.(data) || buildAttributesFallback(data),
         ...data
       };
     }
@@ -441,8 +440,29 @@ const loadProduct = async (id) => {
 const loadSimilarProducts = async () => {
   if (!product.value) return;
   try {
-    // const res = await api.get('/advert/similar', { ... });
-    // similarProducts.value = res.data || [];
+    await productStore.fetchAdverts({
+      category: product.value.category,
+      section: product.value.section,
+      // subCategory: product.value.section,
+      take: 6
+    }, true);
+    
+    similarProducts.value = productStore.products
+      .filter(p => String(p.id) !== String(product.value.id))
+      .slice(0, 5)
+      .map(ad => ({
+        id: ad.id,
+        title: ad.title,
+        price: ad.price,
+        city: ad.city,
+        category: ad.category,
+        section: ad.section,
+        subcategory: ad.subcategory,
+        images: ad.images,
+        image: ad.image,
+        description: ad.description,
+        sellerId: ad.sellerId,
+      }));
   } catch (e) {
     console.error('Ошибка загрузки похожих:', e);
     similarProducts.value = [];

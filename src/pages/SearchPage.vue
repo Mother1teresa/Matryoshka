@@ -174,81 +174,32 @@ const onLikeClick = (item) => {
   }, "Войдите, чтобы добавить в избранное");
 };
 
-// === ПОИСК ТОВАРОВ: API + ЛОКАЛЬНЫЕ ===
+// === ПОИСК ТОВАРОВ: API ===
 const searchProducts = async (q) => {
-  const qLow = q.toLowerCase();
-  let apiResults = [];
-  let localResults = [];
-
-  // 1. Поиск через API
+  const qLow = q.toLowerCase()
+  
   try {
-    const res = await api.get('/advert', {
-      params: {
-        dto: JSON.stringify({ query: q, take: 50 })
-      }
-    });
-    const ads = Array.isArray(res.data) ? res.data : res.data?.items || [];
+    // Один запрос к API с поиском
+    await productStore.fetchAdverts({ 
+      query: q, 
+      take: 50 
+    }, true) // всегда свежий запрос
     
-    apiResults = ads.map((ad) => ({
-      id: ad.id,
-      title: ad.title || 'Без названия',
-      price: Number(ad.price) || 0,
-      city: ad.address || ad.city || '',
-      category: ad.category || 'tovary',
-      section: ad.section || ad.subCategory || 'default',
-      image: '/src/assets/img/placeholder.png',
-      source: 'api',
-    }));
+    // Преобразуем загруженные товары в формат поиска
+    return productStore.products.map(p => ({
+      id: p.id,
+      title: p.title,
+      price: p.price,
+      city: p.city,
+      category: p.category,
+      section: p.section,
+      image: p.image,
+    }))
   } catch (e) {
-    console.warn("API поиска товаров недоступен:", e);
+    console.error("Ошибка поиска:", e)
+    return []
   }
-
-  // 2. Загружаем локальные товары если ещё нет
-  if (productStore.products.length === 0) {
-    try {
-      await productStore.fetchAdverts();
-    } catch (e) {
-      console.warn("Не удалось загрузить товары:", e);
-    }
-  }
-
-  // 3. Фильтруем локальные товары
-  const localMatches = productStore.products.filter((p) => {
-    const title = (p.title || "").toLowerCase();
-    const desc = (p.description || "").toLowerCase();
-    const city = (p.city || "").toLowerCase();
-    return title.includes(qLow) || desc.includes(qLow) || city.includes(qLow);
-  });
-
-  localResults = localMatches.map((p) => ({
-    id: p.id,
-    title: p.title,
-    price: p.price,
-    city: p.city,
-    category: p.category,
-    section: p.section,
-    image: p.image || p.images?.[0] || '/src/assets/img/placeholder.png',
-    source: 'local',
-  }));
-
-  // 4. Мержим: API + локальные без дублей
-  const apiIds = new Set(apiResults.map(r => String(r.id)));
-  const merged = [
-    ...apiResults,
-    ...localResults.filter(l => !apiIds.has(String(l.id)))
-  ];
-
-  // 5. Если API вернул ID, но нет картинки — ищем картинку в локальных
-  return merged.map(item => {
-    if (item.source === 'api') {
-      const localMatch = localResults.find(l => String(l.id) === String(item.id));
-      if (localMatch && localMatch.image !== '/src/assets/img/placeholder.png') {
-        return { ...item, image: localMatch.image };
-      }
-    }
-    return item;
-  });
-};
+}
 
 // === ПОИСК ВИДЕО ===
 const searchVideos = async (q) => {

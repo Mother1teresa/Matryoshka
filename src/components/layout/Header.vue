@@ -430,6 +430,7 @@ const handleCreateVideo = () => {
 }
 .header__right-true .btn-light {
   width: 100%;
+  text-transform: capitalize;
 }
 .profile-wrapper {
   position: relative;
