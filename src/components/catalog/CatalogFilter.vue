@@ -54,12 +54,6 @@ const normalizeQuery = (query) => {
   
   return q
 }
-const normalizeQuery = (query) => {
-  const q = { ...query }
-  if (q.priceFrom) q.priceFrom = Number(q.priceFrom)
-  if (q.priceTo) q.priceTo = Number(q.priceTo)
-  return q
-}
 
 const mapToBackend = (formData) => {
   const clean = {}
