@@ -4,7 +4,13 @@ import { useRouter, useRoute } from 'vue-router'
 import Multiselect from 'vue-multiselect'
 import 'vue-multiselect/dist/vue-multiselect.css'
 import { productFields } from "/src/stores/productFields.js"
-import { buildSearchDto } from "/src/utils/filterToApiMapper.js"
+import { 
+  buildSearchDto, 
+  employmentMap, workFormatMap, propertyTypeMap, 
+  vehicleKppMap, driveMap, vesselTypeMap, paymentTypeMap,
+  businessFormMap, offerTypeMap, transactionScopeMap,
+  steeringWheelMap, coolingMap, genderMap, houseStateMap, engineTypeMap
+} from "/src/utils/filterToApiMapper.js"
 
 const router = useRouter()
 const route = useRoute()
@@ -14,15 +20,6 @@ const sectionParam = computed(() => route.params.section)
 const subcategoryParam = computed(() => route.params.subcategory)
 const isExpanded = ref(false)
 const form = ref({})
-
-// Добавить в CatalogFilter.vue
-import { 
-  buildSearchDto, 
-  employmentMap, workFormatMap, propertyTypeMap, 
-  vehicleKppMap, driveMap, vesselTypeMap, paymentTypeMap,
-  businessFormMap, offerTypeMap, transactionScopeMap,
-  steeringWheelMap, coolingMap, genderMap, houseStateMap, engineTypeMap
-} from "/src/utils/filterToApiMapper.js"
 
 // Обратные мапперы (API -> UI)
 const REVERSE_MAPS = {
