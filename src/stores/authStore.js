@@ -526,7 +526,19 @@ export const useAuthStore = defineStore("auth", {
       try {
         const response = await api.get(`/feed/video/${videoId}`);
         const video = response.data;
-        
+        let author = video.author;
+        if (author?.id) {
+          const profile = await this.fetchProfileById(author.id);
+          if (profile) {
+            author = {
+              id: author.id,
+              name: author.name || profile.name || 'Пользователь',
+              username: profile.username || author.name,
+              avatar: profile.avatar || '/public/img/users/mask-avatar.png',
+              rating: profile.rating || 0
+            };
+          }
+        }
         return {
           id: video.id,
           cdnUrl: video.cdnUrl || '',
@@ -535,15 +547,26 @@ export const useAuthStore = defineStore("auth", {
           views: video.views || 0,
           commentsCount: video.comments?.length || video.commentsCount || 0,
           createdAt: video.createdAt || '',
-          comments: video.comments || [],
+          comments: (video.comments || []).map(c => ({
+            id: c.id,
+            text: c.text,
+            name: c.name,
+            parentId: c.parentId,
+            createdAt: c.createdAt,
+            author: {
+              id: c.author?.id,
+              name: c.author?.name || 'Пользователь',
+              avatar: '/public/img/users/mask-avatar.png' // Комментарии без аватаров в API
+            }
+          })),
           isLikedByMe: false,
           isFavorite: false,
-          author: {
-            id: video.author?.id || '',
-            name: video.author?.name || 'Пользователь',
-            username: video.author?.name || '',
-            avatar: video.author?.avatar || '/public/img/users/mask-avatar.png',
-            rating: video.author?.rating
+           author: author || {
+            id: '',
+            name: 'Пользователь',
+            username: '',
+            avatar: '/public/img/users/mask-avatar.png',
+            rating: 0
           }
         };
       } catch (e) {
@@ -558,7 +581,18 @@ export const useAuthStore = defineStore("auth", {
       const details = await this.fetchVideo(videoId);
       if (!details) return video;
       
-      // Обновляем реактивно
+      // Если author без avatar/rating — догружаем отдельно
+      if (details.author?.id && (!details.author.avatar || !details.author.rating)) {
+        const profile = await this.fetchProfileById(details.author.id);
+        if (profile) {
+          details.author = {
+            ...details.author,
+            avatar: profile.avatar || '/public/img/users/mask-avatar.png',
+            rating: profile.rating || 0
+          };
+        }
+      }
+      
       Object.assign(video, {
         views: details.views,
         author: details.author,
@@ -890,7 +924,6 @@ export const useAuthStore = defineStore("auth", {
         if (e.response?.data?.code === "SESSION_EXPIRED") this.logout();
       }
     },
-    // В actions добавь:
     async fetchProfileById(userId) {
       if (!userId) {
         console.error("fetchProfileById: userId не передан");
@@ -991,43 +1024,26 @@ export const useAuthStore = defineStore("auth", {
       this.isVideosLoading = true;
       try {
         const res = await api.get('/media/video', {
-          params: { userId }  // бэкенд фильтрует по userId
+          params: { userId }
         });
         const rawVideos = Array.isArray(res.data) ? res.data : [];
 
-        const enrichedVideos = await Promise.all(rawVideos.map(async (v) => {
-          let userData = null;
-          if (v.userId) {
-            try {
-              // const userRes = await api.get(`/users/${v.userId}`);
-              // userData = userRes.data;
-            } catch (e) {
-              console.log(`Автор ${v.userId} не найден`);
-            }
-          }
-
-          return {
-            ...v,
-            s3Key: v.s3Key || v.fileName || v.id,
-            thumbnail: v.thumbnailUrl || v.cdnUrl || v.url,
-            description: v.description || 'Описание ролика временно недоступно',
-            isArchived: v.isArchived || false,
-            likes: v.likes || v.likesCount || 0,
-            likesCount: v.likesCount || v.likes || 0,
-            author: {
-              name: userData?.username || userData?.name || 'Пользователь',
-              avatar: userData?.avatar || userData?.avatarUrl || maskAvatar,
-              city: userData?.city || 'Город не указан',
-              rating: userData?.rating || 0,
-              deals: userData?.dealsCount || 0
-            },
-            viewsCount: v.viewsCount || 0,
-            commentsCount: v.commentsCount || 0, 
-            commentsDisabled: v.commentsDisabled || false
-          };
+        return rawVideos.map(v => ({
+          id: v.id,
+          s3Key: v.s3Key || v.fileName || v.id,
+          thumbnail: v.thumbnailUrl || v.cdnUrl || v.url,
+          cdnUrl: v.cdnUrl || '',
+          description: v.description || 'Описание ролика временно недоступно',
+          isArchived: v.isArchived || false,
+          likes: v.likes || v.likesCount || 0,
+          likesCount: v.likesCount || v.likes || 0,
+          viewsCount: v.viewsCount || 0,
+          commentsCount: v.commentsCount || 0,
+          commentsDisabled: v.commentsDisabled || false,
+          duration: v.duration || '',
+          // Автор не заполняем здесь — подставим в компоненте из профиля
+          userId: v.userId
         }));
-
-        return enrichedVideos;  // ← возвращаем, не сохраняем в allVideos
       } catch (e) {
         console.error("Ошибка загрузки видео пользователя:", e);
         return [];

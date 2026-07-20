@@ -7,6 +7,7 @@
         <router-link to="/">Главная</router-link>
         <span> → {{ sellerName }}</span>
       </div>
+      
       <!-- Карточка продавца -->
       <div class="seller-card-main">
         <div class="seller-header-flex">
@@ -20,10 +21,8 @@
                 <div class="seller-type">
                   {{ sellerType }}
                 </div>
-                <div class="rating-block">
-                  <div class="rating">{{ sellerRating }} <span>★★★★★</span>
-                    <small> ({{ sellerReviewsCount }})</small>
-                  </div>
+                <div class="rating-block" v-if="seller.rating">
+                  <div class="rating">{{ seller.rating }} <span>★★★★★</span></div>
                 </div>
               </div>
               <div class="seller-desc">
@@ -41,10 +40,10 @@
           </div>
           <div class="seller-info-right">
             <div class="experience">{{ membershipText }}</div>
-            <!-- <button class="btn-subscribe-text" @click="onSubscribeClick" :class="{ 'is-active': subStore.isSubscribed(seller?.id) }"> {{ subStore.isSubscribed(seller?.id) ? "Отписаться" : "Подписаться" }}</button> -->
           </div>
         </div>
       </div>
+      <!-- Табы -->
       <div class="seller-tabs">
         <button :class="{ active: currentTab === 'announcements' }" @click="currentTab = 'announcements'">
           Объявления
@@ -56,7 +55,9 @@
           Отзывы
         </button>
       </div>
+      <!-- Контент -->
       <div class="seller-content">
+        <!-- Объявления -->
         <div v-if="currentTab === 'announcements'" class="products-grid-wrapper">
           <div v-if="sellerProducts.length" class="products">
             <ProductCard v-for="product in sellerProducts" :key="product.id" :product="product"/>
@@ -65,6 +66,8 @@
             <p>У продавца пока нет объявлений</p>
           </div>
         </div>
+        
+        <!-- Видео -->
         <div v-if="currentTab === 'video'" class="video-grid">
           <div v-if="!auth.isAuthenticated" class="auth-overlay">
             <div class="auth-content">
@@ -76,23 +79,20 @@
               </p>
             </div>
           </div>
-          <!-- Контент для авторизованных -->
           <template v-else>
             <div v-if="sellerVideos.length" class="video-grid_block">
               <div v-for="video in sellerVideos" :key="video.id" class="video-card">
                 <div class="video-preview" @click="playVideo(video)">
                   <video 
-                    :src="video.thumbnail || video.cdnUrl || video.url"
+                    :src="video.cdnUrl"
                     class="video-thumb"
                     preload="metadata"
                     muted
                     playsinline
                   ></video>
-                  <span class="duration">{{ video.duration }}</span>
                 </div>
                 <div class="video-info">
                   <div class="video-title">{{ video.description }}</div>
-                  <div class="video-date">{{ video.date }}</div>
                 </div>
               </div>
             </div>
@@ -101,8 +101,10 @@
             </div>
           </template>
         </div>
+        
+        <!-- Отзывы -->
         <div v-if="currentTab === 'reviews'" class="reviews-container">
-          <div v-if="reviewStore.isLoading" class="block__loading">
+          <div v-if="isReviewsLoading" class="block__loading">
             Загрузка отзывов...
           </div>
           <template v-else-if="sellerReviews.length">
@@ -140,9 +142,8 @@
         </div>
       </div>
     </div>
-    <!-- Загрузка -->
+    
     <div v-else-if="isLoading" class="block__loading">Загрузка...</div>
-    <!-- Не найден -->
     <div v-else class="block__loading">Продавец не найден</div>
   </section>
 </template>
@@ -152,10 +153,8 @@ import { ref, computed, watch, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "/src/stores/authStore.js";
 import { useModalStore } from "/src/stores/modal.js";
-import { notify } from "/src/utils/notify";
 import { useReviewStore } from "/src/stores/reviews.js";
-import { useSubscriptionStore } from "../stores/subscriptionStore.js";
-import { useSellerStore } from "/src/stores/sellers.js";
+import { notify } from "/src/utils/notify";
 
 import Header from '../components/layout/Header.vue';
 import ProductCard from "/src/components/product/ProductCard.vue";
@@ -164,16 +163,16 @@ const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
 const modal = useModalStore();
-const subStore = useSubscriptionStore();
 const reviewStore = useReviewStore();
-const sellerStore = useSellerStore();
 
 const currentTab = ref("announcements");
 const isDescExpanded = ref(false);
 const isLoading = ref(false);
+const isReviewsLoading = ref(false);
 
-// === ПРОДАВЕЦ ===
 const seller = ref(null);
+const sellerProducts = ref([]);
+const sellerVideos = ref([]);
 
 const sellerName = computed(() => {
   return seller.value?.name || seller.value?.username || seller.value?.companyName || 'Продавец';
@@ -187,11 +186,66 @@ const sellerDescription = computed(() => {
   return seller.value?.description || "Переходите на наш профиль, чтобы увидеть все актуальные предложения.";
 });
 
-const sellerRating = computed(() => reviewStore.getRatingById(route.params.id));
-const sellerReviewsCount = computed(() => reviewStore.getReviewsCountById(route.params.id));
+const sellerReviews = computed(() => reviewStore.reviews);
 
-// === ТОВАРЫ ПРОДАВЦА ===
-const sellerProducts = ref([]);
+const membershipText = computed(() => {
+  if (!seller.value?.createdAt) return 'На Матрёшке недавно';
+  
+  const date = new Date(seller.value.createdAt);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMonth = Math.floor(diffMs / (1000 * 60 * 60 * 24 * 30));
+  
+  if (diffMonth < 1) return 'На Матрёшке меньше месяца';
+  
+  const lastDigit = diffMonth % 10;
+  const lastTwo = diffMonth % 100;
+  let suffix = 'месяцев';
+  if (lastTwo < 11 || lastTwo > 14) {
+    if (lastDigit === 1) suffix = 'месяц';
+    else if (lastDigit >= 2 && lastDigit <= 4) suffix = 'месяца';
+  }
+  
+  return `На Матрёшке ${diffMonth} ${suffix}`;
+});
+
+// === ЗАГРУЗКА ДАННЫХ ===
+const loadSellerData = async (sellerId) => {
+  if (!sellerId) {
+    seller.value = null;
+    return;
+  }
+  
+  isLoading.value = true;
+  seller.value = null;
+  sellerProducts.value = [];
+  sellerVideos.value = [];
+  reviewStore.reviews = [];
+
+  try {
+    // 1. Загружаем профиль продавца
+    const profile = await auth.fetchProfileById(sellerId);
+    
+    if (!profile) {
+      seller.value = null;
+      return;
+    }
+    
+    seller.value = profile;
+
+    // 2. Загружаем товары и видео параллельно
+    await Promise.all([
+      loadSellerProducts(sellerId),
+      loadSellerVideos(sellerId),
+    ]);
+
+  } catch (err) {
+    console.error("Ошибка загрузки данных продавца:", err);
+    seller.value = null;
+  } finally {
+    isLoading.value = false;
+  }
+};
 
 const loadSellerProducts = async (sellerId) => {
   try {
@@ -217,96 +271,33 @@ const loadSellerProducts = async (sellerId) => {
   }
 };
 
-// === ВИДЕО ПРОДАВЦА ===
-const sellerVideos = ref([]);
 const loadSellerVideos = async (sellerId) => {
-  if (!sellerId) return;
   try {
     const videos = await auth.fetchVideosByUser(sellerId);
     sellerVideos.value = videos.map(v => ({
       ...v,
       author: {
-        ...v.author,
-        name: v.author?.username || v.author?.name || 'Пользователь'
+        id: seller.value?.id,
+        name: seller.value?.name || 'Пользователь',
+        avatar: seller.value?.avatar || '/src/assets/img/mask-avatar.png'
       }
     }));
   } catch (err) {
-    console.error("Ошибка загрузки видео продавца:", err);
+    console.error("Ошибка загрузки видео:", err);
     sellerVideos.value = [];
   }
 };
 
-// === ЗАГРУЗКА ВСЕХ ДАННЫХ ПРОДАВЦА ===
-const loadSellerData = async (sellerId) => {
-  if (!sellerId) {
-    seller.value = null;
-    return;
-  }
-  
-  isLoading.value = true;
-  seller.value = null;
-  sellerProducts.value = [];
-  sellerVideos.value = [];
-
+const loadReviews = async (sellerId) => {
+  isReviewsLoading.value = true;
   try {
-    // 1. Загружаем профиль продавца через API
-    const profile = await auth.fetchProfileById(sellerId);
-    
-    if (profile) {
-      seller.value = profile;
-    } else {
-      // Fallback: ищем в sellerStore
-      await sellerStore.ensureSellers(sellerId);
-      const storeSeller = sellerStore.getSellerById(sellerId);
-      if (storeSeller) {
-        seller.value = storeSeller;
-      } else {
-        // Последний fallback — минимальные данные
-        seller.value = {
-          id: sellerId,
-          name: "Загрузка...",
-          type: "private",
-        };
-      }
-    }
-
-    // 2. Параллельно загружаем остальное
-    await Promise.all([
-      reviewStore.fetchReviewsBySeller(sellerId),
-      loadSellerProducts(sellerId),
-      loadSellerVideos(sellerId),
-    ]);
-
+    await reviewStore.fetchReviewsBySeller(sellerId);
   } catch (err) {
-    console.error("Ошибка загрузки данных продавца:", err);
-    seller.value = null;
+    console.error("Ошибка загрузки отзывов:", err);
   } finally {
-    isLoading.value = false;
+    isReviewsLoading.value = false;
   }
 };
-
-const sellerReviews = computed(() => reviewStore.reviews);
-
-const membershipText = computed(() => {
-  if (!seller.value?.createdAt) return 'На Матрёшке недавно';
-  
-  const date = new Date(seller.value.createdAt);
-  const now = new Date();
-  const diffMs = now - date;
-  const diffMonth = Math.floor(diffMs / (1000 * 60 * 60 * 24 * 30));
-  
-  if (diffMonth < 1) return 'На Матрёшке меньше месяца';
-  
-  const lastDigit = diffMonth % 10;
-  const lastTwo = diffMonth % 100;
-  let suffix = 'месяцев';
-  if (lastTwo < 11 || lastTwo > 14) {
-    if (lastDigit === 1) suffix = 'месяц';
-    else if (lastDigit >= 2 && lastDigit <= 4) suffix = 'месяца';
-  }
-  
-  return `На Матрёшке ${diffMonth} ${suffix}`;
-});
 
 // === WATCH ===
 watch(() => route.params.id, (newId) => {
@@ -316,41 +307,30 @@ watch(() => route.params.id, (newId) => {
   }
 }, { immediate: true });
 
-onUnmounted(() => {
-  reviewStore.reviews = [];
-});
-
-// === ACTIONS ===
-const checkAuthAndRun = (action, message = "Авторизуйтесь, чтобы продолжить") => {
-  if (!auth.isAuthenticated) {
-    modal.openLogin();
-    notify(message);
-    return;
+watch(currentTab, (newTab) => {
+  if (newTab === 'reviews' && route.params.id) {
+    loadReviews(route.params.id);
   }
-  action();
-};
-
-const onSubscribeClick = () => {
-  const sellerId = seller.value?.id;
-  if (!sellerId) return;
-  
-  checkAuthAndRun(async () => {
-    const isNowSubscribed = await subStore.toggle(sellerId);
-    notify(isNowSubscribed ? "Вы подписались" : "Вы отписались");
-  });
-};
-
-const playVideo = (video) => {
-  router.push({ name: 'shorts', params: { id: video.id } });
-};
+});
 
 watch(() => seller.value?.name, (newName) => {
   if (newName) {
     document.title = `${newName} — продавец на Матрешка`;
   }
 }, { immediate: true });
-</script>
 
+onUnmounted(() => {
+  document.title = 'Матрешка';
+  reviewStore.reviews = [];
+});
+
+// === ACTIONS ===
+const openLogin = () => modal.openLogin();
+const openRegister = () => modal.openRegister();
+const playVideo = (video) => {
+  router.push({ name: 'shorts', params: { id: video.id } });
+};
+</script>
 <style scoped>
 .seller-page-section {
   margin-bottom: 3.188rem;
