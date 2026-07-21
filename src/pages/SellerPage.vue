@@ -21,8 +21,8 @@
                 <div class="seller-type">
                   {{ sellerType }}
                 </div>
-                <div class="rating-block" v-if="seller.rating">
-                  <div class="rating">{{ seller.rating }} <span>★★★★★</span></div>
+                <div class="rating-block" v-if="seller.rating !== undefined">
+                  <div class="rating">{{ seller.rating }} <span>{{ renderStars(seller.rating) }}</span></div>
                 </div>
               </div>
               <div class="seller-desc">
@@ -174,6 +174,10 @@ const seller = ref(null);
 const sellerProducts = ref([]);
 const sellerVideos = ref([]);
 
+const renderStars = (rating) => {
+  const r = Math.round(Number(rating) || 0);
+  return '★'.repeat(r) + '☆'.repeat(5 - r);
+};
 const sellerName = computed(() => {
   return seller.value?.name || seller.value?.username || seller.value?.companyName || 'Продавец';
 });

@@ -84,10 +84,10 @@
     </div>
   </Transition>
 </template>
-
 <script setup>
 import { ref, reactive, computed } from 'vue';
 import { useAuthStore } from "/src/stores/authStore.js";
+import { useReviewStore } from "/src/stores/reviews.js";
 import { uploadToMediaService } from "/src/utils/uploadService.js"
 import { notify } from "/src/utils/notify";
 
@@ -99,6 +99,7 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'success']);
 const auth = useAuthStore();
+const reviewStore = useReviewStore();
 const isSubmitting = ref(false);
 const previewImages = ref([]);
 const selectedFiles = ref([]);
@@ -135,27 +136,35 @@ const submitReview = async () => {
     const imageUrls = [];
     if (selectedFiles.value.length > 0) {
       for (const file of selectedFiles.value) {
-        const url = await uploadToMediaService(file, "image", {});
-        if (url) imageUrls.push(url);
+        const uploaded = await uploadToMediaService(file, "review_photo", {});
+        if (uploaded) {
+          // Как в примере с аватаром: cdnUrl || url || uploaded
+          const url = uploaded.cdnUrl || uploaded.url || uploaded;
+          if (url) imageUrls.push(url);
+        }
       }
     }
+    
     const payload = {
       targetUserId: props.targetUserId,
-      chatId: props.chatId,
+      authorId: auth.user?.id,
       rating: form.rating,
       comment: form.text,
       dealStatus: form.dealConfirmed,
       finishReason: form.dealConfirmed === 'no' ? form.reason : null,
       images: imageUrls
     };
-    await auth.createReview(payload);
+    
+    await reviewStore.createReview(payload);
     notify("Отзыв успешно отправлен!");
     emit('success');
     emit('close');
     
-    // Сброс данных
+    // Сброс
     form.rating = 0;
     form.text = '';
+    form.dealConfirmed = 'yes';
+    form.reason = '';
     previewImages.value = [];
     selectedFiles.value = [];
   } catch (e) {
@@ -166,7 +175,6 @@ const submitReview = async () => {
   }
 };
 </script>
-
 <style scoped>
 .review-modal {
   background: #fff;

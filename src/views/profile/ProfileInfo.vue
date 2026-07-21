@@ -51,14 +51,17 @@
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue';
 import { useAuthStore } from '/src/stores/authStore.js';
-import { useReviewStore } from '/src/stores/reviews.js';
 import ProfileEditModal from '../ProfileEditModal.vue';
 
-const reviewStore = useReviewStore();
 const auth = useAuthStore();
 const isModalOpen = ref(false);
-const userRating = computed(() => reviewStore.getRatingById(auth.user?.id));
-const userStars = computed(() => reviewStore.renderStars(userRating.value));
+
+// Рейтинг напрямую из профиля
+const userRating = computed(() => auth.user?.rating || 0);
+const userStars = computed(() => {
+  const r = Math.round(userRating.value);
+  return '★'.repeat(r) + '☆'.repeat(5 - r);
+});
 
 const fetchUserData = async () => {
   if (!auth.user?.id) {
@@ -66,22 +69,33 @@ const fetchUserData = async () => {
     return;
   }
   try {
-    await auth.fetchProfile();
-    await reviewStore.fetchReviewsBySeller(auth.user.id);
+    await auth.fetchProfile(); // Тут rating обновится в auth.user
   } catch (e) {
     console.error("Не удалось загрузить данные профиля:", e);
   }
 };
-const userRole = computed(() => {return auth.user?.role;});
+
+const userRole = computed(() => auth.user?.role);
 const positionMap = {
   'manager': 'Менеджер по продажам',
   'director': 'Директор',
   'employee': 'Сотрудник'
 };
 
-const getPositionName = (position) => {if (!position) return '';return positionMap[position] ? ` ${positionMap[position]}` : ` ${position}`;};
-onMounted(() => {fetchUserData();});
-watch(isModalOpen, (newVal) => {if (newVal) {document.body.classList.add("overflow-mod");} else {document.body.classList.remove("overflow-mod");}});
+const getPositionName = (position) => {
+  if (!position) return '';
+  return positionMap[position] ? ` ${positionMap[position]}` : ` ${position}`;
+};
+
+onMounted(() => { fetchUserData(); });
+
+watch(isModalOpen, (newVal) => {
+  if (newVal) {
+    document.body.classList.add("overflow-mod");
+  } else {
+    document.body.classList.remove("overflow-mod");
+  }
+});
 </script>
 <style scoped>
 .profile-container {

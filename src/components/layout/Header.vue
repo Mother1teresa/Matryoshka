@@ -78,8 +78,7 @@
                 <!-- dropdown -->
                 <transition name="fade">
                   <div v-if="showProfileMenu" class="profile-menu">
-                    <div class="rating" v-if="auth.user?.id">{{ userRating }}
-                      <span>★★★★★</span></div> 
+                    <div class="rating" v-if="auth.user?.id">{{ userRating }} <span>{{ userStars }}</span></div>
                       <div class="profile-menu_links">
                       <!-- {{ reviewStore.renderStars(reviewStore.getRatingById(auth.user.id)) }} -->
                       <router-link to="/profile/info" @click="showProfileMenu = false" class="profile-menu_link">Мои данные</router-link>
@@ -147,7 +146,6 @@ import { useAuthStore } from "/src/stores/authStore.js";
 import { useModalStore } from "/src/stores/modal.js";
 import { useMenuStore } from "/src/stores/menu.js";
 import { useRegionModalStore } from "/src/stores/regionModal.js";
-import { useReviewStore } from '/src/stores/reviews.js';
 import { inject } from 'vue';
 import { useRouter } from 'vue-router';
 import { notify } from "/src/utils/notify";
@@ -158,19 +156,18 @@ const modal = useModalStore();
 const menu = useMenuStore();
 const auth = useAuthStore();
 const region = useRegionModalStore();
-const reviewStore = useReviewStore();
 
 const profileWrapper = ref(null);
 const showProfileMenu = ref(false);
 const showLogoutConfirm = ref(false);
 
 const searchQuery = ref("");
-const userRating = computed(() => {
-  if (!auth.user?.id) return 0;
-  return reviewStore.getRatingById(auth.user.id);
+const userRating = computed(() => auth.user?.rating || 0);
+const userStars = computed(() => {
+  const r = Math.round(userRating.value);
+  return '★'.repeat(r) + '☆'.repeat(5 - r);
 });
 const currentRegionName = computed(() => region.selectedRegion || "Регион");
-
 const goToSearch = () => {
   const query = searchQuery.value.trim();
   if (!query) return;
@@ -249,7 +246,6 @@ const handleCreateVideo = () => {
 }
 
 /* -------- Layout -------- */
-
 .header__top {
   display: flex;
   justify-content: space-between;

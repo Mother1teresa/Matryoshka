@@ -101,7 +101,7 @@
                     </router-link>
                     <div class="rating-badge">
                       <span class="rating-num">{{ video.author?.rating || 0 }}</span>
-                      <span class="stars">★★★★★</span>
+                      <span class="stars">{{ renderStars(video.author?.rating) }}</span>
                       <!-- <button v-if="!isOwnVideo(video) && video.author?.id" class="btn-primary" :class="{'is-active': subStore.isSubscribed(video.author?.id)}" @click="onSubscribeClick(video.author?.id)">
                         {{ subStore.isSubscribed(video.author?.id) ? "Отписаться" : "Подписаться" }}
                         </button> -->
@@ -213,6 +213,11 @@ const isMuted = ref(true);
 const isScrolling = ref(false);
 const activeVideoId = ref(null);
 let scrollTimeout = null;
+
+const renderStars = (rating) => {
+  const r = Math.round(Number(rating) || 0);
+  return '★'.repeat(r) + '☆'.repeat(5 - r);
+};
 
 const videos = computed(() => authStore.welcomeFeed || []);
 const isLoading = computed(() => authStore.isVideosLoading);

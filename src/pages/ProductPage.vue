@@ -119,7 +119,7 @@
                 <router-link :to="{ name: 'SellerPage', params: { id: product?.sellerId } }" class="name">
                   {{ sellerName }}
                 </router-link>
-                <div class="rating">{{ sellerRating }} ★★★★★</div>
+                <div class="rating">{{ sellerRating }} {{ renderStars(sellerRating) }}</div>
                 <div class="type">{{ sellerType }}</div>
                 <!-- <button class="btn subscribe" @click="onSubscribeClick" :class="{ 'is-active': subStore.isSubscribed(product?.sellerId) }">{{ subStore.isSubscribed(product?.sellerId) ? 'Отписаться' : 'Подписаться' }} </button> -->
               </div>
@@ -212,7 +212,6 @@ import { useFavoritesStore } from "/src/stores/favoritesStore";
 import { useSubscriptionStore } from "../stores/subscriptionStore.js";
 import { useAuthStore } from "/src/stores/authStore.js";
 import { useModalStore } from "/src/stores/modal.js";
-import { useReviewStore } from '/src/stores/reviews.js';
 import { geocodeByQuery } from '/src/utils/geocode.js';
 
 import heart from "/src/assets/img/icons/heart.svg";
@@ -225,7 +224,6 @@ const modal = useModalStore();
 const productStore = useProductStore();
 const favStore = useFavoritesStore();
 const subStore = useSubscriptionStore();
-const reviewStore = useReviewStore();
 
 const isReady = ref(false);
 const isNumberShown = ref(false);
@@ -255,9 +253,13 @@ const sellerType = computed(() => {
 });
 
 const sellerRating = computed(() => {
-  return reviewStore.getRatingById(product.value?.sellerId) || 0;
+  return seller.value?.rating || 0;
 });
 
+const renderStars = (rating) => {
+  const r = Math.round(Number(rating) || 0);
+  return '★'.repeat(r) + '☆'.repeat(5 - r);
+};
 // === ГЕОКОДИРОВАНИЕ ===
 const resolveCoordinates = async () => {
   if (hasCoordinatesFromApi.value) {

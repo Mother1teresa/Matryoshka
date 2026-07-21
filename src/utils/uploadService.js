@@ -58,7 +58,7 @@ export const uploadToMediaService = async (file, type = "video", metadata = {}, 
       await auth.refreshToken().catch(() => {});
     }
 
-    const isImage = type === "image" || ['jpg', 'jpeg', 'png', 'webp'].includes(extension);
+    const isImage = type === "image" || type === "review_photo" || ['jpg', 'jpeg', 'png', 'webp'].includes(extension);
     const resolvedTitle = isImage ? "" : (metadata.title || file.name);
     
     // Сохраняем метаданные в сервисе

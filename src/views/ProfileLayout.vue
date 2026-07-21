@@ -57,14 +57,17 @@
 <script setup>
 import { ref, watch, computed, inject  } from "vue";
 import { useAuthStore } from "/src/stores/authStore.js";
-import { useReviewStore } from "/src/stores/reviews.js";
 
-const reviewStore = useReviewStore();
 const auth = useAuthStore();
 const openMaintenance = inject('openMaintenance');
 const isCollapsed = ref(false);
-const userRating = computed(() => reviewStore.getRatingById(auth.user?.id));
-const userStars = computed(() => reviewStore.renderStars(userRating.value));
+
+// Рейтинг напрямую из профиля
+const userRating = computed(() => auth.user?.rating || 0);
+const userStars = computed(() => {
+  const r = Math.round(userRating.value);
+  return '★'.repeat(r) + '☆'.repeat(5 - r);
+});
 
 const handleEduClick = () => {
   openMaintenance();

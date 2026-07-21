@@ -905,6 +905,7 @@ export const useAuthStore = defineStore("auth", {
           employees: rawData.employees || [],
           role: newRole,
           editable: editable,
+          rating: rawData.rating || 0,
         };
         this.user = updatedUser;
         

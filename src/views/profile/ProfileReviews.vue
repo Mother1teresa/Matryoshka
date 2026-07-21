@@ -10,6 +10,7 @@
             <span class="rating-num">{{ userRating }}</span>
             <!-- {{ reviewStore.getRatingById(auth.user?.id) }} -->
             <span class="stars">{{ userStars }}</span>
+            <span class="reviews-count">{{ reviewsCount }} отзывов</span>
             <!-- {{ reviewStore.renderStars(reviewStore.getRatingById(auth.user?.id)) }} -->
           </div>
         </div>
@@ -19,86 +20,76 @@
         <div v-for="review in reviews" :key="review.id" class="review-card">
           <div class="review-header">
             <div class="user-info">
-            <img v-if="review.userAvatar" :src="review.userAvatar || maskAvatar"  class="user-avatar"  alt="Аватар автора"/>
-            <div v-else 
-                class="user-avatar-placeholder" 
-                :style="{ backgroundColor: getUserColor(review.author) }">
+              <img v-if="review.userAvatar" :src="review.userAvatar" class="user-avatar" alt="Аватар автора"/>
+              <div v-else class="user-avatar-placeholder" :style="{ backgroundColor: getUserColor(review.author) }">
                 {{ review.author?.charAt(0).toUpperCase() }}
-            </div>
-            <div class="user-details">
-                <div class="user-name">{{ review.author  }}</div>
-                <div class="review-product">{{ review.productTitle }}</div>
-                <div class="review-body">
-                  {{ review.text }}
-                </div>
-            </div>
+              </div>
+              <div class="user-details">
+                <div class="user-name">{{ review.author }}</div>
+                <div class="review-body">{{ review.text }}</div>
+              </div>
             </div>
             <div class="review-meta">
-                <div class="deal-status">Сделка состоялась</div>
-                <div class="stars-row">{{ '★'.repeat(review.rating) }}{{ '☆'.repeat(5 - review.rating) }}</div>
-                <div class="review-date">{{ review.date }}</div>
+              <div class="stars-row">{{ reviewStore.renderStars(review.rating) }}</div>
+              <div class="review-date">{{ reviewStore.formatDate(review.date) }}</div>
             </div>
           </div>
-            <div v-if="review.reply" class="seller-reply">
-                <img :src="auth.userAvatar || '/src/assets/img/mask-avatar.png'" class="reply-avatar" />
-                <div class="reply-content">
-                    <div class="reply-label">Ответ продавца</div>
-                    <div class="reply-text">{{ review.reply }}</div>
-                </div>
+          
+          <!-- Ответ продавца -->
+          <div v-if="review.reply" class="seller-reply">
+            <img :src="auth.userAvatar" class="reply-avatar" />
+            <div class="reply-content">
+              <div class="reply-label">Ответ продавца</div>
+              <div class="reply-text">{{ review.reply }}</div>
             </div>
-            <!-- Если нажали "Ответить" — показываем поле ввода -->
-            <div v-else-if="activeReplyFields[review.id]" class="reply-form-container">
-                <div class="seller-reply">
-                <img :src="auth.userAvatar || '/src/assets/img/mask-avatar.png'" class="reply-avatar" />
-                <div class="reply-content" style="flex: 1;">
-                    <div class="reply-label">Ответ продавца</div>
-                    <input 
-                        type="text" 
-                        placeholder="Напишите ответ..." 
-                        v-model="replyTexts[review.id]"
-                        @keyup.enter="sendReply(review.id)"
-                    />
-                </div>
-                <button class="send-reply-btn" @click="sendReply(review.id)">
-                    <img src="/src/assets/img/icons/send.svg" alt="Отправить" />
-                </button>
-                </div>
+          </div>
+          
+          <!-- Форма ответа -->
+          <div v-else-if="activeReplyFields[review.id]" class="reply-form-container">
+            <div class="seller-reply">
+              <img :src="auth.userAvatar" class="reply-avatar" />
+              <div class="reply-content" style="flex: 1;">
+                <div class="reply-label">Ответ продавца</div>
+                <input 
+                  type="text" 
+                  placeholder="Напишите ответ..." 
+                  v-model="replyTexts[review.id]"
+                  @keyup.enter="sendReply(review.id)"
+                />
+              </div>
+              <button class="send-reply-btn" @click="sendReply(review.id)">
+                <img src="/src/assets/img/icons/send.svg" alt="Отправить" />
+              </button>
             </div>
-            <div v-else class="reply-actions">
-                <button class="reply-button" @click="toggleReplyField(review.id)">
-                Ответить
-                </button>
-            </div>
+          </div>
+          
+          <div v-else-if="isOwnProfile" class="reply-actions">
+            <button class="reply-button" @click="toggleReplyField(review.id)">Ответить</button>
+          </div>
         </div>
       </div>
-      <div v-else class="empty-state">
-        У вас пока нет отзывов
-      </div>
+      
+      <div v-else class="empty-state">У вас пока нет отзывов</div>
     </div>
   </div>
 </template>
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed } from 'vue';
 import { useAuthStore } from "/src/stores/authStore.js";
 import { useReviewStore } from "/src/stores/reviews.js";
-import maskAvatar from "/src/assets/img/mask-avatar.png"
+import { notify } from '../../utils/notify';
 
 const auth = useAuthStore();
 const reviewStore = useReviewStore();
 
 const replyTexts = ref({});
 const activeReplyFields = ref({});
-const sellerRating = computed(() => {
-  return reviewStore.getRatingById(auth.user?.id);
-});
-
-const sellerStars = computed(() => {
-  return reviewStore.renderStars(sellerRating.value);
-});
 
 const userRating = computed(() => reviewStore.getRatingById(auth.user?.id));
 const userStars = computed(() => reviewStore.renderStars(userRating.value));
+const reviewsCount = computed(() => reviewStore.getReviewsCountById(auth.user?.id));
 const reviews = computed(() => reviewStore.reviews || []);
+const isOwnProfile = computed(() => true);
 
 function getUserColor(name) {
   if (!name) return '#ccc';
@@ -106,18 +97,21 @@ function getUserColor(name) {
   const colors = ['#4A90E2', '#50E3C2', '#F5A623', '#D0021B', '#9013FE'];
   return colors[hash % colors.length];
 }
+
 function toggleReplyField(reviewId) {
   activeReplyFields.value[reviewId] = !activeReplyFields.value[reviewId];
 }
+
 async function sendReply(reviewId) {
   const text = replyTexts.value[reviewId];
   if (!text || text.trim() === '') return;
   try {
-    await reviewStore.addReply(reviewId, text);
+    await reviewStore.addReply(reviewId, text, auth.user?.id);
     activeReplyFields.value[reviewId] = false;
     delete replyTexts.value[reviewId]; 
   } catch (e) {
     console.error("Не удалось отправить ответ", e);
+    notify("Не удалось отправить ответ")
   }
 }
 </script>
