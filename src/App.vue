@@ -134,6 +134,11 @@ onMounted(async () => {
   window.addEventListener("storage", handleStorageChange);
   productStore.fetchAdverts();
   window.addEventListener("notify", handleNotify);
+  if (auth.isAuthenticated) {
+    const { useFavoritesStore } = await import("/src/stores/favoritesStore.js");
+    const favStore = useFavoritesStore();
+    await favStore.fetchAdvertFavorites().catch(() => {});
+  }
 
   // === ОБНОВЛЕНИЕ ДЛЯ НАЧАЛА ===
   if (auth.isAuthenticated) {

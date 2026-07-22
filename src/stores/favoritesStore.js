@@ -1,73 +1,58 @@
-// favoritesStore.js
-import { defineStore } from "pinia"
-import { favoritesApi } from "/src/api/favorites.api.js";
-import { useAuthStore } from "./authStore";
+import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
+import { favoritesApi } from '/src/api/favorites.api.js'
 
-export const useFavoritesStore = defineStore("favorites", {
-  state: () => ({
-    favorites: JSON.parse(localStorage.getItem('user_favorites') || '[]')
-  }),
-
-  actions: {
-    // Загрузка избранного с сервера (вызывать после логина)
-    async fetchFavorites() {
-      const auth = useAuthStore();
-      if (!auth.isAuthenticated) return;
-      this.isLoading = true;
-      try {
-        // const res = await favoritesApi.getAll();
-        // Допустим, сервер возвращает массив объектов или массив ID
-        this.favorites = res.data.map(item => item.id || item);
-        this.saveToLocal();
-      } catch (e) {
-        console.error("Ошибка загрузки избранного:", e);
-      } finally {
-        this.isLoading = false;
-      }
-    },
-
-    // 2. Переключение лайка (Локально + API)
-    async toggle(productId) {
-      const auth = useAuthStore();
-      if (!auth.isAuthenticated) return "login";
-
-      const index = this.favorites.indexOf(productId);
-      const isAdding = index === -1;
-
-      // Оптимистичное обновление (сначала меняем в интерфейсе)
-      if (isAdding) {
-        this.favorites.push(productId);
-      } else {
-        this.favorites.splice(index, 1);
-      }
-      this.saveToLocal();
-
-      try {
-        // Отправляем на бэкенд
-        if (isAdding) {
-          await favoritesApi.add(productId);
-        } else {
-          await favoritesApi.remove(productId);
-        }
-      } catch (e) {
-        // Если ошибка на сервере — откатываем изменения назад
-        console.error("Ошибка синхронизации лайка:", e);
-        this.fetchFavorites(); 
-      }
-    },
-
-    saveToLocal() {
-      localStorage.setItem('user_favorites', JSON.stringify(this.favorites));
-    },
-
-    // Очистка при выходе
-    clear() {
-      this.favorites = [];
-      localStorage.removeItem('user_favorites');
-    }
-  },
-
-  getters: {
-    isFavorite: (state) => (productId) => state.favorites.includes(productId)
+export const useFavoritesStore = defineStore('favorites', () => {
+  const advertFavorites = ref([])
+  const isLoading = ref(false)
+  const isFavorite = (id) => {
+    return advertFavorites.value.some(a => String(a.id) === String(id))
   }
-});
+
+  const fetchAdvertFavorites = async () => {
+    isLoading.value = true
+    try {
+      const res = await favoritesApi.getAdvertFavorites()
+      advertFavorites.value = (res.data || []).map(item => ({
+        id: item.id,
+        title: item.title,
+        price: item.price,
+        category: item.category,
+        subCategory: item.subCategory,
+        address: item.address,
+        isFavorite: item.isFavorite,
+        image: '/src/assets/img/placeholder.png', // API не возвращает картинку, подставим placeholder
+        city: item.address || '',
+        seller: null
+      }))
+      return advertFavorites.value
+    } catch (e) {
+      console.error('Ошибка загрузки избранных объявлений:', e)
+      advertFavorites.value = []
+      throw e
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  const toggleAdvertFavorite = async (advertId) => {
+    try {
+      await favoritesApi.toggleAdvertFavorite(advertId)
+      await fetchAdvertFavorites()
+      return true
+    } catch (e) {
+      console.error('Ошибка toggle advert favorite:', e)
+      throw e
+    }
+  }
+  const toggle = toggleAdvertFavorite;
+  const clear = () => { advertFavorites.value = []; };
+  return {
+    advertFavorites,
+    isLoading,
+    isFavorite,
+    fetchAdvertFavorites,
+    toggleAdvertFavorite,
+    toggle,
+    clear,
+}})

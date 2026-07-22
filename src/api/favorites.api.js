@@ -1,15 +1,11 @@
 import { api } from "./api.js";
 
 export const favoritesApi = {
-  getAll() {
-    return api.get("/favorites");
+  getAdvertFavorites() {
+    return api.get("/advert/favorites");
   },
 
-  add(productId) {
-    return api.post("/favorites", { product_id: productId });
-  },
-
-  remove(productId) {
-    return api.delete(`/favorites/${productId}`);
+  toggleAdvertFavorite(advertId) {
+    return api.post(`/advert/${advertId}/favorite`);
   }
 };

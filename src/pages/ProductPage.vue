@@ -545,9 +545,13 @@ const checkAuthAndRun = (action, message = "Авторизуйтесь, чтоб
 
 const onLikeClick = (item) => {
   if (!item) return;
-  checkAuthAndRun(() => {
-    favStore.toggle(item.id);
-    notify(favStore.isFavorite(item.id) ? "Добавлено в избранное" : "Удалено из избранного");
+  checkAuthAndRun(async () => {
+    try {
+      await favStore.toggleAdvertFavorite(item.id);
+      notify(favStore.isFavorite(item.id) ? "Добавлено в избранное" : "Удалено из избранного");
+    } catch (e) {
+      notify("Ошибка", "error");
+    }
   }, "Войдите, чтобы добавить в избранное");
 };
 

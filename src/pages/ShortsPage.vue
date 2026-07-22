@@ -102,12 +102,17 @@
                     <div class="rating-badge">
                       <span class="rating-num">{{ video.author?.rating || 0 }}</span>
                       <span class="stars">{{ renderStars(video.author?.rating) }}</span>
-                      <!-- <button v-if="!isOwnVideo(video) && video.author?.id" class="btn-primary" :class="{'is-active': subStore.isSubscribed(video.author?.id)}" @click="onSubscribeClick(video.author?.id)">
+                      <span v-if="isOwnVideo(video)" class="own-badge">Это ваш ролик</span>
+                      <!-- <button v-else-if="video.author?.id" class="btn-primary" 
+                        :class="{'is-active': subStore.isSubscribed(video.author?.id)}" 
+                        @click="onSubscribeClick(video.author?.id)">
                         {{ subStore.isSubscribed(video.author?.id) ? "Отписаться" : "Подписаться" }}
-                        </button> -->
-                        <!-- v-else -->
-                      <span class="own-badge">Это ваш ролик</span>
+                      </button> -->
                     </div>
+                  </div>
+                  <!-- Прикреплённый товар -->
+                  <div v-if="video.linkedProduct" class="linked-product-wrapper">
+                    <ProductCard :product="normalizeProduct(video.linkedProduct)" />
                   </div>
                 </div>
               </div>
@@ -191,6 +196,7 @@ import heart from "/src/assets/img/icons/heart.svg";
 import heartFilled from "/src/assets/img/icons/heart-filled.svg";
 import muteIcon from "/src/assets/img/icons/mute.svg";
 import unmuteIcon from "/src/assets/img/icons/unmute.svg"; 
+import ProductCard from "/src/components/product/ProductCard.vue";
 
 import bookmarkIcon from "/src/assets/img/icons/bookmark.svg";
 import bookmarkFilledIcon from "/src/assets/img/icons/bookmark-fill.svg";
@@ -218,7 +224,13 @@ const renderStars = (rating) => {
   const r = Math.round(Number(rating) || 0);
   return '★'.repeat(r) + '☆'.repeat(5 - r);
 };
-
+// Нормализация продукта под формат ProductCard
+const normalizeProduct = (product) => ({
+  ...product,
+  images: product.images || product.pictures?.map(p => p.pictureUrl || p.url) || [],
+  category: product.category || product.type || 'tovary',
+  section: product.section || 'default',
+});
 const videos = computed(() => authStore.welcomeFeed || []);
 const isLoading = computed(() => authStore.isVideosLoading);
 const selectedVideoId = computed(() => route.params.id);
@@ -550,6 +562,26 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.linked-product-wrapper {
+  margin-top: 1rem;
+}
+.linked-product-wrapper :deep(.product-card) {
+  width: 100%;
+  min-height: auto;
+  padding: 0.5rem;
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+.linked-product-wrapper :deep(.product-img) {
+  width: 100%;
+  height: 4rem;
+  border-radius: 0.5rem;
+  flex-shrink: 0;
+}
 .mute-btn {
   position: absolute;
   bottom: 1rem;

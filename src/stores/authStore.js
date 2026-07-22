@@ -24,6 +24,7 @@ export const useAuthStore = defineStore("auth", {
         welcomeFeed: [],
         isVideosLoading: false,
         allChats: [],
+        favoriteVideos: [],
         allNotifications: [],
         isNotificationsLoading: false,
         // === STOMP ===
@@ -672,28 +673,28 @@ export const useAuthStore = defineStore("auth", {
       
       try {
         await api.post('/feed/video/mark-as-favorite', { videoId });
-        
         if (video) {
           video.isFavorite = true;
+          // Добавляем в favoriteVideos если есть данные
+          if (!this.favoriteVideos.find(v => v.id === videoId)) {
+            this.favoriteVideos.push({ ...video, isFavorite: true });
+          }
         }
       } catch (e) {
-        console.error('Ошибка добавления в избранное:', e);
+        console.error('Ошибка:', e);
         throw e;
       }
     },
-
     async unmarkAsFavorite(videoId) {
       const video = this.welcomeFeed.find(v => v.id === videoId);
       if (video && !video.isFavorite) return;
       
       try {
         await api.post('/feed/video/unmark-as-favorite', { videoId });
-        
-        if (video) {
-          video.isFavorite = false;
-        }
+        if (video) video.isFavorite = false;
+        this.favoriteVideos = this.favoriteVideos.filter(v => v.id !== videoId);  // ← убираем из стора
       } catch (e) {
-        console.error('Ошибка удаления из избранного:', e);
+        console.error('Ошибка:', e);
         throw e;
       }
     },
@@ -728,12 +729,13 @@ export const useAuthStore = defineStore("auth", {
         if (favoritesData?.favoriteVideos?.length) {
           const promises = favoritesData.favoriteVideos.map(id => this.fetchVideo(id));
           const results = await Promise.all(promises);
-          
-          return results.filter(video => video !== null);
+          this.favoriteVideos = results.filter(v => v !== null);  // ← сохраняем в стор!
+          return this.favoriteVideos;
         }
+        this.favoriteVideos = [];
         return [];
       } catch (e) {
-        console.error('Ошибка загрузки избранного:', e.response?.data || e);
+        console.error('Ошибка загрузки избранного:', e);
         return [];
       }
     },
@@ -797,9 +799,10 @@ export const useAuthStore = defineStore("auth", {
               userData.coordinates || [37.6173, 55.7558],
             );
           }
-          await useFavoritesStore()
-            .fetchFavorites()
-            .catch(() => {});
+          await Promise.all([
+            this.fetchFavorites(this.user?.id).catch(() => {}),      // видео из authStore
+            useFavoritesStore().fetchAdvertFavorites().catch(() => {})  // товары из favoritesStore
+          ]);
           return true;
         }
       } catch (e) {
@@ -821,9 +824,10 @@ export const useAuthStore = defineStore("auth", {
           this.login(userToLogin);
         
           // Загружаем избранное
-          await useFavoritesStore()
-            .fetchFavorites()
-            .catch(() => {});
+          await Promise.all([
+            this.fetchFavorites(this.user?.id).catch(() => {}),
+            useFavoritesStore().fetchAdvertFavorites().catch(() => {})
+          ]);
         }
         return responseData;
       } catch (e) {
@@ -1119,6 +1123,7 @@ export const useAuthStore = defineStore("auth", {
       );
       const favStore = useFavoritesStore();
       favStore.clear();
+      this.favoriteVideos = [];
 
       if (window.location.pathname !== "/") {
         try {

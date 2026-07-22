@@ -104,17 +104,25 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useAuthStore } from "/src/stores/authStore.js";
+import { useFavoritesStore } from "/src/stores/favoritesStore.js";
 import { notify } from "/src/utils/notify.js";
 
 const authStore = useAuthStore();
+const favStore = useFavoritesStore();
+
 const isDropdownOpen = ref(false);
 const selectedType = ref('videos');
 const isLoading = ref(false);
-const currentItems = ref([]);
 
-// Загрузка избранного
+// ✅ Единый источник правды — стор, не локальные ref!
+const currentItems = computed(() => {
+  return selectedType.value === 'videos' 
+    ? authStore.favoriteVideos 
+    : favStore.advertFavorites;
+});
+
 const loadData = async () => {
   if (!authStore.isAuthenticated) {
     notify('Войдите, чтобы увидеть избранное');
@@ -124,38 +132,30 @@ const loadData = async () => {
   isLoading.value = true;
   try {
     if (selectedType.value === 'videos') {
-      // Используем fetchFavorites для видео
-      const userId = authStore.user?.id;
-      if (userId) {
-        const videos = await authStore.fetchFavorites(userId);
-        currentItems.value = videos || [];
-      }
+      await authStore.fetchFavorites(authStore.user?.id);
     } else {
-      // Объявления — пока заглушка или старый метод
-      currentItems.value = [];
+      await favStore.fetchAdvertFavorites();
     }
   } catch (e) {
-    console.error('Ошибка загрузки избранного:', e);
     notify('Не удалось загрузить избранное', 'error');
   } finally {
     isLoading.value = false;
   }
 };
 
-// Удалить из избранного
 const removeFromFavorites = async (id) => {
   if (!authStore.isAuthenticated) return;
   
   try {
     if (selectedType.value === 'videos') {
-      // POST /api/feed/video/unmark-as-favorite
       await authStore.unmarkAsFavorite(id);
+      // стор сам обновит favoriteVideos
+    } else {
+      await favStore.toggleAdvertFavorite(id);
+      // стор сам обновит advertFavorites через fetchAdvertFavorites
     }
-    
-    currentItems.value = currentItems.value.filter(item => item.id !== id);
     notify('Удалено из избранного');
   } catch (e) {
-    console.error('Ошибка удаления:', e);
     notify('Не удалось удалить', 'error');
   }
 };
@@ -164,16 +164,6 @@ const changeType = (type) => {
   selectedType.value = type;
   isDropdownOpen.value = false;
   loadData();
-};
-
-const closeDropdown = () => isDropdownOpen.value = false;
-
-const onWriteClick = (item) => {
-  console.log('Написать продавцу:', item);
-};
-
-const onShowPhone = (item) => {
-  console.log('Телефон:', item.contacts);
 };
 
 onMounted(() => {

@@ -52,6 +52,7 @@
 <script setup>
 import { onMounted } from "vue";
 import { useRoute } from "vue-router";
+import { notify } from "/src/utils/notify";
 import heart from "/src/assets/img/icons/heart.svg";
 import heartFilled from "/src/assets/img/icons/heart-filled.svg";
 
@@ -64,6 +65,7 @@ import { useModalStore } from "/src/stores/modal.js";
 const auth = useAuthStore();
 const modal = useModalStore();
 const route = useRoute();
+const emit = defineEmits(["toggle-like"]);
 
 const props = defineProps({
   product: {
@@ -72,13 +74,17 @@ const props = defineProps({
   },
 });
 
-const onLikeClick = (item) => {
+const onLikeClick = async (item) => {
   if (!auth.isAuthenticated) {
     modal.openLogin();
     return;
   }
-  favStore.toggle(item.id);
-  emit("toggle-like", item.id);
+  try {
+    await favStore.toggleAdvertFavorite(item.id);
+    emit("toggle-like", item.id);
+  } catch (e) {
+    notify("Ошибка при работе с избранным", "error");
+  }
 };
 onMounted(async () => {});
 </script>

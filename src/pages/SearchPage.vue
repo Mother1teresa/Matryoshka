@@ -159,19 +159,19 @@ const checkAuthAndRun = (action, message = "Авторизуйтесь, чтоб
     notify(message);
     return;
   }
-  action();
+  await action();
 };
 
-const onLikeClick = (item) => {
+const onLikeClick = async (item) => {
   if (!item) return;
-  checkAuthAndRun(() => {
-    favStore.toggle(item.id);
-    notify(
-      favStore.isFavorite(item.id)
-        ? "Добавлено в избранное"
-        : "Удалено из избранного"
-    );
-  }, "Войдите, чтобы добавить в избранное");
+  checkAuthAndRun(async () => {
+    try {
+      await favStore.toggleAdvertFavorite(item.id);
+      notify(favStore.isFavorite(item.id) ? "Добавлено в избранное" : "Удалено из избранного");
+    } catch (e) {
+      notify("Ошибка", "error");
+    }
+  }, "Войдите...");
 };
 
 // === ПОИСК ТОВАРОВ: API ===

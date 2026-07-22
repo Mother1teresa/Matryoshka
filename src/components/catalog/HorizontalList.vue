@@ -64,12 +64,14 @@ const getImageUrl = (item) => {
   return "/img/placeholder.png";
 };
 
-const onLikeClick = (item) => {
-  if (!auth.isAuthenticated) {
-    modal.openLogin();
-    return;
+const onLikeClick = async (item) => {
+  if (!auth.isAuthenticated) { modal.openLogin(); return; }
+  try {
+    await favStore.toggleAdvertFavorite(item.id);
+    notify(favStore.isFavorite(item.id) ? "Добавлено в избранное" : "Удалено из избранного");
+  } catch (e) {
+    notify("Ошибка", "error");
   }
-  favStore.toggle(item.id);
 };
 
 const checkAuthAndRun = (
