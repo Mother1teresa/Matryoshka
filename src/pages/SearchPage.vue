@@ -153,7 +153,7 @@ const onImageError = (e) => {
   e.target.src = '/src/assets/img/placeholder.png';
 };
 
-const checkAuthAndRun = (action, message = "Авторизуйтесь, чтобы продолжить") => {
+const checkAuthAndRun = async (action, message = "Авторизуйтесь, чтобы продолжить") => {
   if (!auth.isAuthenticated) {
     modal.openLogin();
     notify(message);
