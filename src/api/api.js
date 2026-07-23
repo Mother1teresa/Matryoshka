@@ -12,8 +12,6 @@ export const api = axios.create({
 
 let isRefreshing = false;
 let failedQueue = [];
-let refreshAttempts = 0;
-const MAX_REFRESH_ATTEMPTS = 3;
 
 const processQueue = (error) => {
   failedQueue.forEach((prom) => {
@@ -23,15 +21,11 @@ const processQueue = (error) => {
   failedQueue = [];
 };
 
-// Хелпер для плавного выхода
-const delayedLogout = (auth, message = "Сессия истекла. Войдите заново.", type = "error") => {
-  notify(message, type);
-  setTimeout(() => {
-    auth.logout();
-  }, 1500);
+const doLogout = (auth, message = "Сессия истекла. Войдите заново.") => {
+  notify(message, "error");
+  auth.logout();
 };
 
-// ОБРАБОТКА REFRESH КУК
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -39,41 +33,43 @@ api.interceptors.response.use(
     const auth = useAuthStore();
     const originalRequest = error.config;
     if (!originalRequest) return Promise.reject(error);
+
     const status = error.response?.status;
     const data = error.response?.data;
     const url = originalRequest.url || "";
-  
+    const errorMessage = data?.message || data?.error || (typeof data === 'string' ? data : "");
+
+    // Не трогаем auth-эндпоинты
     if (url.includes("/auth/")) {
       return Promise.reject(error);
     }
-    // Проверка на явный код протухшей сессии от бэкенда
-    if (data?.code === "SESSION_EXPIRED") {
-      delayedLogout(auth, "Сессия истекла. Войдите заново.");
-      return Promise.reject(error);
-    }
-    const errorMessage = data?.message || data?.error || (typeof data === 'string' ? data : "");
-    const isMediaCreateError = url.includes("/media/create") && (status === 401 || status === 403 || status === 500);
-    const isUserNotFound = errorMessage.includes("User not found") || (status === 404 && url.includes("/profile"));
 
-    if (isUserNotFound || isMediaCreateError) {
-      delayedLogout(auth, "Сессия истекла. Войдите заново.");
+    // === ФАТАЛЬНЫЕ ОШИБКИ: сразу логаут, без рефреша ===
+    const isUserNotFound = errorMessage.includes("User not found") && url.includes("/profile");
+
+    if (data?.code === "SESSION_EXPIRED" || isUserNotFound) {
+      doLogout(auth, "Сессия истекла. Войдите заново.");
       return Promise.reject(error);
     }
+
+    // Не 401 — просто прокидываем ошибку, не рефрешим
     if (status !== 401) {
       return Promise.reject(error);
     }
 
-    // Ошибка авторизации ПОСЛЕ попытки рефреша
+    // === 401: пробуем рефреш один раз ===
+
+    // Проверка: если пользователь не авторизован — не рефрешим, просто реджектим
+    if (!auth.isAuthenticated || !auth.user?.id) {
+      return Promise.reject(error);
+    }
+
     if (originalRequest._retry) {
-      delayedLogout(auth, "Ошибка авторизации. Войдите заново.");
+      doLogout(auth, "Ошибка авторизации. Войдите заново.");
       return Promise.reject(error);
     }
-    // Превышение лимита попыток рефреша кук
-    if (refreshAttempts >= MAX_REFRESH_ATTEMPTS) {
-      refreshAttempts = 0;
-      delayedLogout(auth, "Сессия истекла. Войдите заново.");
-      return Promise.reject(error);
-    }
+
+    // Ждём, пока другой запрос рефрешит токен
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
         failedQueue.push({ resolve, reject });
@@ -83,32 +79,28 @@ api.interceptors.response.use(
           return api(originalRequest);
         })
         .catch((err) => {
-          delayedLogout(auth, "Сессия истекла. Войдите заново.");
+          doLogout(auth);
           return Promise.reject(err);
         });
     }
+
+    // === РЕФРЕШ ===
     originalRequest._retry = true;
     isRefreshing = true;
-    refreshAttempts++;
+
     try {
       const success = await auth.refreshToken();
       if (success) {
-        refreshAttempts = 0;
-        await new Promise(resolve => setTimeout(resolve, 50));
         processQueue(null);
         return api(originalRequest);
       }
       throw new Error("Refresh failed");
     } catch (refreshError) {
       processQueue(refreshError);
-      delayedLogout(auth, "Сессия истекла. Войдите заново.");
+      doLogout(auth);
       return Promise.reject(refreshError);
     } finally {
       isRefreshing = false;
     }
   },
 );
-
-export const resetRefreshCooldown = () => {
-  refreshAttempts = 0;
-};

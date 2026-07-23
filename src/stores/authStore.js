@@ -2,7 +2,7 @@ import { defineStore } from "pinia";
 import { Client } from '@stomp/stompjs';
 import { markRaw, ref } from 'vue';
 import router from "/src/router/index.js";
-import { api, authApi, resetRefreshCooldown } from "/src/api/api.js";
+import { api, authApi } from "/src/api/api.js";
 import { useFavoritesStore } from "/src/stores/favoritesStore.js";
 import maskAvatar from "/src/assets/img/mask-avatar.png";
 import { useRegionModalStore } from "/src/stores/regionModal.js";
@@ -10,6 +10,7 @@ import { geocodeByQuery } from '/src/utils/geocode.js';
 import { notify } from "/src/utils/notify";
 
 let stompClient = null;
+let refreshTimer = null;
 
 export const useAuthStore = defineStore("auth", {
   state: () => {
@@ -74,7 +75,7 @@ export const useAuthStore = defineStore("auth", {
     isStompConnected: (state) => state._stompConnected,
   },
   actions: {
-   _stompClient: null,
+    _stompClient: null,
     getSocket() {
       return this._stompClient;
     },
@@ -192,10 +193,8 @@ export const useAuthStore = defineStore("auth", {
         }
       };
       
-      // Первый запрос сразу
       poll();
       
-      // Затем каждые 3 секунды
       this._pollingIntervals[roomId] = setInterval(poll, 3000);
     },
     
@@ -374,23 +373,6 @@ export const useAuthStore = defineStore("auth", {
         throw e;
       }
     },
-    // async fetchMyAdverts() {
-    //   if (!this.isAuthenticated || !this.user?.id) {
-    //     notify("Нужна авторизация для загрузки объявлений");
-    //     return [];
-    //   }
-    //   try {
-    //     const res = await api.get('/advert', {
-    //       params: { userId: this.user.id }
-    //     });
-    //     return Array.isArray(res.data) ? res.data : [];
-    //   } catch (e) {
-    //     console.error("Ошибка загрузки:", e);
-    //     notify("Не удалось загрузить объявления", "error");
-    //     return [];
-    //   }
-    // },
-    //ИЛИ 
     async fetchMyAdverts() {
       if (!this.isAuthenticated || !this.user?.id) {
         notify("Нужна авторизация для загрузки объявлений");
@@ -420,17 +402,6 @@ export const useAuthStore = defineStore("auth", {
         throw e;
       }
     },
-    // async updateAdvertStatus(id, status) {
-    //   try {
-    //     await api.patch('/advert/update', { id, status });
-    //     notify(status === 'archive' ? "В архив" : "Опубликовано", "success");
-    //     return true;
-    //   } catch (e) {
-    //     console.error("Ошибка обновления статуса:", e);
-    //     notify("Не удалось обновить статус", "error");
-    //     return false;
-    //   }
-    // },
     async deleteAdvert(id, s3Key = null) {
       try {
         const dto = { id };
@@ -453,25 +424,6 @@ export const useAuthStore = defineStore("auth", {
         throw e;
       }
     },
-    // async fetchAdvertsBySeller(sellerId) {
-    //   if (!sellerId) {
-    //     console.log("fetchAdvertsBySeller: sellerId не передан");
-    //     return [];
-    //   }
-    //   try {
-    //     const res = await api.get('/advert', {
-    //       params: {
-    //         dto: JSON.stringify({ userId: String(sellerId), take: 50 })
-    //       }
-    //     });
-    //     return Array.isArray(res.data) ? res.data : [];
-    //   } catch (e) {
-    //     console.error("Ошибка загрузки товаров продавца:", e);
-    //     notify("Не удалось загрузить объявления продавца", "error");
-    //     return [];
-    //   }
-    // },
-    //ИЛИ
     async fetchAdvertsBySeller(sellerId) {
       if (!sellerId) {
         console.log("fetchAdvertsBySeller: sellerId не передан");
@@ -498,7 +450,6 @@ export const useAuthStore = defineStore("auth", {
           params: { page: Number(page), size: Number(size), seed: Number(seed) }
         });
         const shortVideos = response.data || [];
-        // Просто сохраняем базовые данные, author подтянем позже
         this.welcomeFeed = shortVideos.map(v => ({
           id: v.id,
           likes: v.likes || 0,
@@ -557,7 +508,7 @@ export const useAuthStore = defineStore("auth", {
             author: {
               id: c.author?.id,
               name: c.author?.name || 'Пользователь',
-              avatar: '/public/img/users/mask-avatar.png' // Комментарии без аватаров в API
+              avatar: '/public/img/users/mask-avatar.png'
             }
           })),
           isLikedByMe: false,
@@ -675,7 +626,6 @@ export const useAuthStore = defineStore("auth", {
         await api.post('/feed/video/mark-as-favorite', { videoId });
         if (video) {
           video.isFavorite = true;
-          // Добавляем в favoriteVideos если есть данные
           if (!this.favoriteVideos.find(v => v.id === videoId)) {
             this.favoriteVideos.push({ ...video, isFavorite: true });
           }
@@ -692,7 +642,7 @@ export const useAuthStore = defineStore("auth", {
       try {
         await api.post('/feed/video/unmark-as-favorite', { videoId });
         if (video) video.isFavorite = false;
-        this.favoriteVideos = this.favoriteVideos.filter(v => v.id !== videoId);  // ← убираем из стора
+        this.favoriteVideos = this.favoriteVideos.filter(v => v.id !== videoId);
       } catch (e) {
         console.error('Ошибка:', e);
         throw e;
@@ -729,7 +679,7 @@ export const useAuthStore = defineStore("auth", {
         if (favoritesData?.favoriteVideos?.length) {
           const promises = favoritesData.favoriteVideos.map(id => this.fetchVideo(id));
           const results = await Promise.all(promises);
-          this.favoriteVideos = results.filter(v => v !== null);  // ← сохраняем в стор!
+          this.favoriteVideos = results.filter(v => v !== null);
           return this.favoriteVideos;
         }
         this.favoriteVideos = [];
@@ -785,7 +735,7 @@ export const useAuthStore = defineStore("auth", {
       };
       this.isAuthLoading = false;
       this.saveToStorage();
-      resetRefreshCooldown();
+      this.startRefreshTimer();
     },
     async loginAPI({ email, password }) {
       try {
@@ -800,8 +750,8 @@ export const useAuthStore = defineStore("auth", {
             );
           }
           await Promise.all([
-            this.fetchFavorites(this.user?.id).catch(() => {}),      // видео из authStore
-            useFavoritesStore().fetchAdvertFavorites().catch(() => {})  // товары из favoritesStore
+            this.fetchFavorites(this.user?.id).catch(() => {}),
+            useFavoritesStore().fetchAdvertFavorites().catch(() => {})
           ]);
           return true;
         }
@@ -823,7 +773,6 @@ export const useAuthStore = defineStore("auth", {
           };
           this.login(userToLogin);
         
-          // Загружаем избранное
           await Promise.all([
             this.fetchFavorites(this.user?.id).catch(() => {}),
             useFavoritesStore().fetchAdvertFavorites().catch(() => {})
@@ -836,6 +785,11 @@ export const useAuthStore = defineStore("auth", {
       }
     },
     async refreshToken() {
+      // Проверка: не рефрешим для анонимов
+      if (!this.isAuthenticated || !this.user?.id) {
+        console.log('[refreshToken] Пропуск: пользователь не авторизован');
+        return false;
+      }
       try {
         const res = await authApi.post("/auth/refresh");
         const isSuccess = res.status === 204 || (res.status === 200 && res.data === true);
@@ -847,9 +801,7 @@ export const useAuthStore = defineStore("auth", {
       } catch (err) {
         console.error("[Pinia Auth] Ошибка обновления сессии:", err.response?.data || err);
         notify("Сессия истекла. Войдите заново.", "error");
-        setTimeout(() => {
-          this.logout();
-        }, 1500);
+        this.logout();
         return false;
       } finally {
         this.isAuthLoading = false;
@@ -893,7 +845,6 @@ export const useAuthStore = defineStore("auth", {
         const currentEmail = this.user?.email;
         const newRole = rawData.role || currentRole || 'PRIVATE_PERSON';
         const newEmail = cleanValue(rawData.email) || currentEmail || '';
-        // === ОБЪЯВЛЯЕМ editable ===
         const isMyProfile = String(rawData.id) === String(this.user?.id);
         const editable = isMyProfile ? true : (rawData.editable ?? false);
         
@@ -989,14 +940,11 @@ export const useAuthStore = defineStore("auth", {
           let userData = null;
           if (v.userId) {
             try {
-              // const userRes = await api.get(`/users/${v.userId}`);
-              // userData = userRes.data;
               console.log('User data:', userData);
             } catch (e) {
               console.log(`Автор ${v.userId} не найден`);
             }
           }
-
           return {
             ...v,
             s3Key: v.s3Key || v.fileName || v.id,
@@ -1046,7 +994,6 @@ export const useAuthStore = defineStore("auth", {
           commentsCount: v.commentsCount || 0,
           commentsDisabled: v.commentsDisabled || false,
           duration: v.duration || '',
-          // Автор не заполняем здесь — подставим в компоненте из профиля
           userId: v.userId
         }));
       } catch (e) {
@@ -1109,8 +1056,39 @@ export const useAuthStore = defineStore("auth", {
         }
       }
     },
+    startRefreshTimer() {
+      this.stopRefreshTimer();
+      // Проверка перед стартом: не запускаем для анонимов
+      if (!this.isAuthenticated || !this.user?.id) {
+        console.log('[startRefreshTimer] Пропуск: пользователь не авторизован');
+        return;
+      }
+      console.log('[startRefreshTimer] Запущен, интервал 15 минут');
+      refreshTimer = setInterval(async () => {
+        if (!this.isAuthenticated || !this.user?.id) {
+          console.log('[refreshTimer] Пользователь разлогинен, останавливаем таймер');
+          this.stopRefreshTimer();
+          return;
+        }
+        try {
+          await this.refreshToken();
+        } catch (e) {
+          console.error('[refreshTimer] Ошибка рефреша:', e);
+          this.logout();
+        }
+      }, 15 * 60 * 1000);
+    },
+    stopRefreshTimer() {
+      if (refreshTimer) {
+        clearInterval(refreshTimer);
+        refreshTimer = null;
+        console.log('[stopRefreshTimer] Таймер остановлен');
+      }
+    },
     async logout() {
+      this.stopRefreshTimer();
       this.disconnectSocket();
+      this.stopAllPolling();
       this.isAuthenticated = false;
       this.user = null;
       this.isAuthLoading = false;
@@ -1124,6 +1102,10 @@ export const useAuthStore = defineStore("auth", {
       const favStore = useFavoritesStore();
       favStore.clear();
       this.favoriteVideos = [];
+      this.allChats = [];
+      this.allNotifications = [];
+      this.welcomeFeed = [];
+      this.allVideos = [];
 
       if (window.location.pathname !== "/") {
         try {
