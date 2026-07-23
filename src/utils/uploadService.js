@@ -1,9 +1,6 @@
 import axios from "axios";
 import { api } from "/src/api/api.js";
 
-/**
- * Вспомогательный метод для безопасного определения MIME-типа и расширения
- */
 const getFileInfo = (file, type) => {
   const fallbackExt = type === "video" ? "mp4" : "jpg";
   const fallbackMime = type === "video" ? "video/mp4" : "image/jpeg";
@@ -51,11 +48,12 @@ export const uploadToMediaService = async (file, type = "video", metadata = {}, 
       }
     });
 
-    // === ПРОВЕРКА ТОКЕНА ДЛЯ НАЧАЛА ===
+    // === ПРОВЕРКА: если пользователь разлогинился — не делаем create ===
     const { useAuthStore } = await import("/src/stores/authStore.js");
     const auth = useAuthStore();
-    if (auth.isAuthenticated) {
-      await auth.refreshToken().catch(() => {});
+    if (!auth.isAuthenticated || !auth.user?.id) {
+      console.log('[uploadToMediaService] Пользователь разлогинен, пропускаем /media/create');
+      throw new Error("Пользователь не авторизован");
     }
 
     const isImage = type === "image" || type === "review_photo" || ['jpg', 'jpeg', 'png', 'webp'].includes(extension);
