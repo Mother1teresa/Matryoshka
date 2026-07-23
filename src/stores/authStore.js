@@ -785,21 +785,20 @@ export const useAuthStore = defineStore("auth", {
       }
     },
     async refreshToken() {
-      // Проверка: не рефрешим для анонимов
       if (!this.isAuthenticated || !this.user?.id) {
         console.log('[refreshToken] Пропуск: пользователь не авторизован');
         return false;
       }
       try {
         const res = await authApi.post("/auth/refresh");
-        const isSuccess = res.status === 204 || (res.status === 200 && res.data === true);
+        const isSuccess = res.status === 204 || res.status === 200;
         if (isSuccess) {
           this.isAuthenticated = true;
           this.saveToStorage();
         }
         return isSuccess;
       } catch (err) {
-        console.error("[Pinia Auth] Ошибка обновления сессии:", err.response?.data || err);
+        console.error("Ошибка обновления сессии:", err.response?.data || err);
         notify("Сессия истекла. Войдите заново.", "error");
         this.logout();
         return false;

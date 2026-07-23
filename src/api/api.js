@@ -58,7 +58,6 @@ api.interceptors.response.use(
     }
 
     // === 401: пробуем рефреш один раз ===
-
     // Проверка: если пользователь не авторизован — не рефрешим, просто реджектим
     if (!auth.isAuthenticated || !auth.user?.id) {
       return Promise.reject(error);
@@ -75,11 +74,9 @@ api.interceptors.response.use(
         failedQueue.push({ resolve, reject });
       })
         .then(() => {
-          originalRequest._retry = true;
           return api(originalRequest);
         })
         .catch((err) => {
-          doLogout(auth);
           return Promise.reject(err);
         });
     }
