@@ -73,7 +73,7 @@ export const useProductStore = defineStore("product", () => {
 
       const res = await api.get('/advert', {
         params: Object.keys(dto).length > 0 
-          ? { dto: JSON.stringify(dto) } 
+          ? { dto: JSON.stringify(dto) , take: 50 } 
           : undefined
       })
       

@@ -399,7 +399,7 @@ export const useAuthStore = defineStore("auth", {
       try {
         const res = await api.get('/advert', {
           params: {
-            dto: JSON.stringify({ userId: String(this.user.id) })
+            dto: JSON.stringify({ userId: String(this.user.id), take: 50 })
           }
         });
         return Array.isArray(res.data) ? res.data : [];
@@ -461,7 +461,7 @@ export const useAuthStore = defineStore("auth", {
     //   try {
     //     const res = await api.get('/advert', {
     //       params: {
-    //         dto: JSON.stringify({ userId: String(sellerId) })
+    //         dto: JSON.stringify({ userId: String(sellerId), take: 50 })
     //       }
     //     });
     //     return Array.isArray(res.data) ? res.data : [];
@@ -480,7 +480,7 @@ export const useAuthStore = defineStore("auth", {
       try {
         const res = await api.get('/advert', {
           params: {
-            dto: JSON.stringify({ userId: String(sellerId) })
+            dto: JSON.stringify({ userId: String(sellerId), take: 50 })
           }
         });
         return Array.isArray(res.data) ? res.data : [];
