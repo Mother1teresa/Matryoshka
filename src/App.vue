@@ -140,35 +140,30 @@ onMounted(async () => {
     await favStore.fetchAdvertFavorites().catch(() => {});
   }
 
-  // === ОБНОВЛЕНИЕ ДЛЯ НАЧАЛА ===
   if (auth.isAuthenticated) {
     try {
       console.log("🔄 Старт приложения: фоновое обновление токена...");
-      // Запускаем рефреш. Флаг auth.isAuthLoading станет false в блоке finally внутри метода стора
       await auth.refreshToken(); 
     } catch (err) {
       console.error("Ошибка при стартовом обновлении токена:", err);
-      auth.isAuthLoading = false;
     } finally {
-      // Когда стартовый рефреш завершился, проверяем, остался ли пользователь авторизован
-      if (auth.isAuthenticated) {
-        isInitializing = true;
-        try {
-          // Последовательно и безопасно запрашиваем профиль
-          await auth.fetchProfile();
-          if (auth.user?.id) {
-            startGlobalPolling();
-            await reviewStore.initUserReviews(auth.user.id);
-          }
-        } catch (e) {
-          console.error('Ошибка загрузки профиля после стартового рефреша:', e);
-        } finally {
-          isInitializing = false;
+      auth.isAuthLoading = false;
+    }
+    if (auth.isAuthenticated && !isInitializing) {
+      isInitializing = true;
+      try {
+        await auth.fetchProfile();
+        if (auth.user?.id) {
+          startGlobalPolling();
+          await reviewStore.initUserReviews(auth.user.id);
         }
+      } catch (e) {
+        console.error('Ошибка загрузки профиля после стартового рефреша:', e);
+      } finally {
+        isInitializing = false;
       }
     }
   } else {
-    // Если пользователь изначально зашел как гость, мгновенно снимаем состояние загрузки авторизации
     auth.isAuthLoading = false;
   }
 });

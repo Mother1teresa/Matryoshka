@@ -799,11 +799,7 @@ export const useAuthStore = defineStore("auth", {
         return isSuccess;
       } catch (err) {
         console.error("Ошибка обновления сессии:", err.response?.data || err);
-        notify("Сессия истекла. Войдите заново.", "error");
-        this.logout();
         return false;
-      } finally {
-        this.isAuthLoading = false;
       }
     },
     async verifyCodeAPI(payload) {

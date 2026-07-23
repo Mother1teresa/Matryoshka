@@ -5,6 +5,7 @@ export const authApi = axios.create({
   baseURL: "/api",
   withCredentials: true,
 });
+
 export const api = axios.create({
   baseURL: "/api",
   withCredentials: true,
@@ -14,9 +15,9 @@ let isRefreshing = false;
 let failedQueue = [];
 
 const processQueue = (error) => {
-  failedQueue.forEach((prom) => {
-    if (error) prom.reject(error);
-    else prom.resolve();
+  failedQueue.forEach(({ resolve, reject }) => {
+    if (error) reject(error);
+    else resolve();
   });
   failedQueue = [];
 };
@@ -29,47 +30,33 @@ const doLogout = (auth, message = "Сессия истекла. Войдите �
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    const originalRequest = error.config;
     if (!error.response) return Promise.reject(error);
 
-    const { useAuthStore } = await import("/src/stores/authStore.js");
-    const auth = useAuthStore();
-    const originalRequest = error.config;
-    if (!originalRequest) return Promise.reject(error);
+    const { status, data } = error.response;
+    const url = originalRequest?.url || "";
+    const errorMessage = data?.message || data?.error || "";
 
-    const status = error.response.status;
-    const data = error.response.data;
-    const url = originalRequest.url || "";
-    const errorMessage = data?.message || data?.error || (typeof data === 'string' ? data : "");
+    if (status !== 401) return Promise.reject(error);
+    if (url.includes("/auth/")) return Promise.reject(error);
 
-    // Не трогаем auth-эндпоинты
-    if (url.includes("/auth/")) {
-      return Promise.reject(error);
-    }
-
-    // === ФАТАЛЬНЫЕ ОШИБКИ: сразу логаут, без рефреша ===
+    const isSessionExpired = data?.code === "SESSION_EXPIRED";
     const isUserNotFound = errorMessage.includes("User not found") && url.includes("/profile");
-
-    if (data?.code === "SESSION_EXPIRED" || isUserNotFound) {
-      doLogout(auth, "Сессия истекла. Войдите заново.");
+    
+    if (isSessionExpired || isUserNotFound) {
+      const { useAuthStore } = await import("/src/stores/authStore.js");
+      doLogout(useAuthStore());
       return Promise.reject(error);
     }
 
-    // Не 401 — просто прокидываем
-    if (status !== 401) {
-      return Promise.reject(error);
-    }
-
-    // === 401: логика рефреша ===
-    if (!auth.isAuthenticated || !auth.user?.id) {
-      return Promise.reject(error);
-    }
+    const { useAuthStore } = await import("/src/stores/authStore.js");
+    const auth = useAuthStore();    
+    if (!auth.isAuthenticated) return Promise.reject(error);
 
     if (originalRequest._retry) {
       doLogout(auth, "Ошибка авторизации. Войдите заново.");
       return Promise.reject(error);
     }
-
-    // Ждём, пока другой запрос рефрешит токен
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
         failedQueue.push({ resolve, reject });
@@ -77,18 +64,17 @@ api.interceptors.response.use(
         .then(() => api(originalRequest))
         .catch((err) => Promise.reject(err));
     }
-
-    // === ЗАПУСКАЕМ РЕФРЕШ ===
     originalRequest._retry = true;
     isRefreshing = true;
 
     try {
       const success = await auth.refreshToken();
-      if (success) {
-        processQueue(null);
-        return api(originalRequest);
-      }
-      throw new Error("Refresh returned false");
+      
+      if (!success) throw new Error("Refresh failed");
+      
+      processQueue(null);
+      return api(originalRequest);
+      
     } catch (refreshError) {
       processQueue(refreshError);
       doLogout(auth);
@@ -96,5 +82,22 @@ api.interceptors.response.use(
     } finally {
       isRefreshing = false;
     }
-  },
+  }
+);
+
+// === AUTH API ===
+authApi.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (!error.response) return Promise.reject(error);
+    
+    const { status, data } = error.response;
+    
+    if (status === 401 || data?.code === "SESSION_EXPIRED") {
+      const { useAuthStore } = await import("/src/stores/authStore.js");
+      doLogout(useAuthStore());
+    }
+    
+    return Promise.reject(error);
+  }
 );

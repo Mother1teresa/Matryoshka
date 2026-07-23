@@ -154,7 +154,7 @@ const onPublish = async () => {
         description: form.description.trim(),
         productId: form.productId,
         commentsDisabled: form.allowComments,
-        userId: auth.user?.id // ← добавьте userId сюда
+        userId: auth.user?.id
       },
       (progress) => {
         uploadProgress.value = progress; 
