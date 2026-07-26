@@ -25,7 +25,7 @@
           <div v-for="video in currentItems" :key="video.id" class="fav-video-card">
             <div class="fav-video-card_block">
               <div class="fav-video-preview">
-                <video 
+                <video
                   v-if="video.cdnUrl"
                   :src="video.cdnUrl"
                   preload="metadata"
@@ -65,12 +65,20 @@
         <template v-else>
           <div v-for="item in currentItems" :key="item.id" class="fav-ad-horizontal">
             <div class="ad-img-container">
-              <img :src="item.image || '/src/assets/img/placeholder.png'" class="ad-main-img" />
+              <router-link :to="productLink(item)">
+                <img :src="item.image || '/src/assets/img/placeholder.png'" class="ad-main-img" />
+              </router-link>
             </div>
             <div class="ad-content-info">
               <div class="ad-title-row">
-                <h3 class="ad-title">{{ item.title }}</h3>
-                <img src="/src/assets/img/icons/heart-filled.svg" class="fav-heart" @click="removeFromFavorites(item.id)" />
+                <router-link :to="productLink(item)">
+                  <h3 class="ad-title">{{ item.title }}</h3>
+                </router-link>
+                <img
+                  src="/src/assets/img/icons/heart-filled.svg"
+                  class="fav-heart"
+                  @click.stop="removeFromFavorites(item.id)"
+                />
               </div>
               <div class="ad-price">{{ item.price }} ₽</div>
               <div class="ad-details-tags">
@@ -80,7 +88,6 @@
                 <img src="/src/assets/img/icons/location-pin.svg" class="pin" />
                 {{ item.address }}
               </div>
-              <p class="ad-desc">{{ item.description }}</p>
             </div>
             <div class="ad-seller-actions">
               <div class="seller-brief">
@@ -95,40 +102,97 @@
           </div>
         </template>
       </template>
+
       <!-- Пустое состояние -->
       <div v-else class="empty-state">
         <p>В избранном пока ничего нет</p>
       </div>
     </div>
+
+    <!-- Модалка звонка -->
+    <Transition name="fade">
+      <div v-if="showCallModal" class="modal-overlay" @click.self="showCallModal = false">
+        <div class="confirm-call-card">
+          <p class="confirm-message">
+            Позвонить <strong>{{ callModalName }}</strong>?
+          </p>
+          <div class="phone-display">
+            {{ formatPhone(callModalPhone) }}
+          </div>
+          <div class="confirm-actions">
+            <button class="btn-black" @click="handleCall">Позвонить</button>
+            <button class="btn-gray" @click="showCallModal = false">Отмена</button>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { useAuthStore } from "/src/stores/authStore.js";
 import { useFavoritesStore } from "/src/stores/favoritesStore.js";
+import { useModalStore } from "/src/stores/modal.js";
 import { notify } from "/src/utils/notify.js";
 
+const router = useRouter();
 const authStore = useAuthStore();
 const favStore = useFavoritesStore();
+const modal = useModalStore();
 
 const isDropdownOpen = ref(false);
 const selectedType = ref('videos');
 const isLoading = ref(false);
+const showCallModal = ref(false);
+const callModalPhone = ref('');
+const callModalName = ref('');
 
-// ✅ Единый источник правды — стор, не локальные ref!
+const closeDropdown = () => { isDropdownOpen.value = false; };
+
 const currentItems = computed(() => {
-  return selectedType.value === 'videos' 
-    ? authStore.favoriteVideos 
+  return selectedType.value === 'videos'
+    ? authStore.favoriteVideos
     : favStore.advertFavorites;
 });
+
+/** Ссылка на карточку товара (как в ProductPage.vue) */
+const productLink = (item) => ({
+  name: 'Product',
+  params: {
+    type: item.category,
+    section: item.section || item.subCategory || 'default',
+    id: item.id
+  }
+});
+
+/** Форматирование телефона (как в ProductPage.vue) */
+const formatPhone = (phone) => {
+  if (!phone) return '';
+  const cleaned = ('' + phone).replace(/\D/g, '');
+  const match = cleaned.match(/^(\d|7|8)(\d{3})(\d{3})(\d{2})(\d{2})$/);
+  if (match) {
+    return `+7 (${match[2]}) ${match[3]}-${match[4]}-${match[5]}`;
+  }
+  return phone;
+};
+
+const checkAuthAndRun = (action, message = "Авторизуйтесь, чтобы продолжить") => {
+  if (!authStore.isAuthenticated) {
+    modal.openLogin();
+    notify(message);
+    return;
+  }
+  action();
+};
 
 const loadData = async () => {
   if (!authStore.isAuthenticated) {
     notify('Войдите, чтобы увидеть избранное');
     return;
   }
-  
+
   isLoading.value = true;
   try {
     if (selectedType.value === 'videos') {
@@ -145,14 +209,12 @@ const loadData = async () => {
 
 const removeFromFavorites = async (id) => {
   if (!authStore.isAuthenticated) return;
-  
+
   try {
     if (selectedType.value === 'videos') {
       await authStore.unmarkAsFavorite(id);
-      // стор сам обновит favoriteVideos
     } else {
-      await favStore.toggleAdvertFavorite(id);
-      // стор сам обновит advertFavorites через fetchAdvertFavorites
+      await favStore.removeAdvertFavorite(id);
     }
     notify('Удалено из избранного');
   } catch (e) {
@@ -164,6 +226,42 @@ const changeType = (type) => {
   selectedType.value = type;
   isDropdownOpen.value = false;
   loadData();
+};
+
+/** Открыть чат с продавцом (как в ProductPage.vue) */
+const onWriteClick = async (item) => {
+  if (!item?.sellerId) {
+    notify('Продавец не найден', 'error');
+    return;
+  }
+  checkAuthAndRun(async () => {
+    try {
+      const roomId = await authStore.createPrivateRoom(item.sellerId);
+      router.push({ name: 'ChatDetail', params: { id: roomId } });
+    } catch (err) {
+      notify("Не удалось открыть чат", "error");
+    }
+  }, "Войдите, чтобы написать сообщение");
+};
+
+/** Показать номер продавца (как в ProductPage.vue) */
+const onShowPhone = (item) => {
+  if (!item?.seller?.phone) {
+    notify('Номер телефона не указан', 'error');
+    return;
+  }
+  checkAuthAndRun(() => {
+    callModalName.value = item.seller.name || 'Продавцу';
+    callModalPhone.value = item.seller.phone;
+    showCallModal.value = true;
+  }, "Войдите, чтобы увидеть номер телефона");
+};
+
+const handleCall = () => {
+  if (callModalPhone.value) {
+    window.location.href = `tel:${callModalPhone.value}`;
+  }
+  showCallModal.value = false;
 };
 
 onMounted(() => {

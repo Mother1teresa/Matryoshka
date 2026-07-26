@@ -117,24 +117,21 @@ export function toApiValue(fieldKey, value) {
   return mapper[extracted] ?? extracted;
 }
 export const API_FILTER_FIELDS = [
-  'query', 'priceFrom', 'priceTo',
+  'query', 'category', 'subCategory', 'profession', 'sphere',
+  'employment', 'workFormat', 'propertyType', 'vehicleKpp', 'drive',
+  'vesselType', 'paymentType', 'businessForm', 'offerType', 'transactionScope',
+  'userId', 'hasParking', 'hasElevator', 'hasBalcony', 'hasDocuments',
   'yearOfManufactureFrom', 'yearOfManufactureTo',
   'engineCapacityFrom', 'engineCapacityTo',
   'horsePowerFrom', 'horsePowerTo',
   'totalAreaFrom', 'totalAreaTo',
-  'livingAreaFrom', 'livingAreaTo',
   'vesselLengthFrom', 'vesselLengthTo',
   'vesselDraftFrom', 'vesselDraftTo',
   'vesselWidthFrom', 'vesselWidthTo',
   'maxPassengersFrom', 'maxPassengersTo',
+  'livingAreaFrom', 'livingAreaTo',
   'heightFrom', 'heightTo',
-  'hasParking', 'hasElevator', 'hasBalcony', 'hasDocuments',
-  'profession', 'sphere', 'employment', 'workFormat',
-  'propertyType', 'vehicleKpp', 'drive', 'vesselType',
-  'paymentType', 'businessForm', 'offerType', 'transactionScope',
-  'houseState', 'engineType', 'steeringWheel', 'cooling',
-  'brand', 'model', 'color', 'ownersPts', 'subcategory',
-  'userId', 'take'
+  'priceFrom', 'priceTo', 'take', 'cursor'
 ];
 export function buildSearchDto(formData, category, subCategory) {
   const dto = {};

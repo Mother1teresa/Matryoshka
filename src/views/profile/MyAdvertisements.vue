@@ -20,15 +20,21 @@
       <div v-else-if="currentAds.length > 0" class="ads-list">
         <div v-for="ad in currentAds" :key="ad.id" class="ad-card-horizontal">
           <div class="ad-image-block">
-            <img 
-              :src="ad.image" 
-              alt="product" 
-              @error="ad.image = '/src/assets/img/placeholder.png'"
-            />
+            <router-link :to="productLink(ad)">
+              <img 
+                :src="ad.image" 
+                alt="product" 
+                @error="ad.image = '/src/assets/img/placeholder.png'"
+              />
+            </router-link>
           </div>
           <div class="ad-main-info">
             <div class="ad-title-row">
-              <h3 class="ad-title">{{ ad.title }}</h3>
+              <h3 class="ad-title">
+                <router-link :to="productLink(ad)" class="ad-title-link">
+                  {{ ad.title }}
+                </router-link>
+              </h3>
               <button class="menu-dots-btn" @click.stop="toggleMenu(ad.id)">
                 <span></span><span></span><span></span>
               </button>
@@ -40,7 +46,7 @@
                 <button v-else @click="handleStatusChange(ad.id, 'active')">
                   Опубликовать заново
                 </button>
-                <button class="delete-btn" @click="handleDelete(ad.id)">Удалить</button>
+                <button class="delete-btn" @click="handleDelete(ad)">Удалить</button>
               </div>
             </div>
             <div v-if="activeTab === 'archive'" class="archive-reason">Продал / Другая причина</div>
@@ -82,7 +88,9 @@
         <p>Вы можете создать новое объявление в разделе "Создать".</p>
         <router-link to="/profile/create-ad" class="btn go-to-ads-btn">К созданию</router-link>
       </div>
-</div></div></template>
+    </div>
+  </div>
+</template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
@@ -97,6 +105,16 @@ const activeTab = ref("active");
 const isLoading = ref(false);
 const myAds = ref([]);
 
+// Ссылка на страницу товара
+const productLink = (ad) => ({
+  name: 'Product',
+  params: {
+    type: ad.category || 'tovary',
+    section: ad.section || 'default',
+    id: ad.id
+  }
+});
+
 // Загрузка объявлений
 const loadAdverts = async () => {
   isLoading.value = true;
@@ -106,10 +124,8 @@ const loadAdverts = async () => {
     console.log('Получено объявлений:', ads.length);
     console.log('Первое объявление:', ads[0]);
     myAds.value = ads.map(ad => {
-      // Маппинг статуса с API на фронтовые табы
       let status = ad.status || 'active';
       
-      // Если API возвращает другие статусы — мапим их
       const statusMap = {
         'ACTIVE': 'active',
         'ACTIVE_PUBLISHED': 'active',
@@ -123,7 +139,7 @@ const loadAdverts = async () => {
       }
       
       return {
-        id: ad.id,
+        id: String(ad.id),
         title: ad.title,
         price: Number(ad.price) || 0,
         stock: ad.stock || 0,
@@ -135,7 +151,10 @@ const loadAdverts = async () => {
         comments: ad.commentsCount || ad.comments || 0,
         shares: ad.sharesCount || ad.shares || 0,
         status: status,
+        category: ad.category || 'tovary',
+        section: ad.subCategory || ad.section || 'default',
         image: ad.pictures?.[0]?.pictureUrl || ad.thumbnailUrl || ad.image || '/src/assets/img/placeholder.png',
+        s3Key: ad.pictures?.[0]?.s3Key || ad.s3Key,
         videoId: ad.videoId
       };
     });
@@ -177,11 +196,11 @@ const handleStatusChange = async (id, newStatus) => {
   activeMenuId.value = null;
 };
 
-const handleDelete = async (id) => {
+const handleDelete = async (ad) => {
   if (!confirm("Вы точно хотите удалить объявление?")) return;
-  const success = await auth.deleteAdvert(id);
+  const success = await auth.deleteAdvert(ad.id, ad.s3Key);
   if (success) {
-    myAds.value = myAds.value.filter(ad => ad.id !== id);
+    myAds.value = myAds.value.filter(a => a.id !== ad.id);
   }
   activeMenuId.value = null;
 };
@@ -199,7 +218,16 @@ onUnmounted(() => {
   window.removeEventListener("click", closeMenu);
 });
 </script>
+
 <style scoped>
+.ad-title-link {
+  color: inherit;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+.ad-title-link:hover {
+  opacity: 0.7;
+}
 .tabs-nav {
   display: flex;
   gap: 4rem;

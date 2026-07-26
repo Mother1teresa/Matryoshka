@@ -7,6 +7,7 @@ import { useFavoritesStore } from "/src/stores/favoritesStore.js";
 import maskAvatar from "/src/assets/img/mask-avatar.png";
 import { useRegionModalStore } from "/src/stores/regionModal.js";
 import { geocodeByQuery } from '/src/utils/geocode.js';
+import { getFCMToken, listenToMessages } from '/src/firebase.js';
 import { notify } from "/src/utils/notify";
 
 let stompClient = null;
@@ -33,6 +34,9 @@ export const useAuthStore = defineStore("auth", {
         // === POLLING ===
         _pollingIntervals: {}, // roomId -> intervalId
         _lastMessageIds: {}, 
+        // === FCM ===
+        fcmToken: null,
+        _fcmUnsubscribe: null,
       };
     } catch (e){
       console.error("Auth parse error:", e);
@@ -213,6 +217,57 @@ export const useAuthStore = defineStore("auth", {
       this._lastMessageIds = {};
     },
 
+    // ========== FCM ==========
+    async initFCM() {
+      if (!this.user?.id) return;
+      
+      const token = await getFCMToken();
+      if (!token) return;
+      
+      this.fcmToken = token;
+      
+      // Отправляем токен на бэкенд
+      try {
+        await api.post('/notifications/register-token', {
+          userId: this.user.id,
+          fcmToken: token,
+          platform: 'web'
+        });
+        console.log('[FCM] Токен зарегистрирован');
+      } catch (e) {
+        console.error('[FCM] Ошибка регистрации:', e);
+      }
+      
+      // Слушаем foreground сообщения
+      this._fcmUnsubscribe = listenToMessages((payload) => {
+        const { title, body } = payload.notification || {};
+        
+        // Показываем через твой notify
+        notify(body || title || 'Новое уведомление', 'info');
+        
+        // Добавляем в список уведомлений
+        const newNote = {
+          id: payload.data?.notificationId || Date.now(),
+          title: title || 'Уведомление',
+          message: body || '',
+          date: new Date().toLocaleDateString('ru-RU'),
+          time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+          is_read: false,
+          createdAt: new Date().toISOString()
+        };
+        
+        this.allNotifications.unshift(newNote);
+      });
+    },
+    
+    stopFCM() {
+      if (this._fcmUnsubscribe) {
+        this._fcmUnsubscribe();
+        this._fcmUnsubscribe = null;
+      }
+      this.fcmToken = null;
+    },
+
     // ========== CHAT ACTIONS ==========
     async subscribeToRoom(roomId, onMessage) {
       const client = this.initSocket();
@@ -379,11 +434,7 @@ export const useAuthStore = defineStore("auth", {
         return [];
       }
       try {
-        const res = await api.get('/advert', {
-          params: {
-            dto: JSON.stringify({ userId: String(this.user.id), take: 50 })
-          }
-        });
+        const res = await api.post('/advert', { userId: String(this.user.id), take: 50});
         return Array.isArray(res.data) ? res.data : [];
       } catch (e) {
         console.error("Ошибка загрузки:", e.response?.status, e.response?.data);
@@ -404,13 +455,17 @@ export const useAuthStore = defineStore("auth", {
     },
     async deleteAdvert(id, s3Key = null) {
       try {
-        const dto = { id };
-        if (s3Key) dto.s3Key = s3Key;
-        await api.delete('/advert', { params: {advertDeleteRequestDTO: JSON.stringify(dto)} });
+        const dto = { 
+          id: String(id), 
+          ...(s3Key && { s3Key }) 
+        };
+        await api.delete('/advert', { 
+          params: { advertDeleteRequestDTO: JSON.stringify(dto) } 
+        });
         notify("Объявление удалено", "success");
         return true;
       } catch (e) {
-        console.error("Ошибка удаления:", e);
+        console.error("Ошибка удаления:", e.response?.data || e);
         notify("Не удалось удалить", "error");
         return false;
       }
@@ -430,11 +485,7 @@ export const useAuthStore = defineStore("auth", {
         return [];
       }
       try {
-        const res = await api.get('/advert', {
-          params: {
-            dto: JSON.stringify({ userId: String(sellerId), take: 50 })
-          }
-        });
+        const res = await api.post('/advert', { userId: String(sellerId), take: 50});
         return Array.isArray(res.data) ? res.data : [];
       } catch (e) {
         console.error("Ошибка загрузки товаров продавца:", e);
@@ -736,6 +787,7 @@ export const useAuthStore = defineStore("auth", {
       this.isAuthLoading = false;
       this.saveToStorage();
       this.startRefreshTimer();
+      this.initFCM().catch(console.error);
     },
     async loginAPI({ email, password }) {
       try {
@@ -1083,6 +1135,7 @@ export const useAuthStore = defineStore("auth", {
     async logout() {
       this.stopRefreshTimer();
       this.disconnectSocket();
+      this.stopFCM();
       this.stopAllPolling();
       this.isAuthenticated = false;
       this.user = null;

@@ -21,6 +21,11 @@ export const useProductStore = defineStore("product", () => {
 
     isLoading.value = true
     console.log('=== fetchAdverts START ===', filters)
+    const parseBool = (val) => {
+      if (typeof val === 'boolean') return val
+      if (typeof val === 'string') return val === 'true' || val === '1'
+      return Boolean(val)
+    }
 
     try {
       const dto = {}
@@ -31,8 +36,8 @@ export const useProductStore = defineStore("product", () => {
         dto.subCategory = filters.subcategory || filters.subCategory || filters.section
       }
       if (filters.userId) dto.userId = String(filters.userId)
-      if (filters.priceFrom) dto.priceFrom = Number(filters.priceFrom)
-      if (filters.priceTo) dto.priceTo = Number(filters.priceTo)
+      if (filters.priceFrom != null) dto.priceFrom = Number(filters.priceFrom)
+      if (filters.priceTo != null) dto.priceTo = Number(filters.priceTo)
       if (filters.take) dto.take = Number(filters.take)
       if (filters.profession) dto.profession = filters.profession
       if (filters.sphere) dto.sphere = filters.sphere
@@ -46,37 +51,34 @@ export const useProductStore = defineStore("product", () => {
       if (filters.businessForm) dto.businessForm = filters.businessForm
       if (filters.offerType) dto.offerType = filters.offerType
       if (filters.transactionScope) dto.transactionScope = filters.transactionScope
-      if (filters.hasParking != null) dto.hasParking = Boolean(filters.hasParking)
-      if (filters.hasElevator != null) dto.hasElevator = Boolean(filters.hasElevator)
-      if (filters.hasBalcony != null) dto.hasBalcony = Boolean(filters.hasBalcony)
-      if (filters.hasDocuments != null) dto.hasDocuments = Boolean(filters.hasDocuments)
-      if (filters.yearOfManufactureFrom) dto.yearOfManufactureFrom = Number(filters.yearOfManufactureFrom)
-      if (filters.yearOfManufactureTo) dto.yearOfManufactureTo = Number(filters.yearOfManufactureTo)
-      if (filters.engineCapacityFrom) dto.engineCapacityFrom = Number(filters.engineCapacityFrom)
-      if (filters.engineCapacityTo) dto.engineCapacityTo = Number(filters.engineCapacityTo)
-      if (filters.horsePowerFrom) dto.horsePowerFrom = Number(filters.horsePowerFrom)
-      if (filters.horsePowerTo) dto.horsePowerTo = Number(filters.horsePowerTo)
-      if (filters.totalAreaFrom) dto.totalAreaFrom = Number(filters.totalAreaFrom)
-      if (filters.totalAreaTo) dto.totalAreaTo = Number(filters.totalAreaTo)
-      if (filters.vesselLengthFrom) dto.vesselLengthFrom = Number(filters.vesselLengthFrom)
-      if (filters.vesselLengthTo) dto.vesselLengthTo = Number(filters.vesselLengthTo)
-      if (filters.vesselDraftFrom) dto.vesselDraftFrom = Number(filters.vesselDraftFrom)
-      if (filters.vesselDraftTo) dto.vesselDraftTo = Number(filters.vesselDraftTo)
-      if (filters.vesselWidthFrom) dto.vesselWidthFrom = Number(filters.vesselWidthFrom)
-      if (filters.vesselWidthTo) dto.vesselWidthTo = Number(filters.vesselWidthTo)
-      if (filters.maxPassengersFrom) dto.maxPassengersFrom = Number(filters.maxPassengersFrom)
-      if (filters.maxPassengersTo) dto.maxPassengersTo = Number(filters.maxPassengersTo)
-      if (filters.livingAreaFrom) dto.livingAreaFrom = Number(filters.livingAreaFrom)
-      if (filters.livingAreaTo) dto.livingAreaTo = Number(filters.livingAreaTo)
-      if (filters.heightFrom) dto.heightFrom = Number(filters.heightFrom)
-      if (filters.heightTo) dto.heightTo = Number(filters.heightTo)
+      if (filters.hasParking != null) dto.hasParking = parseBool(filters.hasParking)
+      if (filters.hasElevator != null) dto.hasElevator = parseBool(filters.hasElevator)
+      if (filters.hasBalcony != null) dto.hasBalcony = parseBool(filters.hasBalcony)
+      if (filters.hasDocuments != null) dto.hasDocuments = parseBool(filters.hasDocuments)
+      if (filters.yearOfManufactureFrom != null) dto.yearOfManufactureFrom = Number(filters.yearOfManufactureFrom)
+      if (filters.yearOfManufactureTo != null) dto.yearOfManufactureTo = Number(filters.yearOfManufactureTo)
+      if (filters.engineCapacityFrom != null) dto.engineCapacityFrom = Number(filters.engineCapacityFrom)
+      if (filters.engineCapacityTo != null) dto.engineCapacityTo = Number(filters.engineCapacityTo)
+      if (filters.horsePowerFrom != null) dto.horsePowerFrom = Number(filters.horsePowerFrom)
+      if (filters.horsePowerTo != null) dto.horsePowerTo = Number(filters.horsePowerTo)
+      if (filters.totalAreaFrom != null) dto.totalAreaFrom = Number(filters.totalAreaFrom)
+      if (filters.totalAreaTo != null) dto.totalAreaTo = Number(filters.totalAreaTo)
+      if (filters.vesselLengthFrom != null) dto.vesselLengthFrom = Number(filters.vesselLengthFrom)
+      if (filters.vesselLengthTo != null) dto.vesselLengthTo = Number(filters.vesselLengthTo)
+      if (filters.vesselDraftFrom != null) dto.vesselDraftFrom = Number(filters.vesselDraftFrom)
+      if (filters.vesselDraftTo != null) dto.vesselDraftTo = Number(filters.vesselDraftTo)
+      if (filters.vesselWidthFrom != null) dto.vesselWidthFrom = Number(filters.vesselWidthFrom)
+      if (filters.vesselWidthTo != null) dto.vesselWidthTo = Number(filters.vesselWidthTo)
+      if (filters.maxPassengersFrom != null) dto.maxPassengersFrom = Number(filters.maxPassengersFrom)
+      if (filters.maxPassengersTo != null) dto.maxPassengersTo = Number(filters.maxPassengersTo)
+      if (filters.livingAreaFrom != null) dto.livingAreaFrom = Number(filters.livingAreaFrom)
+      if (filters.livingAreaTo != null) dto.livingAreaTo = Number(filters.livingAreaTo)
+      if (filters.heightFrom != null) dto.heightFrom = Number(filters.heightFrom)
+      if (filters.heightTo != null) dto.heightTo = Number(filters.heightTo)
 
-      const res = await api.get('/advert', {
-        params: Object.keys(dto).length > 0 
-          ? { dto: JSON.stringify(dto) , take: 50 } 
-          : undefined
-      })
-      
+      if (!dto.take) dto.take = 50
+      const res = await api.post('/advert', dto)
+
       const ads = Array.isArray(res.data) ? res.data : res.data?.items || []
       console.log('API returned ads:', ads.length)
 
