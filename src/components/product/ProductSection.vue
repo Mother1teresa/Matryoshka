@@ -71,6 +71,6 @@ onMounted(() => {
   gap: 0.938rem;
   width: 56.438rem;
   margin: 0 auto;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
 }
 </style>

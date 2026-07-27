@@ -5,12 +5,7 @@
       <div v-if="!isAuthenticated" class="auth-overlay">
         <div class="auth-content">
           <p class="auth-title">Для просмотра мини-видео необходимо авторизоваться</p>
-          <button class="auth-btn register" @click="openRegister">Зарегистрироваться</button>
-          <p class="auth-text">
-            Если у вас есть аккаунт, то <br><a href="#" @click.prevent="openLogin" class="auth-link">войдите</a>
-          </p>
-          <img src="/src/assets/img/arr-select.svg" alt="" class="auth-mini_arr">
-          <p class="auth-hint">(как ссылка)</p>
+          <button class="auth-btn register" @click.prevent="openLogin">Войти</button>
         </div>
       </div>
       <!-- АВТОРИЗОВАННЫЙ -->
