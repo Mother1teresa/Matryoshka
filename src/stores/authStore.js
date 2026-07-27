@@ -54,6 +54,8 @@ export const useAuthStore = defineStore("auth", {
         _stompConnected: false,
         _pollingIntervals: {},
         _lastMessageIds: {},
+        fcmToken: null,
+        _fcmUnsubscribe: null,
       };
     }
   },
@@ -226,26 +228,21 @@ export const useAuthStore = defineStore("auth", {
       
       this.fcmToken = token;
       
-      // Отправляем токен на бэкенд
       try {
-        await api.post('/notifications/register-token', {
-          userId: this.user.id,
-          fcmToken: token,
-          platform: 'web'
+        await api.post('/notifications', {
+          userId: String(this.user.id),
+          token: token
         });
         console.log('[FCM] Токен зарегистрирован');
       } catch (e) {
         console.error('[FCM] Ошибка регистрации:', e);
       }
       
-      // Слушаем foreground сообщения
       this._fcmUnsubscribe = listenToMessages((payload) => {
         const { title, body } = payload.notification || {};
         
-        // Показываем через твой notify
         notify(body || title || 'Новое уведомление', 'info');
         
-        // Добавляем в список уведомлений
         const newNote = {
           id: payload.data?.notificationId || Date.now(),
           title: title || 'Уведомление',
@@ -1096,11 +1093,8 @@ export const useAuthStore = defineStore("auth", {
       } catch (e) {
         console.error("Ошибка уведомлений:", e);
         this.allNotifications = [];
-        if (!this.isAuthenticated) return; 
       } finally {
-        if (this.isAuthenticated) {
-          this.isNotificationsLoading = false;
-        }
+        this.isNotificationsLoading = false;
       }
     },
     startRefreshTimer() {
