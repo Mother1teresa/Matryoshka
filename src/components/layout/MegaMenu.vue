@@ -35,14 +35,17 @@ watch(route, () => {
     </div>
 
     <!-- правая колонка -->
-    <div class="mega-right">
+    <div class="mega-right" :class="{
+        'is-services': activeCategory.slug === 'uslugi',
+        'is-two-sections': activeCategory.sections?.length === 2
+      }">
       <div
         v-for="section in activeCategory.sections"
         :key="section.title" class="mega-right__block">
         <div class="section-title">
           {{ section.title }}
         </div>
-        <div class="section-links">
+        <div class="section-links" :class="{ 'section-links--2col': section.links.length > 12 }">
         <router-link
           v-for="link in section.links"
           :key="link.slug"
@@ -78,8 +81,6 @@ watch(route, () => {
 
   overflow: hidden;
 }
-
-/* LEFT COLUMN */
 .mega-left {
   width: 20.313rem;
   padding: 1.5rem 1.5rem 1.5rem 1.5rem;
@@ -90,19 +91,15 @@ watch(route, () => {
 .mega-left::-webkit-scrollbar {
   width: 6px;
 }
-
 .mega-left::-webkit-scrollbar-thumb {
   background: var(--btn-bg);
   border-radius: 10px;
   transition: all .3s;
 }
-
 .mega-left::-webkit-scrollbar-thumb:hover {
   background: #105965;
 }
-/* CATEGORY ITEM */
 .mega-left__name {
-  /* height: 4.125rem; */
   padding: 0.75rem;
   border-radius: 1.25rem;
   display: flex;
@@ -111,15 +108,12 @@ watch(route, () => {
   cursor: pointer;
   transition: all 0.3s ease;
 }
-/* hover */
 .mega-left__name:hover {
   background: #F6F6F6;
 }
-/* active */
 .mega-left__name.active {
   background: #F0F0F0;
 }
-/* RIGHT COLUMN */
 .mega-right {
   flex: 1;
   padding: 2.288rem 1.75rem;
@@ -129,27 +123,22 @@ watch(route, () => {
   row-gap: 2.125rem;
   overflow-y: scroll;
   height: auto;
-  column-count: 4; 
-  column-gap: 20px;
-  /* break-inside: avoid; */
+  /* column-count: 4; 
+  column-gap: 20px; */
 }
-/* BLOCK */
 .mega-right__block {
   display: flex;
   flex-direction: column;
 }
-/* SECTION TITLE */
 .section-title {
   color: var(--btn-bg);
   margin-bottom: 0.938rem;
 }
-/* LINKS CONTAINER */
 .section-links {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
-/* LINK */
 .section-link {
   font-size: 0.875rem;
   color: #000000;
@@ -157,14 +146,36 @@ watch(route, () => {
   cursor: pointer;
   transition: color 0.3s ease;
 }
-/* hover link */
 .section-link:hover {
   color: var(--btn-bg);
 }
-
 .mega-left__icon {
   width: 2.188rem;
   height: 2.188rem;
   object-fit: contain;
+}
+.mega-right.is-services {
+  grid-template-columns: 1fr;
+}
+.mega-right.is-services .mega-right__block {
+  width: 100%;
+}
+.mega-right.is-services .section-links {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem 3rem;
+  align-items: start;
+}
+.mega-right.is-pair {
+  grid-template-columns: repeat(2, 1fr);
+}
+.mega-right.is-two-sections {
+  grid-template-columns: repeat(2, 1fr);
+}
+.section-links--2col {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem 1.5rem;
+  align-items: start;
 }
 </style>

@@ -1873,7 +1873,7 @@ export const adCreateConfig = {
             },
             { 
               key: 'legal_form', 
-              label: 'Организационно-правовая форма', 
+              label: 'Правовая форма', 
               type: 'chips', 
               options: ['ИП', 'ООО', 'АО', 'Другое'], 
               gridClass: 'chips-4' 

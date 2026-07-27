@@ -414,7 +414,7 @@ export const productFields = {
         { key: "priceFrom", label: "Цена от", type: "number" },
         { key: "priceTo", label: "Цена до", type: "number" },
         { key: "workExperience", label: "Возраст бизнеса", type: "select", options: ['До 1 года','1-3 года','3-5 лет','5-10 лет','Более 10 лет'] },
-        { key: "businessForm", label: "Организационно-правовая форма", type: "select", options: ['ИП','ООО','АО','Другое'] }
+        { key: "businessForm", label: "Правовая форма", type: "select", options: ['ИП','ООО','АО','Другое'] }
       ],
       extra: []
     },

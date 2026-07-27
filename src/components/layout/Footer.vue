@@ -14,27 +14,21 @@
         <div class="footer__bottom-left">
           <p>
             Матрёшка — сайт объявлений России.
-            <a href="https://www.avito.ru/legal/">Правила</a> Матрёшки. <br />
-            <a href="https://www.avito.ru/legal/rules/privacy-policy"
+            <a href="">Правила</a> Матрёшки. <br />
+            <a href=""
               >Политика конфиденциальности</a
             >. Оплачивая услуги на Матрёшка, вы принимаете
-            <a href="https://www.avito.ru/legal/rules/services-agreement"
+            <a href=""
               >оферту</a
             >. <br />Матрёшка использует
-            <a href="https://www.avito.ru/legal/rules/rec-technologies/"
+            <a href=""
               >рекомендательные технологии</a
             >.
           </p>
         </div>
         <div class="footer__bottom-right">
           <a href="http://">
-            <img src="/src/assets/img/ok.svg" alt="" />
-          </a>
-          <a href="http://">
             <img src="/src/assets/img/vk.svg" alt="" />
-          </a>
-          <a href="http://">
-            <img src="/src/assets/img/tg.svg" alt="" />
           </a>
         </div>
       </div>
@@ -81,7 +75,6 @@
 .footer__bottom-right {
   display: flex;
   justify-content: space-between;
-  width:34%;
 }
 .footer__bottom-right img {
   position: relative;

@@ -532,9 +532,8 @@ const updateNumeric = (val) => {
 }
 
 /* Multiselect */
-/* Кастомная стрелка */
 .multiselect__caret {
-  position: absolute; right: 12px; top: 50%; width: 12px; height: 12px; margin-top: -6px;
+  position: absolute; right: 0.75rem; top: 50%; width: 0.75rem; height: 0.75rem; margin-top: -0.375rem;
   background-image: url("/src/assets/img/arr-select.svg");
   background-repeat: no-repeat; background-size: contain; transition: transform 0.3s; z-index: 1; pointer-events: none;
 }

@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { useAuthStore } from "/src/stores/authStore.js";
+import { notify } from "/src/utils/notify.js";
 import { watch } from "vue";
 const routes = [
   {

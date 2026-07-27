@@ -290,7 +290,6 @@ const handleCreateVideo = () => {
   display: flex;
   align-items: center;
   gap: 0.825rem;
-  padding-top: 0.15rem;
   width: 75%;
 }
 .search-input__box {

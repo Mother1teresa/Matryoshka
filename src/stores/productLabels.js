@@ -120,7 +120,7 @@ export const productLabels = {
   payback: "Срок окупаемости",
   payBackPeriod: "Срок окупаемости",
   businessAge: "Возраст бизнеса",
-  legalForm: "Организационно-правовая форма",
+  legalForm: "Правовая форма",
   businessForm: "Форма бизнеса",
   isProfitable: "Прибыльный",
   
@@ -325,7 +325,7 @@ export const fieldGroups = {
         { key: "businessStatus", type: "text", label: "Состояние" },
         { key: "payback", type: "text", label: "Срок окупаемости" },
         { key: "businessAge", type: "text", label: "Возраст бизнеса" },
-        { key: "legalForm", type: "text", label: "Организационно-правовая форма" },
+        { key: "legalForm", type: "text", label: "Правовая форма" },
       ]
     }
   ],

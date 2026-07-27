@@ -472,12 +472,8 @@ input::placeholder{
   border: 1px solid #ff4d4f !important;
   border-radius: 0.625rem;
 }
-/* Для мультиселекта специфично */
-/* .multiselect-container.error-field :deep(.multiselect__tags) {
-  border-color: #ff4d4f;
-} */
 .multiselect__caret {
-  position: absolute; right: 12px; top: 50%; width: 12px; height: 12px; margin-top: -6px;
+  position: absolute; right: 0.75rem; top: 50%; width: 0.75rem; height: 0.75rem; margin-top: -0.375rem;
   background-image: url("/src/assets/img/arr-select.svg");
   background-repeat: no-repeat; background-size: contain; transition: transform 0.3s; z-index: 1; pointer-events: none;
 }
@@ -505,7 +501,8 @@ input::placeholder{
   display: grid;
   align-items: center;
   padding: 0.75rem;
-  line-height: 16px;
+  min-height: auto;
+  line-height: 1rem;
   text-decoration: none;
   text-transform: none;
   vertical-align: middle;
@@ -519,7 +516,7 @@ input::placeholder{
   display: block;
   background: #fff;
   width: 100%;
-  max-height: 240px;
+  max-height: 20rem !important;
   overflow: auto;
   border: 1px solid #e8e8e8;
   border-top: none;
@@ -527,6 +524,7 @@ input::placeholder{
   border-bottom-right-radius: 0;
   z-index: 50;
   -webkit-overflow-scrolling: touch;
+  transition: all .35s;
 }
 :deep(.multiselect__tag){
   padding: 0.25rem 1.2rem 0.25rem 0.425rem;
@@ -539,6 +537,10 @@ input::placeholder{
   max-width: 100%;
   text-overflow: ellipsis;
   font-size: 0.875rem;
+}
+:deep(.multiselect__tag-icon) {
+  margin-left: 0.438rem;
+  width: 1.25rem;
 }
 :deep(.multiselect__option--selected){
   color: var(--btn-bg);
