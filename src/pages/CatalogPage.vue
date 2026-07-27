@@ -100,6 +100,7 @@ onMounted(() => {const exists = categories.find(c => c.slug === route.params.typ
   font-size: 1.115rem;
   border-radius: 0.938rem;
   background: #eeeeee;
+  transition: color .3s;
 }
 
 .tab-btn.active {
@@ -127,11 +128,15 @@ onMounted(() => {const exists = categories.find(c => c.slug === route.params.typ
   background: #eeeeee;
   font-size: 1.115rem;
   width: 12.313rem;
+  transition: color .3s;
 }
 .sub-btn.active {
-  background: white;
+  background: white !important;
   box-shadow: 0px 0.2rem 0.2rem 0px #00000040;
 }
+/* .sub-btn.active:hover{
+  opacity: 100%;
+} */
 .grid-realty{
   display: grid;
 }
