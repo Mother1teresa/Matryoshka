@@ -17,6 +17,56 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Create .env file
+        run: |
+          echo "VITE_FIREBASE_API_KEY=${{ secrets.VITE_FIREBASE_API_KEY }}" >> .env
+          echo "VITE_FIREBASE_AUTH_DOMAIN=matreshka-28074.firebaseapp.com" >> .env
+          echo "VITE_FIREBASE_PROJECT_ID=matreshka-28074" >> .env
+          echo "VITE_FIREBASE_STORAGE_BUCKET=matreshka-28074.firebasestorage.app" >> .env
+          echo "VITE_FIREBASE_MESSAGING_SENDER_ID=788752225889" >> .env
+          echo "VITE_FIREBASE_APP_ID=1:788752225889:web:4c3f06ba5a20ec67583c20" >> .env
+          echo "VITE_FIREBASE_VAPID_KEY=${{ secrets.VITE_FIREBASE_VAPID_KEY }}" >> .env
+
+      - name: Create firebase-messaging-sw.js
+        run: |
+          cat > public/firebase-messaging-sw.js << 'EOF'
+          importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
+          importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
+
+          firebase.initializeApp({
+            apiKey: "${{ secrets.VITE_FIREBASE_API_KEY }}",
+            authDomain: "matreshka-28074.firebaseapp.com",
+            projectId: "matreshka-28074",
+            storageBucket: "matreshka-28074.firebasestorage.app",
+            messagingSenderId: "788752225889",
+            appId: "1:788752225889:web:4c3f06ba5a20ec67583c20"
+          });
+
+          const messaging = firebase.messaging();
+
+          messaging.onBackgroundMessage((payload) => {
+            const { title, body } = payload.notification || {};
+            self.registration.showNotification(title || 'Уведомление', {
+              body: body || '',
+              icon: '/icon-192x192.png',
+              data: { url: payload.data?.url || '/notifications' }
+            });
+          });
+
+          self.addEventListener('notificationclick', (event) => {
+            event.notification.close();
+            const url = event.notification.data?.url || '/notifications';
+            event.waitUntil(
+              clients.matchAll({ type: 'window' }).then((windowClients) => {
+                for (const client of windowClients) {
+                  if (client.url.includes(url) && 'focus' in client) return client.focus();
+                }
+                if (clients.openWindow) return clients.openWindow(url);
+              })
+            );
+          });
+          EOF
+
       - name: Install dependencies and Build
         run: |
           npm install
@@ -26,11 +76,8 @@ jobs:
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.SERVER_HOST }}
-          # Используй имя пользователя, под которым ты заходишь на сервер (front)
           username: ${{ secrets.SERVER_USER }} 
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
-          # Копируем всё содержимое папки dist в /var/www/html/dist
           source: "dist/"
           target: "/var/www/html"
-          # strip_components убрали, чтобы dist осталась папкой
