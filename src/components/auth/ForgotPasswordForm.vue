@@ -90,8 +90,7 @@ async function submitForgot(){
   transition: all 0.3s;
 }
 .auth-btn:hover {
-  background: #105965;
-  color: white;
+  opacity: 80%;
 }
 
 .auth-bottom{

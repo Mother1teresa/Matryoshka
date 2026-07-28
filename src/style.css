@@ -616,7 +616,7 @@ h4 {
   transition: all 0.3s;
   border: none;
 }
-.auth-btn.register {background-color: #64a07a;color: white;margin-bottom: 0.688rem; padding: 0.625rem;width: 11.438rem;}
+.auth-btn.register {background-color: #64a07a; color: white; margin-bottom: 0.688rem; padding: 0.625rem; width: 11.438rem;}
 .auth-btn.register:hover {background-color: #558a68;}
 .auth-text {font-size: 0.875rem; margin-bottom: 0.25rem;}
 .auth-link {color: #2563eb;text-decoration: none;font-weight: 500;}

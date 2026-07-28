@@ -182,8 +182,7 @@ async function submitRegister(){
 }
 .auth-btn:hover,
 .auth-btn:focus {
-  background: #105965;
-  color: white;
+  opacity: 80%;
 }
 .form-or {
   text-align: center;

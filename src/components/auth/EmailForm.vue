@@ -95,8 +95,7 @@ async function submit(){
 }
 .auth-btn:hover,
 .auth-btn:focus {
-  background: #105965;
-  color: white;
+  opacity: 80%;
 }
 
 </style>
