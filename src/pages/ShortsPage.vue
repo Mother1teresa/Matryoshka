@@ -49,7 +49,6 @@
               <div class="v-action">
                 <button class="action-btn" @click.stop="onLikeClick(video)">
                   <img :src="video.isLikedByMe ? heartFilled : heart" class="like-icon"/>
-                  <span>{{ video.likes || 0 }}</span>
                 </button>
               </div>
               <div v-if="!isOwnVideo(video)" class="v-action">
@@ -860,6 +859,7 @@ onUnmounted(() => {
   color: #000000;
   line-height: 1;
   margin: 0;
+  height: 3.6rem;
 }
 .video-stats-row {
   display: flex;
@@ -1092,15 +1092,15 @@ onUnmounted(() => {
 .copy-btn:hover {background: #5a9669;}
 .shorts-block_avt{
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: 50% 1fr;
   gap: 1rem;
   margin-bottom: 1rem;
 }
 .reply-banner{display: flex;gap: 2rem;margin-bottom: .5rem;justify-content: space-between;}
 .reply-banner button{font-size: 1rem; width: 1.3rem;}
-.own-badge {font-size: 0.75rem;color: #999;padding: 0.438rem 1rem;}
+.own-badge {font-size: 0.55rem;color: #999;padding: 0 1rem;}
 .favorite-icon {width: 1.5rem; height: 1.5rem;}
-/* .favorite-icon[src*="-fill"] {
+/* .favorite-icon
   filter: brightness(0) saturate(100%) invert(31%) sepia(82%) saturate(4477%) hue-rotate(340deg) brightness(92%) contrast(96%);
 } */
 .favorite-icon[src*="-fill"] {

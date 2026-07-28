@@ -7,9 +7,33 @@ import {
 
 export const productFields = {
   tovary: {
-    default: {
+    fashion: {
       main: [
-        { key: "subcategory", label: "Категория", type: "select", options: ['Женская одежда','Женская обувь','Мужская одежда','Мужская обувь','Сумки','Аксессуары','Двери','Инструменты','Камины','Потолки','Окна','Косметика','Парфюм','Массажеры','Мед техника'] },
+        { key: "subcategory", label: "Категория", type: "select", options: ['Женская одежда','Женская обувь','Мужская одежда','Мужская обувь','Сумки','Аксессуары'] },
+        { key: "priceFrom", label: "Цена: от", type: "number" },
+        { key: "priceTo", label: "Цена: до", type: "number" }
+      ],
+      extra: []
+    },
+    repair_build: {
+      main: [
+        { key: "subcategory", label: "Категория", type: "select", options: ['Двери','Инструменты','Камины','Потолки','Окна'] },
+        { key: "priceFrom", label: "Цена: от", type: "number" },
+        { key: "priceTo", label: "Цена: до", type: "number" }
+      ],
+      extra: []
+    },
+    beauty_health: {
+      main: [
+        { key: "subcategory", label: "Категория", type: "select", options: ['Косметика','Парфюм','Массажеры','Мед техника'] },
+        { key: "priceFrom", label: "Цена: от", type: "number" },
+        { key: "priceTo", label: "Цена: до", type: "number" }
+      ],
+      extra: []
+    },
+    furniture: {
+      main: [
+        { key: "subcategory", label: "Категория", type: "select", options: ['Ремонт техники','Уборка','Фотосъёмка','Дизайн'] },
         { key: "priceFrom", label: "Цена: от", type: "number" },
         { key: "priceTo", label: "Цена: до", type: "number" }
       ],
@@ -404,7 +428,6 @@ export const productFields = {
       extra: []
     }
   },
-
   biznes: {
     ready_business: {
       main: [

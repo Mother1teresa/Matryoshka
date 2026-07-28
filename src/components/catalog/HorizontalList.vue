@@ -52,7 +52,15 @@ const loadData = () => {
 watch(apiFilters, loadData, { deep: true });
 onMounted(loadData);
 
-const displayItems = computed(() => store.products);
+const displayItems = computed(() => {
+  if (props.subcategory) {
+    return store.getProductsByCategory(props.category, props.subcategory)
+  }
+  if (props.section) {
+    return store.getProductsByCategory(props.category, props.section)
+  }
+  return store.products
+});
 
 const getImageUrl = (item) => {
   if (item.images && item.images.length > 0) {

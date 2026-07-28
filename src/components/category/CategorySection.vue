@@ -52,7 +52,7 @@ const menu = useMenuStore();
   display: flex;
   flex-wrap: wrap;
   gap: 0.625rem;
-  width: 84%;
+  width: 82%;
 }
 
 .category img {

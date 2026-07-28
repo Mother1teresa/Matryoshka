@@ -32,8 +32,8 @@ export const useProductStore = defineStore("product", () => {
       
       if (filters.query) dto.query = filters.query
       if (filters.category) dto.category = filters.category
-      if (filters.subcategory || filters.subCategory || filters.section) {
-        dto.subCategory = filters.subcategory || filters.subCategory || filters.section
+      if (filters.subCategory || filters.subcategory) {
+        dto.subCategory = filters.subCategory || filters.subcategory
       }
       if (filters.userId) dto.userId = String(filters.userId)
       if (filters.priceFrom != null) dto.priceFrom = Number(filters.priceFrom)
@@ -182,12 +182,23 @@ export const useProductStore = defineStore("product", () => {
   const resetLikes = () => {
     products.value.forEach(p => p.isLiked = false)
   }
+  const getProductsBySection = (category, sectionSlug) => {
+    const cat = categories.find(c => c.slug === category)
+    const sec = cat?.sections.find(s => s.slug === sectionSlug)
+    const allowedSlugs = sec?.links.map(l => l.slug) || []
+    return products.value.filter(p => {
+      if (category && p.category !== category) return false
+      if (sectionSlug && !allowedSlugs.includes(p.subcategory)) return false
+      return true
+    })
+  }
 
   return {
     products,
     isLoading,
     fetchAdverts,
     getProductsByCategory,
+    getProductsBySection,
     toggleLike,
     resetLikes,
   }

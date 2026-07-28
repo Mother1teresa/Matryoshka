@@ -14,8 +14,9 @@ const store = useProductStore()
 const apiFilters = computed(() => {
   const result = {}
   if (props.category) result.category = props.category
-  if (props.subcategory || props.section) {
-    result.subcategory = props.subcategory || props.section
+  // subcategory передаём только если конкретная подкатегория выбрана
+  if (props.subcategory) {
+    result.subcategory = props.subcategory
   }
   if (props.filters) {
     for (const key of API_FILTER_FIELDS) {
@@ -35,7 +36,18 @@ const loadData = () => {
 watch(apiFilters, loadData, { deep: true })
 onMounted(loadData)
 
-const products = computed(() => store.products)
+const products = computed(() => {
+  // Конкретная подкатегория: /tovary/fashion/men-clothes
+  if (props.subcategory) {
+    return store.getProductsByCategory(props.category, props.subcategory)
+  }
+  // Страница секции без подкатегории: /tovary/fashion
+  if (props.section) {
+    return store.getProductsBySection(props.category, props.section)
+  }
+  // Просто категория: /tovary
+  return store.getProductsByCategory(props.category)
+})
 </script>
 
 <template>

@@ -54,7 +54,7 @@ watch(route, () => {
                     type: activeCategory.slug, 
                     section: section.slug || section.title_slug || link.slug, // зависит от вашей структуры данных
                     subcategory: link.slug 
-                 } 
+                 }
                }"
           @click="menu.close()"
           class="section-link"

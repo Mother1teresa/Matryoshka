@@ -502,5 +502,6 @@ watch(
   -webkit-box-orient: vertical;
   overflow: hidden;
   color: #333;
+  height: 3.6rem;
 }
 </style>

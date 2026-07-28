@@ -391,7 +391,7 @@ const playVideo = (video) => {
 .video-preview img { width: 100%; height: 100%; }
 .video-card { width: 100%; height: 20.313rem; background: white; border-radius: 0.938rem; padding: 0.938rem; }
 .video-info { text-align: end; }
-.video-title { font-size: .9rem; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; overflow: hidden; transition: all 0.3s; border-radius: 0;}
+.video-title { font-size: .9rem; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; overflow: hidden; transition: all 0.3s; border-radius: 0; height: 3.6rem;}
 .video-date { color: #7c7c7c; font-size: 0.875rem;}
 .seller-card-main { background-color: white; margin-bottom: 1.25rem; padding: 1.438rem; border-radius: 1.25rem; }
 .seller-info-right { text-align: end; }

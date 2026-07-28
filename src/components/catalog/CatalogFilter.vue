@@ -1,8 +1,10 @@
 <script setup>
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, nextTick, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import Multiselect from 'vue-multiselect'
 import 'vue-multiselect/dist/vue-multiselect.css'
+import { useProductStore } from "/src/stores/product.js"
+import { categories } from "/src/data/categories.js"
 import { productFields } from "/src/stores/productFields.js"
 import { 
   buildSearchDto, 
@@ -14,6 +16,7 @@ import {
 
 const router = useRouter()
 const route = useRoute()
+const productStore = useProductStore()
 
 const typeParam = computed(() => route.params.type)
 const sectionParam = computed(() => route.params.section)
@@ -21,7 +24,6 @@ const subcategoryParam = computed(() => route.params.subcategory)
 const isExpanded = ref(false)
 const form = ref({})
 
-// Обратные мапперы (API -> UI)
 const REVERSE_MAPS = {
   employment: Object.fromEntries(Object.entries(employmentMap).map(([k,v]) => [v,k])),
   workFormat: Object.fromEntries(Object.entries(workFormatMap).map(([k,v]) => [v,k])),
@@ -44,14 +46,11 @@ const normalizeQuery = (query) => {
   const q = { ...query }
   if (q.priceFrom) q.priceFrom = Number(q.priceFrom)
   if (q.priceTo) q.priceTo = Number(q.priceTo)
-  
-  // Обратный маппинг API-значений в UI-значения
   for (const [key, val] of Object.entries(q)) {
     if (REVERSE_MAPS[key] && REVERSE_MAPS[key][val]) {
       q[key] = REVERSE_MAPS[key][val]
     }
   }
-  
   return q
 }
 
@@ -63,6 +62,45 @@ const mapToBackend = (formData) => {
     }
   }
   return clean
+}
+
+// --- данные категории для поиска названий и slug ---
+const currentCategoryData = computed(() =>
+  categories.find(c => c.slug === typeParam.value)
+)
+
+const subcategoryLabel = computed(() => {
+  if (!subcategoryParam.value) return ''
+  const cat = currentCategoryData.value
+  if (!cat) return ''
+  for (const sec of cat.sections) {
+    const link = sec.links.find(l => l.slug === subcategoryParam.value)
+    if (link) return link.name
+    for (const l of sec.links) {
+      if (l.subLinks) {
+        const sub = l.subLinks.find(sl => sl.slug === subcategoryParam.value)
+        if (sub) return sub.name
+      }
+    }
+  }
+  return ''
+})
+
+// --- найти slug по названию подкатегории (для редиректа) ---
+const findSlugByName = (name) => {
+  const cat = currentCategoryData.value
+  if (!cat || !name) return null
+  for (const sec of cat.sections) {
+    const link = sec.links.find(l => l.name === name)
+    if (link) return { section: sec.slug, slug: link.slug }
+    for (const l of sec.links) {
+      if (l.subLinks) {
+        const sub = l.subLinks.find(sl => sl.name === name)
+        if (sub) return { section: sec.slug, slug: sub.slug }
+      }
+    }
+  }
+  return null
 }
 
 const currentConfig = computed(() => {
@@ -80,34 +118,85 @@ const mainFields = computed(() => currentConfig.value.main || [])
 const extraFields = computed(() => currentConfig.value.extra || [])
 const hasExtra = computed(() => extraFields.value.length > 0)
 
-watch(currentConfig, (newConfig) => {
+// --- сброс формы при ЛЮБОМ изменении маршрута (type/section/subcategory) ---
+watch([typeParam, sectionParam, subcategoryParam], () => {
+  const newConfig = currentConfig.value
   const obj = {}
   ;[...(newConfig.main || []), ...(newConfig.extra || [])].forEach(field => {
     obj[field.key] = field.type === 'chips' ? [] : ''
   })
+
+  const label = subcategoryLabel.value
+  if (label && obj.subcategory !== undefined) {
+    const field = newConfig.main?.find(f => f.key === 'subcategory')
+               || newConfig.extra?.find(f => f.key === 'subcategory')
+    if (field?.options?.includes(label)) {
+      obj.subcategory = label
+    }
+  }
+
   form.value = { ...obj, ...normalizeQuery(route.query) }
+
+  // Автопоиск сразу после перехода (из меню или при F5)
+  nextTick(() => executeSearch(false))
 }, { immediate: true })
 
 watch(() => route.query, (newQuery) => {
   form.value = { ...form.value, ...normalizeQuery(newQuery) }
 }, { deep: true })
 
-const applyFilters = () => {
+// --- ядро: отправка запроса на бэкенд ---
+const executeSearch = (updateUrl = true) => {
   const cleanData = mapToBackend(form.value)
-  const apiCategory = typeParam.value
-  const apiSubCategory = subcategoryParam.value || sectionParam.value || ''
-  const apiDto = buildSearchDto(cleanData, apiCategory, apiSubCategory)
-  router.push({
-    name: 'catalog',
-    params: route.params,
-    query: apiDto
-  })
+  delete cleanData.subcategory
+
+  cleanData.category = typeParam.value
+
+  // subCategory (slug) отправляем только если он есть в URL.
+  // Если его нет — мы на странице секции (/tovary/fashion), грузим всю категорию.
+  if (subcategoryParam.value) {
+    cleanData.subCategory = subcategoryParam.value
+  }
+
+  productStore.fetchAdverts(cleanData, true)
+
+  if (updateUrl) {
+    const query = { ...cleanData }
+    delete query.category
+    delete query.subCategory
+    router.push({ name: 'catalog', params: route.params, query })
+  }
+}
+
+// --- кнопка "Показать" ---
+const applyFilters = () => {
+  // Если мы на странице секции БЕЗ subcategory в URL, но пользователь выбрал подкатегорию в селекте —
+  // редиректим на чистый URL с subcategory, чтобы не плодить дубли страниц
+  if (!subcategoryParam.value && form.value.subcategory) {
+    const found = findSlugByName(form.value.subcategory)
+    if (found) {
+      router.push({
+        name: 'catalog',
+        params: {
+          type: typeParam.value,
+          section: found.section,
+          subcategory: found.slug
+        }
+      })
+      return
+    }
+  }
+
+  executeSearch(true)
 }
 
 const toggleChip = (key, value) => {
   const arr = form.value[key] || []
   form.value[key] = arr.includes(value) ? arr.filter(v => v !== value) : [...arr, value]
 }
+onMounted(() => {
+  executeSearch(false)
+})
 </script>
 <template>
   <div class="filter-wrapper">
