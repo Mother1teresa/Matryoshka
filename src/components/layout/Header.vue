@@ -25,20 +25,18 @@
         <div class="header__right">
           <!-- НЕ авторизован -->
           <template v-if="!auth.isAuthenticated">
-            
             <div class="header__right-false">
-              <button class="btn-light btn-login" @click="modal.openLogin">
+              <a href="" class="btn-light btn-login" target="_blank" >
                 Поддержка
-              </button>
+              </a>
               <button class="btn-light" @click="region.open()">
                 <img src="/src/assets/img/location_on.svg" />
                 {{ region.selectedRegion || "Регион"  }}
               </button>
             </div>
-            <a href="" target="_blank" class="header__right-false_poder">
-              <!-- <img src="" alt=""> -->
+            <button @click="modal.openLogin" class="header__right-false_poder">
               Войти
-            </a>
+            </button>
           </template>
 
           <!-- авторизован -->
