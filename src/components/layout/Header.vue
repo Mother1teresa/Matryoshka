@@ -25,15 +25,20 @@
         <div class="header__right">
           <!-- НЕ авторизован -->
           <template v-if="!auth.isAuthenticated">
+            
             <div class="header__right-false">
               <button class="btn-light btn-login" @click="modal.openLogin">
-                Войти
+                Поддержка
               </button>
               <button class="btn-light" @click="region.open()">
                 <img src="/src/assets/img/location_on.svg" />
                 {{ region.selectedRegion || "Регион"  }}
               </button>
             </div>
+            <a href="" target="_blank" class="header__right-false_poder">
+              <!-- <img src="" alt=""> -->
+              Войти
+            </a>
           </template>
 
           <!-- авторизован -->
@@ -101,6 +106,9 @@
                           {{ auth.unreadNotificationsCount }}
                         </span>
                       </router-link>
+                      <a href="" target="_blank" class="profile-menu_link">
+                        Поддержка
+                      </a>
                       <div class="profile-menu_link logout" @click.stop="askLogout">Выйти</div>
                       </div>
                   </div>
@@ -244,23 +252,19 @@ const handleCreateVideo = () => {
   /* box-shadow: 0 2px 5px rgba(0,0,0,0.05); */
   border-bottom: 6px solid #dddddd;
 }
-
-/* -------- Layout -------- */
 .header__top {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 1rem;
 }
-
 .header__center {
   display: flex;
   gap: 15px;
 }
-
 .header__right {
   display: flex;
-  gap: 15px;
+  gap: 0.813rem;
   align-items: flex-start;
   width: 17.5rem;
   justify-content: flex-end;
@@ -306,7 +310,6 @@ const handleCreateVideo = () => {
   height: 1.5rem;
   object-fit: fill;
 }
-
 .btn-light {
   background: var(--bg-profil);
   border: none;
@@ -315,7 +318,7 @@ const handleCreateVideo = () => {
   gap: 0.25rem;
   align-items: center;
   justify-content: center;
-  width: 100%;
+  width: 95%;
   border-radius: 0.938rem;
   height: 2.125rem;
   padding: 0.625rem 1.5rem;
@@ -325,10 +328,9 @@ const handleCreateVideo = () => {
   height: auto;
 }
 .btn-light img {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.45rem;
+  height: 1.45rem;
 }
-
 .btn-search {
   background: var(--btn-bg);
   color: white;
@@ -337,7 +339,6 @@ const handleCreateVideo = () => {
   border-radius: 1.25rem;
   cursor: pointer;
 }
-
 .btn-category {
   background: white;
   border: 1px solid var(--btn-bg);
@@ -351,12 +352,10 @@ const handleCreateVideo = () => {
   font-weight: 400;
   transition: opacity 0.3s;
 }
-
 .btn-category img {
   width: 2.063rem;
   height: auto;
 }
-
 .profile {
   display: grid;
   align-items: center;
@@ -503,21 +502,27 @@ const handleCreateVideo = () => {
   align-items: center;
   z-index: 10;
 }
-
 .logout-box {
   background: white;
   padding: 1.563rem;
   border-radius: 1rem;
 }
-
 .logout-actions {
   display: flex;
   gap: 0.625rem;
   margin-top: 0.938rem;
 }
-
 .logout-actions .btn-light {
   height: auto;
   border-radius: 1.25rem;
+}
+.header__right-false_poder{
+  background: var(--bg-profil);
+  width: 5.438rem;
+  height: 5.438rem;
+  border-radius: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

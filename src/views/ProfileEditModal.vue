@@ -516,7 +516,7 @@ input::placeholder{
   display: block;
   background: #fff;
   width: 100%;
-  max-height: 20rem !important;
+  max-height: 15rem !important;
   overflow: auto;
   border: 1px solid #e8e8e8;
   border-top: none;

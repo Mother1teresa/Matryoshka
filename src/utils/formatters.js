@@ -17,51 +17,49 @@ const MONTHS = [
   'янв', 'фев', 'мар', 'апр', 'мая', 'июн', 
   'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'
 ];
+
 export const formatDate = (dateStr) => {
   if (!dateStr) return 'недавно';
   
   const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return 'недавно';
+  
   const now = new Date();
   
   const diffMs = now - date;
-  const diffSec = Math.floor(diffMs / 1000);
-  const diffMin = Math.floor(diffSec / 60);
-  const diffHour = Math.floor(diffMin / 60);
-  const diffDay = Math.floor(diffHour / 24);
+  const diffMin = Math.floor(diffMs / 1000 / 60);
   
-  // Сегодня — показываем время или "только что"
-  if (diffDay === 0) {
+  // Сравниваем календарные дни (без времени) — корректно при переходе через полночь
+  const stripTime = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diffDays = Math.round((stripTime(now) - stripTime(date)) / (1000 * 60 * 60 * 24));
+  
+  // Сегодня
+  if (diffDays === 0) {
     if (diffMin < 1) return 'только что';
     if (diffMin < 60) return `${diffMin} мин назад`;
     
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    return `сегодня в ${hours}:${minutes}`;
+    const h = date.getHours().toString().padStart(2, '0');
+    const m = date.getMinutes().toString().padStart(2, '0');
+    return `сегодня в ${h}:${m}`;
   }
   
   // Вчера
-  if (diffDay === 1) {
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    return `вчера в ${hours}:${minutes}`;
+  if (diffDays === 1) {
+    const h = date.getHours().toString().padStart(2, '0');
+    const m = date.getMinutes().toString().padStart(2, '0');
+    return `вчера в ${h}:${m}`;
   }
   
   // Этот год — "9 дек в 10:56"
   const day = date.getDate();
   const month = MONTHS[date.getMonth()];
-  const hours = date.getHours().toString().padStart(2, '0');
-  const minutes = date.getMinutes().toString().padStart(2, '0');
+  const h = date.getHours().toString().padStart(2, '0');
+  const m = date.getMinutes().toString().padStart(2, '0');
   
   if (date.getFullYear() === now.getFullYear()) {
-    return `${day} ${month} в ${hours}:${minutes}`;
+    return `${day} ${month} в ${h}:${m}`;
   }
   
   // Прошлые годы — "15 мар 2024 в 10:56"
-  const year = date.getFullYear();
-  return `${day} ${month} ${year} в ${hours}:${minutes}`;
+  return `${day} ${month} ${date.getFullYear()} в ${h}:${m}`;
 };
-
-export const capitalizeFirst = (str) => {
-  if (!str || typeof str !== 'string') return str;
-  return str[0].toUpperCase() + str.slice(1);
-}
