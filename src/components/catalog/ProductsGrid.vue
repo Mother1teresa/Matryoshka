@@ -1,8 +1,7 @@
 <script setup>
-import { computed, watch, onMounted } from "vue"
+import { computed } from "vue"
 import { useProductStore } from "/src/stores/product.js"
 import ProductCard from "/src/components/product/ProductCard.vue"
-import { API_FILTER_FIELDS } from "/src/utils/filterToApiMapper.js"
 
 const props = defineProps({
   category: String,
@@ -10,38 +9,15 @@ const props = defineProps({
   subcategory: String,
   filters: Object
 })
+
 const store = useProductStore()
-const apiFilters = computed(() => {
-  const result = {}
-  if (props.category) result.category = props.category
-  // subcategory передаём только если конкретная подкатегория выбрана
-  if (props.subcategory) {
-    result.subcategory = props.subcategory
-  }
-  if (props.filters) {
-    for (const key of API_FILTER_FIELDS) {
-      const val = props.filters[key]
-      if (val !== '' && val !== null && val !== undefined) {
-        result[key] = val
-      }
-    }
-  }
-  return result
-})
-
-const loadData = () => {
-  store.fetchAdverts(apiFilters.value)
-}
-
-watch(apiFilters, loadData, { deep: true })
-onMounted(loadData)
 
 const products = computed(() => {
   // Конкретная подкатегория: /tovary/fashion/men-clothes
   if (props.subcategory) {
     return store.getProductsByCategory(props.category, props.subcategory)
   }
-  // Страница секции без подкатегории: /tovary/fashion
+  // Страница секции: /tovary/fashion
   if (props.section) {
     return store.getProductsBySection(props.category, props.section)
   }

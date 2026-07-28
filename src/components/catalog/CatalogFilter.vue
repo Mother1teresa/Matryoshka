@@ -13,6 +13,7 @@ import {
   businessFormMap, offerTypeMap, transactionScopeMap,
   steeringWheelMap, coolingMap, genderMap, houseStateMap, engineTypeMap
 } from "/src/utils/filterToApiMapper.js"
+import { carModels, motoModels, truckModels, yachtModels, jetskiModels } from "/src/data/sharedFieldOptions.js"
 
 const router = useRouter()
 const route = useRoute()
@@ -23,6 +24,7 @@ const sectionParam = computed(() => route.params.section)
 const subcategoryParam = computed(() => route.params.subcategory)
 const isExpanded = ref(false)
 const form = ref({})
+const isNavigating = ref(false)
 
 const REVERSE_MAPS = {
   employment: Object.fromEntries(Object.entries(employmentMap).map(([k,v]) => [v,k])),
@@ -92,11 +94,12 @@ const findSlugByName = (name) => {
   if (!cat || !name) return null
   for (const sec of cat.sections) {
     const link = sec.links.find(l => l.name === name)
-    if (link) return { section: sec.slug, slug: link.slug }
+    if (link) return { section: sec.slug || link.slug, slug: link.slug }
+
     for (const l of sec.links) {
       if (l.subLinks) {
         const sub = l.subLinks.find(sl => sl.name === name)
-        if (sub) return { section: sec.slug, slug: sub.slug }
+        if (sub) return { section: l.slug, slug: sub.slug }
       }
     }
   }
@@ -118,8 +121,74 @@ const mainFields = computed(() => currentConfig.value.main || [])
 const extraFields = computed(() => currentConfig.value.extra || [])
 const hasExtra = computed(() => extraFields.value.length > 0)
 
-// --- сброс формы при ЛЮБОМ изменении маршрута (type/section/subcategory) ---
+watch(() => route.query, (newQuery) => {
+  form.value = { ...form.value, ...normalizeQuery(newQuery) }
+}, { deep: true })
+
+// --- ядро: отправка запроса на бэкенд ---
+const executeSearch = (updateUrl = true) => {
+  if (isNavigating.value) return
+
+  const cleanData = mapToBackend(form.value)
+  delete cleanData.subcategory
+
+  cleanData.category = typeParam.value
+
+  // Определяем subCategory для бэка:
+  // 1. Выбрано в фильтре → его slug
+  // 2. Нет в фильтре → берём из URL (subcategory, а если его нет — section)
+  let targetSubcategory = null
+
+  if (form.value.subcategory) {
+    const found = findSlugByName(form.value.subcategory)
+    if (found) targetSubcategory = found.slug
+  }
+  if (!targetSubcategory && subcategoryParam.value) {
+    targetSubcategory = subcategoryParam.value
+  }
+  if (!targetSubcategory && sectionParam.value) {
+    targetSubcategory = sectionParam.value
+  }
+
+  if (targetSubcategory) {
+    cleanData.subCategory = targetSubcategory
+  }
+
+  productStore.fetchAdverts(cleanData, true)
+
+  if (updateUrl) {
+    const query = { ...cleanData }
+    delete query.category
+    delete query.subCategory
+
+    const params = {
+      type: typeParam.value,
+      section: sectionParam.value,
+    }
+
+    // Если пользователь выбрал подкатегорию в селекте — обновляем путь
+    if (form.value.subcategory) {
+      const found = findSlugByName(form.value.subcategory)
+      if (found) {
+        params.section = found.section || sectionParam.value
+        params.subcategory = found.slug
+      }
+    }
+
+    isNavigating.value = true
+    router.push({ name: 'catalog', params, query })
+      .catch(() => {})
+      .finally(() => { isNavigating.value = false })
+  }
+}
+
+const applyFilters = () => {
+  executeSearch(true)
+}
+
 watch([typeParam, sectionParam, subcategoryParam], () => {
+  if (isNavigating.value) return
+
   const newConfig = currentConfig.value
   const obj = {}
   ;[...(newConfig.main || []), ...(newConfig.extra || [])].forEach(field => {
@@ -136,66 +205,42 @@ watch([typeParam, sectionParam, subcategoryParam], () => {
   }
 
   form.value = { ...obj, ...normalizeQuery(route.query) }
-
-  // Автопоиск сразу после перехода (из меню или при F5)
   nextTick(() => executeSearch(false))
 }, { immediate: true })
-
-watch(() => route.query, (newQuery) => {
-  form.value = { ...form.value, ...normalizeQuery(newQuery) }
-}, { deep: true })
-
-// --- ядро: отправка запроса на бэкенд ---
-const executeSearch = (updateUrl = true) => {
-  const cleanData = mapToBackend(form.value)
-  delete cleanData.subcategory
-
-  cleanData.category = typeParam.value
-
-  // subCategory (slug) отправляем только если он есть в URL.
-  // Если его нет — мы на странице секции (/tovary/fashion), грузим всю категорию.
-  if (subcategoryParam.value) {
-    cleanData.subCategory = subcategoryParam.value
-  }
-
-  productStore.fetchAdverts(cleanData, true)
-
-  if (updateUrl) {
-    const query = { ...cleanData }
-    delete query.category
-    delete query.subCategory
-    router.push({ name: 'catalog', params: route.params, query })
-  }
-}
-
-// --- кнопка "Показать" ---
-const applyFilters = () => {
-  // Если мы на странице секции БЕЗ subcategory в URL, но пользователь выбрал подкатегорию в селекте —
-  // редиректим на чистый URL с subcategory, чтобы не плодить дубли страниц
-  if (!subcategoryParam.value && form.value.subcategory) {
-    const found = findSlugByName(form.value.subcategory)
-    if (found) {
-      router.push({
-        name: 'catalog',
-        params: {
-          type: typeParam.value,
-          section: found.section,
-          subcategory: found.slug
-        }
-      })
-      return
-    }
-  }
-
-  executeSearch(true)
-}
 
 const toggleChip = (key, value) => {
   const arr = form.value[key] || []
   form.value[key] = arr.includes(value) ? arr.filter(v => v !== value) : [...arr, value]
 }
-onMounted(() => {
-  executeSearch(false)
+// --- динамические опции для зависимых селектов ---
+const getOptions = (field) => {
+  if (field.key !== 'model') return field.options || []
+  if (typeParam.value !== 'transport') return field.options || []
+  
+  const brand = form.value?.brand
+  if (!brand) return []
+  
+  // Водный транспорт: section = 'water', а подтип — в subcategoryParam
+  if (sectionParam.value === 'water') {
+    if (subcategoryParam.value === 'yachts') return yachtModels[brand] || []
+    if (subcategoryParam.value === 'jetski') return jetskiModels[brand] || []
+    return []
+  }
+  
+  switch (sectionParam.value) {
+    case 'cars':   return carModels[brand] || []
+    case 'moto':   return motoModels[brand] || []
+    case 'trucks': return truckModels[brand] || []
+    default:       return []
+  }
+}
+
+// --- сбрасываем модель при смене марки ---
+watch(() => form.value?.brand, (newBrand, oldBrand) => {
+  if (typeParam.value !== 'transport') return
+  if (oldBrand !== undefined && newBrand !== oldBrand && form.value) {
+    form.value.model = ''
+  }
 })
 </script>
 <template>
@@ -210,7 +255,7 @@ onMounted(() => {
                 <div v-if="field.type === 'select'" class="multiselect-container">
                   <multiselect
                     v-model="form[field.key]"
-                    :options="field.options || []"
+                    :options="getOptions(field)"
                     :placeholder="field.label"
                     :searchable="false"
                     :show-labels="false"
@@ -251,7 +296,7 @@ onMounted(() => {
             <div v-else-if="field.type === 'select'" class="multiselect-container">
               <multiselect
                 v-model="form[field.key]"
-                :options="field.options || []"
+                :options="getOptions(field)"
                 :placeholder="field.label"
                 :searchable="false"
                 :show-labels="false"

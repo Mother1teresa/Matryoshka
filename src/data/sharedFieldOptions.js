@@ -101,3 +101,74 @@ export const professions = [
   'Машинист', 'Монтажник', 'Автослесарь', 'Механик', 'Интернет-маркетолог', 
   'Логист', 'Менеджер', 'Бухгалтер', 'Юрист', 'Охранник', 'Водитель'
 ];
+
+export const motoModels = {
+  'Honda': ['CBR600RR', 'CBR1000RR-R', 'Gold Wing', 'Africa Twin', 'CB500X', 'Shadow', 'Transalp', 'Другая'],
+  'Yamaha': ['YZF-R1', 'YZF-R6', 'MT-09', 'MT-07', 'XSR900', 'Ténéré 700', 'Tracer 9', 'Другая'],
+  'Kawasaki': ['Ninja ZX-10R', 'Ninja ZX-6R', 'Z900', 'Versys 1000', 'KLR650', 'Другая'],
+  'Suzuki': ['GSX-R1000', 'GSX-R750', 'Hayabusa', 'V-Strom 650', 'SV650', 'Другая'],
+  'KTM': ['RC 390', 'Duke 390', 'Duke 890', 'Adventure 890', 'Duke 1290', 'Другая'],
+  'BMW Motorrad': ['S 1000 RR', 'R 1250 GS', 'F 900 R', 'G 310 R', 'Другая'],
+  'Ducati': ['Panigale V4', 'Streetfighter V4', 'Multistrada V4', 'Monster', 'Scrambler', 'Другая'],
+  'Triumph': ['Speed Triple', 'Street Triple', 'Tiger 900', 'Bonneville', 'Другая'],
+  'Aprilia': ['RSV4', 'Tuono V4', 'RS 660', 'Другая'],
+  'Harley-Davidson': ['Sportster', 'Softail', 'Touring', 'Street', 'CVO', 'Другая'],
+  'Polaris': ['Sportsman', 'RZR', 'Ranger', 'Другая'],
+  'Arctic Cat': ['Alterra', 'Wildcat', 'Prowler', 'Другая'],
+  'Bajaj': ['Pulsar', 'Boxer', 'Dominar', 'Другая'],
+  'BSE': ['Z1', 'Z3', 'Z5', 'Другая'],
+  'Stels': ['Guepard', 'Dolphin', 'Kapitan', 'Другая'],
+  'Gaiakin': ['GK150', 'GK250', 'Другая'],
+  'JHL MOTO': ['JH150', 'JH200', 'Другая'],
+  'Sanhesh': ['SH150', 'SH200', 'Другая'],
+  'Racer': ['RC200', 'RC250', 'RC300', 'Другая'],
+  'Motoland': ['XR250', 'Enduro 300', 'Другая'],
+  'Другая': ['Другая']
+};
+
+export const truckModels = {
+  'Hyundai': ['HD78', 'HD120', 'HD170', 'HD260', 'HD370', 'Mighty', 'County', 'Другая'],
+  'HHI': ['XCIENT', 'Mega Truck', 'Другая'],
+  'JCB': ['3CX', '4CX', 'Другая'],
+  'Kato': ['KR10H', 'KR25H', 'Другая'],
+  'Komatsu': ['PC200', 'PC300', 'WA380', 'D65', 'Другая'],
+  'Kubota': ['KX019', 'KX040', 'U50', 'Другая'],
+  'Rippa': ['R15', 'R22', 'R32', 'Другая'],
+  'Terex': ['TA300', 'TA400', 'Другая'],
+  'Другая': ['Другая']
+};
+
+export const yachtModels = {
+  'Azimut': ['Atlantis 43', 'Atlantis 51', 'Flybridge 53', 'Magellano 66', 'S6', 'Другая'],
+  'Princess': ['V40', 'V50', 'V60', 'F50', 'F62', 'S65', 'Другая'],
+  'Sunseeker': ['Predator 50', 'Manhattan 55', '76 Yacht', 'Другая'],
+  'Ferretti': ['450', '550', '670', '720', 'Другая'],
+  'Pershing': ['5X', '6X', '7X', '8X', 'Другая'],
+  'Riva': ['Aquariva', 'Iseo', '56 Rivale', '88 Florida', 'Другая'],
+  'Benetti': ['Delfino 95', 'Motopanfilo 37M', 'Другая'],
+  'Lürssen': ['Azzam', 'Dilbar', 'Другая'],
+  'Amels': ['60', '80', '200', 'Другая'],
+  'Oceanco': ['Bravo Eugenia', 'Infinity', 'Другая'],
+  'Heesen': ['Akira', 'Project Cosmos', 'Другая'],
+  'Moonen': ['Martinique', 'Caribbean', 'Другая'],
+  'Feadship': ['Anna', 'Viva', 'Другая'],
+  'Burger': ['Classic', 'Sport Fishing', 'Другая'],
+  'Westport': ['112', '130', '164', 'Другая'],
+  'Hargrave': ['90', '100', 'Другая'],
+  'Trinity': ['Carpe Diem', 'Другая'],
+  'Codecasa': ['Vintage', 'Full Beam', 'Другая'],
+  'CRN': ['Ancona', 'Другая'],
+  'Mondomarine': ['SF40', 'Другая'],
+  'Другая': ['Другая']
+};
+
+export const jetskiModels = {
+  'Yamaha': ['VX Cruiser', 'FX SVHO', 'GP1800R', 'SuperJet', 'EX Deluxe', 'VX Limited', 'Другая'],
+  'Sea-Doo (BRP)': ['GTX', 'RXT', 'Spark', 'Wake Pro', 'Fish Pro', 'Другая'],
+  'Kawasaki': ['Ultra 310X', 'STX 160', 'SX-R', 'Другая'],
+  'Honda': ['AquaTrax F-12', 'Другая'],
+  'Polaris': ['SLX', 'Pro 1200', 'Другая'],
+  'Tigershark': ['770', '900', '1000', 'Другая'],
+  'Arctic Cat': ['Tigershark', 'Другая'],
+  'Другая': ['Другая']
+};

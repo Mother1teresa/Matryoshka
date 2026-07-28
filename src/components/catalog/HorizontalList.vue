@@ -27,30 +27,6 @@ const route = useRoute();
 const router = useRouter();
 const store = useProductStore();
 
-const apiFilters = computed(() => {
-  const result = {}
-  if (props.category) result.category = props.category
-  if (props.subcategory || props.section) {
-    result.subcategory = props.subcategory || props.section
-  }
-  if (props.filters) {
-    for (const key of API_FILTER_FIELDS) {
-      const val = props.filters[key]
-      if (val !== '' && val !== null && val !== undefined) {
-        result[key] = val
-      }
-    }
-  }
-  return result
-})
-
-const loadData = () => {
-  if (route.params.id) return;
-  store.fetchAdverts(apiFilters.value);
-};
-
-watch(apiFilters, loadData, { deep: true });
-onMounted(loadData);
 
 const displayItems = computed(() => {
   if (props.subcategory) {

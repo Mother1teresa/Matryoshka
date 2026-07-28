@@ -2,6 +2,7 @@
 import { defineStore } from "pinia"
 import { ref } from "vue"
 import { api } from "/src/api/api.js"
+import { categories } from "/src/data/categories.js"
 
 export const useProductStore = defineStore("product", () => {
   const products = ref([])
@@ -32,7 +33,7 @@ export const useProductStore = defineStore("product", () => {
       
       if (filters.query) dto.query = filters.query
       if (filters.category) dto.category = filters.category
-      if (filters.subCategory || filters.subcategory) {
+      if (filters.subcategory || filters.subCategory) {
         dto.subCategory = filters.subCategory || filters.subcategory
       }
       if (filters.userId) dto.userId = String(filters.userId)

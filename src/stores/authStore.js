@@ -510,7 +510,7 @@ export const useAuthStore = defineStore("auth", {
           comments: [],
           isDetailsLoaded: false,
           isVideoReady: false,
-          isLikedByMe: false,
+          isLikedByMe: v.isLikedByMe || v.likedByMe || false,
           isFavorite: false, 
         }));
         
@@ -559,7 +559,7 @@ export const useAuthStore = defineStore("auth", {
               avatar: '/public/img/users/mask-avatar.png'
             }
           })),
-          isLikedByMe: false,
+          isLikedByMe: video.isLikedByMe || video.likedByMe || false,
           isFavorite: false,
            author: author || {
             id: '',
@@ -599,6 +599,7 @@ export const useAuthStore = defineStore("auth", {
         comments: details.comments,
         commentsCount: details.commentsCount,
         isDetailsLoaded: true,
+        isLikedByMe: details.isLikedByMe ?? video.isLikedByMe,
         isFavorite: details.isFavorite ?? video.isFavorite,
       });
       

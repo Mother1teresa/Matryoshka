@@ -45,23 +45,49 @@ watch(route, () => {
         <div class="section-title">
           {{ section.title }}
         </div>
-        <div class="section-links" :class="{ 'section-links--2col': section.links.length > 12 }">
-        <router-link
-          v-for="link in section.links"
-          :key="link.slug"
-          :to="{ name: 'catalog', 
-                 params: { 
-                    type: activeCategory.slug, 
-                    section: section.slug || section.title_slug || link.slug, // зависит от вашей структуры данных
-                    subcategory: link.slug 
-                 }
-               }"
-          @click="menu.close()"
-          class="section-link"
-        >
-          {{ link.name }}
-        </router-link>
-        </div>
+        <div
+            class="section-links"
+            :class="{ 'section-links--2col': section.links.length > 12 }"
+          >
+            <template v-for="link in section.links" :key="link.slug">
+              <!-- Обычная ссылка (без subLinks) -->
+              <router-link
+                v-if="!link.subLinks"
+                :to="{
+                  name: 'catalog',
+                  params: {
+                    type: activeCategory.slug,
+                    section: section.slug || link.slug,
+                    subcategory: section.slug ? link.slug : undefined
+                  }
+                }"
+                @click="menu.close()"
+                class="section-link"
+              >
+                {{ link.name }}
+              </router-link>
+
+              <!-- Ссылка с subLinks — рендерим каждый subLink отдельно -->
+              <template v-else>
+                <router-link
+                  v-for="sub in link.subLinks"
+                  :key="sub.slug"
+                  :to="{
+                    name: 'catalog',
+                    params: {
+                      type: activeCategory.slug,
+                      section: link.slug,
+                      subcategory: sub.slug
+                    }
+                  }"
+                  @click="menu.close()"
+                  class="section-link"
+                >
+                  {{ sub.name }}
+                </router-link>
+              </template>
+            </template>
+          </div>
       </div>
     </div>
   </div>
