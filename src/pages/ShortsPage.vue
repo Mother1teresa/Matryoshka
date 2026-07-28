@@ -83,7 +83,7 @@
                   <div class="video-stats-row">
                     <span>{{ (video.likes ?? video.likesCount ?? 0) }} лайков</span>
                     <span class="dot"></span>
-                    <span>{{ v(video.views ?? video.viewsCount ?? 0) }} просмотров</span>
+                    <span>{{ (video.views ?? video.viewsCount ?? 0) }} просмотров</span>
                     <span class="dot"></span>
                     <span v-if="video.createdAt">{{ formatDate(video.createdAt) }}</span>
                   </div>
@@ -263,9 +263,7 @@ const checkAuthAndRun = (action, message = "Авторизуйтесь, чтоб
 const addView = async (video) => {
   if (!video?.id) return;
   try {
-    const ipRes = await fetch('https://api.ipify.org?format=json').catch(() => null);
-    const ip = ipRes ? (await ipRes.json()).ip : 'unknown';
-    await authStore.addView(video.id, ip);
+    await authStore.addView(video.id);
   } catch (e) {
     console.error('Ошибка просмотра:', e);
   }
@@ -439,6 +437,7 @@ const initObserver = () => {
           scrollTimeout = setTimeout(() => {
             isScrolling.value = false;
           }, 300);
+          
           if (!video?.hasError) {
             entry.target.play().catch(err => {
               if (err.name === 'NotAllowedError' && !isMuted.value) {
@@ -448,12 +447,14 @@ const initObserver = () => {
               }
             });
           }
+          
           videos.value.forEach(v => {
             if (v.id !== videoId) v.isPlaying = false;
           });
-          if (video && !video.isDetailsLoaded) {
-            authStore.enrichVideo(videoId);
-          }
+          
+          // ← Обновляем счётчики при КАЖДОМ показе
+          authStore.enrichVideo(videoId, true);
+          
           addView(video);
           router.replace({ name: "shorts", params: { id: videoId } });
         } else {

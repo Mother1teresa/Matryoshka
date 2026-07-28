@@ -574,9 +574,12 @@ export const useAuthStore = defineStore("auth", {
         return null;
       }
     },
-    async enrichVideo(videoId) {
+    async enrichVideo(videoId, force = false) {
       const video = this.welcomeFeed.find(v => v.id === videoId);
-      if (!video || video.isDetailsLoaded) return video;
+      if (!video) return null;
+      
+      // Если уже загружено и не требуется форс-апдейт — пропускаем
+      if (video.isDetailsLoaded && !force) return video;
       
       const details = await this.fetchVideo(videoId);
       if (!details) return video;
@@ -595,6 +598,7 @@ export const useAuthStore = defineStore("auth", {
       
       Object.assign(video, {
         views: details.views,
+        likes: details.likes,
         author: details.author,
         comments: details.comments,
         commentsCount: details.commentsCount,
@@ -616,12 +620,18 @@ export const useAuthStore = defineStore("auth", {
           userId: this.user.id,
           videoId: videoId
         });
-        const video = this.welcomeFeed.find(v => v.id === videoId);
-        if (video) {
-          video.views = (video.views || 0) + 1;
+        const inFeed = this.welcomeFeed.find(v => v.id === videoId);
+        if (inFeed) {
+          inFeed.views = (inFeed.views || 0) + 1;
+        }
+        
+        const inAll = this.allVideos.find(v => v.id === videoId);
+        if (inAll) {
+          inAll.views = (inAll.views || 0) + 1;
+          inAll.viewsCount = inAll.views;
         }
       } catch (e) {
-        console.error('Ошибка отправки просмотра видео:', e.response?.data || e);
+        console.error('Ошибка отправки просмотра:', e.response?.data || e);
       }
     },
     async likeVideo(videoId) {
