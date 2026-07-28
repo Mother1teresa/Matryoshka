@@ -23,7 +23,7 @@
         <span>Запомнить пароль</span>
       </label>
       <!-- @click="modal.openForgot()" -->
-      <div class="auth-forgot">Забыли пароль?</div>
+      <div @click="modal.openForgot()" class="auth-forgot">Забыли пароль?</div>
     </div>
 
     <button type="submit" class="auth-btn">Войти</button>

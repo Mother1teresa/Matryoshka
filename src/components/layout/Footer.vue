@@ -78,18 +78,17 @@
 }
 .footer__bottom-right img {
   position: relative;
-  width: 5.313rem;
-  height: 5.313rem;
+  width: 4rem;
+  height: 4rem;
   overflow: hidden;
   z-index: 1;
 }
 .footer__bottom-right a {
   position: relative;
 }
-.footer__bottom-right a::after {
+/* .footer__bottom-right a::after {
   position: absolute;
   content: "";
-  background-color: white;
   top: 0.5rem;
   left: 0.5rem;
   border-radius: 50%;
@@ -97,5 +96,5 @@
   width: 4.13rem;
   height: 4.13rem;
   z-index: 0;
-}
+} */
 </style>
