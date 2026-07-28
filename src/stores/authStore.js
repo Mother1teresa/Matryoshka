@@ -505,7 +505,7 @@ export const useAuthStore = defineStore("auth", {
           description: v.description || '',
           createdAt: v.createdAt || '',
           cdnUrl: v.cdnUrl || '',
-          views: 0, 
+          views: v.views ?? v.viewsCount ?? 0, 
           author: null,
           comments: [],
           isDetailsLoaded: false,
@@ -543,9 +543,9 @@ export const useAuthStore = defineStore("auth", {
           id: video.id,
           cdnUrl: video.cdnUrl || '',
           description: video.description || '',
-          likes: video.likes || 0,
-          views: video.views || 0,
-          commentsCount: video.comments?.length || video.commentsCount || 0,
+          likes: video.likes ?? video.likesCount ?? 0,
+          views: video.views ?? video.viewsCount ?? 0,
+          commentsCount: video.comments?.length ?? video.commentsCount ?? video.commentCount ?? 0,
           createdAt: video.createdAt || '',
           comments: (video.comments || []).map(c => ({
             id: c.id,
@@ -598,6 +598,7 @@ export const useAuthStore = defineStore("auth", {
         author: details.author,
         comments: details.comments,
         commentsCount: details.commentsCount,
+        createdAt: details.createdAt || video.createdAt,
         isDetailsLoaded: true,
         isLikedByMe: details.isLikedByMe ?? video.isLikedByMe,
         isFavorite: details.isFavorite ?? video.isFavorite,
@@ -712,7 +713,7 @@ export const useAuthStore = defineStore("auth", {
     async fetchLikeCount(videoId) {
       try {
         const response = await api.get('/feed/like-count', {
-          data: { videoId }
+          params: { videoId }
         });
         return response.data;
       } catch (e) {
@@ -974,40 +975,61 @@ export const useAuthStore = defineStore("auth", {
       this.isVideosLoading = true;
       try {
         const res = await api.get('/media/video', {
-          params: { 
-            userId: this.user?.id
-          }
+          params: { userId: this.user?.id }
         });
         const rawVideos = Array.isArray(res.data) ? res.data : [];
 
         const enrichedVideos = await Promise.all(rawVideos.map(async (v) => {
-          console.log('Processing video:', v.id, 'userId:', v.userId);
-          let userData = null;
-          if (v.userId) {
-            try {
-              console.log('User data:', userData);
-            } catch (e) {
-              console.log(`Автор ${v.userId} не найден`);
-            }
-          }
-          return {
+          // Базовые технические поля из /media/video
+          const base = {
             ...v,
             s3Key: v.s3Key || v.fileName || v.id,
             thumbnail: v.thumbnailUrl || v.cdnUrl || v.url,
-            description: v.description || 'Описание ролика временно недоступно',
             isArchived: v.isArchived || false,
-            likes: v.likes || v.likesCount || 0,
-            likesCount: v.likesCount || v.likes || 0,
+          };
+
+          // Догружаем реальную статистику: лайки, просмотры, комментарии, автора, дату
+          let feedData = null;
+          try {
+            feedData = await this.fetchVideo(v.id);
+          } catch (e) {
+            console.error(`[fetchVideos] Не удалось обогатить видео ${v.id}:`, e);
+          }
+
+          if (feedData) {
+            return {
+              ...base,
+              description: feedData.description || base.description || 'Описание ролика временно недоступно',
+              likes: feedData.likes ?? 0,
+              likesCount: feedData.likes ?? 0,
+              views: feedData.views ?? 0,
+              viewsCount: feedData.views ?? 0,
+              commentsCount: feedData.commentsCount ?? 0,
+              createdAt: feedData.createdAt || '',
+              author: feedData.author || {
+                name: 'Пользователь',
+                avatar: maskAvatar,
+              },
+              comments: feedData.comments || [],
+              commentsDisabled: v.commentsDisabled || false,
+            };
+          }
+
+          // Fallback, если /feed/video/{id} недоступен
+          return {
+            ...base,
+            description: v.description || 'Описание ролика временно недоступно',
+            likes: v.likes ?? v.likesCount ?? 0,
+            likesCount: v.likesCount ?? v.likes ?? 0,
+            views: v.views ?? v.viewsCount ?? 0,
+            viewsCount: v.viewsCount ?? v.views ?? 0,
+            commentsCount: v.commentsCount ?? 0,
+            createdAt: v.createdAt || '',
             author: {
-              name: userData?.username || userData?.name || 'Пользователь',
-              avatar: userData?.avatar || userData?.avatarUrl || maskAvatar,
-              city: userData?.city || 'Город не указан',
-              rating: userData?.rating || 0,
-              deals: userData?.dealsCount || 0
+              name: 'Пользователь',
+              avatar: maskAvatar,
             },
-            viewsCount: v.viewsCount || 0,
-            commentsCount: v.commentsCount || 0, 
-            commentsDisabled: v.commentsDisabled || false
+            commentsDisabled: v.commentsDisabled || false,
           };
         }));
 

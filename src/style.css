@@ -145,6 +145,12 @@ h4 {
 .text13 {
   font-size: 0.813em;
 }
+@media (max-width:77rem) {
+  .container {
+    width: 72.5rem;
+    margin: 0 auto;
+  }
+}
 @media (max-width: 48em) {
   html {
     font-size: calc(1rem);
@@ -617,9 +623,4 @@ h4 {
 .auth-link:hover {text-decoration: underline;}
 .auth-hint {font-size: 0.625rem;margin-top: 0.25rem;}
 .auth-mini_arr{width: 0.753rem;text-align: center;transform: rotate(180deg);}
-@media (max-width:77rem) {
-  .container {
-    width: 72.5rem;
-    margin: 0 auto;
-  }
-}
+

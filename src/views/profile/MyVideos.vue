@@ -88,18 +88,17 @@
                   <div class="video-info">
                     <template v-if="activeTab === 'active'">
                       <div class="stats-line">
-                        <!-- Исправлено на camelCase под структуру из Store -->
                         <div class="stat">
                           <img src="/src/assets/img/icons/eye.svg" />
-                          {{ video.viewsCount || 0 }}
+                          {{ video.viewsCount ?? video.views ?? 0 }}
                         </div>
                         <div class="stat">
                           <img src="/src/assets/img/icons/heart.svg" />
-                          {{ video.likes || video.likesCount || 0 }}
+                          {{ video.likes ?? video.likesCount ?? 0 }}
                         </div>
                         <div class="stat">
                           <img src="/src/assets/img/icons/comment.svg" />
-                          {{ video.commentsCount || 0 }}
+                          {{ video.commentsCount ?? 0 }}
                         </div>
                       </div>
                       <p class="video-description">

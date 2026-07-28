@@ -403,12 +403,12 @@ const handleCreateVideo = () => {
   height: auto;
 }
 .icon:first-child img {
-  width: 2.282rem;
-  height: 2.873rem;
+  width: 1.8rem;
+  height: 1.8rem;
 }
 .icon:last-child img {
-  width: 2.808rem;
-  height: 2.536rem;
+  width: 1.8rem;
+  height: 1.9rem;
 }
 .icon .badge-count{
   right: 0;

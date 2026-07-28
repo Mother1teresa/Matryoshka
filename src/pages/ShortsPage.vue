@@ -81,9 +81,9 @@
                 <div class="video-header-info">
                   <h2 class="video-title">{{ video.description || '\u00A0' }}</h2>
                   <div class="video-stats-row">
-                    <span>{{ video.likes || 0 }} лайков</span>
+                    <span>{{ (video.likes ?? video.likesCount ?? 0) }} лайков</span>
                     <span class="dot"></span>
-                    <span>{{ video.views || 0 }} просмотров</span>
+                    <span>{{ v(video.views ?? video.viewsCount ?? 0) }} просмотров</span>
                     <span class="dot"></span>
                     <span v-if="video.createdAt">{{ formatDate(video.createdAt) }}</span>
                   </div>

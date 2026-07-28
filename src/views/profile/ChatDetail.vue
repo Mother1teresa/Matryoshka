@@ -14,13 +14,13 @@
             </span>
           </div>
         </div>
-        <div v-if="isTyping" class="typing-indicator">
-          <span class="typing-dots"><span></span><span></span><span></span></span>
-          печатает...
-        </div>
         <div class="header-product-info" v-if="currentChat?.productName">
           <img :src="currentChat?.productImage || '/src/assets/img/icons/box-icon.svg'" class="product-mini-photo" />
           <span>{{ currentChat.productName }}</span>
+        </div>
+        <div v-if="isTyping" class="typing-indicator">
+          <span class="typing-dots"><span></span><span></span><span></span></span>
+          печатает...
         </div>
       </header>
       <div class="messages-viewport" ref="scrollContainer">
@@ -67,11 +67,11 @@
           <button class="retry-btn" @click="reconnectSocket">Переподключить</button>
         </div>
         <div v-if="isLoading" class="connection-status loading">Загрузка...</div>
-        <button v-if="!isOrderPlaced" class="order-btn" @click="handleCreateOrder">Оформить заказ</button>
+        <!-- <button v-if="!isOrderPlaced" class="order-btn" @click="handleCreateOrder">Оформить заказ</button> -->
         <button class="attach-btn">
           <img src="/src/assets/img/icons/clip.svg" />
         </button>
-        <textarea ref="textareaRef" v-model="newMessage" @input="handleInput" placeholder="Напишите сообщение..." @keydown.enter.exact.prevent="sendMessage" @keydown.enter.shift.exact="insertNewLine" @keydown.enter.ctrl.exact.prevent="sendMessage" rows="1" maxlength="2000"></textarea>
+        <textarea ref="textareaRef" v-model="newMessage" @input="handleInput" placeholder="Сообщение" @keydown.enter.exact.prevent="sendMessage" @keydown.enter.shift.exact="insertNewLine" @keydown.enter.ctrl.exact.prevent="sendMessage" rows="1" maxlength="2000"></textarea>
         <button class="send-btn" @click="sendMessage" :disabled="isSending || !newMessage.trim()">
           <img src="/src/assets/img/icons/send-plane.svg" />
         </button>
@@ -470,191 +470,69 @@ watch(() => route.params.id, (newId, oldId) => {
 });
 </script>
 <style scoped>
-.chat-dialog-window {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  height: 100dvh;
-  background: #ffffff;
-  border-radius: 1.25rem;
-  overflow: hidden;
-  box-shadow: 0 0.25rem 0.938rem rgba(0, 0, 0, 0.05);
-}
-.chat-header {
-  display: flex;
-  align-items: center;
-  padding: 0.625rem 1rem;
-  border-bottom: 0.063rem solid #eee;
-  gap: 0.75rem;
-  flex-shrink: 0;
-}
-.back-btn {
-  width: 2.25rem; height: 2.25rem; border-radius: 50%; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  padding: 0; flex-shrink: 0; border: none; background: transparent;
-}
-.back-btn img { width: 1.25rem; height: 1.25rem; }
-.header-user-info {
-  display: flex; align-items: center; gap: 0.75rem; flex: 1; min-width: 0;
-}
-.mini-avatar {
-  width: 2.5rem; height: 2.5rem; border-radius: 50%; object-fit: cover; flex-shrink: 0;
-}
-.user-meta { display: flex; flex-direction: column; min-width: 0; }
-.user-meta .name {
-  display: block; font-weight: 600; font-size: 0.938rem; color: #1a1a1a;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.online-status { font-size: 0.75rem; color: #999; }
-.online-status.is_online { color: #64a07a; }
-.typing-indicator {
-  font-size: 0.75rem; color: #64a07a; display: flex; align-items: center;
-  gap: 0.25rem; animation: fadeIn 0.3s ease;
-}
-.typing-dots { display: flex; gap: 2px; }
-.typing-dots span {
-  width: 4px; height: 4px; background: #64a07a; border-radius: 50%;
-  animation: bounce 1.4s infinite ease-in-out both;
-}
-.typing-dots span:nth-child(1) { animation-delay: -0.32s; }
-.typing-dots span:nth-child(2) { animation-delay: -0.16s; }
-@keyframes bounce {
-  0%, 80%, 100% { transform: scale(0); }
-  40% { transform: scale(1); }
-}
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-.header-product-info {
-  display: flex; align-items: center; gap: 0.5rem; background: #f9f9f9;
-  padding: 0.313rem 0.75rem; border-radius: 0.625rem; font-size: 0.813rem;
-  color: #555; flex-shrink: 0; max-width: 12rem;
-}
-.header-product-info img {
-  width: 2.25rem; height: 1.5rem; border-radius: 0.25rem;
-  object-fit: cover; flex-shrink: 0;
-}
-.messages-viewport {
-  flex: 1; overflow-y: auto; padding: 1.25rem; display: flex;
-  flex-direction: column; position: relative;
-  background: linear-gradient(180deg, #D3F2A3 0%, #6CC08B 50%, #074050 100%);
-  background-attachment: fixed; gap: 0.625rem;
-}
-.messages-viewport::before {
-  content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-  background-image: url('/src/assets/img/matreshka-pattern.png');
-  background-repeat: repeat; background-size: 15rem; opacity: 0.15;
-  pointer-events: none; z-index: 0;
-}
-.msg-bubble, .system-msg, .bot-actions-row, .review-invitation, .sticky-date {
-  position: relative; z-index: 1;
-}
-.sticky-date { display: flex; justify-content: center; margin: 0.938rem 0; pointer-events: none; }
-.sticky-date span {
-  background: rgba(0, 0, 0, 0.2); color: #ffffff; font-size: 0.75rem;
-  padding: 0.25rem 0.75rem; border-radius: 1.25rem; backdrop-filter: blur(0.25rem);
-}
-.system-msg {
-  align-self: center; background: rgba(0, 0, 0, 0.2); color: #fff;
-  padding: 0.25rem 1rem; border-radius: 1rem; font-size: 0.75rem; margin: 0.5rem 0;
-}
-.msg-bubble {
-  max-width: 80%; padding: 0.625rem 0.938rem; font-size: 0.875rem;
-  line-height: 1.4; position: relative;
-  box-shadow: 0 0.063rem 0.125rem rgba(0, 0, 0, 0.1);
-  word-break: break-word; transition: opacity 0.3s;
-}
-.msg-bubble.received {
-  align-self: flex-start; background: #ffffff;
-  border-radius: 0.938rem 0.938rem 0.938rem 0.125rem;
-}
-.msg-bubble.sent {
-  align-self: flex-end; background: #e1fec6;
-  border-radius: 0.938rem 0.938rem 0.125rem 0.938rem;
-}
-.msg-bubble.msg-error { opacity: 0.7; border: 1px solid #ff6b6b; }
-.msg-content { display: flex; flex-direction: column; gap: 0.25rem; }
-.msg-footer {
-  display: flex; align-items: center; justify-content: flex-end;
-  gap: 0.313rem; margin-top: 0.125rem;
-}
-.msg-time { font-size: 0.625rem; color: #888; }
-.msg-status-text { font-size: 0.625rem; color: #888; }
-.msg-status-text.error { color: #ff6b6b; }
-.msg-status { display: flex; align-items: center; }
-.tick-icon { width: 0.875rem; height: auto; display: block; }
-.tick-icon.is-read { filter: none; }
-.bot-actions-row {
-  width: 100%; align-self: center; background: #ffffff; border: 1px solid #eee;
-  border-radius: 1.25rem; padding: 1rem; text-align: center;
-  max-width: 25rem; margin: 1.25rem 0; box-shadow: 0 0.25rem 0.938rem rgba(0, 0, 0, 0.05);
-}
-.bot-actions-row p { font-size: 0.813rem; margin-bottom: 0.938rem; color: #1a1a1a; }
-.btns { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.313rem; }
-.bot-btn {
-  background: #fff; border: 0.063rem solid #dcdcdc;
-  padding: 0.5rem 1.25rem; border-radius: 0.625rem;
-  font-size: 0.813rem; cursor: pointer; transition: background 0.2s;
-}
-.bot-btn:hover { background: #f5f5f5; }
-.review-invitation {
-  align-self: center; background: #ffffff; border-radius: 1.25rem;
-  padding: 1.25rem; text-align: center; max-width: 25rem;
-  margin: 1.25rem 0; box-shadow: 0 0.25rem 0.938rem rgba(0, 0, 0, 0.1);
-}
-.review-invitation p { font-size: 0.875rem; color: #1a1a1a; margin-bottom: 0.625rem; }
-.review-link-btn {
-  background: #64a07a; color: white; border: none;
-  padding: 0.625rem 1.25rem; border-radius: 0.625rem; cursor: pointer;
-  margin-top: 0.625rem; font-weight: 600; font-size: 0.875rem; transition: background 0.2s;
-}
-.review-link-btn:hover { background: #5a906e; }
-.chat-input-bar {
-  display: flex; align-items: center; padding: 0.938rem 1.25rem;
-  gap: 0.938rem; background: #fff; border-top: 0.063rem solid #eee;
-  flex-shrink: 0; flex-wrap: wrap;
-}
-.connection-status {
-  width: 100%; text-align: center; font-size: 0.75rem;
-  padding: 0.25rem; border-radius: 0.5rem;
-}
-.connection-status.offline {
-  color: #ff6b6b; background: #fff0f0;
-  display: flex; align-items: center; justify-content: center; gap: 0.5rem;
-}
-.connection-status.loading { color: #888; }
-.retry-btn {
-  background: #ff6b6b; color: white; border: none;
-  padding: 0.125rem 0.5rem; border-radius: 0.25rem;
-  font-size: 0.75rem; cursor: pointer;
-}
-.order-btn {
-  background: #ffffff; border: 0.063rem solid #e0e0e0;
-  border-radius: 0.625rem; padding: 0.5rem 1rem;
-  font-size: 0.813rem; color: #333; cursor: pointer;
-  white-space: nowrap; transition: all 0.2s; flex-shrink: 0;
-}
-.order-btn:hover { background: #f9f9f9; }
-.attach-btn {
-  width: 2.5rem; height: 2.5rem; border-radius: 50%; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  padding: 0; flex-shrink: 0; border: none; background: transparent;
-}
-.attach-btn img { width: 1.25rem; height: 1.25rem; }
-.chat-input-bar textarea {
-  flex: 1; border: none; background: #f5f5f5;
-  padding: 0.625rem 1rem; border-radius: 1.25rem;
-  resize: none; font-family: inherit; font-size: 0.875rem;
-  outline: none; min-height: 2.5rem; max-height: 6rem;
-  line-height: 1.4; overflow-y: auto;
-}
-.send-btn {
-  width: 2.5rem; height: 2.5rem; border-radius: 50%; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  padding: 0; flex-shrink: 0; border: none; background: #64a07a;
-  transition: opacity 0.2s;
-}
-.send-btn:hover:not(:disabled) { background: #5a906e; }
-.send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.send-btn img { width: 1.5rem; height: 1.5rem; filter: brightness(0) invert(1); }
+.chat-dialog-window{display:flex;flex-direction:column;height:100vh;height:100dvh;background:#fff;overflow:hidden}
+.chat-header{position:relative;display:flex;align-items:center;padding:.5rem .75rem;border-bottom:1px solid #e5e5e5;gap:.625rem;flex-shrink:0;background:#f8f8f8}
+.back-btn{width:2rem;height:2rem;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;border:none;background:#f44;transition:transform .15s}
+.back-btn:active{transform:scale(.95)}
+.back-btn img{width:1rem;height:1rem;filter:brightness(0) invert(1)}
+.header-user-info{display:flex;align-items:center;gap:.5rem;min-width:0}
+.mini-avatar{width:2.25rem;height:2.25rem;border-radius:50%;object-fit:cover;flex-shrink:0}
+.user-meta{display:flex;flex-direction:column;min-width:0}
+.user-meta .name{font-weight:600;font-size:.875rem;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.online-status{font-size:.75rem;color:#999}
+.online-status.is_online{color:#4caf50}
+.header-product-info{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:.5rem;background:#fff;padding:.375rem .875rem;border-radius:.625rem;font-size:.813rem;color:#333;max-width:13rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #eee}
+.product-mini-photo{width:1.75rem;height:1.75rem;border-radius:.25rem;object-fit:cover;flex-shrink:0}
+.header-actions{display:flex;align-items:center;gap:.25rem;margin-left:auto;flex-shrink:0}
+.action-btn{background:none;border:none;cursor:pointer;padding:.375rem;display:flex;align-items:center;justify-content:center;color:#888;border-radius:50%;transition:all .15s}
+.action-btn:hover{background:#eee;color:#555}
+.typing-indicator{position:absolute;bottom:-1rem;left:3.2rem;font-size:.7rem;color:#4caf50;display:flex;align-items:center;gap:.25rem;pointer-events:none}
+.typing-dots{display:flex;gap:2px}
+.typing-dots span{width:4px;height:4px;background:#4caf50;border-radius:50%;animation:bounce 1.4s infinite ease-in-out both}
+.typing-dots span:nth-child(1){animation-delay:-.32s}
+.typing-dots span:nth-child(2){animation-delay:-.16s}
+@keyframes bounce{0%,80%,100%{transform:scale(0)}40%{transform:scale(1)}}
+.messages-viewport{flex:1;overflow-y:auto;padding:.75rem .875rem 1rem;display:flex;flex-direction:column;position:relative;background:linear-gradient(180deg,#dcedc8 0%,#80cbc4 100%);background-attachment:fixed;gap:.25rem}
+.messages-viewport::before{content:"";position:absolute;inset:0;background-image:url('/src/assets/img/matreshka-pattern.png');background-repeat:repeat;background-size:5.5rem;opacity:.06;pointer-events:none;z-index:0}
+.msg-bubble,.system-msg,.bot-actions-row,.review-invitation,.sticky-date{position:relative;z-index:1}
+.sticky-date{display:flex;justify-content:center;margin:.5rem 0;pointer-events:none}
+.sticky-date span{background:rgba(0,0,0,.18);color:#fff;font-size:.75rem;padding:.25rem .875rem;border-radius:1rem;backdrop-filter:blur(2px)}
+.system-msg{align-self:center;background:rgba(0,0,0,.2);color:#fff;padding:.375rem 1.25rem;border-radius:1rem;font-size:.8125rem;margin:.5rem 0;backdrop-filter:blur(4px);text-align:center}
+.msg-bubble{max-width:75%;padding:.5rem .75rem;font-size:.9375rem;line-height:1.35;word-break:break-word;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.msg-bubble.received{align-self:flex-start;background:#fff;border-radius:.75rem .75rem .75rem .25rem;color:#1a1a1a}
+.msg-bubble.sent{align-self:flex-end;background:#e1fec6;border-radius:.75rem .75rem .25rem .75rem;color:#1a1a1a}
+.msg-bubble.msg-error{opacity:.8;border:1px solid #ff6b6b}
+.msg-content{display:flex;flex-direction:column;gap:.125rem}
+.msg-footer{display:flex;align-items:center;justify-content:flex-end;gap:.25rem;margin-top:.125rem}
+.msg-time{font-size:.6875rem;color:#8e8e93}
+.msg-status-text{font-size:.6875rem;color:#8e8e93}
+.msg-status-text.error{color:#ff6b6b}
+.msg-status{display:flex;align-items:center}
+.tick-icon{width:.875rem;height:auto;display:block}
+.bot-actions-row{width:100%;align-self:center;background:#fff;border:1px solid #eee;border-radius:1.25rem;padding:1rem;text-align:center;max-width:24rem;margin:.75rem 0;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.bot-actions-row p{font-size:.875rem;margin-bottom:.75rem;color:#1a1a1a}
+.btns{display:flex;flex-wrap:wrap;justify-content:center;gap:.5rem}
+.bot-btn{background:#fff;border:1px solid #dcdcdc;padding:.5rem 1.25rem;border-radius:.625rem;font-size:.875rem;cursor:pointer;transition:all .2s}
+.bot-btn:hover{background:#f5f5f5;border-color:#c0c0c0}
+.review-invitation{align-self:center;background:#fff;border-radius:1.25rem;padding:1.25rem;text-align:center;max-width:24rem;margin:.75rem 0;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.review-invitation p{font-size:.875rem;color:#1a1a1a;margin-bottom:.625rem}
+.review-link-btn{background:#64a07a;color:#fff;border:none;padding:.625rem 1.25rem;border-radius:.625rem;cursor:pointer;font-weight:600;font-size:.875rem;transition:background .2s}
+.review-link-btn:hover{background:#5a906e}
+.chat-input-bar{display:flex;align-items:center;padding:.5rem .75rem;gap:.5rem;background:#fff;border-top:1px solid #e5e5e5;flex-shrink:0}
+.connection-status{width:100%;text-align:center;font-size:.75rem;padding:.25rem;border-radius:.5rem}
+.connection-status.offline{color:#ff6b6b;background:#fff0f0;display:flex;align-items:center;justify-content:center;gap:.5rem}
+.connection-status.loading{color:#888}
+.retry-btn{background:#ff6b6b;color:#fff;border:none;padding:.125rem .5rem;border-radius:.25rem;font-size:.75rem;cursor:pointer}
+.attach-btn{width:2.25rem;height:2.25rem;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;border:none;background:transparent;opacity:.55;transition:opacity .2s}
+.attach-btn:hover{opacity:.85}
+.attach-btn img{width:1.25rem;height:1.25rem}
+.chat-input-bar textarea{flex:1;border:1px solid #e0e0e0;background:#fff;padding:.5rem 1rem;border-radius:1.25rem;resize:none;font-family:inherit;font-size:.9375rem;outline:none;min-height:2.25rem;max-height:6rem;line-height:1.4;overflow-y:auto;color:#1a1a1a;transition:border-color .2s}
+.chat-input-bar textarea::placeholder{color:#bbb}
+.chat-input-bar textarea:focus{border-color:#bdbdbd}
+.send-btn{width:2.25rem;height:2.25rem;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;border:none;background:#888;transition:all .2s}
+.send-btn:hover:not(:disabled){background:#666}
+.send-btn:disabled{opacity:.4;cursor:not-allowed}
+.send-btn img{width:1.25rem;height:1.25rem;filter:brightness(0) invert(1)}
 .product-mini-photo {
   width: 4.563rem; height: 3.125rem; border-radius: 0.625rem; object-fit: cover;
 }
