@@ -68,13 +68,16 @@
         </div>
         <div v-if="isLoading" class="connection-status loading">Загрузка...</div>
         <!-- <button v-if="!isOrderPlaced" class="order-btn" @click="handleCreateOrder">Оформить заказ</button> -->
-        <button class="attach-btn">
-          <img src="/src/assets/img/icons/clip.svg" />
-        </button>
-        <textarea ref="textareaRef" v-model="newMessage" @input="handleInput" placeholder="Сообщение" @keydown.enter.exact.prevent="sendMessage" @keydown.enter.shift.exact="insertNewLine" @keydown.enter.ctrl.exact.prevent="sendMessage" rows="1" maxlength="2000"></textarea>
-        <button class="send-btn" @click="sendMessage" :disabled="isSending || !newMessage.trim()">
-          <img src="/src/assets/img/icons/send-plane.svg" />
-        </button>
+        <div class="chat_footer-block">
+          <button class="attach-btn">
+            <img src="/src/assets/img/icons/clip.svg" />
+          </button>
+          <textarea ref="textareaRef" v-model="newMessage" @input="handleInput" placeholder="Сообщение" @keydown.enter.exact.prevent="sendMessage" @keydown.enter.shift.exact="insertNewLine" @keydown.enter.ctrl.exact.prevent="sendMessage" rows="1" maxlength="2000"></textarea>
+          <button class="send-btn" @click="sendMessage" :disabled="isSending || !newMessage.trim()">
+            <img src="/src/assets/img/icons/send-plane.svg" />
+          </button>
+        </div>
+        
       </footer>
     </div>
     <ReviewModal 
@@ -518,7 +521,8 @@ watch(() => route.params.id, (newId, oldId) => {
 .review-invitation p{font-size:.875rem;color:#1a1a1a;margin-bottom:.625rem}
 .review-link-btn{background:#64a07a;color:#fff;border:none;padding:.625rem 1.25rem;border-radius:.625rem;cursor:pointer;font-weight:600;font-size:.875rem;transition:background .2s}
 .review-link-btn:hover{background:#5a906e}
-.chat-input-bar{display:flex;align-items:center;padding:.5rem .75rem;gap:.5rem;background:#fff;border-top:1px solid #e5e5e5;flex-shrink:0}
+.chat-input-bar{display:grid;align-items:center;padding:.5rem .75rem;gap:1.5rem;background:#fff;border-top:1px solid #e5e5e5;flex-shrink:0;}
+.messages-page-wrapper{border-radius: 2rem; overflow: hidden;}
 .connection-status{width:100%;text-align:center;font-size:.75rem;padding:.25rem;border-radius:.5rem}
 .connection-status.offline{color:#ff6b6b;background:#fff0f0;display:flex;align-items:center;justify-content:center;gap:.5rem}
 .connection-status.loading{color:#888}
@@ -536,4 +540,5 @@ watch(() => route.params.id, (newId, oldId) => {
 .product-mini-photo {
   width: 4.563rem; height: 3.125rem; border-radius: 0.625rem; object-fit: cover;
 }
+.chat_footer-block{display: flex; gap: 2rem;}
 </style>
