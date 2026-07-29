@@ -124,6 +124,9 @@
                 <div v-if="!video.comments?.length" class="comments-empty">
                   <p>Комментариев нет</p>
                 </div>
+                <div v-if="video.commentsDisabled" class="comments-locked">
+                  <p>Комментарии не доступны</p>
+                </div>
                 <div v-else class="comments-list">
                   <div v-for="comment in video.comments" :key="comment.id" class="comment-item">
                     <img :src="comment.author?.avatar || '/assets/img/mask-avatar.png'"/>
@@ -319,7 +322,7 @@ const postComment = async (video, parentId = null) => {
         id: `temp-${Date.now()}`,
         author: {
           name: authStore.user?.username || authStore.user?.name || "Пользователь",
-          avatar: authStore.userAvatar || "/public/img/users/mask-avatar.png",
+          avatar: authStore.userAvatar || "/src/assets/img/mask-avatar.png",
         },
         text: newComment.value.trim(),
         createdAt: new Date().toISOString(),
