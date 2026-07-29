@@ -433,7 +433,7 @@ const handleVideoCreated = (createdMedia) => {
   color: white;
 }
 .video-dropdown-menu .delete-btn {
-  color: #89140e;
+  /* color: #89140e; */
   border-top: 1px solid #eee !important;
   border-radius: 0;
 }

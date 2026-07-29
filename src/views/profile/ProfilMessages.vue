@@ -7,22 +7,25 @@ import { notify } from "/src/utils/notify";
 const auth = useAuthStore();
 const router = useRouter();
 const isLoading = ref(true);
+const isLoadingChats = ref(false);
 
 // Ссылка на чаты из Pinia
 const chats = computed(() => auth.allChats);
-
 const unreadCount = computed(() =>
   chats.value.reduce((sum, c) => sum + (c.unreadCount || 0), 0)
 );
 
 const loadChats = async (isSilent = false) => {
+  if (isLoadingChats.value) return;
+  isLoadingChats.value = true;
   if (!isSilent) isLoading.value = true;
   try {
     await auth.fetchUserChats();
   } catch (e) {
     if (!isSilent) notify("Ошибка обновления чатов", "error");
   } finally {
-    isLoading.value = false;
+    isLoadingChats.value = false;
+    if (!isSilent) isLoading.value = false;
   }
 };
 
@@ -34,6 +37,7 @@ const openChat = (chatId) => {
 let stompClient = null;
 let userSubscription = null;
 let pollInterval = null;
+let checkConnectionInterval = null;
 
 const startPolling = () => {
   if (pollInterval) return;
@@ -52,21 +56,22 @@ const stopPolling = () => {
 
 const handleNewMessage = (msg) => {
   if (msg.senderId === auth.user?.id) return;
-  const chatIndex = auth.allChats.findIndex(c => c.id === msg.roomId);
+  
+  const chatIndex = auth.allChats.findIndex(c => String(c.id) === String(msg.roomId));
   
   if (chatIndex !== -1) {
-    const updatedChat = { ...auth.allChats[chatIndex] };
-    
-    updatedChat.lastMessage = {
-      text: msg.message,
-      isMine: false,
-      isRead: false,
-      time: msg.createdAt
-        ? new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-        : "",
-    };
-    updatedChat.unreadCount = (updatedChat.unreadCount || 0) + 1;
-    auth.allChats[chatIndex] = updatedChat;
+    auth.updateChatInList(msg.roomId, (chat) => {
+      chat.lastMessage = {
+        text: msg.message,
+        isMine: false,
+        isRead: false,
+        time: msg.createdAt
+          ? new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          : "",
+      };
+      chat.unreadCount = (chat.unreadCount || 0) + 1;
+      return chat;
+    });
   } else {
     loadChats(true);
   }
@@ -103,14 +108,16 @@ const connectStomp = async () => {
       subscribeTopic();
     } else {
       let attempts = 0;
-      const checkConnection = setInterval(() => {
+      checkConnectionInterval = setInterval(() => {  // ← сохраняем
         attempts++;
         if (stompClient?.connected) {
           subscribeTopic();
-          clearInterval(checkConnection);
+          clearInterval(checkConnectionInterval);
+          checkConnectionInterval = null;
         }
         if (attempts > 50) { 
-          clearInterval(checkConnection);
+          clearInterval(checkConnectionInterval);
+          checkConnectionInterval = null;
           startPolling();
         }
       }, 100);
@@ -131,6 +138,10 @@ onUnmounted(() => {
     userSubscription.unsubscribe();
   }
   stopPolling();
+  if (checkConnectionInterval) {
+    clearInterval(checkConnectionInterval);
+    checkConnectionInterval = null;
+  }
 });
 </script>
 

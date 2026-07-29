@@ -514,7 +514,7 @@ export const adCreateConfig = {
               label: 'Владельцев по ПТС', 
               type: 'select', 
               placeholder: 'Введите или выберите кол-во владельцев',
-              options: ['1', '2', '3+', 'Не важно']
+              options: ['1', '2', '3', '4 и более']
             },
             { 
               key: 'mileage', 

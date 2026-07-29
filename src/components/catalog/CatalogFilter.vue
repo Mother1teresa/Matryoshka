@@ -367,21 +367,6 @@ flex-direction: column;}
 :deep(.multiselect__option--selected){
   color: var(--btn-bg);
 }
-:deep(.multiselect__option){
-  display: grid;
-  align-items: center;
-  padding: 0.75rem;
-  /* min-height: 3.2rem; */
-  line-height: 1rem;
-  min-height: auto;
-  text-decoration: none;
-  text-transform: none;
-  vertical-align: middle;
-  position: relative;
-  cursor: pointer;
-  white-space: normal;
-  font-size: 1rem;
-}
 :deep(.multiselect__content-wrapper) {
   position: absolute;
   display: block;

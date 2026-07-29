@@ -104,6 +104,7 @@ const messages = ref([]);
 const chatData = ref(null);
 const opponentProfile = ref(null);
 const isProfileLoading = ref(false);
+
 const currentChat = computed(() => {
   const roomId = route.params.id;
   const fromStore = auth.allChats.find(c => String(c.id) === String(roomId));
@@ -127,6 +128,7 @@ const displayName = computed(() => {
 });
 
 const loadOpponentProfile = async () => {
+  if (isProfileLoading.value) return;
   const roomId = route.params.id;
   if (!roomId || !auth.user?.id) return;
   isProfileLoading.value = true;
@@ -134,43 +136,12 @@ const loadOpponentProfile = async () => {
   try {
     let room = auth.allChats.find(c => String(c.id) === String(roomId));
     if (!room) {
-      room = auth.allChats.find(c => {
-        if (!c.userA || !c.userB) return false;
-        const p1 = `${c.userA}_${c.userB}`;
-        const p2 = `${c.userB}_${c.userA}`;
-        return String(p1) === String(roomId) || String(p2) === String(roomId);
-      });
+      await auth.fetchUserChats();
+      room = auth.allChats.find(c => String(c.id) === String(roomId));
     }
-    if (!room) {
-      try {
-        await auth.fetchUserChats();
-        room = auth.allChats.find(c => String(c.id) === String(roomId));
-        if (!room) {
-          room = auth.allChats.find(c => {
-            if (!c.userA || !c.userB) return false;
-            const p1 = `${c.userA}_${c.userB}`;
-            const p2 = `${c.userB}_${c.userA}`;
-            return String(p1) === String(roomId) || String(p2) === String(roomId);
-          });
-        }
-      } catch (e) {
-        console.error('[loadOpponentProfile] Ошибка загрузки списка чатов:', e);
-      }
-    }
-    let opponentId = room?.user?.id;
-    if (!opponentId && room?.userA && room?.userB) {
-      opponentId = String(room.userA) === String(auth.user.id) ? room.userB : room.userA;
-    }
-    if (!opponentId && roomId) {
-      const parts = String(roomId).split('_');
-      if (parts.length === 2) {
-        const [a, b] = parts;
-        if (String(a) === String(auth.user.id)) opponentId = b;
-        else if (String(b) === String(auth.user.id)) opponentId = a;
-      }
-    }
+    const opponentId = room?.user?.id;
     if (!opponentId) {
-      console.warn('[loadOpponentProfile] opponentId не найден');
+      console.warn('[loadOpponentProfile] opponentId не найден в данных комнаты');
       return;
     }
     const profile = await auth.fetchProfileById(opponentId);
@@ -206,7 +177,6 @@ const showBotActions = ref(false);
 const showReviewLink = ref(false);
 const isReviewModalOpen = ref(false);
 const isTyping = ref(false);
-const pendingTimeouts = new Map();
 
 // ===== STOMP =====
 let roomSubscription = null;
@@ -248,12 +218,11 @@ const connectChat = async () => {
 };
 
 const handleIncomingMessage = (msg) => {
+  // Если сервер прислал echo нашего сообщения — обновляем id
   const pendingMsg = messages.value.find(m => 
-    m.status === 'sending' &&
     m.isMine &&
     m.text === msg.message &&
-    m.senderId === msg.senderId &&
-    Math.abs(new Date(m.createdAt) - new Date(msg.createdAt)) < 3000
+    m.senderId === msg.senderId
   );
 
   if (pendingMsg) {
@@ -263,12 +232,6 @@ const handleIncomingMessage = (msg) => {
     pendingMsg.time = msg.createdAt
       ? new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
       : pendingMsg.time;
-
-    const timeoutId = pendingTimeouts.get(pendingMsg.id);
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-      pendingTimeouts.delete(pendingMsg.id);
-    }
     return;
   }
 
@@ -288,7 +251,7 @@ const handleIncomingMessage = (msg) => {
     status: 'sent',
   });
 
-  if (!msg.isMine && !msg.isRead) {
+  if (!msg.isMine && !msg.isRead && msg.id) {
     auth.markMessageAsRead(msg.id, route.params.id).then(() => {
       const localMsg = messages.value.find(m => m.id === msg.id);
       if (localMsg) localMsg.isRead = true;
@@ -306,7 +269,6 @@ const reconnectSocket = () => {
 
 const handleTyping = () => {
   if (typingDebounce) clearTimeout(typingDebounce);
-
   typingDebounce = setTimeout(() => {
     const client = auth.getSocket();
     if (client?.connected && newMessage.value.trim()) {
@@ -371,15 +333,9 @@ const sendMessage = async () => {
 
   try {
     await auth.sendMessage(route.params.id, text);
-
-    const timeoutId = setTimeout(() => {
-      const msg = messages.value.find(m => m.id === localId);
-      if (msg && msg.status === 'sending') {
-        msg.status = 'error';
-      }
-      pendingTimeouts.delete(localId);
-    }, 5000);
-    pendingTimeouts.set(localId, timeoutId);
+    // STOMP отправил успешно — сразу считаем доставленным
+    const msg = messages.value.find(m => m.id === localId);
+    if (msg) msg.status = 'sent';
   } catch (e) {
     const msg = messages.value.find(m => m.id === localId);
     if (msg) msg.status = 'error';
@@ -391,7 +347,7 @@ const sendMessage = async () => {
 
 const markMessagesAsRead = async () => {
   const unreadIds = messages.value
-    .filter(m => !m.isMine && !m.isRead)
+    .filter(m => !m.isMine && !m.isRead && m.id && !String(m.id).startsWith('local-'))
     .map(m => m.id);
 
   if (unreadIds.length === 0) return;
@@ -500,8 +456,6 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (abortController.value) abortController.value.abort();
-  pendingTimeouts.forEach((id) => clearTimeout(id));
-  pendingTimeouts.clear();
   if (typingTimeout) clearTimeout(typingTimeout);
   if (typingDebounce) clearTimeout(typingDebounce);
 
@@ -526,9 +480,6 @@ watch(() => route.params.id, (newId, oldId) => {
     opponentProfile.value = null;
     chatData.value = null;
 
-    pendingTimeouts.forEach((id) => clearTimeout(id));
-    pendingTimeouts.clear();
-
     if (roomSubscription) {
       roomSubscription.unsubscribe();
       roomSubscription = null;
@@ -543,13 +494,6 @@ watch(() => route.params.id, (newId, oldId) => {
       .then(() => connectChat());
   }
 });
-
-// <-- ВАЖНО: если список чатов подгрузился ПОСЛЕ открытия чата — пересчитываем currentChat
-watch(() => auth.allChats, () => {
-  if (!opponentProfile.value && route.params.id) {
-    loadOpponentProfile();
-  }
-}, { deep: true });
 </script>
 <style scoped>
 .chat-dialog-window{display:flex;flex-direction:column;height:100vh;height:100dvh;background:#fff;overflow:hidden}

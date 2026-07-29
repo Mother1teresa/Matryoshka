@@ -36,6 +36,7 @@ export const useAuthStore = defineStore("auth", {
         _lastMessageIds: {},
         fcmToken: null,
         _fcmUnsubscribe: null,
+        _isFetchingChats: false,
       };
     } catch (e){
       console.error("Auth parse error:", e);
@@ -55,10 +56,12 @@ export const useAuthStore = defineStore("auth", {
         _lastMessageIds: {},
         fcmToken: null,
         _fcmUnsubscribe: null,
+        _isFetchingChats: false,
       };
     }
   },
   getters: {
+    
     userAvatar: (state) =>
       state.user?.avatarUrl || state.user?.avatar || maskAvatar,
     formattedPhone: (state) => {
@@ -259,7 +262,13 @@ export const useAuthStore = defineStore("auth", {
       }
       this.fcmToken = null;
     },
-
+    updateChatInList(roomId, updater) {
+      const idx = this.allChats.findIndex(c => String(c.id) === String(roomId));
+      if (idx !== -1) {
+        const updated = updater({ ...this.allChats[idx] });
+        this.allChats.splice(idx, 1, updated);
+      }
+    },
     async subscribeToRoom(roomId, onMessage) {
       this.initSocket();
       const client = await this.waitForStompConnect();
@@ -298,6 +307,11 @@ export const useAuthStore = defineStore("auth", {
         console.log("Невозможно загрузить чаты: пользователь не авторизован");
         return;
       }
+      if (this._isFetchingChats) {
+        console.log('[fetchUserChats] Уже выполняется, пропускаем');
+        return;
+      }
+      this._isFetchingChats = true;
       try {
         const res = await api.get('/chat/user-rooms');
         const rooms = res.data || [];
@@ -348,6 +362,8 @@ export const useAuthStore = defineStore("auth", {
       } catch (e) {
         console.error("Ошибка при получении чатов:", e.response?.data || e);
         throw e;
+      } finally {
+        this._isFetchingChats = false;
       }
     },
     async fetchChatMessages(roomId, signal) {

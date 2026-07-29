@@ -401,7 +401,7 @@ onUnmounted(() => {
   top: 1rem;
   right: 0.8rem;
   background: var(--btn-bg);
-  border-radius: 0.438rem;
+  border-radius: 0.938rem;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   z-index: 1;
   max-width: 13.975rem;
@@ -431,7 +431,7 @@ onUnmounted(() => {
   color: white;
 }
 .video-dropdown-menu .delete-btn {
-  color: #89140e;
+  /* color: #89140e; */
   border-top: 1px solid #eee !important;
   border-radius: 0;
 }
