@@ -576,7 +576,7 @@ watch(() => route.params.id, (newId, oldId) => {
 .attach-btn{width:2.25rem;height:2.25rem;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;border:none;background:transparent;opacity:.55;transition:opacity .2s}
 .attach-btn:hover{opacity:.85}
 .attach-btn img{width:1.25rem;height:1.25rem}
-.chat-input-bar textarea{flex:1;border:1px solid #e0e0e0;background:#fff;padding:.5rem 1rem;border-radius:1.25rem;resize:none;font-family:inherit;font-size:.9375rem;outline:none;min-height:2.25rem;max-height:6rem;line-height:1.4;overflow-y:auto;color:#1a1a1a;transition:border-color .2s}
+.chat-input-bar textarea{flex:1;border:1px solid #e0e0e0;background:#fff;padding:.5rem 1rem;border-radius:1.25rem;resize:none;font-family:inherit;font-size:.9375rem;outline:none;min-height:2.25rem;max-height:6rem;line-height:1.4;overflow-y:hidden;color:#1a1a1a;transition:border-color .2s}
 .chat-input-bar textarea::placeholder{color:#bbb}
 .chat-input-bar textarea:focus{border-color:#bdbdbd}
 .send-btn{width:2.25rem;height:2.25rem;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;border:none;background:#888;transition:all .2s}
