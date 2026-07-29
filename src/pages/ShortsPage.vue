@@ -782,7 +782,7 @@ onUnmounted(() => {
   max-width: 65.75rem;
   height: 47rem;
   gap: 0.75rem;
-  overflow: hidden;
+  /* overflow: hidden; */
   grid-template-columns: 1fr 1fr;
 }
 
