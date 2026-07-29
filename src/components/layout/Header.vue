@@ -27,6 +27,7 @@
           <template v-if="!auth.isAuthenticated">
             <div class="header__right-false">
               <a href="" class="btn-light btn-login" target="_blank" >
+                <img src="/src/assets/img/404/supp.svg" alt="">
                 Поддержка
               </a>
               <button class="btn-light" @click="region.open()">

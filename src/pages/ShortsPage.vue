@@ -85,7 +85,7 @@
                     <span class="dot"></span>
                     <span>{{ (video.views ?? video.viewsCount ?? 0) }} просмотров</span>
                     <span class="dot"></span>
-                    <span v-if="video.createdAt">{{ formatDate(video.createdAt) }}</span>
+                    <span v-if="video.publishedAt">{{ formatDate(video.publishedAt) }}</span>
                   </div>
                 </div>
                 <div class="shorts-block_avt">
@@ -584,8 +584,8 @@ onUnmounted(() => {
 }
 .mute-btn {
   position: absolute;
-  bottom: 1rem;
-  left: 1.5rem;
+  bottom: 1.5rem;
+  left: 2rem;
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 50%;
