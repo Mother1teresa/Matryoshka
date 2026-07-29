@@ -321,7 +321,7 @@ export const useAuthStore = defineStore("auth", {
               user: {
                 id: opponentId || "",
                 name: existing?.user?.name || "Пользователь",
-                avatar: existing?.user?.avatar || "/src/assets/img/mask-avatar.png",
+                avatar: existing?.user?.avatar || "/img/users/mask-avatar.png",
                 isOnline: existing?.user?.isOnline || false,
               },
               productName: existing?.productName || "",
@@ -394,7 +394,7 @@ export const useAuthStore = defineStore("auth", {
             user: {
               id: String(userBId),
               name: "Пользователь",
-              avatar: "/src/assets/img/mask-avatar.png",
+              avatar: "/img/users/mask-avatar.png",
               isOnline: false,
             },
             productName: "",
@@ -549,7 +549,7 @@ export const useAuthStore = defineStore("auth", {
               id: author.id,
               name: author.name || profile.name || 'Пользователь',
               username: profile.username || author.name,
-              avatar: profile.avatar || '/public/img/users/mask-avatar.png',
+              avatar: profile.avatar || '/img/users/mask-avatar.png',
               rating: profile.rating || 0
             };
           }
@@ -573,7 +573,7 @@ export const useAuthStore = defineStore("auth", {
             author: {
               id: c.author?.id,
               name: c.author?.name || 'Пользователь',
-              avatar: '/public/img/users/mask-avatar.png'
+              avatar: '/img/users/mask-avatar.png'
             }
           })),
           isLikedByMe: video.isLikedByMe ?? video.likedByMe ?? false,
@@ -582,7 +582,7 @@ export const useAuthStore = defineStore("auth", {
             id: '',
             name: 'Пользователь',
             username: '',
-            avatar: '/public/img/users/mask-avatar.png',
+            avatar: '/img/users/mask-avatar.png',
             rating: 0
           }
         };
@@ -602,7 +602,7 @@ export const useAuthStore = defineStore("auth", {
         if (profile) {
           details.author = {
             ...details.author,
-            avatar: profile.avatar || '/public/img/users/mask-avatar.png',
+            avatar: profile.avatar || '/img/users/mask-avatar.png',
             rating: profile.rating || 0
           };
         }

@@ -113,7 +113,7 @@
           <div class="seller-card">
             <div class="seller">
               <router-link :to="{ name: 'SellerPage', params: { id: product?.sellerId } }">
-                <img :src="seller?.avatar || '/src/assets/img/mask-avatar.png'" class="avatar" />
+                <img :src="seller?.avatar || '/img/users/mask-avatar.png'" class="avatar" />
               </router-link>
               <div class="seller-card__block">
                 <router-link :to="{ name: 'SellerPage', params: { id: product?.sellerId } }" class="name">
@@ -338,7 +338,7 @@ const loadSeller = async (sellerId) => {
       id: sellerId,
       name: 'Продавец',
       type: 'private',
-      avatar: '/src/assets/img/mask-avatar.png',
+      avatar: '/img/users/mask-avatar.png',
       phone: '',
     };
   } catch (e) {
@@ -347,7 +347,7 @@ const loadSeller = async (sellerId) => {
       id: sellerId,
       name: 'Продавец',
       type: 'private',
-      avatar: '/src/assets/img/mask-avatar.png',
+      avatar: '/img/users/mask-avatar.png',
       phone: '',
     };
   }

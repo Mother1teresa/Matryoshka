@@ -49,7 +49,7 @@ export const useFavoritesStore = defineStore('favorites', () => {
             item.seller = {
               id: s.id,
               name: s.name || s.username || 'Продавец',
-              avatar: s.avatar || s.avatarUrl || '/src/assets/img/mask-avatar.png',
+              avatar: s.avatar || s.avatarUrl || '/img/users/mask-avatar.png',
               phone: s.phone || ''
             }
           }

@@ -145,7 +145,7 @@ onUnmounted(() => {
       <div v-for="chat in chats" :key="chat.id" class="chat-card" @click="openChat(chat.id)">
         <div class="chat-main-info">
           <div class="avatar-block">
-            <img :src="chat.user?.avatar || '/src/assets/img/mask-avatar.png'" class="user-avatar" />
+            <img :src="chat.user?.avatar || '/img/users/mask-avatar.png'" class="user-avatar" />
             <span v-if="chat.user?.isOnline" class="online-badge"></span>
           </div>
           <div class="chat-text-details">

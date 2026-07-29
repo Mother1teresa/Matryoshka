@@ -50,7 +50,7 @@
                 <img src="/src/assets/img/icons/heart-filled.svg" />
               </div>
               <div class="author-info">
-                <img :src="video.author?.avatar || '/src/assets/img/mask-avatar.png'" class="author-avatar" />
+                <img :src="video.author?.avatar || '/img/users/mask-avatar.png'" class="author-avatar" />
                 <span class="author-name">{{ video.author?.username || 'Пользователь' }}</span>
               </div>
               <div class="action-btns">
@@ -91,7 +91,7 @@
             </div>
             <div class="ad-seller-actions">
               <div class="seller-brief">
-                <img :src="item.seller?.avatar || '/src/assets/img/mask-avatar.png'" class="seller-avatar" />
+                <img :src="item.seller?.avatar || '/img/users/mask-avatar.png'" class="seller-avatar" />
                 <span class="seller-name">{{ item.seller?.name || 'Продавец' }}</span>
               </div>
               <div class="action-buttons">

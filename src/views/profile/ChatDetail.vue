@@ -95,7 +95,7 @@ import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "/src/stores/authStore.js";
 import { notify } from "/src/utils/notify";
 import ReviewModal from "../ReviewModal.vue";
-import maskAvatar from "/src/assets/img/mask-avatar.png";
+import maskAvatar from "/img/users/mask-avatar.png";
 
 const router = useRouter();
 const route = useRoute();

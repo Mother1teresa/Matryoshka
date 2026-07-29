@@ -13,7 +13,7 @@
         <div class="seller-header-flex">
           <div class="seller-info-left">
             <div class="logo-wrapper">
-              <img :src="seller.avatar || '/src/assets/img/mask-avatar.png'" class="seller-logo"/>
+              <img :src="seller.avatar || '/img/users/mask-avatar.png'" class="seller-logo"/>
             </div>
             <div class="seller-text">
               <div class="seller-name-row">
@@ -111,7 +111,7 @@
             <div v-for="review in sellerReviews" :key="review.id" class="review-card">
               <div class="review-header">
                 <div class="user-info">
-                  <img :src="review.userAvatar || '/src/assets/img/mask-avatar.png'" class="user-avatar" />
+                  <img :src="review.userAvatar || '/img/users/mask-avatar.png'" class="user-avatar" />
                   <div class="user-details">
                     <div class="user-name">{{ review.author }}</div>
                     <div class="review-product">{{ review.productTitle }}</div>
@@ -128,7 +128,7 @@
               </div>
               <!-- Ответ продавца -->
               <div v-if="review.reply" class="seller-reply">
-                <img :src="seller?.avatar || '/src/assets/img/mask-avatar.png'" class="reply-avatar" />
+                <img :src="seller?.avatar || '/img/users/mask-avatar.png'" class="reply-avatar" />
                 <div class="reply-content">
                   <div class="reply-label">Ответ продавца</div>
                   <div class="reply-text">{{ review.reply }}</div>
@@ -283,7 +283,7 @@ const loadSellerVideos = async (sellerId) => {
       author: {
         id: seller.value?.id,
         name: seller.value?.name || 'Пользователь',
-        avatar: seller.value?.avatar || '/src/assets/img/mask-avatar.png'
+        avatar: seller.value?.avatar || '/img/users/mask-avatar.png'
       }
     }));
   } catch (err) {

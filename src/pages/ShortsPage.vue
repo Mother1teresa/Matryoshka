@@ -128,18 +128,38 @@
                   <p>Комментарии не доступны</p>
                 </div>
                 <div v-else class="comments-list">
-                  <div v-for="comment in video.comments" :key="comment.id" class="comment-item">
-                    <img :src="comment.author?.avatar || '/assets/img/mask-avatar.png'"/>
-                    <div class="c-body">
-                      <div class="c-header">
-                        <span class="c-user">{{ comment.author?.name || "Пользователь" }}</span>
-                        <p class="c-text">{{ comment.text }}</p>
+                  <div v-for="comment in buildCommentTree(video.comments)" :key="comment.id" class="comment-thread">
+                    <!-- Родительский комментарий -->
+                    <div class="comment-item">
+                      <img :src="comment.author?.avatar || '/img/users/mask-avatar.png'"/>
+                      <div class="c-body">
+                        <div class="c-header">
+                          <span class="c-user">{{ comment.author?.name || "Пользователь" }}</span>
+                          <p class="c-text">{{ comment.text }}</p>
+                        </div>
+                        <div class="c-header_footer">
+                          <span class="c-date">{{ formatDate(comment.createdAt) }}</span>
+                          <span v-if="!isOwnComment(comment)" class="c-reply" @click.stop.prevent="startReply(comment)">
+                            Ответить
+                          </span>
+                        </div>
                       </div>
-                      <div class="c-header_footer">
-                        <span class="c-date">{{ formatDate(comment.createdAt) }}</span>
-                        <span v-if="!isOwnComment(comment)" class="c-reply" @click.stop.prevent="startReply(comment)"">
-                          Ответить
-                        </span>
+                    </div>
+
+                    <!-- Ответы -->
+                    <div v-if="comment.replies?.length" class="comment-replies">
+                      <div v-for="reply in comment.replies" :key="reply.id" class="comment-item reply-item">
+                        <img :src="reply.author?.avatar || '/img/users/mask-avatar.png'" class="reply-avatar"/>
+                        <div class="c-body">
+                          <div class="c-header">
+                            <span class="c-reply-badge">Ответ</span>
+                            <span class="c-user">{{ reply.author?.name || "Пользователь" }}</span>
+                            <p class="c-text">{{ reply.text }}</p>
+                          </div>
+                          <div class="c-header_footer">
+                            <span class="c-date">{{ formatDate(reply.createdAt) }}</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -225,6 +245,24 @@ let scrollTimeout = null;
 const renderStars = (rating) => {
   const r = Math.round(Number(rating) || 0);
   return '★'.repeat(r) + '☆'.repeat(5 - r);
+};
+
+const buildCommentTree = (comments) => {
+  if (!comments?.length) return [];
+  const map = {};
+  const roots = [];
+  comments.forEach(c => {
+    map[c.id] = { ...c, replies: [] };
+  });
+  comments.forEach(c => {
+    const node = map[c.id];
+    if (c.parentId && map[c.parentId]) {
+      map[c.parentId].replies.push(node);
+    } else {
+      roots.push(node);
+    }
+  });
+  return roots;
 };
 // Нормализация продукта под формат ProductCard
 const normalizeProduct = (product) => ({
@@ -322,36 +360,16 @@ const postComment = async (video, parentId = null) => {
         id: `temp-${Date.now()}`,
         author: {
           name: authStore.user?.username || authStore.user?.name || "Пользователь",
-          avatar: authStore.userAvatar || "/src/assets/img/mask-avatar.png",
+          avatar: authStore.userAvatar || "/public/img/users/mask-avatar.png",
         },
         text: newComment.value.trim(),
         createdAt: new Date().toISOString(),
-        replyTo: parentId ? replyTo.value?.userName : null,
-        replies: [],
+        parentId: parentId || null,
       };
       if (!video.comments) video.comments = [];
-      if (parentId) {
-        const findParent = (comments, id) => {
-          for (const c of comments) {
-            if (c.id === id) return c;
-            if (c.replies?.length) {
-              const found = findParent(c.replies, id);
-              if (found) return found;
-            }
-          }
-          return null;
-        };
-        const parent = findParent(video.comments, parentId);
-        if (parent) {
-          if (!parent.replies) parent.replies = [];
-          parent.replies.push(newItem);
-        } else {
-          video.comments.push(newItem);
-        }
-        replyTo.value = null;
-      } else {
-        video.comments.push(newItem);
-      }
+      video.comments.push(newItem);
+
+      if (parentId) replyTo.value = null;
       newComment.value = "";
       notify(parentId ? "Ответ добавлен" : "Комментарий добавлен");
     } catch (e) {
@@ -972,24 +990,14 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 .c-body { flex: 1; min-width: 0;}
-.c-user {font-size: 0.875rem;font-weight: 600;color: #1a1a1a;}
-.c-date {font-size: 0.638rem;color: #959595;}
-.c-text {font-size: 0.875rem;color: #444;margin: 0 0 0.438rem 0;}
-.c-header {display: grid;}
+.c-user {font-size: 1rem;font-weight: 600;color: #1a1a1a;}
+.c-date {font-size: 0.75rem;color: #959595;}
+.c-text {font-size: 0.9375rem;color: #444;margin: 0 0 0.438rem 0;}
+.c-header {display: grid; gap: 0.15rem;}
 .c-header_footer{display: flex;gap: 5rem;}
-.c-reply {
-  font-size: 0.75rem;
-  color: #828282;
-  cursor: pointer;
-  transition: color 0.2s;
-}
+.c-reply {font-size: 0.75rem;color: #828282;cursor: pointer;transition: color 0.2s;}
 .c-reply:hover { color: #6aaa7d;}
-.footer-input {
-  padding: 0.333rem 0.5rem 0.467rem 0.5rem;
-  border-top: 0.0625rem solid #eee;
-  background: #fff;
-  border-radius: 0 0 0.625rem 0.625rem;
-}
+.footer-input {padding: 0.333rem 0.5rem 0.467rem 0.5rem;border-top: 0.0625rem solid #eee;background: #fff;border-radius: 0 0 0.625rem 0.625rem;}
 .input-row {display: flex;align-items: center;gap: 0.5rem;}
 .footer-input input {
   flex: 1;
@@ -1035,18 +1043,8 @@ onUnmounted(() => {
   max-width: 24rem;
   box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.15);
 }
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.125rem;
-}
-.modal-header h3 {
-  font-size: 1.25rem;
-  font-weight: 500;
-  margin: 0;
-  color: #1a1a1a;
-}
+.modal-header {display: flex;justify-content: space-between;align-items: center;margin-bottom: 1.125rem;}
+.modal-header h3 {  font-size: 1.25rem;  font-weight: 500;  margin: 0;  color: #1a1a1a;}
 .close-modal {
   background: none;
   border: none;
@@ -1078,7 +1076,6 @@ onUnmounted(() => {
   color: #333;
   outline: none;
 }
-
 .copy-btn {
   width: fit-content;
   background: #6aaa7d;
@@ -1092,7 +1089,6 @@ onUnmounted(() => {
   transition: background 0.2s;
   margin-top: 0.938rem;
 }
-
 .copy-btn:hover {background: #5a9669;}
 .shorts-block_avt{
   display: grid;
@@ -1110,4 +1106,11 @@ onUnmounted(() => {
 .favorite-icon[src*="-fill"] {
   filter: invert(27%) sepia(95%) saturate(5000%) hue-rotate(350deg) brightness(95%) contrast(100%);
 }
+.comment-thread {display: flex;flex-direction: column;gap: 0.5rem;}
+.comment-replies {display: flex;flex-direction: column;gap: 0.5rem;margin-left: 1.125rem;}
+.reply-item {background: #F6F6F6;border-radius: 0.625rem;padding: 0.225rem 0.475rem;align-items: flex-start;}
+.reply-item .c-header {display: flex;flex-wrap: wrap;align-items: center;row-gap: 0.35rem; column-gap: .55rem;}
+.c-reply-badge {font-size: 0.75rem;color: #8E8C8C;line-height: 1;}
+.reply-item .c-text {width: 100%;}
+.reply-item .reply-avatar{width: 2rem; height: 2rem;}
 </style>
