@@ -124,21 +124,33 @@ const currentChat = computed(() => {
 const loadOpponentProfile = async () => {
   const roomId = route.params.id;
   if (!roomId || !auth.user?.id) return;
-
   let room = auth.allChats.find(c => String(c.id) === String(roomId));
-
-  // Если комнаты нет в Pinia — один раз подгружаем список чатов с сервера
+  if (!room) {
+    room = auth.allChats.find(c => {
+      if (!c.userA || !c.userB) return false;
+      const pseudo1 = `${c.userA}_${c.userB}`;
+      const pseudo2 = `${c.userB}_${c.userA}`;
+      return String(pseudo1) === String(roomId) || String(pseudo2) === String(roomId);
+    });
+  }
   if (!room) {
     try {
       await auth.fetchUserChats();
       room = auth.allChats.find(c => String(c.id) === String(roomId));
+      if (!room) {
+        room = auth.allChats.find(c => {
+          if (!c.userA || !c.userB) return false;
+          const pseudo1 = `${c.userA}_${c.userB}`;
+          const pseudo2 = `${c.userB}_${c.userA}`;
+          return String(pseudo1) === String(roomId) || String(pseudo2) === String(roomId);
+        });
+      }
     } catch (e) {
       console.error('[loadOpponentProfile] Ошибка загрузки списка чатов:', e);
     }
   }
 
   let opponentId = room?.user?.id;
-  // Новый формат DTO: { userA, userB }
   if (!opponentId && room?.userA && room?.userB) {
     opponentId = String(room.userA) === String(auth.user.id) ? room.userB : room.userA;
   }
@@ -574,7 +586,7 @@ watch(() => route.params.id, (newId, oldId) => {
 .attach-btn{width:2.25rem;height:2.25rem;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;border:none;background:transparent;opacity:.55;transition:opacity .2s}
 .attach-btn:hover{opacity:.85}
 .attach-btn img{width:1.25rem;height:1.25rem}
-.chat-input-bar textarea{flex:1;border:1px solid #e0e0e0;background:#fff;padding:.5rem 1rem;border-radius:1.25rem;resize:none;font-family:inherit;font-size:.9375rem;outline:none;min-height:2.25rem;line-height:1.4;overflow-y:auto;color:#1a1a1a;transition:border-color .2s}
+.chat-input-bar textarea{flex:1;border:1px solid #e0e0e0;background:#fff;padding:.5rem 1rem;border-radius:1.25rem;resize:none;font-family:inherit;font-size:.9375rem;outline:none;min-height:2.25rem;overflow-y:auto;color:#1a1a1a;transition:border-color .2s}
 .chat-input-bar textarea::-webkit-scrollbar,.chat-input-bar textarea::-webkit-scrollbar-thumb{width: 0 !important;}
 .chat-input-bar textarea::placeholder{color:#bbb}
 .chat-input-bar textarea:focus{border-color:#bdbdbd}

@@ -99,10 +99,8 @@ export const useAuthStore = defineStore("auth", {
       if (import.meta.env.DEV) {
         sockJsUrl = `${window.location.protocol}//${window.location.host}/chat-websocket`;
       } else {
-        // ВАРИАНТ А (рекомендуется): прокси через тот же домен
-        // Настройте nginx/Vercel/Netlify: /chat-websocket → http://85.198.96.229/chat-websocket
+        // Прокси через тот же домен (nginx/Vercel/Netlify)
         sockJsUrl = `/chat-websocket`;
-        
       }
 
       console.log('[initSocket] Connecting to:', sockJsUrl);
@@ -146,7 +144,7 @@ export const useAuthStore = defineStore("auth", {
         
         reconnectAttempts++;
         if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-          console.error('[STOMP] Лимит попыток исчерпан, переходим на polling');
+          console.error('[STOMP] Лимит попыток исчерпан');
           client.deactivate();
           this._stompClient = null;
         }
@@ -272,26 +270,25 @@ export const useAuthStore = defineStore("auth", {
     },
 
     // ========== CHAT ACTIONS ==========
-    async subscribeToRoom(roomId, onMessage) {
+     async subscribeToRoom(roomId, onMessage) {
       const client = this.initSocket();
-      if (client && client.connected) {
-        const subscription = client.subscribe(`/topic/room/${roomId}`, (message) => {
-          const body = JSON.parse(message.body);
-          onMessage?.(body);
-        });
-        console.log(`[subscribeToRoom] WebSocket subscription for room ${roomId}`);
-        return { type: 'websocket', subscription };
+      if (!client) {
+        console.warn(`[subscribeToRoom] STOMP client не создан`);
+        return null;
       }
-      console.warn(`[subscribeToRoom] WebSocket не подключён, polling отключён`);
-      return null;
+      // Подписываемся сразу — STOMP отправит SUBSCRIBE автоматически после CONNECT
+      const subscription = client.subscribe(`/topic/room/${roomId}`, (message) => {
+        const body = JSON.parse(message.body);
+        onMessage?.(body);
+      });
+      console.log(`[subscribeToRoom] WebSocket subscription for room ${roomId}`);
+      return { type: 'websocket', subscription };
     },
     async sendMessage(roomId, text) {
       const client = this.getSocket();
-      
       if (!client?.connected) {
         throw new Error('Нет соединения с сервером');
       }
-      
       client.publish({
         destination: `/app/chat.sendMessage/${roomId}`,
         body: JSON.stringify({
@@ -317,29 +314,41 @@ export const useAuthStore = defineStore("auth", {
       try {
         const res = await api.get('/chat/user-rooms');
         const rooms = res.data || [];
+        const existingMap = new Map();
+        this.allChats.forEach(c => {
+          existingMap.set(String(c.id), c);
+          if (c.userA && c.userB) {
+            existingMap.set(`${c.userA}_${c.userB}`, c);
+            existingMap.set(`${c.userB}_${c.userA}`, c);
+          }
+        });
+
         this.allChats = rooms
           .map((room) => {
+            const pseudoId = `${room.userA}_${room.userB}`;
+            const existing = existingMap.get(pseudoId) || existingMap.get(`${room.userB}_${room.userA}`);
             const opponentId = String(room.userA) === String(this.user.id) ? room.userB : room.userA;
+
             return {
-              id: room.id || `${room.userA}_${room.userB}`,
+              id: existing?.id || pseudoId,
               userA: room.userA,
               userB: room.userB,
               user: {
                 id: opponentId || "",
-                name: "Пользователь",
-                avatar: "/src/assets/img/mask-avatar.png",
-                isOnline: false,
+                name: existing?.user?.name || "Пользователь",
+                avatar: existing?.user?.avatar || "/src/assets/img/mask-avatar.png",
+                isOnline: existing?.user?.isOnline || false,
               },
-              productName: "",
-              productImage: "",
-              price: "",
-              lastMessage: {
+              productName: existing?.productName || "",
+              productImage: existing?.productImage || "",
+              price: existing?.price || "",
+              lastMessage: existing?.lastMessage || {
                 text: "Сообщений нет",
                 isMine: false,
                 isRead: false,
                 time: "",
               },
-              unreadCount: 0,
+              unreadCount: existing?.unreadCount || 0,
             };
           })
           .filter((chat) => {
@@ -356,12 +365,11 @@ export const useAuthStore = defineStore("auth", {
     },
     async fetchChatMessages(roomId, signal) {
       try {
-        const res = await api.get(`/chat/room/${roomId}`, { signal });
-        // Новый API возвращает RoomResponseDTO { userA, userB }
-        // Если бэкенд кладёт messages внутрь — берём оттуда,
-        // иначе fallback на старый формат (массив напрямую)
-        const data = res.data || {};
-        const msgs = Array.isArray(data) ? data : (data.messages || []);
+        const res = await api.get(`/chat/search-messages/${roomId}`, {
+          params: { query: '' },
+          signal
+        });
+        const msgs = res.data || [];
         return {
           messages: msgs.map(msg => ({
             id: msg.id,
@@ -391,9 +399,7 @@ export const useAuthStore = defineStore("auth", {
           userA: String(this.user.id),
           userB: String(userBId),
         });
-        const roomId = res.data; // string (UUID от бэкенда)
-        
-        // СРАЗУ добавляем комнату в allChats, чтобы при переходе в чат она уже была
+        const roomId = res.data;
         const existingIndex = this.allChats.findIndex(c => String(c.id) === String(roomId));
         if (existingIndex === -1) {
           this.allChats.unshift({
@@ -418,8 +424,6 @@ export const useAuthStore = defineStore("auth", {
             unreadCount: 0,
           });
         }
-        
-        await this.fetchUserChats();
         return roomId;
       } catch (e) {
         console.error("Ошибка создания комнаты:", e.response?.data || e);
