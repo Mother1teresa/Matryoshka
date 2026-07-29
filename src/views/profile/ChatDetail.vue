@@ -6,7 +6,7 @@
           <img src="/src/assets/img/icons/arrow-back.svg" />
         </button>
         <div class="header-user-info">
-          <img :src="currentChat?.user?.avatar || '/src/assets/img/mask-avatar.png'" class="mini-avatar" />
+          <img :src="currentChat?.user?.avatar || '/public/img/users/mask-avatar.png'" class="mini-avatar" />
           <div class="user-meta">
             <span class="name">{{ currentChat?.user?.name }}</span>
             <span :class="['online-status', { is_online: currentChat?.user?.isOnline }]">
@@ -103,10 +103,52 @@ const auth = useAuthStore();
 
 const messages = ref([]);
 const chatData = ref(null);
+const opponentProfile = ref(null);
 const currentChat = computed(() => {
   const roomId = route.params.id;
-  return auth.allChats.find(c => c.id === roomId) || chatData.value;
+  return auth.allChats.find(c => String(c.id) === String(roomId)) || chatData.value;
 });
+
+const loadOpponentProfile = async () => {
+  const roomId = route.params.id;
+  if (!roomId) return;
+  let opponentId = null;
+
+  const existingChat = auth.allChats.find(c => String(c.id) === String(roomId));
+  if (existingChat?.user?.id) {
+    opponentId = existingChat.user.id;
+  }
+
+  if (!opponentId && messages.value.length > 0) {
+    const opponentMsg = messages.value.find(m => !m.isMine);
+    if (opponentMsg) opponentId = opponentMsg.senderId;
+  }
+
+  if (!opponentId) {
+    console.log('[loadOpponentProfile] opponentId не найден, пропускаем');
+    return;
+  }
+  const profile = await auth.fetchProfileById(opponentId);
+  if (!profile) return;
+
+  opponentProfile.value = profile;
+  chatData.value = {
+    id: roomId,
+    user: {
+      id: profile.id,
+      name: profile.name || profile.username || 'Пользователь',
+      avatar: profile.avatar || profile.avatarUrl || '/src/assets/img/mask-avatar.png',
+      isOnline: existingChat?.user?.isOnline || false,
+      rating: profile.rating || 0,
+      city: profile.city || '',
+    },
+    productName: existingChat?.productName || '',
+    productImage: existingChat?.productImage || '',
+    price: existingChat?.price || '',
+    lastMessage: existingChat?.lastMessage || null,
+    unreadCount: existingChat?.unreadCount || 0,
+  };
+};
 
 const scrollContainer = ref(null);
 const textareaRef = ref(null);
@@ -253,6 +295,8 @@ const fetchMessages = async () => {
     checkBotStatus(messages.value);
     nextTick(() => scrollToBottom());
     await markMessagesAsRead();
+    await loadOpponentProfile();
+
   } catch (e) {
     if (e.name !== 'AbortError') {
       console.error("Ошибка загрузки сообщений:", e);
@@ -452,6 +496,8 @@ watch(() => route.params.id, (newId, oldId) => {
     isOrderPlaced.value = false;
     isReviewModalOpen.value = false;
     isTyping.value = false;
+    opponentProfile.value = null;
+    chatData.value = null;
 
     pendingTimeouts.forEach((id) => clearTimeout(id));
     pendingTimeouts.clear();
@@ -495,7 +541,7 @@ watch(() => route.params.id, (newId, oldId) => {
 .typing-dots span:nth-child(1){animation-delay:-.32s}
 .typing-dots span:nth-child(2){animation-delay:-.16s}
 @keyframes bounce{0%,80%,100%{transform:scale(0)}40%{transform:scale(1)}}
-.messages-viewport{flex:1;overflow-y:auto;padding:.75rem .875rem 1rem;display:flex;flex-direction:column;position:relative;background:linear-gradient(180deg,#dcedc8 0%,#80cbc4 100%);background-attachment:fixed;gap:.25rem}
+.messages-viewport{flex:1;overflow-y:auto;padding:.75rem .875rem 1rem;display:flex;flex-direction:column;position:relative;background:linear-gradient(153deg, #dcedc8 0%, #80cbc4 100%);background-attachment:fixed;gap:.25rem}
 .messages-viewport::before{content:"";position:absolute;inset:0;background-image:url('/src/assets/img/matreshka-pattern.png');background-repeat:repeat;background-size:5.5rem;opacity:.06;pointer-events:none;z-index:0}
 .msg-bubble,.system-msg,.bot-actions-row,.review-invitation,.sticky-date{position:relative;z-index:1}
 .sticky-date{display:flex;justify-content:center;margin:.5rem 0;pointer-events:none}

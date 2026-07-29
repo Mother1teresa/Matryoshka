@@ -1,4 +1,5 @@
 import { defineStore } from "pinia";
+import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 import { markRaw, ref } from 'vue';
 import router from "/src/router/index.js";
@@ -86,7 +87,7 @@ export const useAuthStore = defineStore("auth", {
       return this._stompClient;
     },
     initSocket() {
-      console.log('[initSocket] START (Native WebSocket)');
+      console.log('[initSocket] START (SockJS + STOMP)');
       
       if (this._stompClient?.connected) return this._stompClient;
       if (!this.user?.id) {
@@ -94,16 +95,19 @@ export const useAuthStore = defineStore("auth", {
         return null;
       }
 
-      let wsUrl;
+      // SockJS работает через HTTP endpoint — сам разберётся с транспортом
+      let sockJsUrl;
       if (import.meta.env.DEV) {
-        wsUrl = `ws://${window.location.host}/chat-websocket`;
+        sockJsUrl = `http://${window.location.host}/chat-websocket`;
       } else {
-        wsUrl = `wss://${window.location.host}/chat-websocket`;
+        // Ваш продакшен endpoint (см. скриншот)
+        sockJsUrl = `http://85.198.96.229/chat-websocket`;
       }
 
-      console.log('[initSocket] Connecting to:', wsUrl);
+      console.log('[initSocket] Connecting to:', sockJsUrl);
+      
       const client = new Client({
-        webSocketFactory: () => new WebSocket(wsUrl),
+        webSocketFactory: () => new SockJS(sockJsUrl),
         debug: (str) => console.log('[STOMP]', str),
         reconnectDelay: 5000,
         heartbeatIncoming: 4000,
@@ -146,6 +150,7 @@ export const useAuthStore = defineStore("auth", {
           this._stompClient = null;
         }
       };
+
       try {
         client.activate();
       } catch (e) {
@@ -162,7 +167,7 @@ export const useAuthStore = defineStore("auth", {
       
       if (this._stompClient) {
         try {
-          this._stompClient.reconnectDelay = 0;
+          // НЕ сбрасываем reconnectDelay — просто деактивируем
           this._stompClient.deactivate();
         } catch (e) {
           console.error('[disconnectSocket] Error:', e);
@@ -1006,7 +1011,6 @@ export const useAuthStore = defineStore("auth", {
           } catch (e) {
             console.error(`[fetchVideos] Не удалось обогатить видео ${v.id}:`, e);
           }
-
           if (feedData) {
             return {
               ...base,
