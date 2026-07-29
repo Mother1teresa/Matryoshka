@@ -38,7 +38,7 @@
                 <span v-else-if="msg.status === 'error'" class="msg-status-text error">ошибка</span>
                 <span class="msg-time">{{ msg.time }}</span>
                 <div v-if="msg.isMine && msg.status !== 'sending'" class="msg-status">
-                  <img v-if="!msg.isRead" src="/src/assets/img/icons/tick.svg" class="tick-icon" />
+                  <img v-if="!msg.isRead" src="/src/assets/img/icons/tick.png" class="tick-icon" />
                   <img v-else src="/src/assets/img/icons/check-mark.png" class="tick-icon is-read" />
                 </div>
               </div>
@@ -76,7 +76,6 @@
             <img src="/src/assets/img/icons/send-plane.svg" />
           </button>
         </div>
-
       </footer>
     </div>
     <ReviewModal 
@@ -592,7 +591,7 @@ box-shadow: 0px 3px 4px 0px #00000040; z-index: 2; height: 5.438rem;}
 .msg-status-text{font-size:.6875rem;color:#8e8e93}
 .msg-status-text.error{color:#ff6b6b}
 .msg-status{display:flex;align-items:center}
-.tick-icon{width:.875rem;height:auto;display:block}
+.tick-icon{width:.675rem;height:auto;display:block}
 .bot-actions-row{width:100%;align-self:center;background:#fff;border:1px solid #eee;border-radius:1.25rem;padding:1rem;text-align:center;max-width:24rem;margin:.75rem 0;box-shadow:0 2px 8px rgba(0,0,0,.06)}
 .bot-actions-row p{font-size:.875rem;margin-bottom:.75rem;color:#1a1a1a}
 .btns{display:flex;flex-wrap:wrap;justify-content:center;gap:.5rem}
@@ -622,5 +621,6 @@ box-shadow: 0px 3px 4px 0px #00000040; z-index: 2; height: 5.438rem;}
 .product-mini-photo {
   width: 4.563rem; height: 3.125rem; border-radius: 0.625rem; object-fit: cover;
 }
-.chat_footer-block{display: flex; gap: 0.563rem; justify-content: center; align-items: center;}
+.is-read{ width: .9rem;}
+.chat_footer-block{display: flex; gap: 0.563rem; justify-content: center;align-items: flex-end;}
 </style>
