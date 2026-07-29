@@ -95,13 +95,14 @@ export const useAuthStore = defineStore("auth", {
         return null;
       }
 
-      // SockJS работает через HTTP endpoint — сам разберётся с транспортом
       let sockJsUrl;
       if (import.meta.env.DEV) {
-        sockJsUrl = `http://${window.location.host}/chat-websocket`;
+        sockJsUrl = `${window.location.protocol}//${window.location.host}/chat-websocket`;
       } else {
-        // Ваш продакшен endpoint (см. скриншот)
-        sockJsUrl = `http://85.198.96.229/chat-websocket`;
+        // ВАРИАНТ А (рекомендуется): прокси через тот же домен
+        // Настройте nginx/Vercel/Netlify: /chat-websocket → http://85.198.96.229/chat-websocket
+        sockJsUrl = `/chat-websocket`;
+        
       }
 
       console.log('[initSocket] Connecting to:', sockJsUrl);
@@ -390,7 +391,34 @@ export const useAuthStore = defineStore("auth", {
           userA: String(this.user.id),
           userB: String(userBId),
         });
-        const roomId = res.data; // string
+        const roomId = res.data; // string (UUID от бэкенда)
+        
+        // СРАЗУ добавляем комнату в allChats, чтобы при переходе в чат она уже была
+        const existingIndex = this.allChats.findIndex(c => String(c.id) === String(roomId));
+        if (existingIndex === -1) {
+          this.allChats.unshift({
+            id: roomId,
+            userA: String(this.user.id),
+            userB: String(userBId),
+            user: {
+              id: String(userBId),
+              name: "Пользователь",
+              avatar: "/src/assets/img/mask-avatar.png",
+              isOnline: false,
+            },
+            productName: "",
+            productImage: "",
+            price: "",
+            lastMessage: {
+              text: "Сообщений нет",
+              isMine: false,
+              isRead: false,
+              time: "",
+            },
+            unreadCount: 0,
+          });
+        }
+        
         await this.fetchUserChats();
         return roomId;
       } catch (e) {
