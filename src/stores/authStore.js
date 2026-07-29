@@ -318,42 +318,30 @@ export const useAuthStore = defineStore("auth", {
         const rooms = res.data || [];
         this.allChats = rooms
           .map((room) => {
-            const opponent = room.users?.find((u) => u.id !== this.user.id) || {};
-            const lastMsg = room.messages && room.messages.length > 0
-              ? room.messages[room.messages.length - 1]
-              : null;
-
-            const unreadCount = room.messages?.filter(
-              m => m.senderId !== this.user.id && !m.isRead
-            ).length || 0;
-
+            const opponentId = String(room.userA) === String(this.user.id) ? room.userB : room.userA;
             return {
-              id: room.id,
-              productName: room.productName || "Объявление",
-              productImage: room.productImage || "/src/assets/img/mask-avatar.png",
-              price: room.price || "",
+              id: room.id || `${room.userA}_${room.userB}`,
+              userA: room.userA,
+              userB: room.userB,
               user: {
-                id: opponent.id || "",
-                name: opponent.username || opponent.email || "Пользователь",
-                avatar: opponent.avatar || "/src/assets/img/mask-avatar.png",
-                isOnline: opponent.isOnline || false,
+                id: opponentId || "",
+                name: "Пользователь",
+                avatar: "/src/assets/img/mask-avatar.png",
+                isOnline: false,
               },
+              productName: "",
+              productImage: "",
+              price: "",
               lastMessage: {
-                text: lastMsg ? lastMsg.message : "Сообщений нет",
-                isMine: lastMsg ? lastMsg.senderId === this.user.id : false,
-                isRead: lastMsg ? lastMsg.isRead : false,
-                time: lastMsg && lastMsg.createdAt
-                  ? new Date(lastMsg.createdAt).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
-                  : "",
+                text: "Сообщений нет",
+                isMine: false,
+                isRead: false,
+                time: "",
               },
-              unreadCount,
+              unreadCount: 0,
             };
           })
           .filter((chat) => {
-            // ФИЛЬТР: убираем чат с самим собой
             if (!chat.user?.id || String(chat.user.id) === String(this.user.id)) {
               console.log('[fetchUserChats] Filtering out self-chat:', chat.id);
               return false;
@@ -368,7 +356,11 @@ export const useAuthStore = defineStore("auth", {
     async fetchChatMessages(roomId, signal) {
       try {
         const res = await api.get(`/chat/room/${roomId}`, { signal });
-        const msgs = res.data || [];
+        // Новый API возвращает RoomResponseDTO { userA, userB }
+        // Если бэкенд кладёт messages внутрь — берём оттуда,
+        // иначе fallback на старый формат (массив напрямую)
+        const data = res.data || {};
+        const msgs = Array.isArray(data) ? data : (data.messages || []);
         return {
           messages: msgs.map(msg => ({
             id: msg.id,
@@ -394,12 +386,13 @@ export const useAuthStore = defineStore("auth", {
         throw new Error("Нельзя создать чат с самим собой");
       }
       try {
-        const res = await api.post("/chat/create-room", {
-          userA: this.user.id,
-          userB: userBId,
+        const res = await api.post("/chat/get-or-create-room", {
+          userA: String(this.user.id),
+          userB: String(userBId),
         });
+        const roomId = res.data; // string
         await this.fetchUserChats();
-        return res.data?.roomId;
+        return roomId;
       } catch (e) {
         console.error("Ошибка создания комнаты:", e.response?.data || e);
         throw e;

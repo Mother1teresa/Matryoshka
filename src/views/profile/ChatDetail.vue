@@ -104,30 +104,50 @@ const auth = useAuthStore();
 const messages = ref([]);
 const chatData = ref(null);
 const opponentProfile = ref(null);
+
 const currentChat = computed(() => {
   const roomId = route.params.id;
-  return auth.allChats.find(c => String(c.id) === String(roomId)) || chatData.value;
+  const fromStore = auth.allChats.find(c => String(c.id) === String(roomId));
+  if (fromStore) {
+    return {
+      ...fromStore,
+      user: {
+        ...fromStore.user,
+        rating: fromStore.user?.rating || opponentProfile.value?.rating || 0,
+      }
+    };
+  }
+  return chatData.value;
 });
 
+// ===== ЗАГРУЗКА ПРОФИЛЯ СОБЕСЕДНИКА =====
 const loadOpponentProfile = async () => {
   const roomId = route.params.id;
-  if (!roomId) return;
-  let opponentId = null;
+  if (!roomId || !auth.user?.id) return;
 
-  const existingChat = auth.allChats.find(c => String(c.id) === String(roomId));
-  if (existingChat?.user?.id) {
-    opponentId = existingChat.user.id;
+  let room = auth.allChats.find(c => String(c.id) === String(roomId));
+
+  // Если комнаты нет в Pinia — один раз подгружаем список чатов с сервера
+  if (!room) {
+    try {
+      await auth.fetchUserChats();
+      room = auth.allChats.find(c => String(c.id) === String(roomId));
+    } catch (e) {
+      console.error('[loadOpponentProfile] Ошибка загрузки списка чатов:', e);
+    }
   }
 
-  if (!opponentId && messages.value.length > 0) {
-    const opponentMsg = messages.value.find(m => !m.isMine);
-    if (opponentMsg) opponentId = opponentMsg.senderId;
+  let opponentId = room?.user?.id;
+  // Новый формат DTO: { userA, userB }
+  if (!opponentId && room?.userA && room?.userB) {
+    opponentId = String(room.userA) === String(auth.user.id) ? room.userB : room.userA;
   }
 
   if (!opponentId) {
-    console.log('[loadOpponentProfile] opponentId не найден, пропускаем');
+    console.warn('[loadOpponentProfile] opponentId не найден');
     return;
   }
+
   const profile = await auth.fetchProfileById(opponentId);
   if (!profile) return;
 
@@ -137,16 +157,15 @@ const loadOpponentProfile = async () => {
     user: {
       id: profile.id,
       name: profile.name || profile.username || 'Пользователь',
-      avatar: profile.avatar || profile.avatarUrl || '/src/assets/img/mask-avatar.png',
-      isOnline: existingChat?.user?.isOnline || false,
+      avatar: profile.avatar || profile.avatarUrl || '/public/img/users/mask-avatar.png',
+      isOnline: room?.user?.isOnline || false,
       rating: profile.rating || 0,
-      city: profile.city || '',
     },
-    productName: existingChat?.productName || '',
-    productImage: existingChat?.productImage || '',
-    price: existingChat?.price || '',
-    lastMessage: existingChat?.lastMessage || null,
-    unreadCount: existingChat?.unreadCount || 0,
+    productName: room?.productName || '',
+    productImage: room?.productImage || '',
+    price: room?.price || '',
+    lastMessage: room?.lastMessage || null,
+    unreadCount: room?.unreadCount || 0,
   };
 };
 
@@ -190,7 +209,7 @@ const connectChat = async () => {
           const data = JSON.parse(message.body);
           if (data.senderId !== auth.user?.id) {
             isTyping.value = true;
-            setTimeout(() => { isTyping.value = false; }, 300000);
+            setTimeout(() => { isTyping.value = false; }, 3000);
           }
         }
       );
@@ -255,7 +274,6 @@ const reconnectSocket = () => {
   connectChat();
 };
 
-// ===== Typing indicator =====
 const handleTyping = () => {
   if (typingDebounce) clearTimeout(typingDebounce);
   
@@ -274,12 +292,6 @@ const handleTyping = () => {
 };
 
 // ===== Messages =====
-const loadChatInfo = () => {
-  const roomId = route.params.id;
-  const found = auth.allChats.find(c => c.id === roomId);
-  if (found) chatData.value = found;
-};
-
 const fetchMessages = async () => {
   if (abortController.value) abortController.value.abort();
   abortController.value = new AbortController();
@@ -291,12 +303,9 @@ const fetchMessages = async () => {
       ...msg,
       status: 'sent',
     }));
-    loadChatInfo();
     checkBotStatus(messages.value);
     nextTick(() => scrollToBottom());
     await markMessagesAsRead();
-    await loadOpponentProfile();
-
   } catch (e) {
     if (e.name !== 'AbortError') {
       console.error("Ошибка загрузки сообщений:", e);
@@ -342,7 +351,7 @@ const sendMessage = async () => {
     }, 5000);
     pendingTimeouts.set(localId, timeoutId);
 
-    await auth.fetchUserChats();
+    // ЛОКАЛЬНОЕ ОБНОВЛЕНИЕ allChats УБРАНО — работаем только через API / WebSocket
   } catch (e) {
     const msg = messages.value.find(m => m.id === localId);
     if (msg) msg.status = 'error';
@@ -455,18 +464,10 @@ const shouldShowDate = (msg, index) => {
 
 // ===== Lifecycle =====
 onMounted(() => {
-  loadChatInfo();
-  fetchMessages()
-    .then(() => {
-      console.log('[onMounted] Messages loaded');
-    })
-    .catch((e) => {
-      console.error('[onMounted] fetchMessages error:', e);
-    })
-    .finally(() => {
-      console.log('[onMounted] Connecting chat...');
-      connectChat();
-    });
+  loadOpponentProfile()
+    .then(() => fetchMessages())
+    .then(() => connectChat())
+    .catch((e) => console.error('[onMounted] Error:', e));
 });
 
 onUnmounted(() => {
@@ -475,8 +476,6 @@ onUnmounted(() => {
   pendingTimeouts.clear();
   if (typingTimeout) clearTimeout(typingTimeout);
   if (typingDebounce) clearTimeout(typingDebounce);
-  
-  // auth.stopMessagePolling(route.params.id);
   
   if (roomSubscription) {
     roomSubscription.unsubscribe();
@@ -510,11 +509,10 @@ watch(() => route.params.id, (newId, oldId) => {
       typingSubscription.unsubscribe();
       typingSubscription = null;
     }
-    // auth.stopMessagePolling(oldId);
-    loadChatInfo();
-    fetchMessages().then(() => {
-      connectChat();
-    });
+
+    loadOpponentProfile()
+      .then(() => fetchMessages())
+      .then(() => connectChat());
   }
 });
 </script>
@@ -576,7 +574,8 @@ watch(() => route.params.id, (newId, oldId) => {
 .attach-btn{width:2.25rem;height:2.25rem;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;border:none;background:transparent;opacity:.55;transition:opacity .2s}
 .attach-btn:hover{opacity:.85}
 .attach-btn img{width:1.25rem;height:1.25rem}
-.chat-input-bar textarea{flex:1;border:1px solid #e0e0e0;background:#fff;padding:.5rem 1rem;border-radius:1.25rem;resize:none;font-family:inherit;font-size:.9375rem;outline:none;min-height:2.25rem;max-height:6rem;line-height:1.4;overflow-y:hidden;color:#1a1a1a;transition:border-color .2s}
+.chat-input-bar textarea{flex:1;border:1px solid #e0e0e0;background:#fff;padding:.5rem 1rem;border-radius:1.25rem;resize:none;font-family:inherit;font-size:.9375rem;outline:none;min-height:2.25rem;line-height:1.4;overflow-y:auto;color:#1a1a1a;transition:border-color .2s}
+.chat-input-bar textarea::-webkit-scrollbar,.chat-input-bar textarea::-webkit-scrollbar-thumb{width: 0 !important;}
 .chat-input-bar textarea::placeholder{color:#bbb}
 .chat-input-bar textarea:focus{border-color:#bdbdbd}
 .send-btn{width:2.25rem;height:2.25rem;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;border:none;background:#888;transition:all .2s}
@@ -586,5 +585,5 @@ watch(() => route.params.id, (newId, oldId) => {
 .product-mini-photo {
   width: 4.563rem; height: 3.125rem; border-radius: 0.625rem; object-fit: cover;
 }
-.chat_footer-block{display: flex; gap: 2rem;}
+.chat_footer-block{display: flex; gap: 2rem;align-items: flex-end;}
 </style>
