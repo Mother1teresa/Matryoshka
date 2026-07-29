@@ -190,7 +190,7 @@ const connectChat = async () => {
           const data = JSON.parse(message.body);
           if (data.senderId !== auth.user?.id) {
             isTyping.value = true;
-            setTimeout(() => { isTyping.value = false; }, 3000);
+            setTimeout(() => { isTyping.value = false; }, 300000);
           }
         }
       );
@@ -476,7 +476,7 @@ onUnmounted(() => {
   if (typingTimeout) clearTimeout(typingTimeout);
   if (typingDebounce) clearTimeout(typingDebounce);
   
-  auth.stopMessagePolling(route.params.id);
+  // auth.stopMessagePolling(route.params.id);
   
   if (roomSubscription) {
     roomSubscription.unsubscribe();
@@ -510,7 +510,7 @@ watch(() => route.params.id, (newId, oldId) => {
       typingSubscription.unsubscribe();
       typingSubscription = null;
     }
-    auth.stopMessagePolling(oldId);
+    // auth.stopMessagePolling(oldId);
     loadChatInfo();
     fetchMessages().then(() => {
       connectChat();

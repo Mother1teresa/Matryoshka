@@ -280,11 +280,9 @@ export const useAuthStore = defineStore("auth", {
         });
         console.log(`[subscribeToRoom] WebSocket subscription for room ${roomId}`);
         return { type: 'websocket', subscription };
-      } else {
-        console.log(`[subscribeToRoom] Using polling for room ${roomId}`);
-        this.startMessagePolling(roomId, onMessage);
-        return { type: 'polling' };
       }
+      console.warn(`[subscribeToRoom] WebSocket не подключён, polling отключён`);
+      return null;
     },
     async sendMessage(roomId, text) {
       const client = this.getSocket();
