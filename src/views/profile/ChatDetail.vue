@@ -8,7 +8,7 @@
         <div class="header-user-info">
           <img :src="currentChat?.user?.avatar || maskAvatar" class="mini-avatar" />
           <div class="user-meta">
-            <span class="name">{{ currentChat?.user?.name }}</span>
+            <span class="name">{{ displayName }}</span>
             <span :class="['online-status', { is_online: currentChat?.user?.isOnline }]">
               {{ currentChat?.user?.isOnline ? "в сети" : "был(а) недавно" }}
             </span>
@@ -104,7 +104,7 @@ const auth = useAuthStore();
 const messages = ref([]);
 const chatData = ref(null);
 const opponentProfile = ref(null);
-
+const isProfileLoading = ref(false);
 const currentChat = computed(() => {
   const roomId = route.params.id;
   const fromStore = auth.allChats.find(c => String(c.id) === String(roomId));
@@ -113,80 +113,86 @@ const currentChat = computed(() => {
       ...fromStore,
       user: {
         ...fromStore.user,
-        rating: fromStore.user?.rating || opponentProfile.value?.rating || 0,
+        name: opponentProfile.value?.name || fromStore.user?.name || 'Пользователь',
+        avatar: opponentProfile.value?.avatar || fromStore.user?.avatar || maskAvatar,
+        rating: opponentProfile.value?.rating || fromStore.user?.rating || 0,
       }
     };
   }
   return chatData.value;
 });
 
-// ===== ЗАГРУЗКА ПРОФИЛЯ СОБЕСЕДНИКА =====
+const displayName = computed(() => {
+  if (isProfileLoading.value) return 'Загрузка...';
+  return currentChat.value?.user?.name || 'Пользователь';
+});
+
 const loadOpponentProfile = async () => {
   const roomId = route.params.id;
   if (!roomId || !auth.user?.id) return;
+  isProfileLoading.value = true;
 
-  let room = auth.allChats.find(c => String(c.id) === String(roomId));
-  if (!room) {
-    room = auth.allChats.find(c => {
-      if (!c.userA || !c.userB) return false;
-      const p1 = `${c.userA}_${c.userB}`;
-      const p2 = `${c.userB}_${c.userA}`;
-      return String(p1) === String(roomId) || String(p2) === String(roomId);
-    });
-  }
-  if (!room) {
-    try {
-      await auth.fetchUserChats();
-      room = auth.allChats.find(c => String(c.id) === String(roomId));
-      if (!room) {
-        room = auth.allChats.find(c => {
-          if (!c.userA || !c.userB) return false;
-          const p1 = `${c.userA}_${c.userB}`;
-          const p2 = `${c.userB}_${c.userA}`;
-          return String(p1) === String(roomId) || String(p2) === String(roomId);
-        });
+  try {
+    let room = auth.allChats.find(c => String(c.id) === String(roomId));
+    if (!room) {
+      room = auth.allChats.find(c => {
+        if (!c.userA || !c.userB) return false;
+        const p1 = `${c.userA}_${c.userB}`;
+        const p2 = `${c.userB}_${c.userA}`;
+        return String(p1) === String(roomId) || String(p2) === String(roomId);
+      });
+    }
+    if (!room) {
+      try {
+        await auth.fetchUserChats();
+        room = auth.allChats.find(c => String(c.id) === String(roomId));
+        if (!room) {
+          room = auth.allChats.find(c => {
+            if (!c.userA || !c.userB) return false;
+            const p1 = `${c.userA}_${c.userB}`;
+            const p2 = `${c.userB}_${c.userA}`;
+            return String(p1) === String(roomId) || String(p2) === String(roomId);
+          });
+        }
+      } catch (e) {
+        console.error('[loadOpponentProfile] Ошибка загрузки списка чатов:', e);
       }
-    } catch (e) {
-      console.error('[loadOpponentProfile] Ошибка загрузки списка чатов:', e);
     }
-  }
-
-  let opponentId = room?.user?.id;
-  if (!opponentId && room?.userA && room?.userB) {
-    opponentId = String(room.userA) === String(auth.user.id) ? room.userB : room.userA;
-  }
-
-  // <-- fallback: парсим roomId как userA_userB, если чат не найден в сторе
-  if (!opponentId && roomId && auth.user?.id) {
-    const parts = String(roomId).split('_');
-    if (parts.length === 2) {
-      const [a, b] = parts;
-      if (String(a) === String(auth.user.id)) opponentId = b;
-      else if (String(b) === String(auth.user.id)) opponentId = a;
+    let opponentId = room?.user?.id;
+    if (!opponentId && room?.userA && room?.userB) {
+      opponentId = String(room.userA) === String(auth.user.id) ? room.userB : room.userA;
     }
+    if (!opponentId && roomId) {
+      const parts = String(roomId).split('_');
+      if (parts.length === 2) {
+        const [a, b] = parts;
+        if (String(a) === String(auth.user.id)) opponentId = b;
+        else if (String(b) === String(auth.user.id)) opponentId = a;
+      }
+    }
+    if (!opponentId) {
+      console.warn('[loadOpponentProfile] opponentId не найден');
+      return;
+    }
+    const profile = await auth.fetchProfileById(opponentId);
+    if (!profile) return;
+
+    opponentProfile.value = profile;
+    chatData.value = {
+      id: roomId,
+      user: {
+        ...profile,
+        isOnline: room?.user?.isOnline || false,
+      },
+      productName: room?.productName || '',
+      productImage: room?.productImage || '',
+      price: room?.price || '',
+      lastMessage: room?.lastMessage || null,
+      unreadCount: room?.unreadCount || 0,
+    };
+  } finally {
+    isProfileLoading.value = false;
   }
-
-  if (!opponentId) {
-    console.warn('[loadOpponentProfile] opponentId не найден');
-    return;
-  }
-
-  const profile = await auth.fetchProfileById(opponentId);
-  if (!profile) return;
-
-  opponentProfile.value = profile;
-  chatData.value = {
-    id: roomId,
-    user: {
-      ...profile,
-      isOnline: room?.user?.isOnline || false,
-    },
-    productName: room?.productName || '',
-    productImage: room?.productImage || '',
-    price: room?.price || '',
-    lastMessage: room?.lastMessage || null,
-    unreadCount: room?.unreadCount || 0,
-  };
 };
 
 const scrollContainer = ref(null);
@@ -223,8 +229,6 @@ const connectChat = async () => {
 
     if (result?.type === 'websocket' && result.subscription) {
       roomSubscription = result.subscription;
-
-      // <-- ВАЖНО: подписка на typing ТОЛЬКО после успешного коннекта
       const client = auth.getSocket();
       if (client?.connected) {
         typingSubscription = client.subscribe(
@@ -540,6 +544,13 @@ watch(() => route.params.id, (newId, oldId) => {
       .then(() => connectChat());
   }
 });
+
+// <-- ВАЖНО: если список чатов подгрузился ПОСЛЕ открытия чата — пересчитываем currentChat
+watch(() => auth.allChats, () => {
+  if (!opponentProfile.value && route.params.id) {
+    loadOpponentProfile();
+  }
+}, { deep: true });
 </script>
 <style scoped>
 .chat-dialog-window{display:flex;flex-direction:column;height:100vh;height:100dvh;background:#fff;overflow:hidden}

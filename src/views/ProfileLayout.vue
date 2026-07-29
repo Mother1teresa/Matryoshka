@@ -16,12 +16,12 @@
           />
           <span class="user-name">{{ auth.user?.name }}</span>
         </router-link>
-        <div class="user-brief" :class="{ 'hidden-content': isCollapsed }">
-          <div class="rating">
+        <!-- <div class="user-brief" :class="{ 'hidden-content': isCollapsed }"> -->
+          <!-- <div class="rating">
             <p>{{ userRating  }}</p>
             <span>{{ userStars }}</span>
-          </div>
-        </div>
+          </div> -->
+        <!-- </div> -->
       </div>
       <nav class="profile-nav">
         <router-link to="/profile/info" :class="{ 'hidden-content': isCollapsed }">Мои данные</router-link >
