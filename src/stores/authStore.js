@@ -31,12 +31,9 @@ export const useAuthStore = defineStore("auth", {
         favoriteVideos: [],
         allNotifications: [],
         isNotificationsLoading: false,
-        // === STOMP ===
         _stompConnected: false,
-        // === POLLING ===
         _pollingIntervals: {},
-        _lastMessageIds: {}, 
-        // === FCM ===
+        _lastMessageIds: {},
         fcmToken: null,
         _fcmUnsubscribe: null,
       };
@@ -87,7 +84,25 @@ export const useAuthStore = defineStore("auth", {
     getSocket() {
       return this._stompClient;
     },
-     initSocket() {
+
+    waitForStompConnect(timeout = 15000) {
+      return new Promise((resolve, reject) => {
+        if (this._stompClient?.connected) {
+          resolve(this._stompClient);
+          return;
+        }
+        const timer = setTimeout(() => {
+          reject(new Error('Таймаут подключения к WebSocket'));
+        }, timeout);
+        const callback = (client) => {
+          clearTimeout(timer);
+          resolve(client);
+        };
+        connectCallbacks.push(callback);
+      });
+    },
+
+    initSocket() {
       console.log('[initSocket] START (SockJS + STOMP)');
 
       if (this._stompClient?.connected) return this._stompClient;
@@ -95,7 +110,6 @@ export const useAuthStore = defineStore("auth", {
         console.log('[initSocket] NO USER ID');
         return null;
       }
-      // Если клиент уже создан и коннектится — не пересоздаём
       if (this._stompClient && !this._stompClient.connected) {
         return this._stompClient;
       }
@@ -108,15 +122,17 @@ export const useAuthStore = defineStore("auth", {
       }
       console.log('[initSocket] Connecting to:', sockJsUrl);
       const client = new Client({
-        webSocketFactory: () => new SockJS(sockJsUrl),
+        webSocketFactory: () => new SockJS(sockJsUrl, null, {
+          transports: ['websocket'],
+        }),
         debug: (str) => console.log('[STOMP]', str),
         reconnectDelay: 5000,
         heartbeatIncoming: 4000,
         heartbeatOutgoing: 4000,
-        connectionTimeout: 10000,
+        connectionTimeout: 20000,
       });
       let reconnectAttempts = 0;
-      const MAX_RECONNECT_ATTEMPTS = 3;
+      const MAX_RECONNECT_ATTEMPTS = 5;
 
       client.onConnect = (frame) => {
         console.log('[STOMP] Connected');
@@ -170,22 +186,17 @@ export const useAuthStore = defineStore("auth", {
       connectCallbacks = [];
     },
 
-    // ========== POLLING (Fallback) ==========
     startMessagePolling(roomId, onNewMessage) {
-      // Останавливаем предыдущий polling для этой комнаты
       this.stopMessagePolling(roomId);
       console.log(`[Polling] Started for room ${roomId}`);
-      
       const poll = async () => {
         try {
           const { messages } = await this.fetchChatMessages(roomId);
-          
           if (messages && messages.length > 0) {
             const lastId = this._lastMessageIds[roomId];
-            const newMessages = lastId 
+            const newMessages = lastId
               ? messages.filter(m => m.id > lastId)
               : messages;
-            
             if (newMessages.length > 0) {
               this._lastMessageIds[roomId] = messages[messages.length - 1].id;
               newMessages.forEach(msg => onNewMessage?.(msg));
@@ -198,7 +209,6 @@ export const useAuthStore = defineStore("auth", {
       poll();
       this._pollingIntervals[roomId] = setInterval(poll, 3000);
     },
-    
     stopMessagePolling(roomId) {
       if (this._pollingIntervals[roomId]) {
         clearInterval(this._pollingIntervals[roomId]);
@@ -206,7 +216,6 @@ export const useAuthStore = defineStore("auth", {
         console.log(`[Polling] Stopped for room ${roomId}`);
       }
     },
-    
     stopAllPolling() {
       Object.keys(this._pollingIntervals).forEach(roomId => {
         this.stopMessagePolling(roomId);
@@ -214,15 +223,11 @@ export const useAuthStore = defineStore("auth", {
       this._lastMessageIds = {};
     },
 
-    // ========== FCM ==========
     async initFCM() {
       if (!this.user?.id) return;
-      
       const token = await getFCMToken();
       if (!token) return;
-      
       this.fcmToken = token;
-      
       try {
         await api.post('/notifications', {
           userId: String(this.user.id),
@@ -232,12 +237,9 @@ export const useAuthStore = defineStore("auth", {
       } catch (e) {
         console.error('[FCM] Ошибка регистрации:', e);
       }
-      
       this._fcmUnsubscribe = listenToMessages((payload) => {
         const { title, body } = payload.notification || {};
-        
         notify(body || title || 'Новое уведомление', 'info');
-        
         const newNote = {
           id: payload.data?.notificationId || Date.now(),
           title: title || 'Уведомление',
@@ -247,11 +249,9 @@ export const useAuthStore = defineStore("auth", {
           is_read: false,
           createdAt: new Date().toISOString()
         };
-        
         this.allNotifications.unshift(newNote);
       });
     },
-    
     stopFCM() {
       if (this._fcmUnsubscribe) {
         this._fcmUnsubscribe();
@@ -260,11 +260,9 @@ export const useAuthStore = defineStore("auth", {
       this.fcmToken = null;
     },
 
-    // ========== CHAT ACTIONS ==========
     async subscribeToRoom(roomId, onMessage) {
-      this.initSocket(); // запускаем коннект, если не запущен
+      this.initSocket();
       const client = await this.waitForStompConnect();
-
       const subscription = client.subscribe(`/topic/room/${roomId}`, (message) => {
         const body = JSON.parse(message.body);
         onMessage?.(body);
@@ -273,7 +271,10 @@ export const useAuthStore = defineStore("auth", {
       return { type: 'websocket', subscription };
     },
     async sendMessage(roomId, text) {
-      const client = await this.waitForStompConnect(8000);
+      const client = await this.waitForStompConnect(10000);
+      if (!client.connected) {
+        throw new Error('Соединение потеряно, попробуйте ещё раз');
+      }
       client.publish({
         destination: `/app/chat.sendMessage/${roomId}`,
         body: JSON.stringify({
@@ -283,6 +284,7 @@ export const useAuthStore = defineStore("auth", {
       });
       console.log('[sendMessage] Sent via STOMP');
     },
+
     async markMessageAsRead(messageId, roomId) {
       try {
         await api.patch(`/chat/messages/${messageId}/read?roomId=${roomId}`);
@@ -315,7 +317,7 @@ export const useAuthStore = defineStore("auth", {
             const opponentId = String(room.userA) === String(this.user.id) ? room.userB : room.userA;
 
             return {
-              id: room.id || existing?.id || pseudoId, // <-- приоритет: реальный ID от бэкенда
+              id: room.id || existing?.id || pseudoId,
               userA: room.userA,
               userB: room.userB,
               user: {
@@ -465,12 +467,12 @@ export const useAuthStore = defineStore("auth", {
     },
     async deleteAdvert(id, s3Key = null) {
       try {
-        const dto = { 
-          id: String(id), 
-          ...(s3Key && { s3Key }) 
+        const dto = {
+          id: String(id),
+          ...(s3Key && { s3Key })
         };
-        await api.delete('/advert', { 
-          params: { advertDeleteRequestDTO: JSON.stringify(dto) } 
+        await api.delete('/advert', {
+          params: { advertDeleteRequestDTO: JSON.stringify(dto) }
         });
         notify("Объявление удалено", "success");
         return true;
@@ -503,7 +505,6 @@ export const useAuthStore = defineStore("auth", {
         return [];
       }
     },
-    // лента видео
     async fetchWelcomeFeed({ page = 0, size = 10, seed = 0.5 }) {
       this.isVideosLoading = true;
       try {
@@ -519,15 +520,14 @@ export const useAuthStore = defineStore("auth", {
           createdAt: v.createdAt || '',
           publishedAt: v.publishedAt || '',
           cdnUrl: v.cdnUrl || '',
-          views: v.views ?? v.viewsCount ?? 0, 
+          views: v.views ?? v.viewsCount ?? 0,
           author: null,
           comments: [],
           isDetailsLoaded: false,
           isVideoReady: false,
           isLikedByMe: v.isLikedByMe || v.likedByMe || false,
-          isFavorite: false, 
+          isFavorite: false,
         }));
-        
         return this.welcomeFeed;
       } catch (e) {
         console.error('Ошибка загрузки ленты:', e);
@@ -541,7 +541,6 @@ export const useAuthStore = defineStore("auth", {
         const response = await api.get(`/feed/video/${videoId}`);
         const video = response.data;
         let author = video.author;
-
         if (author?.id) {
           const profile = await this.fetchProfileById(author.id);
           if (profile) {
@@ -554,7 +553,6 @@ export const useAuthStore = defineStore("auth", {
             };
           }
         }
-
         return {
           id: video.id,
           cdnUrl: video.cdnUrl || '',
@@ -607,8 +605,6 @@ export const useAuthStore = defineStore("auth", {
           };
         }
       }
-
-      // Полностью перезаписываем
       Object.assign(video, {
         views: details.views,
         likes: details.likes,
@@ -616,12 +612,11 @@ export const useAuthStore = defineStore("auth", {
         comments: details.comments,
         commentsCount: details.commentsCount,
         createdAt: details.createdAt || video.createdAt,
-        publishedAt: details.publishedAt || video.publishedAt, 
+        publishedAt: details.publishedAt || video.publishedAt,
         isDetailsLoaded: true,
         isLikedByMe: details.isLikedByMe,
         isFavorite: details.isFavorite,
       });
-
       return video;
     },
     async addView(videoId) {
@@ -638,7 +633,6 @@ export const useAuthStore = defineStore("auth", {
         if (inFeed) {
           inFeed.views = (inFeed.views || 0) + 1;
         }
-        
         const inAll = this.allVideos.find(v => v.id === videoId);
         if (inAll) {
           inAll.views = (inAll.views || 0) + 1;
@@ -667,14 +661,12 @@ export const useAuthStore = defineStore("auth", {
     async toggleLike(videoId) {
       const video = this.welcomeFeed.find(v => v.id === videoId);
       const currentlyLiked = video?.isLikedByMe ?? false;
-
       try {
         if (currentlyLiked) {
           await this.unlikeVideo(videoId);
         } else {
           await this.likeVideo(videoId);
         }
-        // После успеха — забираем актуальное состояние с бэкенда
         const fresh = await this.fetchVideo(videoId);
         if (fresh) {
           const idx = this.welcomeFeed.findIndex(v => v.id === videoId);
@@ -711,14 +703,12 @@ export const useAuthStore = defineStore("auth", {
     async toggleFavorite(videoId) {
       const video = this.welcomeFeed.find(v => v.id === videoId);
       const currentlyFav = video?.isFavorite ?? false;
-
       try {
         if (currentlyFav) {
           await this.unmarkAsFavorite(videoId);
         } else {
           await this.markAsFavorite(videoId);
         }
-
         const fresh = await this.fetchVideo(videoId);
         if (fresh) {
           const idx = this.welcomeFeed.findIndex(v => v.id === videoId);
@@ -730,7 +720,6 @@ export const useAuthStore = defineStore("auth", {
             this.allVideos[allIdx] = { ...this.allVideos[allIdx], ...fresh };
           }
         }
-
         notify(currentlyFav ? "Удалено из избранного" : "Добавлено в избранное");
       } catch (e) {
         notify("Ошибка избранного", "error");
@@ -791,7 +780,6 @@ export const useAuthStore = defineStore("auth", {
         return null;
       }
     },
-    // конец
     saveToStorage() {
       if (!this.user && this.isAuthenticated) {
         console.error("Попытка сохранить пустой профиль!");
@@ -805,7 +793,7 @@ export const useAuthStore = defineStore("auth", {
         if (email && email.includes && email.includes('JsonNullable@')) return '';
         return email || '';
       };
-      this.user = { 
+      this.user = {
         ...userData,
         email: cleanEmail(userData.email),
         role: userData.role || 'PRIVATE_PERSON',
@@ -850,7 +838,6 @@ export const useAuthStore = defineStore("auth", {
             role: 'PRIVATE_PERSON',
           };
           this.login(userToLogin);
-        
           await Promise.all([
             this.fetchFavorites(this.user?.id).catch(() => {}),
             useFavoritesStore().fetchAdvertFavorites().catch(() => {})
@@ -900,10 +887,8 @@ export const useAuthStore = defineStore("auth", {
       try {
         const res = await api.get(`/profile/${this.user.id}`);
         const rawData = res.data;
-        
         console.log('=== fetchProfile ===');
         console.log('RAW RESPONSE:', JSON.stringify(rawData, null, 2));
-
         const cleanValue = (val) => {
           if (val && val.includes && val.includes('JsonNullable@')) return '';
           return val || '';
@@ -920,7 +905,6 @@ export const useAuthStore = defineStore("auth", {
         const newEmail = cleanValue(rawData.email) || currentEmail || '';
         const isMyProfile = String(rawData.id) === String(this.user?.id);
         const editable = isMyProfile ? true : (rawData.editable ?? false);
-        
         const updatedUser = {
           ...this.user,
           id: rawData.id,
@@ -936,10 +920,8 @@ export const useAuthStore = defineStore("auth", {
           rating: rawData.rating || 0,
         };
         this.user = updatedUser;
-        
         console.log('this.user.editable ПОСЛЕ:', this.user?.editable);
         console.log('===================');
-        
         this.saveToStorage();
         const regionStore = useRegionModalStore();
         if (this.user.city) {
@@ -961,19 +943,16 @@ export const useAuthStore = defineStore("auth", {
       try {
         const res = await api.get(`/profile/${userId}`);
         const rawData = res.data;
-        
         const cleanValue = (val) => {
           if (val && val.includes && val.includes('JsonNullable@')) return '';
           return val || '';
         };
-        
         const cleanAvatar = (avatar) => {
           if (avatar && avatar.cdnUrl) return avatar.cdnUrl;
           if (avatar && avatar.url) return avatar.url;
           if (typeof avatar === 'string') return avatar;
           return '';
         };
-        
         return {
           id: rawData.id,
           name: cleanValue(rawData.name) || cleanValue(rawData.username) || 'Пользователь',
@@ -1005,17 +984,13 @@ export const useAuthStore = defineStore("auth", {
           params: { userId: this.user?.id }
         });
         const rawVideos = Array.isArray(res.data) ? res.data : [];
-
         const enrichedVideos = await Promise.all(rawVideos.map(async (v) => {
-          // Базовые технические поля из /media/video
           const base = {
             ...v,
             s3Key: v.s3Key || v.fileName || v.id,
             thumbnail: v.thumbnailUrl || v.cdnUrl || v.url,
             isArchived: v.isArchived || false,
           };
-
-          // Догружаем реальную статистику: лайки, просмотры, комментарии, автора, дату
           let feedData = null;
           try {
             feedData = await this.fetchVideo(v.id);
@@ -1040,8 +1015,6 @@ export const useAuthStore = defineStore("auth", {
               commentsDisabled: v.commentsDisabled || false,
             };
           }
-
-          // Fallback, если /feed/video/{id} недоступен
           return {
             ...base,
             description: v.description || 'Описание ролика временно недоступно',
@@ -1058,7 +1031,6 @@ export const useAuthStore = defineStore("auth", {
             commentsDisabled: v.commentsDisabled || false,
           };
         }));
-
         this.allVideos = enrichedVideos;
       } catch (e) {
         console.error("Ошибка загрузки роликов:", e);
@@ -1073,7 +1045,6 @@ export const useAuthStore = defineStore("auth", {
           params: { userId }
         });
         const rawVideos = Array.isArray(res.data) ? res.data : [];
-
         return rawVideos.map(v => ({
           id: v.id,
           s3Key: v.s3Key || v.fileName || v.id,
@@ -1148,7 +1119,6 @@ export const useAuthStore = defineStore("auth", {
     },
     startRefreshTimer() {
       this.stopRefreshTimer();
-      // Проверка перед стартом: не запускаем для анонимов
       if (!this.isAuthenticated || !this.user?.id) {
         console.log('[startRefreshTimer] Пропуск: пользователь не авторизован');
         return;
@@ -1197,7 +1167,6 @@ export const useAuthStore = defineStore("auth", {
       this.allNotifications = [];
       this.welcomeFeed = [];
       this.allVideos = [];
-
       if (window.location.pathname !== "/") {
         try {
           await router.push("/");
