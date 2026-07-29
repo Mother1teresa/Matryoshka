@@ -6,7 +6,7 @@
           <img src="/src/assets/img/icons/arrow-back.svg" />
         </button>
         <div class="header-user-info">
-          <img :src="currentChat?.user?.avatar || '/public/img/users/mask-avatar.png'" class="mini-avatar" />
+          <img :src="currentChat?.user?.avatar || maskAvatar" class="mini-avatar" />
           <div class="user-meta">
             <span class="name">{{ currentChat?.user?.name }}</span>
             <span :class="['online-status', { is_online: currentChat?.user?.isOnline }]">
@@ -96,6 +96,7 @@ import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "/src/stores/authStore.js";
 import { notify } from "/src/utils/notify";
 import ReviewModal from "../ReviewModal.vue";
+import maskAvatar from "/src/assets/img/mask-avatar.png";
 
 const router = useRouter();
 const route = useRoute();
@@ -128,9 +129,9 @@ const loadOpponentProfile = async () => {
   if (!room) {
     room = auth.allChats.find(c => {
       if (!c.userA || !c.userB) return false;
-      const pseudo1 = `${c.userA}_${c.userB}`;
-      const pseudo2 = `${c.userB}_${c.userA}`;
-      return String(pseudo1) === String(roomId) || String(pseudo2) === String(roomId);
+      const p1 = `${c.userA}_${c.userB}`;
+      const p2 = `${c.userB}_${c.userA}`;
+      return String(p1) === String(roomId) || String(p2) === String(roomId);
     });
   }
   if (!room) {
@@ -140,9 +141,9 @@ const loadOpponentProfile = async () => {
       if (!room) {
         room = auth.allChats.find(c => {
           if (!c.userA || !c.userB) return false;
-          const pseudo1 = `${c.userA}_${c.userB}`;
-          const pseudo2 = `${c.userB}_${c.userA}`;
-          return String(pseudo1) === String(roomId) || String(pseudo2) === String(roomId);
+          const p1 = `${c.userA}_${c.userB}`;
+          const p2 = `${c.userB}_${c.userA}`;
+          return String(p1) === String(roomId) || String(p2) === String(roomId);
         });
       }
     } catch (e) {
@@ -154,7 +155,6 @@ const loadOpponentProfile = async () => {
   if (!opponentId && room?.userA && room?.userB) {
     opponentId = String(room.userA) === String(auth.user.id) ? room.userB : room.userA;
   }
-
   if (!opponentId) {
     console.warn('[loadOpponentProfile] opponentId не найден');
     return;
@@ -167,11 +167,8 @@ const loadOpponentProfile = async () => {
   chatData.value = {
     id: roomId,
     user: {
-      id: profile.id,
-      name: profile.name || profile.username || 'Пользователь',
-      avatar: profile.avatar || profile.avatarUrl || '/public/img/users/mask-avatar.png',
+      ...profile,
       isOnline: room?.user?.isOnline || false,
-      rating: profile.rating || 0,
     },
     productName: room?.productName || '',
     productImage: room?.productImage || '',

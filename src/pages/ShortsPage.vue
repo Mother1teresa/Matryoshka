@@ -126,7 +126,7 @@
                 </div>
                 <div v-else class="comments-list">
                   <div v-for="comment in video.comments" :key="comment.id" class="comment-item">
-                    <img :src="comment.author?.avatar || '/public/img/users/mask-avatar.png'"/>
+                    <img :src="comment.author?.avatar || '/assets/img/mask-avatar.png'"/>
                     <div class="c-body">
                       <div class="c-header">
                         <span class="c-user">{{ comment.author?.name || "Пользователь" }}</span>

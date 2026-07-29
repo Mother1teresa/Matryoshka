@@ -532,6 +532,7 @@ export const useAuthStore = defineStore("auth", {
           commentsCount: v.commentsCount || 0,
           description: v.description || '',
           createdAt: v.createdAt || '',
+          publishedAt: v.publishedAt || '',
           cdnUrl: v.cdnUrl || '',
           views: v.views ?? v.viewsCount ?? 0, 
           author: null,
@@ -555,6 +556,7 @@ export const useAuthStore = defineStore("auth", {
         const response = await api.get(`/feed/video/${videoId}`);
         const video = response.data;
         let author = video.author;
+
         if (author?.id) {
           const profile = await this.fetchProfileById(author.id);
           if (profile) {
@@ -567,6 +569,7 @@ export const useAuthStore = defineStore("auth", {
             };
           }
         }
+
         return {
           id: video.id,
           cdnUrl: video.cdnUrl || '',
@@ -588,9 +591,9 @@ export const useAuthStore = defineStore("auth", {
               avatar: '/public/img/users/mask-avatar.png'
             }
           })),
-          isLikedByMe: video.isLikedByMe || video.likedByMe || false,
-          isFavorite: false,
-           author: author || {
+          isLikedByMe: video.isLikedByMe ?? video.likedByMe ?? false,
+          isFavorite: video.isFavorite ?? false,
+          author: author || {
             id: '',
             name: 'Пользователь',
             username: '',
@@ -606,14 +609,9 @@ export const useAuthStore = defineStore("auth", {
     async enrichVideo(videoId, force = false) {
       const video = this.welcomeFeed.find(v => v.id === videoId);
       if (!video) return null;
-      
-      // Если уже загружено и не требуется форс-апдейт — пропускаем
       if (video.isDetailsLoaded && !force) return video;
-      
       const details = await this.fetchVideo(videoId);
       if (!details) return video;
-      
-      // Если author без avatar/rating — догружаем отдельно
       if (details.author?.id && (!details.author.avatar || !details.author.rating)) {
         const profile = await this.fetchProfileById(details.author.id);
         if (profile) {
@@ -624,7 +622,8 @@ export const useAuthStore = defineStore("auth", {
           };
         }
       }
-      
+
+      // Полностью перезаписываем
       Object.assign(video, {
         views: details.views,
         likes: details.likes,
@@ -632,11 +631,12 @@ export const useAuthStore = defineStore("auth", {
         comments: details.comments,
         commentsCount: details.commentsCount,
         createdAt: details.createdAt || video.createdAt,
+        publishedAt: details.publishedAt || video.publishedAt, 
         isDetailsLoaded: true,
-        isLikedByMe: details.isLikedByMe ?? video.isLikedByMe,
-        isFavorite: details.isFavorite ?? video.isFavorite,
+        isLikedByMe: details.isLikedByMe,
+        isFavorite: details.isFavorite,
       });
-      
+
       return video;
     },
     async addView(videoId) {
@@ -664,32 +664,16 @@ export const useAuthStore = defineStore("auth", {
       }
     },
     async likeVideo(videoId) {
-      const video = this.welcomeFeed.find(v => v.id === videoId);
-      if (video?.isLikedByMe) return;
-      
       try {
         await api.post('/feed/like', { videoId });
-        
-        if (video) {
-          video.isLikedByMe = true;
-          video.likes = (video.likes || 0) + 1;
-        }
       } catch (e) {
         console.error('Ошибка лайка:', e);
         throw e;
       }
     },
     async unlikeVideo(videoId) {
-      const video = this.welcomeFeed.find(v => v.id === videoId);
-      if (video && !video.isLikedByMe) return;
-      
       try {
         await api.post('/feed/unlike', { videoId });
-        
-        if (video) {
-          video.isLikedByMe = false;
-          video.likes = Math.max(0, (video.likes || 0) - 1);
-        }
       } catch (e) {
         console.error('Ошибка удаления лайка:', e);
         throw e;
@@ -697,41 +681,43 @@ export const useAuthStore = defineStore("auth", {
     },
     async toggleLike(videoId) {
       const video = this.welcomeFeed.find(v => v.id === videoId);
-      if (!video) return;
-      
-      if (video.isLikedByMe) {
-        await this.unlikeVideo(videoId);
-        notify("Лайк убран");
-      } else {
-        await this.likeVideo(videoId);
-        notify("Лайк поставлен");
+      const currentlyLiked = video?.isLikedByMe ?? false;
+
+      try {
+        if (currentlyLiked) {
+          await this.unlikeVideo(videoId);
+        } else {
+          await this.likeVideo(videoId);
+        }
+        // После успеха — забираем актуальное состояние с бэкенда
+        const fresh = await this.fetchVideo(videoId);
+        if (fresh) {
+          const idx = this.welcomeFeed.findIndex(v => v.id === videoId);
+          if (idx !== -1) {
+            this.welcomeFeed[idx] = { ...this.welcomeFeed[idx], ...fresh };
+          }
+          const allIdx = this.allVideos.findIndex(v => v.id === videoId);
+          if (allIdx !== -1) {
+            this.allVideos[allIdx] = { ...this.allVideos[allIdx], ...fresh };
+          }
+        }
+        notify(currentlyLiked ? "Лайк убран" : "Лайк поставлен");
+      } catch (e) {
+        notify("Ошибка лайка", "error");
+        throw e;
       }
     },
     async markAsFavorite(videoId) {
-      const video = this.welcomeFeed.find(v => v.id === videoId);
-      if (video?.isFavorite) return;
-      
       try {
         await api.post('/feed/video/mark-as-favorite', { videoId });
-        if (video) {
-          video.isFavorite = true;
-          if (!this.favoriteVideos.find(v => v.id === videoId)) {
-            this.favoriteVideos.push({ ...video, isFavorite: true });
-          }
-        }
       } catch (e) {
         console.error('Ошибка:', e);
         throw e;
       }
     },
     async unmarkAsFavorite(videoId) {
-      const video = this.welcomeFeed.find(v => v.id === videoId);
-      if (video && !video.isFavorite) return;
-      
       try {
         await api.post('/feed/video/unmark-as-favorite', { videoId });
-        if (video) video.isFavorite = false;
-        this.favoriteVideos = this.favoriteVideos.filter(v => v.id !== videoId);
       } catch (e) {
         console.error('Ошибка:', e);
         throw e;
@@ -739,14 +725,31 @@ export const useAuthStore = defineStore("auth", {
     },
     async toggleFavorite(videoId) {
       const video = this.welcomeFeed.find(v => v.id === videoId);
-      if (!video) return;
-      
-      if (video.isFavorite) {
-        await this.unmarkAsFavorite(videoId);
-        notify("Удалено из избранного");
-      } else {
-        await this.markAsFavorite(videoId);
-        notify("Добавлено в избранное");
+      const currentlyFav = video?.isFavorite ?? false;
+
+      try {
+        if (currentlyFav) {
+          await this.unmarkAsFavorite(videoId);
+        } else {
+          await this.markAsFavorite(videoId);
+        }
+
+        const fresh = await this.fetchVideo(videoId);
+        if (fresh) {
+          const idx = this.welcomeFeed.findIndex(v => v.id === videoId);
+          if (idx !== -1) {
+            this.welcomeFeed[idx] = { ...this.welcomeFeed[idx], ...fresh };
+          }
+          const allIdx = this.allVideos.findIndex(v => v.id === videoId);
+          if (allIdx !== -1) {
+            this.allVideos[allIdx] = { ...this.allVideos[allIdx], ...fresh };
+          }
+        }
+
+        notify(currentlyFav ? "Удалено из избранного" : "Добавлено в избранное");
+      } catch (e) {
+        notify("Ошибка избранного", "error");
+        throw e;
       }
     },
     async fetchLikeCount(videoId) {
