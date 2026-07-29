@@ -50,8 +50,7 @@
             :key="choice.slug"
             class="subcategory-card"
             :class="{ active: form.subCategory === choice.slug }"
-            @click="selectSubCategory(choice)"
-          >
+            @click="selectSubCategory(choice)">
             <span>{{ choice.name }}</span>
           </div>
         </div>
@@ -72,8 +71,7 @@
             :key="link.slug"
             class="subcategory-card"
             :class="{ active: form.subSubCategory === link.slug }"
-            @click="selectSubSubCategory(link)"
-          >
+            @click="selectSubSubCategory(link)">
             <span>{{ link.name }}</span>
           </div>
         </div>

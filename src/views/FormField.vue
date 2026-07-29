@@ -233,9 +233,14 @@ const fieldOptions = computed(() => {
 // ─── CHIPS ───
 const isChipActive = (opt) => {
   const val = props.modelValue;
+  if (props.field.single) { return val === opt; }
   return Array.isArray(val) && val.includes(opt);
 };
 const toggleChip = (opt) => {
+  if (props.field.single) {
+    emit('update:modelValue', props.modelValue === opt ? '' : opt);
+    return;
+  }
   const current = Array.isArray(props.modelValue) ? [...props.modelValue] : [];
   const idx = current.indexOf(opt);
   if (idx > -1) current.splice(idx, 1);

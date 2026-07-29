@@ -66,7 +66,8 @@ export const adCreateConfig = {
               label: 'Состояние', 
               type: 'chips', 
               options: ['Новое', 'Б/у'], 
-              gridClass: 'chips-2' 
+              gridClass: 'chips-2',
+              single: true  
             },
             { 
               key: 'size', 
@@ -112,7 +113,8 @@ export const adCreateConfig = {
               label: 'Состояние', 
               type: 'chips', 
               options: ['Новое', 'Б/у'], 
-              gridClass: 'chips-2' 
+              gridClass: 'chips-2',
+              single: true  
             }
           ]
         }
@@ -152,7 +154,8 @@ export const adCreateConfig = {
               label: 'Состояние', 
               type: 'chips', 
               options: ['Новое', 'Б/у'], 
-              gridClass: 'chips-2' 
+              gridClass: 'chips-2' ,
+              single: true 
             }
           ]
         }
@@ -192,7 +195,8 @@ export const adCreateConfig = {
               label: 'Состояние', 
               type: 'chips', 
               options: ['Новое', 'Б/у'], 
-              gridClass: 'chips-2' 
+              gridClass: 'chips-2' ,
+              single: true 
             }
           ]
         }
@@ -356,7 +360,8 @@ export const adCreateConfig = {
               label: 'Состояние', 
               type: 'chips',
               options: ['На ходу', 'Не на ходу'],
-              gridClass: 'chips-2'
+              gridClass: 'chips-2',
+              single: true 
             },
             { 
               key: 'body_type', 
@@ -412,14 +417,16 @@ export const adCreateConfig = {
               label: 'Привод', 
               type: 'chips',
               options: ['Передний', 'Задний', 'Полный'],
-              gridClass: 'chips-3'
+              gridClass: 'chips-3',
+              single: true 
             },
             { 
               key: 'steering', 
               label: 'Руль', 
               type: 'chips',
               options: ['Левый', 'Правый'],
-              gridClass: 'chips-2'
+              gridClass: 'chips-2',
+              single: true 
             }
           ]
         }
@@ -507,7 +514,8 @@ export const adCreateConfig = {
               label: 'Состояние', 
               type: 'chips', 
               options: ['На ходу', 'Не на ходу'], 
-              gridClass: 'chips-2' 
+              gridClass: 'chips-2',
+              single: true  
             },
             { 
               key: 'pts_owners', 
@@ -546,7 +554,8 @@ export const adCreateConfig = {
               label: 'Охлаждение', 
               type: 'chips', 
               options: ['Воздушное', 'Жидкостное'], 
-              gridClass: 'chips-2' 
+              gridClass: 'chips-2',
+              single: true  
             }
           ]
         }
@@ -650,7 +659,8 @@ export const adCreateConfig = {
                 label: 'Состояние', 
                 type: 'chips', 
                 options: ['На ходу', 'Не на ходу'], 
-                gridClass: 'chips-2' 
+                gridClass: 'chips-2' ,
+                single: true 
               }
             ]
           }
@@ -727,7 +737,8 @@ export const adCreateConfig = {
                 label: 'Состояние', 
                 type: 'chips', 
                 options: ['На ходу', 'Не на ходу'], 
-                gridClass: 'chips-2' 
+                gridClass: 'chips-2' ,
+                single: true 
               },
               { 
                 key: 'max_passengers', 
@@ -797,7 +808,8 @@ export const adCreateConfig = {
               label: 'Состояние', 
               type: 'chips', 
               options: ['На ходу', 'Не на ходу'], 
-              gridClass: 'chips-2' 
+              gridClass: 'chips-2' ,
+              single: true 
             },
             { 
               key: 'pts_owners', 
@@ -824,7 +836,8 @@ export const adCreateConfig = {
               label: 'Привод', 
               type: 'chips', 
               options: ['Передний', 'Задний', 'Полный'], 
-              gridClass: 'chips-3' 
+              gridClass: 'chips-3',
+              single: true 
             },
             { 
               key: 'engine_volume', 
@@ -884,7 +897,8 @@ export const adCreateConfig = {
               label: 'Состояние', 
               type: 'chips', 
               options: ['Новое', 'Б/у'], 
-              gridClass: 'chips-2' 
+              gridClass: 'chips-2',
+              single: true  
             },
           ]
         }
@@ -1116,7 +1130,8 @@ export const adCreateConfig = {
                 label: 'Назначение земли', 
                 type: 'chips', 
                 options: landPurposes, 
-                gridClass: 'chips-4' 
+                gridClass: 'chips-4' ,
+                single: true 
               },
               { 
                 key: 'area', 
@@ -1129,7 +1144,8 @@ export const adCreateConfig = {
                 label: 'Состояние', 
                 type: 'chips', 
                 options: ['Свободный участок', 'Строение под ключ', 'Требуется ремонт'], 
-                gridClass: 'chips-3' 
+                gridClass: 'chips-3',
+                single: true 
               },
               { 
                 key: 'communications', 
@@ -1143,7 +1159,8 @@ export const adCreateConfig = {
                 label: 'Подъездная дорога', 
                 type: 'chips', 
                 options: ['Есть', 'Нет'], 
-                gridClass: 'chips-2' 
+                gridClass: 'chips-2' ,
+                single: true 
               },
               { 
                 key: 'distance_to_metro', 
@@ -1156,14 +1173,16 @@ export const adCreateConfig = {
                 label: 'Школы, детские сады, магазины', 
                 type: 'chips', 
                 options: ['Есть', 'Нет'], 
-                gridClass: 'chips-2' 
+                gridClass: 'chips-2' ,
+                single: true 
               },
               { 
                 key: 'documents', 
                 label: 'Документы', 
                 type: 'chips', 
                 options: ['Кадастр', 'Межевание', 'Собственность', 'Ипотека'], 
-                gridClass: 'chips-4' 
+                gridClass: 'chips-4' ,
+                single: true 
               },
               { 
                 key: 'additional', 
@@ -1230,7 +1249,8 @@ export const adCreateConfig = {
                 label: 'Мансарда', 
                 type: 'chips', 
                 options: ['Есть', 'Нет'], 
-                gridClass: 'chips-2' 
+                gridClass: 'chips-2' ,
+                single: true 
               },
               { 
                 key: 'year_built', 
@@ -1243,14 +1263,16 @@ export const adCreateConfig = {
                 label: 'Состояние', 
                 type: 'chips', 
                 options: houseStates, 
-                gridClass: 'chips-3' 
+                gridClass: 'chips-3' ,
+                single: true 
               },
               { 
                 key: 'wall_material', 
                 label: 'Материал стен', 
                 type: 'chips', 
                 options: houseMaterials, 
-                gridClass: 'chips-4' 
+                gridClass: 'chips-4' ,
+                single: true 
               },
               { 
                 key: 'communications', 
@@ -1295,10 +1317,10 @@ export const adCreateConfig = {
               { key: 'area', label: 'Площадь', type: 'number', suffix: 'м²' },
               { key: 'floors', label: 'Кол-во этажей', type: 'number' },
               { key: 'ceiling_height', label: 'Высота потолков', type: 'number', suffix: 'м' },
-              { key: 'status', label: 'Состояние', type: 'chips', options: ['Под ключ', 'Нужен ремонт'], gridClass: 'chips-2' },
-              { key: 'parking', label: 'Парковка', type: 'chips', options: ['Места на улице', 'В здании'], gridClass: 'chips-2' },
+              { key: 'status', label: 'Состояние', type: 'chips', options: ['Под ключ', 'Нужен ремонт'], gridClass: 'chips-2',single: true  },
+              { key: 'parking', label: 'Парковка', type: 'chips', options: ['Места на улице', 'В здании'], gridClass: 'chips-2',single: true  },
               { key: 'communications', label: 'Коммуникации', type: 'chips', options: ['Электричество', 'Вентиляция', 'Кондиционер', 'Интернет', 'Охрана', 'Лифт', 'Отсутствуют'], gridClass: 'chips-4' },
-              { key: 'deal_type', label: 'Тип сделки', type: 'chips', options: ['Аренда', 'Субаренда', 'Продажа'], gridClass: 'chips-3' }
+              { key: 'deal_type', label: 'Тип сделки', type: 'chips', options: ['Аренда', 'Субаренда', 'Продажа'], gridClass: 'chips-3',single: true  }
             ]
           }
         ]
@@ -1327,10 +1349,10 @@ export const adCreateConfig = {
               { key: 'area', label: 'Площадь', type: 'number', suffix: 'м²' },
               { key: 'floors', label: 'Кол-во этажей', type: 'number' },
               { key: 'ceiling_height', label: 'Высота потолков', type: 'number', suffix: 'м' },
-              { key: 'status', label: 'Состояние', type: 'chips', options: ['Под ключ', 'Нужен ремонт'], gridClass: 'chips-2' },
-              { key: 'parking', label: 'Парковка', type: 'chips', options: ['Места на улице', 'В здании'], gridClass: 'chips-2' },
+              { key: 'status', label: 'Состояние', type: 'chips', options: ['Под ключ', 'Нужен ремонт'], gridClass: 'chips-2',single: true  },
+              { key: 'parking', label: 'Парковка', type: 'chips', options: ['Места на улице', 'В здании'], gridClass: 'chips-2',single: true  },
               { key: 'communications', label: 'Коммуникации', type: 'chips', options: ['Электричество', 'Вентиляция', 'Кондиционер', 'Интернет', 'Охрана', 'Лифт', 'Отсутствуют'], gridClass: 'chips-4' },
-              { key: 'deal_type', label: 'Тип сделки', type: 'chips', options: ['Аренда', 'Субаренда', 'Продажа'], gridClass: 'chips-3' }
+              { key: 'deal_type', label: 'Тип сделки', type: 'chips', options: ['Аренда', 'Субаренда', 'Продажа'], gridClass: 'chips-3',single: true  }
             ]
           }
         ]
@@ -1356,12 +1378,12 @@ export const adCreateConfig = {
                 required: true,
                 suffix: '₽'
               },
-              { key: 'warehouse_type', label: 'Тип склада', type: 'chips', options: ['Сухой', 'Холодильный', 'Открытая площадка'], gridClass: 'chips-3' },
+              { key: 'warehouse_type', label: 'Тип склада', type: 'chips', options: ['Сухой', 'Холодильный', 'Открытая площадка'], gridClass: 'chips-3',single: true },
               { key: 'area', label: 'Площадь', type: 'number', suffix: 'м²' },
               { key: 'floor', label: 'Этаж', type: 'number' },
               { key: 'ceiling_height', label: 'Высота потолков', type: 'number', suffix: 'м' },
               { key: 'communications', label: 'Коммуникации', type: 'chips', options: ['Электричество', 'Вентиляция', 'Кондиционер', 'Интернет', 'Охрана', 'Лифт', 'Отсутствуют'], gridClass: 'chips-4' },
-              { key: 'deal_type', label: 'Тип сделки', type: 'chips', options: ['Аренда', 'Субаренда', 'Продажа'], gridClass: 'chips-3' }
+              { key: 'deal_type', label: 'Тип сделки', type: 'chips', options: ['Аренда', 'Субаренда', 'Продажа'], gridClass: 'chips-3' ,single: true }
             ]
           }
         ]
@@ -1390,12 +1412,12 @@ export const adCreateConfig = {
               { key: 'area', label: 'Площадь', type: 'number', suffix: 'м²' },
               { key: 'ceiling_height', label: 'Высота потолков', type: 'number', suffix: 'м' },
               { key: 'power_capacity', label: 'Электромощность', type: 'number', suffix: 'кВт' },
-              { key: 'voltage', label: 'Напряжение', type: 'chips', options: ['220В', '380В'], gridClass: 'chips-2' },
-              { key: 'transformer', label: 'Трансформаторная подстанция', type: 'chips', options: ['Есть', 'Нету'], gridClass: 'chips-2' },
+              { key: 'voltage', label: 'Напряжение', type: 'chips', options: ['220В', '380В'], gridClass: 'chips-2',single: true  },
+              { key: 'transformer', label: 'Трансформаторная подстанция', type: 'chips', options: ['Есть', 'Нету'], gridClass: 'chips-2' ,single: true },
               { key: 'communications', label: 'Коммуникации', type: 'chips', options: ['Электричество', 'Вентиляция', 'Кондиционер', 'Интернет', 'Охрана', 'Лифт', 'Парковка', 'Отсутствуют'], gridClass: 'chips-4' },
               { key: 'equipment_list', label: 'Список оборудования', type: 'dynamic-list', placeholder: 'Введите название оборудования', hint: '(не обязательно)' },
-              { key: 'truck_access', label: 'Подъезд пути для грузового транспорта', type: 'chips', options: ['Есть', 'Нет'], gridClass: 'chips-2' },
-              { key: 'deal_type', label: 'Тип сделки', type: 'chips', options: ['Аренда', 'Субаренда', 'Продажа'], gridClass: 'chips-3' }
+              { key: 'truck_access', label: 'Подъезд пути для грузового транспорта', type: 'chips', options: ['Есть', 'Нет'], gridClass: 'chips-2',single: true  },
+              { key: 'deal_type', label: 'Тип сделки', type: 'chips', options: ['Аренда', 'Субаренда', 'Продажа'], gridClass: 'chips-3',single: true  }
             ]
           }
         ]
@@ -1421,13 +1443,13 @@ export const adCreateConfig = {
                 required: true,
                 suffix: '₽'
               },
-              { key: 'purpose', label: 'Назначение помещения', type: 'chips', options: ['Офис', 'Магазин', 'Производство легкое', 'Свободное'], gridClass: 'chips-4' },
+              { key: 'purpose', label: 'Назначение помещения', type: 'chips', options: ['Офис', 'Магазин', 'Производство легкое', 'Свободное'], gridClass: 'chips-4',single: true  },
               { key: 'area', label: 'Площадь', type: 'number', suffix: 'м²' },
               { key: 'floor', label: 'Этаж', type: 'number' },
-              { key: 'status', label: 'Состояние', type: 'chips', options: ['Под ключ', 'Нужен ремонт'], gridClass: 'chips-2' },
+              { key: 'status', label: 'Состояние', type: 'chips', options: ['Под ключ', 'Нужен ремонт'], gridClass: 'chips-2',single: true  },
               { key: 'ceiling_height', label: 'Высота потолков', type: 'number', suffix: 'м' },
               { key: 'communications', label: 'Коммуникации', type: 'chips', options: ['Электричество', 'Вентиляция', 'Кондиционер', 'Интернет', 'Охрана', 'Лифт', 'Отсутствуют'], gridClass: 'chips-4' },
-              { key: 'deal_type', label: 'Тип сделки', type: 'chips', options: ['Аренда', 'Субаренда', 'Продажа'], gridClass: 'chips-3' }
+              { key: 'deal_type', label: 'Тип сделки', type: 'chips', options: ['Аренда', 'Субаренда', 'Продажа'], gridClass: 'chips-3',single: true  }
             ]
           }
         ]
@@ -1457,11 +1479,11 @@ export const adCreateConfig = {
                 suffix: '₽'
               },
               { key: 'area', label: 'Площадь', type: 'number', suffix: 'м²' },
-              { key: 'material', label: 'Материал', type: 'chips', options: ['Металл', 'Кирпич', 'Бетон', 'ЖБИ'], gridClass: 'chips-4' },
+              { key: 'material', label: 'Материал', type: 'chips', options: ['Металл', 'Кирпич', 'Бетон', 'ЖБИ'], gridClass: 'chips-4',single: true  },
               { key: 'ceiling_height', label: 'Высота потолков', type: 'number', suffix: 'м' },
               { key: 'communications', label: 'Коммуникации', type: 'chips', options: ['Электричество', 'Вода', 'Отопление', 'Освещение', 'Охрана'], gridClass: 'chips-5' },
-              { key: 'deal_type', label: 'Тип сделки', type: 'chips', options: ['Аренда', 'Продажа'], gridClass: 'chips-2' },
-              { key: 'car_capacity', label: 'Кол-во машиномест', type: 'chips', options: ['Один', 'Два', 'Три и более'], gridClass: 'chips-3' }
+              { key: 'deal_type', label: 'Тип сделки', type: 'chips', options: ['Аренда', 'Продажа'], gridClass: 'chips-2',single: true  },
+              { key: 'car_capacity', label: 'Кол-во машиномест', type: 'chips', options: ['Один', 'Два', 'Три и более'], gridClass: 'chips-3',single: true  }
             ]
           }
         ]
@@ -1488,11 +1510,11 @@ export const adCreateConfig = {
                 suffix: '₽'
               },
               { key: 'area', label: 'Площадь', type: 'number', suffix: 'м²' },
-              { key: 'parking_type', label: 'Тип паркинга', type: 'chips', options: ['Открытый', 'Подземный', 'Крытый'], gridClass: 'chips-3' },
+              { key: 'parking_type', label: 'Тип паркинга', type: 'chips', options: ['Открытый', 'Подземный', 'Крытый'], gridClass: 'chips-3',single: true  },
               { key: 'ceiling_height', label: 'Высота потолков', type: 'number', suffix: 'м' },
               { key: 'car_capacity', label: 'Кол-во машиномест', type: 'number' },
               { key: 'communications', label: 'Коммуникации', type: 'chips', options: ['Охрана', 'Отопление', 'Освещение'], gridClass: 'chips-3' },
-              { key: 'deal_type', label: 'Тип сделки', type: 'chips', options: ['Аренда', 'Продажа'], gridClass: 'chips-2' }
+              { key: 'deal_type', label: 'Тип сделки', type: 'chips', options: ['Аренда', 'Продажа'], gridClass: 'chips-2',single: true  }
             ]
           }
         ]
@@ -1559,7 +1581,8 @@ export const adCreateConfig = {
               label: 'Пол', 
               type: 'chips', 
               options: genders,
-              gridClass: 'chips-2'
+              gridClass: 'chips-2',
+              single: true 
             },
             { 
               key: 'age', 
@@ -1611,13 +1634,15 @@ export const adCreateConfig = {
               type: 'chips', 
               options: employmentTypes,
               gridClass: 'chips-4'
+              ,single: true 
             },
             { 
               key: 'work_format', 
               label: 'Формат работы', 
               type: 'chips', 
               options: workFormats,
-              gridClass: 'chips-3'
+              gridClass: 'chips-3',
+              single: true 
             }
           ]
         }
@@ -1688,14 +1713,16 @@ export const adCreateConfig = {
               label: 'Занятость', 
               type: 'chips', 
               options: employmentTypes,
-              gridClass: 'chips-4'
+              gridClass: 'chips-4',
+              single: true 
             },
             { 
               key: 'work_format', 
               label: 'Формат работы', 
               type: 'chips', 
               options: workFormats,
-              gridClass: 'chips-3'
+              gridClass: 'chips-3',
+              single: true 
             }
           ]
         }
@@ -1753,7 +1780,8 @@ export const adCreateConfig = {
               label: 'Пол', 
               type: 'chips', 
               options: genders,
-              gridClass: 'chips-2'
+              gridClass: 'chips-2',
+              single: true 
             },
             { 
               key: 'color', 
@@ -1850,14 +1878,16 @@ export const adCreateConfig = {
               label: 'Цель сделки', 
               type: 'chips', 
               options: ['В аренду', 'Продать', 'Найти партнёра'], 
-              gridClass: 'chips-3' 
+              gridClass: 'chips-3', 
+              single: true 
             },
             { 
               key: 'business_status', 
               label: 'Состояние бизнеса', 
               type: 'chips', 
               options: ['Прибыль', 'Убыток'], 
-              gridClass: 'chips-2' 
+              gridClass: 'chips-2' ,
+              single: true 
             },
             { 
               key: 'payback_period', 
@@ -1876,7 +1906,8 @@ export const adCreateConfig = {
               label: 'Правовая форма', 
               type: 'chips', 
               options: ['ИП', 'ООО', 'АО', 'Другое'], 
-              gridClass: 'chips-4' 
+              gridClass: 'chips-4',
+              single: true  
             }
           ]
         }
