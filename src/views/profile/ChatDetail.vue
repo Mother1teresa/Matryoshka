@@ -67,7 +67,6 @@
           <button class="retry-btn" @click="reconnectSocket">Переподключить</button>
         </div>
         <div v-if="isLoading" class="connection-status loading">Загрузка...</div>
-        <!-- <button v-if="!isOrderPlaced" class="order-btn" @click="handleCreateOrder">Оформить заказ</button> -->
         <div class="chat_footer-block">
           <button class="attach-btn">
             <img src="/src/assets/img/icons/clip.svg" />
@@ -77,7 +76,7 @@
             <img src="/src/assets/img/icons/send-plane.svg" />
           </button>
         </div>
-        
+
       </footer>
     </div>
     <ReviewModal 
@@ -125,6 +124,7 @@ const currentChat = computed(() => {
 const loadOpponentProfile = async () => {
   const roomId = route.params.id;
   if (!roomId || !auth.user?.id) return;
+
   let room = auth.allChats.find(c => String(c.id) === String(roomId));
   if (!room) {
     room = auth.allChats.find(c => {
@@ -155,6 +155,17 @@ const loadOpponentProfile = async () => {
   if (!opponentId && room?.userA && room?.userB) {
     opponentId = String(room.userA) === String(auth.user.id) ? room.userB : room.userA;
   }
+
+  // <-- fallback: парсим roomId как userA_userB, если чат не найден в сторе
+  if (!opponentId && roomId && auth.user?.id) {
+    const parts = String(roomId).split('_');
+    if (parts.length === 2) {
+      const [a, b] = parts;
+      if (String(a) === String(auth.user.id)) opponentId = b;
+      else if (String(b) === String(auth.user.id)) opponentId = a;
+    }
+  }
+
   if (!opponentId) {
     console.warn('[loadOpponentProfile] opponentId не найден');
     return;
@@ -205,24 +216,31 @@ const connectChat = async () => {
     console.log('[connectChat] Missing params');
     return;
   }
-  const result = await auth.subscribeToRoom(route.params.id, handleIncomingMessage);
-  console.log('[connectChat] Mode:', result?.type);
-  chatMode.value = result?.type || 'none';
-  if (result?.type === 'websocket' && result.subscription) {
-    roomSubscription = result.subscription;
-    const client = auth.getSocket();
-    if (client?.connected) {
-      typingSubscription = client.subscribe(
-        `/topic/room/${route.params.id}/typing`,
-        (message) => {
-          const data = JSON.parse(message.body);
-          if (data.senderId !== auth.user?.id) {
-            isTyping.value = true;
-            setTimeout(() => { isTyping.value = false; }, 3000);
+  try {
+    const result = await auth.subscribeToRoom(route.params.id, handleIncomingMessage);
+    console.log('[connectChat] Mode:', result?.type);
+    chatMode.value = result?.type || 'none';
+
+    if (result?.type === 'websocket' && result.subscription) {
+      roomSubscription = result.subscription;
+
+      // <-- ВАЖНО: подписка на typing ТОЛЬКО после успешного коннекта
+      const client = auth.getSocket();
+      if (client?.connected) {
+        typingSubscription = client.subscribe(
+          `/topic/room/${route.params.id}/typing`,
+          (message) => {
+            const data = JSON.parse(message.body);
+            if (data.senderId !== auth.user?.id) {
+              isTyping.value = true;
+              setTimeout(() => { isTyping.value = false; }, 3000);
+            }
           }
-        }
-      );
+        );
+      }
     }
+  } catch (e) {
+    console.error('[connectChat] Error:', e);
   }
 };
 
@@ -285,7 +303,7 @@ const reconnectSocket = () => {
 
 const handleTyping = () => {
   if (typingDebounce) clearTimeout(typingDebounce);
-  
+
   typingDebounce = setTimeout(() => {
     const client = auth.getSocket();
     if (client?.connected && newMessage.value.trim()) {
@@ -359,8 +377,6 @@ const sendMessage = async () => {
       pendingTimeouts.delete(localId);
     }, 5000);
     pendingTimeouts.set(localId, timeoutId);
-
-    // ЛОКАЛЬНОЕ ОБНОВЛЕНИЕ allChats УБРАНО — работаем только через API / WebSocket
   } catch (e) {
     const msg = messages.value.find(m => m.id === localId);
     if (msg) msg.status = 'error';
@@ -485,7 +501,7 @@ onUnmounted(() => {
   pendingTimeouts.clear();
   if (typingTimeout) clearTimeout(typingTimeout);
   if (typingDebounce) clearTimeout(typingDebounce);
-  
+
   if (roomSubscription) {
     roomSubscription.unsubscribe();
     roomSubscription = null;

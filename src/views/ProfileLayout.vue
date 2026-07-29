@@ -3,9 +3,9 @@
     <!-- Боковое меню -->
     <aside class="profile-sidebar" :class="{ 'is-collapsed': isCollapsed }">
       <div class="sidebar-header">
-        <button class="collapse-btn" @click="isCollapsed = !isCollapsed">
+        <!-- <button class="collapse-btn" @click="isCollapsed = !isCollapsed">
           <img src="/src/assets/img/icons/arr-collapse.svg" alt="toggle" :class="{ 'is-rotated': isCollapsed }" />
-        </button>
+        </button> -->
         <router-link to="/" class="logo" :class="{ 'hidden-content': isCollapsed }">
           <span>Матрёшка</span>
         </router-link>
@@ -60,7 +60,7 @@ import { useAuthStore } from "/src/stores/authStore.js";
 
 const auth = useAuthStore();
 const openMaintenance = inject('openMaintenance');
-const isCollapsed = ref(false);
+// const isCollapsed = ref(false);
 
 // Рейтинг напрямую из профиля
 const userRating = computed(() => auth.user?.rating || 0);
@@ -121,7 +121,7 @@ const unavailableRoutes = [
 .profile-nav a {
   display: block;
   text-decoration: none;
-  padding: 1.031rem 0 1.031rem 1.875rem;
+  padding: 0.625rem 0 0.625rem 1.875rem;
   font-size: 1.25rem;
   position: relative;
 }
@@ -164,7 +164,7 @@ const unavailableRoutes = [
   user-select: none;
   display: flex;
 }
-
+/* 
 .nav-footer::after {
   content: '';
   position: absolute;
@@ -181,7 +181,6 @@ const unavailableRoutes = [
   transition: transform 0.3s ease;
 }
 
-/* При наведении на кнопку — звезда шевелится */
 .nav-footer:hover::after {
   animation: starWiggle 0.6s ease-in-out infinite;
 }
@@ -199,7 +198,7 @@ const unavailableRoutes = [
   75% {
     transform: rotate(4deg) scale(1.05);
   }
-}
+} */
 
 .user-avatar {
   width: 3.688rem;

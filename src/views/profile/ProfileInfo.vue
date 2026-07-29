@@ -1,6 +1,6 @@
 <template>
   <div class="profile-container">
-    <h2 class="page-title">Личный кабинет</h2>
+    <h2 class="page-title">Управление профилем</h2>
     <div class="profile-card">
       <button v-if="auth.user?.editable !== false" class="settings-btn" @click="isModalOpen = true">
         <img src="/src/assets/img/icons/settings-gear.svg" alt="settings" />
@@ -8,7 +8,7 @@
       <div class="user-header">
         <img :src="auth.userAvatar" class="large-avatar" />
         <div class="rating-badge">
-          <span class="rating-num">{{ userRating }}</span>
+          <!-- <span class="rating-num">{{ userRating }}</span> -->
           <span class="stars">{{ userStars }}</span>
         </div>
         <p class="user-type">
@@ -110,7 +110,7 @@ watch(isModalOpen, (newVal) => {
 .profile-card {
   background: #fff;
   border-radius: 0.625rem;
-  padding: 1.25rem 3.513rem 4.25rem 3.513rem;
+  padding: 1.25rem 3.513rem 1.25rem 3.513rem;
   position: relative;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
   width: 33.063rem;
@@ -138,16 +138,16 @@ watch(isModalOpen, (newVal) => {
 }
 .stars {
   letter-spacing: 2px;
-  font-size: 2.65rem;
+  font-size: 2.25rem;
 }
 .user-type {
-  font-size: 1.5rem;
-  margin-top: 2.375rem;
+  font-size: 1.25rem;
+  margin-top: 1rem;
   font-weight: 700;
 }
 .user-info-list {
   display: grid;
-  gap: 2rem;
+  gap: 1.2rem;
   margin-bottom: 2.5rem;
 }
 .info-row {
@@ -155,14 +155,14 @@ watch(isModalOpen, (newVal) => {
   justify-content: flex-start;
   align-items: baseline;
   gap: 1.5rem;
-  font-size: 1.5rem; 
+  font-size: 1.25rem; 
 }
 .tyk{text-transform: capitalize;}
 .label {
   font-weight: 700;
   color: #000;
   width: 6.563rem;
-  font-size: 1.28rem;
+  font-size: 1.25rem;
 }
 .value {
   text-align: left;
@@ -177,13 +177,13 @@ watch(isModalOpen, (newVal) => {
   color: #000;
 }
 .about-section h3 {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 700;
   text-align: center;
   margin-bottom: 0.688rem;
 }
 .about-section p {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   text-align: left;
 }
 </style>

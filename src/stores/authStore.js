@@ -13,6 +13,7 @@ import { notify } from "/src/utils/notify";
 
 let stompClient = null;
 let refreshTimer = null;
+let connectCallbacks = [];
 
 export const useAuthStore = defineStore("auth", {
   state: () => {
@@ -33,7 +34,7 @@ export const useAuthStore = defineStore("auth", {
         // === STOMP ===
         _stompConnected: false,
         // === POLLING ===
-        _pollingIntervals: {}, // roomId -> intervalId
+        _pollingIntervals: {},
         _lastMessageIds: {}, 
         // === FCM ===
         fcmToken: null,
@@ -86,25 +87,26 @@ export const useAuthStore = defineStore("auth", {
     getSocket() {
       return this._stompClient;
     },
-    initSocket() {
+     initSocket() {
       console.log('[initSocket] START (SockJS + STOMP)');
-      
+
       if (this._stompClient?.connected) return this._stompClient;
       if (!this.user?.id) {
         console.log('[initSocket] NO USER ID');
         return null;
+      }
+      // Если клиент уже создан и коннектится — не пересоздаём
+      if (this._stompClient && !this._stompClient.connected) {
+        return this._stompClient;
       }
 
       let sockJsUrl;
       if (import.meta.env.DEV) {
         sockJsUrl = `${window.location.protocol}//${window.location.host}/chat-websocket`;
       } else {
-        // Прокси через тот же домен (nginx/Vercel/Netlify)
         sockJsUrl = `/chat-websocket`;
       }
-
       console.log('[initSocket] Connecting to:', sockJsUrl);
-      
       const client = new Client({
         webSocketFactory: () => new SockJS(sockJsUrl),
         debug: (str) => console.log('[STOMP]', str),
@@ -113,7 +115,6 @@ export const useAuthStore = defineStore("auth", {
         heartbeatOutgoing: 4000,
         connectionTimeout: 10000,
       });
-      
       let reconnectAttempts = 0;
       const MAX_RECONNECT_ATTEMPTS = 3;
 
@@ -121,27 +122,24 @@ export const useAuthStore = defineStore("auth", {
         console.log('[STOMP] Connected');
         this._stompConnected = true;
         reconnectAttempts = 0;
+        connectCallbacks.forEach(cb => cb(client));
+        connectCallbacks = [];
       };
-      
       client.onDisconnect = () => {
         console.log('[STOMP] Disconnected');
         this._stompConnected = false;
       };
-      
       client.onStompError = (frame) => {
         console.error('[STOMP] Error:', frame.headers['message']);
         this._stompConnected = false;
       };
-      
       client.onWebSocketError = (event) => {
         console.error('[STOMP] WebSocket Error:', event);
         this._stompConnected = false;
       };
-      
       client.onWebSocketClose = (event) => {
         console.log('[STOMP] WebSocket Closed:', event.code, event.reason);
         this._stompConnected = false;
-        
         reconnectAttempts++;
         if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
           console.error('[STOMP] Лимит попыток исчерпан');
@@ -149,24 +147,19 @@ export const useAuthStore = defineStore("auth", {
           this._stompClient = null;
         }
       };
-
       try {
         client.activate();
       } catch (e) {
         console.error('[STOMP] Activate error:', e);
         return null;
       }
-      
       this._stompClient = markRaw(client);
       return this._stompClient;
     },
-    
     disconnectSocket() {
       console.log('[disconnectSocket]');
-      
       if (this._stompClient) {
         try {
-          // НЕ сбрасываем reconnectDelay — просто деактивируем
           this._stompClient.deactivate();
         } catch (e) {
           console.error('[disconnectSocket] Error:', e);
@@ -174,13 +167,13 @@ export const useAuthStore = defineStore("auth", {
         this._stompClient = null;
       }
       this._stompConnected = false;
+      connectCallbacks = [];
     },
 
     // ========== POLLING (Fallback) ==========
     startMessagePolling(roomId, onNewMessage) {
       // Останавливаем предыдущий polling для этой комнаты
       this.stopMessagePolling(roomId);
-      
       console.log(`[Polling] Started for room ${roomId}`);
       
       const poll = async () => {
@@ -202,9 +195,7 @@ export const useAuthStore = defineStore("auth", {
           console.error(`[Polling] Error for room ${roomId}:`, e);
         }
       };
-      
       poll();
-      
       this._pollingIntervals[roomId] = setInterval(poll, 3000);
     },
     
@@ -270,13 +261,10 @@ export const useAuthStore = defineStore("auth", {
     },
 
     // ========== CHAT ACTIONS ==========
-     async subscribeToRoom(roomId, onMessage) {
-      const client = this.initSocket();
-      if (!client) {
-        console.warn(`[subscribeToRoom] STOMP client не создан`);
-        return null;
-      }
-      // Подписываемся сразу — STOMP отправит SUBSCRIBE автоматически после CONNECT
+    async subscribeToRoom(roomId, onMessage) {
+      this.initSocket(); // запускаем коннект, если не запущен
+      const client = await this.waitForStompConnect();
+
       const subscription = client.subscribe(`/topic/room/${roomId}`, (message) => {
         const body = JSON.parse(message.body);
         onMessage?.(body);
@@ -285,10 +273,7 @@ export const useAuthStore = defineStore("auth", {
       return { type: 'websocket', subscription };
     },
     async sendMessage(roomId, text) {
-      const client = this.getSocket();
-      if (!client?.connected) {
-        throw new Error('Нет соединения с сервером');
-      }
+      const client = await this.waitForStompConnect(8000);
       client.publish({
         destination: `/app/chat.sendMessage/${roomId}`,
         body: JSON.stringify({
@@ -326,11 +311,11 @@ export const useAuthStore = defineStore("auth", {
         this.allChats = rooms
           .map((room) => {
             const pseudoId = `${room.userA}_${room.userB}`;
-            const existing = existingMap.get(pseudoId) || existingMap.get(`${room.userB}_${room.userA}`);
+            const existing = existingMap.get(String(room.id)) || existingMap.get(pseudoId) || existingMap.get(`${room.userB}_${room.userA}`);
             const opponentId = String(room.userA) === String(this.user.id) ? room.userB : room.userA;
 
             return {
-              id: existing?.id || pseudoId,
+              id: room.id || existing?.id || pseudoId, // <-- приоритет: реальный ID от бэкенда
               userA: room.userA,
               userB: room.userB,
               user: {
