@@ -186,39 +186,59 @@ let typingDebounce = null;
 const chatMode = ref('none');
 
 const connectChat = async () => {
-  console.log('[connectChat] START');
-  if (!auth.user?.id || !route.params.id) {
-    console.log('[connectChat] Missing params');
+  const roomId = route.params.id;
+  const userId = auth.user?.id;
+  
+  console.log('[connectChat] START | roomId:', roomId, '| userId:', userId);
+
+  if (!userId || !roomId) {
+    console.warn('[connectChat] ⛔ Missing params');
     return;
   }
+
   try {
-    const result = await auth.subscribeToRoom(route.params.id, handleIncomingMessage);
-    console.log('[connectChat] Mode:', result?.type);
+    const result = await auth.subscribeToRoom(roomId, handleIncomingMessage);
+    console.log('[connectChat] ✅ Подписка оформлена. Mode:', result?.type, '| Subscription:', result?.subscription);
+
     chatMode.value = result?.type || 'none';
 
     if (result?.type === 'websocket' && result.subscription) {
       roomSubscription = result.subscription;
+      
       const client = auth.getSocket();
+      console.log('[connectChat] STOMP client connected?', client?.connected);
+
       if (client?.connected) {
-        typingSubscription = client.subscribe(
-          `/topic/room/${route.params.id}/typing`,
-          (message) => {
-            const data = JSON.parse(message.body);
-            if (data.senderId !== auth.user?.id) {
-              isTyping.value = true;
-              setTimeout(() => { isTyping.value = false; }, 3000);
-            }
+        const topic = `/topic/room/${roomId}/typing`;
+        console.log('[connectChat] Подписываемся на typing:', topic);
+        
+        typingSubscription = client.subscribe(topic, (message) => {
+          const data = JSON.parse(message.body);
+          console.log('[STOMP] 📨 TYPING received:', data);
+          
+          if (data.senderId !== userId) {
+            isTyping.value = true;
+            setTimeout(() => { isTyping.value = false; }, 3000);
           }
-        );
+        });
+      } else {
+        console.warn('[connectChat] STOMP client не подключён — typing не подписан');
       }
     }
   } catch (e) {
-    console.error('[connectChat] Error:', e);
+    console.error('[connectChat] ❌ Error:', e);
   }
 };
 
 const handleIncomingMessage = (msg) => {
-  // Если сервер прислал echo нашего сообщения — обновляем id
+  console.log('[STOMP] 📨 ВХОДЯЩЕЕ сообщение:', {
+    id: msg.id,
+    senderId: msg.senderId,
+    text: msg.message,
+    isRead: msg.isRead,
+    createdAt: msg.createdAt,
+    raw: msg
+  });
   const pendingMsg = messages.value.find(m => 
     m.isMine &&
     m.text === msg.message &&
@@ -226,6 +246,7 @@ const handleIncomingMessage = (msg) => {
   );
 
   if (pendingMsg) {
+    console.log('[STOMP] 🔄 Это echo нашего сообщения. Обновляем ID:', msg.id);
     pendingMsg.id = msg.id;
     pendingMsg.status = 'sent';
     pendingMsg.isRead = msg.isRead || false;
@@ -236,7 +257,10 @@ const handleIncomingMessage = (msg) => {
   }
 
   const exists = messages.value.some(m => m.id === msg.id);
-  if (exists) return;
+  if (exists) {
+    console.log('[STOMP] ⚠️ Сообщение уже есть в списке, пропускаем. ID:', msg.id);
+    return;
+  }
 
   messages.value.push({
     id: msg.id,
@@ -250,6 +274,7 @@ const handleIncomingMessage = (msg) => {
     createdAt: msg.createdAt,
     status: 'sent',
   });
+  console.log('[STOMP] ➕ Сообщение добавлено в список. Всего сообщений:', messages.value.length);
 
   if (!msg.isMine && !msg.isRead && msg.id) {
     auth.markMessageAsRead(msg.id, route.params.id).then(() => {
@@ -312,6 +337,9 @@ const sendMessage = async () => {
   const text = newMessage.value.trim();
   if (!text || isSending.value) return;
 
+  const roomId = route.params.id;
+  console.log('[Chat] ✉️ Отправка сообщения:', { roomId, text, senderId: auth.user?.id });
+
   isSending.value = true;
   newMessage.value = "";
   autoResize();
@@ -329,14 +357,16 @@ const sendMessage = async () => {
     createdAt: now.toISOString(),
   };
   messages.value.push(localMsg);
+  console.log('[Chat] 💾 Локальное сообщение создано:', localMsg);
   nextTick(() => scrollToBottom());
 
   try {
-    await auth.sendMessage(route.params.id, text);
-    // STOMP отправил успешно — сразу считаем доставленным
+    await auth.sendMessage(roomId, text);
+    console.log('[Chat] ✅ Сервер принял сообщение');
     const msg = messages.value.find(m => m.id === localId);
     if (msg) msg.status = 'sent';
   } catch (e) {
+    console.error('[Chat] ❌ Ошибка отправки:', e);
     const msg = messages.value.find(m => m.id === localId);
     if (msg) msg.status = 'error';
     notify(e.message || "Не удалось отправить сообщение", "error");
@@ -344,7 +374,6 @@ const sendMessage = async () => {
     isSending.value = false;
   }
 };
-
 const markMessagesAsRead = async () => {
   const unreadIds = messages.value
     .filter(m => !m.isMine && !m.isRead && m.id && !String(m.id).startsWith('local-'))

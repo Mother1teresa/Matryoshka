@@ -90,15 +90,15 @@
                       <div class="stats-line">
                         <div class="stat">
                           <img src="/src/assets/img/icons/eye.svg" />
-                          {{ video.viewsCount ?? video.views ?? 0 }}
+                          {{ video.viewsCount || video.views || "" }}
                         </div>
                         <div class="stat">
                           <img src="/src/assets/img/icons/heart.svg" />
-                          {{ video.likes ?? video.likesCount ?? 0 }}
+                          {{ video.likes || video.likesCount || "" }}
                         </div>
                         <div class="stat">
                           <img src="/src/assets/img/icons/comment.svg" />
-                          {{ video.commentsCount ?? 0 }}
+                          {{ video.commentsCount || "" }}
                         </div>
                       </div>
                       <p class="video-description">
@@ -250,9 +250,9 @@ const handleVideoCreated = (createdMedia) => {
       thumbnail: createdMedia.cdnUrl || createdMedia.url,
       description: createdMedia.description || 'Действующий ролик',
       isArchived: false,
-      likesCount: 0,
-      viewsCount: 0,
-      commentsCount: 0,
+      likesCount: "",
+      viewsCount: "",
+      commentsCount: "",
       author: {
         name: auth.user?.name || 'Пользователь',
         avatar: auth.userAvatar

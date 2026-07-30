@@ -127,8 +127,12 @@ export const useAuthStore = defineStore("auth", {
       const client = new Client({
         webSocketFactory: () => new SockJS(sockJsUrl, null, {
           transports: ['websocket'],
+          withCredentials: true,
         }),
-        debug: (str) => console.log('[STOMP]', str),
+        debug: (str) => {
+          if (str.includes('<<< PONG') || str.includes('>>> PING')) return;
+          console.log('[STOMP DEBUG]', str);
+        },
         reconnectDelay: 5000,
         heartbeatIncoming: 4000,
         heartbeatOutgoing: 4000,
@@ -138,26 +142,26 @@ export const useAuthStore = defineStore("auth", {
       const MAX_RECONNECT_ATTEMPTS = 5;
 
       client.onConnect = (frame) => {
-        console.log('[STOMP] Connected');
+        console.log('[STOMP] ✅ Connected. Frame:', frame);
         this._stompConnected = true;
         reconnectAttempts = 0;
         connectCallbacks.forEach(cb => cb(client));
         connectCallbacks = [];
       };
       client.onDisconnect = () => {
-        console.log('[STOMP] Disconnected');
+        console.log('[STOMP] 🔌 Disconnected');
         this._stompConnected = false;
       };
       client.onStompError = (frame) => {
-        console.error('[STOMP] Error:', frame.headers['message']);
+        console.error('[STOMP] ❌ Error:', frame.headers['message'], frame);
         this._stompConnected = false;
       };
       client.onWebSocketError = (event) => {
-        console.error('[STOMP] WebSocket Error:', event);
+        console.error('[STOMP] ❌ WebSocket Error:', event);
         this._stompConnected = false;
       };
       client.onWebSocketClose = (event) => {
-        console.log('[STOMP] WebSocket Closed:', event.code, event.reason);
+        console.log('[STOMP] WebSocket Closed. Code:', event.code, 'Reason:', event.reason);
         this._stompConnected = false;
         reconnectAttempts++;
         if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
@@ -274,9 +278,18 @@ export const useAuthStore = defineStore("auth", {
       const client = await this.waitForStompConnect();
       const subscription = client.subscribe(`/topic/room/${roomId}`, (message) => {
         const body = JSON.parse(message.body);
+        // ← расширенное логирование: текст сообщения, id, senderId
+        console.log('[STOMP] 📨 Получено сообщение:', {
+          id: body.id,
+          senderId: body.senderId,
+          text: body.message,
+          isRead: body.isRead,
+          createdAt: body.createdAt,
+          raw: body
+        });
         onMessage?.(body);
       });
-      console.log(`[subscribeToRoom] WebSocket subscription for room ${roomId}`);
+      console.log(`[subscribeToRoom] ✅ WebSocket subscription for room ${roomId}`);
       return { type: 'websocket', subscription };
     },
     async sendMessage(roomId, text) {
@@ -284,14 +297,20 @@ export const useAuthStore = defineStore("auth", {
       if (!client.connected) {
         throw new Error('Соединение потеряно, попробуйте ещё раз');
       }
+      const payload = {
+        senderId: this.user?.id,
+        message: text,
+      };
+      console.log('[STOMP] 📤 Отправка сообщения:', {
+        roomId,
+        ...payload,
+        destination: `/app/chat.sendMessage/${roomId}`
+      });
       client.publish({
         destination: `/app/chat.sendMessage/${roomId}`,
-        body: JSON.stringify({
-          senderId: this.user?.id,
-          message: text,
-        })
+        body: JSON.stringify(payload)
       });
-      console.log('[sendMessage] Sent via STOMP');
+      console.log('[sendMessage] ✅ Отправлено через STOMP');
     },
 
     async markMessageAsRead(messageId, roomId) {
@@ -530,13 +549,13 @@ export const useAuthStore = defineStore("auth", {
         const shortVideos = response.data || [];
         this.welcomeFeed = shortVideos.map(v => ({
           id: v.id,
-          likes: v.likes || 0,
-          commentsCount: v.commentsCount || 0,
+          likes: v.likes || "",
+          commentsCount: v.commentsCount || "",
           description: v.description || '',
           createdAt: v.createdAt || '',
           publishedAt: v.publishedAt || '',
           cdnUrl: v.cdnUrl || '',
-          views: v.views ?? v.viewsCount ?? 0,
+          views: v.views ?? v.viewsCount ?? "",
           author: null,
           comments: [],
           isDetailsLoaded: false,
@@ -573,9 +592,9 @@ export const useAuthStore = defineStore("auth", {
           id: video.id,
           cdnUrl: video.cdnUrl || '',
           description: video.description || '',
-          likes: video.likes ?? video.likesCount ?? 0,
-          views: video.views ?? video.viewsCount ?? 0,
-          commentsCount: video.comments?.length ?? video.commentsCount ?? video.commentCount ?? 0,
+          likes: video.likes ?? video.likesCount ?? "",
+          views: video.views ?? video.viewsCount ?? "",
+          commentsCount: video.comments?.length ?? video.commentsCount ?? video.commentCount ?? "",
           createdAt: video.createdAt || '',
           publishedAt: video.publishedAt || '',
           comments: (video.comments || []).map(c => ({
