@@ -255,7 +255,7 @@ h4 {
   font-weight: 600;
   font-size: 1.25rem;
   cursor: pointer;
-  margin-bottom: .3rem;
+  /* margin-bottom: .3rem; */
 }
 .review-product {
   color: #7c7c7c;
