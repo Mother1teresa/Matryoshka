@@ -334,6 +334,8 @@ export const useAuthStore = defineStore("auth", {
       try {
         const res = await api.get('/chat/user-rooms');
         const rooms = res.data || [];
+
+        // Старый кэш для сохранения данных между обновлениями
         const existingMap = new Map();
         this.allChats.forEach(c => {
           existingMap.set(String(c.id), c);
@@ -343,41 +345,108 @@ export const useAuthStore = defineStore("auth", {
           }
         });
 
-        this.allChats = rooms
+        // Базовый список чатов с opponentId
+        const baseChats = rooms
           .map((room) => {
             const pseudoId = `${room.userA}_${room.userB}`;
-            const existing = existingMap.get(String(room.id)) || existingMap.get(pseudoId) || existingMap.get(`${room.userB}_${room.userA}`);
+            const existing = existingMap.get(String(room.id)) 
+              || existingMap.get(pseudoId) 
+              || existingMap.get(`${room.userB}_${room.userA}`);
             const opponentId = String(room.userA) === String(this.user.id) ? room.userB : room.userA;
 
-            return {
-              id: room.id || existing?.id || pseudoId,
-              userA: room.userA,
-              userB: room.userB,
-              user: {
-                id: opponentId || "",
-                name: existing?.user?.name || "Пользователь",
-                avatar: existing?.user?.avatar || "/img/users/mask-avatar.png",
-                isOnline: existing?.user?.isOnline || false,
-              },
-              productName: existing?.productName || "",
-              productImage: existing?.productImage || "",
-              price: existing?.price || "",
-              lastMessage: existing?.lastMessage || {
-                text: "Сообщений нет",
-                isMine: false,
-                isRead: false,
-                time: "",
-              },
-              unreadCount: existing?.unreadCount || 0,
-            };
+            return { raw: room, existing, pseudoId, opponentId };
           })
-          .filter((chat) => {
-            if (!chat.user?.id || String(chat.user.id) === String(this.user.id)) {
-              console.log('[fetchUserChats] Filtering out self-chat:', chat.id);
+          .filter((item) => {
+            if (!item.opponentId || String(item.opponentId) === String(this.user.id)) {
+              console.log('[fetchUserChats] Filtering out self-chat:', item.raw.id || item.pseudoId);
               return false;
             }
             return true;
           });
+
+        // Параллельно обогащаем: профиль собеседника + последнее сообщение
+        const enrichedChats = await Promise.all(
+          baseChats.map(async ({ raw, existing, pseudoId, opponentId }) => {
+            const chatId = raw.id || existing?.id || pseudoId;
+
+            // --- 1. Профиль собеседника ---
+            let opponentName = existing?.user?.name;
+            let opponentAvatar = existing?.user?.avatar;
+            let opponentRating = existing?.user?.rating || 0;
+            let opponentOnline = existing?.user?.isOnline || false;
+
+            const needProfile = !opponentName 
+              || opponentName === 'Пользователь' 
+              || !opponentAvatar 
+              || opponentAvatar === '/img/users/mask-avatar.png';
+
+            if (needProfile) {
+              try {
+                const profile = await this.fetchProfileById(opponentId);
+                if (profile) {
+                  opponentName = profile.name || opponentName;
+                  opponentAvatar = profile.avatar || profile.avatarUrl || opponentAvatar;
+                  opponentRating = profile.rating || opponentRating;
+                  // если бэкенд присылает isOnline в профиле — можно добавить:
+                  // opponentOnline = profile.isOnline ?? opponentOnline;
+                }
+              } catch (e) {
+                console.warn(`[fetchUserChats] Не удалось загрузить профиль ${opponentId}:`, e);
+              }
+            }
+
+            // --- 2. Последнее сообщение ---
+            let lastMessage = existing?.lastMessage;
+            const hasValidLastMsg = lastMessage && lastMessage.text && lastMessage.text !== 'Сообщений нет';
+
+            if (!hasValidLastMsg) {
+              try {
+                // ⚠️ Если бэкенд поддерживает пагинацию, замени на:
+                // const res = await api.get(`/chat/search-messages/${chatId}`, { params: { query: '', take: 1 }});
+                // const msgs = res.data || [];
+                // const last = msgs[0];
+                
+                const { messages } = await this.fetchChatMessages(chatId);
+                if (messages && messages.length > 0) {
+                  const last = messages[messages.length - 1];
+                  lastMessage = {
+                    text: last.text,
+                    isMine: last.isMine,
+                    isRead: last.isRead,
+                    time: last.time,
+                  };
+                }
+              } catch (e) {
+                console.warn(`[fetchUserChats] Не удалось загрузить сообщения для ${chatId}:`, e);
+              }
+            }
+
+            return {
+              id: chatId,
+              userA: raw.userA,
+              userB: raw.userB,
+              user: {
+                id: opponentId,
+                name: opponentName || 'Пользователь',
+                avatar: opponentAvatar || '/img/users/mask-avatar.png',
+                isOnline: opponentOnline,
+                rating: opponentRating,
+              },
+              productName: existing?.productName || raw.productName || '',
+              productImage: existing?.productImage || raw.productImage || '',
+              price: existing?.price || raw.price || '',
+              lastMessage: lastMessage || {
+                text: 'Сообщений нет',
+                isMine: false,
+                isRead: false,
+                time: '',
+              },
+              unreadCount: existing?.unreadCount || raw.unreadCount || 0,
+            };
+          })
+        );
+
+        this.allChats = enrichedChats;
       } catch (e) {
         console.error("Ошибка при получении чатов:", e.response?.data || e);
         throw e;

@@ -94,7 +94,7 @@ const unavailableRoutes = [
   background: #f5f5f5;
   border-right: 1px solid #000000;
   position: relative;
-  padding-bottom: 20.25rem;
+  padding-bottom: 5.25rem;
   transition: width 0.3s ease;
   /* overflow: hidden;  */
   white-space: nowrap;

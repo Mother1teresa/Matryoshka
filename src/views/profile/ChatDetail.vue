@@ -525,7 +525,8 @@ watch(() => route.params.id, (newId, oldId) => {
 });
 </script>
 <style scoped>
-.chat-dialog-window{display:flex;flex-direction:column;height:100vh;height:100dvh;background:#fff;overflow:hidden}
+.chat-dialog-window{display:flex;flex-direction:column;height:100vh;height:100dvh;background:#fff;overflow:hidden; background: linear-gradient(126.24deg, rgba(211, 242, 163, 0.8) 1.06%, rgba(108, 192, 139, 0.8) 52.82%, rgba(7, 64, 80, 0.8) 100%); position: relative;}
+.chat-dialog-window::before{content:"";position:absolute;inset:0;background-image:url('/src/assets/img/matreshka-pattern.png');background-repeat:repeat;background-size:5.5rem;opacity:.06;pointer-events:none;z-index:0}
 .chat-header{position:relative;display:flex;align-items:center;padding:0.625rem 1.75rem 0.625rem 0.313rem;border-bottom:1px solid #e5e5e5;gap:.625rem;flex-shrink:0;background:#FFFFFF;
 box-shadow: 0px 3px 4px 0px #00000040; z-index: 2; height: 5.438rem;}
 .back-btn{width:1.625rem;height:100%;border-radius:0.625rem;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;border:none;background:#f44;transition:transform .15s}
@@ -548,15 +549,15 @@ box-shadow: 0px 3px 4px 0px #00000040; z-index: 2; height: 5.438rem;}
 .typing-dots span:nth-child(1){animation-delay:-.32s}
 .typing-dots span:nth-child(2){animation-delay:-.16s}
 @keyframes bounce{0%,80%,100%{transform:scale(0)}40%{transform:scale(1)}}
-.messages-viewport{flex:1;overflow-y:auto;padding: 1rem 20% 2.438rem 20%;display:flex;flex-direction:column;position:relative;background:linear-gradient(153deg, #dcedc8 0%, #80cbc4 100%);background-attachment:fixed;gap:.25rem}
-.messages-viewport::before{content:"";position:absolute;inset:0;background-image:url('/src/assets/img/matreshka-pattern.png');background-repeat:repeat;background-size:5.5rem;opacity:.06;pointer-events:none;z-index:0}
+.messages-viewport{flex:1;overflow-y:auto;padding: 1rem 20% 2.438rem 20%;display:flex;flex-direction:column;position:relative; background-attachment:fixed; gap:0.625rem;}
+/* .messages-viewport::before{content:"";position:absolute;inset:0;background-image:url('/src/assets/img/matreshka-pattern.png');background-repeat:repeat;background-size:5.5rem;opacity:.06;pointer-events:none;z-index:0} */
 .msg-bubble,.system-msg,.bot-actions-row,.review-invitation,.sticky-date{position:relative;z-index:1}
 .sticky-date{display:flex;justify-content:center;margin:.5rem 0;pointer-events:none}
 .sticky-date span{background:rgba(0,0,0,.18);color:#fff;font-size:.75rem;padding:.25rem .875rem;border-radius:1rem;backdrop-filter:blur(2px)}
 .system-msg{align-self:center;background:rgba(0,0,0,.2);color:#fff;padding:.375rem 1.25rem;border-radius:1rem;font-size:.8125rem;margin:.5rem 0;backdrop-filter:blur(4px);text-align:center}
 .msg-bubble{max-width:75%;padding:.5rem .75rem;font-size:.9375rem;line-height:1.35;word-break:break-word;box-shadow:0 1px 2px rgba(0,0,0,.08)}
 .msg-bubble.received{align-self:flex-start;background:#fff;border-radius:.75rem .75rem .75rem .25rem;color:#1a1a1a}
-.msg-bubble.sent{align-self:flex-end;background:#e1fec6;border-radius:.75rem .75rem .25rem .75rem;color:#1a1a1a}
+.msg-bubble.sent{align-self:flex-end;background:#D4FFE4;border-radius:.75rem .75rem .25rem .75rem;color:#1a1a1a}
 .msg-bubble.msg-error{opacity:.8;border:1px solid #ff6b6b}
 .msg-content{display:flex;flex-direction:column;gap:.125rem}
 .msg-footer{display:flex;align-items:center;justify-content:flex-end;gap:.25rem;margin-top:.125rem}
@@ -574,26 +575,27 @@ box-shadow: 0px 3px 4px 0px #00000040; z-index: 2; height: 5.438rem;}
 .review-invitation p{font-size:.875rem;color:#1a1a1a;margin-bottom:.625rem}
 .review-link-btn{background:#64a07a;color:#fff;border:none;padding:.625rem 1.25rem;border-radius:.625rem;cursor:pointer;font-weight:600;font-size:.875rem;transition:background .2s}
 .review-link-btn:hover{background:#5a906e}
-.chat-input-bar{display:grid;align-items:center;padding:1.25rem .75rem;gap:1.5rem;background:#fff;border-top:1px solid #e5e5e5;flex-shrink:0;}
-.messages-page-wrapper{border-radius: 0 0 2rem 2rem; overflow: hidden;}
+.chat-input-bar{display:grid;align-items:center;padding:1.25rem .75rem;gap:1rem;background: linear-gradient(16deg, rgba(211, 242, 163, 0.4) 1%, rgba(108, 192, 139, 0.4) 52.82%, rgba(7, 64, 80, 0.4) 100%);border-top:1px solid #e5e5e5;flex-shrink:0;}
+.messages-page-wrapper{border-radius: 0 0 0.938rem 0.938rem; overflow: hidden;}
 .connection-status{width:100%;text-align:center;font-size:.75rem;padding:.25rem;border-radius:.5rem}
-.connection-status.offline{color:#ff6b6b;background:#fff0f0;display:flex;align-items:center;justify-content:center;gap:.5rem}
+.connection-status.offline{color:#ff6b6b;background:#fff0f0;display:flex;align-items:center;justify-content:center;gap:.5rem; width: 49%;margin: 0 auto;}
 .connection-status.loading{color:#888}
 .retry-btn{background:#ff6b6b;color:#fff;border:none;padding:.125rem .5rem;border-radius:.25rem;font-size:.75rem;cursor:pointer}
-.attach-btn{ width:3rem;height:3rem;border-radius:0.938rem;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;border:none;background:transparent;opacity:.55;transition:opacity .2s;background:#E5E5E5;}
+.attach-btn{ width:3rem;height:3rem;border-radius:0.938rem;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;border:none;background:transparent;opacity:.55;transition:opacity .2s;background:#ffffff;}
 .attach-btn:hover{opacity:.85}
 .attach-btn img{width:1.25rem;height:1.25rem}
 .chat-input-bar textarea{border:1px solid #e0e0e0;background:#fff;padding:1rem 0.75rem;border-radius: 0.938rem;resize:none;font-family:inherit;font-size: 0.75rem;outline:none;min-height:3.063rem;overflow-y:auto;color:#1a1a1a;transition:border-color .2s; width: 36.938rem; }
 .chat-input-bar textarea::-webkit-scrollbar,.chat-input-bar textarea::-webkit-scrollbar-thumb{width: 0 !important;}
 .chat-input-bar textarea::placeholder{color:#bbb}
 .chat-input-bar textarea:focus{border-color:#bdbdbd}
-.send-btn{width:3rem;height:3rem;border-radius:0.938rem;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;border:none;background:#E5E5E5;transition:all .2s}
+.send-btn{width:3rem;height:3rem;border-radius:0.938rem;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;border:none;background:#FFFFFF;transition:all .2s}
 .send-btn:hover:not(:disabled){background:#666}
 .send-btn:disabled{opacity:.4;cursor:not-allowed}
-.send-btn img{width:1.25rem;height:1.25rem;filter:brightness(0) invert(1)}
+.send-btn img{width:1.25rem;height:1.25rem;}
+/* filter:brightness(0) invert(1) */
 .product-mini-photo {
   width: 4.563rem; height: 3.125rem; border-radius: 0.625rem; object-fit: cover;
 }
 .is-read{ width: .9rem;}
-.chat_footer-block{display: flex; gap: 0.563rem; justify-content: center;align-items: flex-end;}
+.chat_footer-block{display: flex; gap: 0.563rem; justify-content: center;align-items: flex-end;z-index: 2;}
 </style>
