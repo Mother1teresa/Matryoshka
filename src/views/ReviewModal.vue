@@ -48,7 +48,7 @@
           </div>
 
           <!-- Блок: Текст отзыва -->
-          <div class="form-group">
+          <div class="form-group center">
             <label>Напишите отзыв</label>
             <textarea 
               v-model="form.text" 
@@ -59,7 +59,7 @@
           </div>
 
           <!-- Блок: Фото -->
-          <div class="form-group">
+          <div class="form-group center">
             <label>Добавьте фотографии, если есть</label>
             <div class="photo-upload-grid">
               <div class="upload-slot" @click="$refs.fileInput.click()">
@@ -179,43 +179,114 @@ const submitReview = async () => {
 .review-modal {
   background: #fff;
   width: 100%;
-  max-width: 37.5rem; 
+  max-width: 37.5rem;
   border-radius: 1.875rem;
   padding: 2rem;
   position: relative;
+  box-shadow: 0 1.25rem 3.75rem rgba(0, 0, 0, 0.12);
 }
 
+/* ===== Шапка ===== */
 .modal-header {
   display: flex;
   justify-content: center;
+  align-items: center;
   margin-bottom: 1.5rem;
+  position: relative;
 }
 
-.modal-header h3 { font-size: 1.25rem; font-weight: 600; }
+.modal-header h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+  color: #111;
+}
 
 .close-btn {
   position: absolute;
-  right: 1.5rem;
-  top: 1.5rem;
-  font-size: 1.5rem;
-  background: none; border: none; cursor: pointer;
+  right: 0;
+  top: 0;
+  font-size: 1.75rem;
+  line-height: 1;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #333;
+  padding: 0;
 }
 
-.form-group { margin-bottom: 1.5rem; }
-.form-group label { display: block; margin-bottom: 0.75rem; font-weight: 500; font-size: 0.938rem; }
+/* ===== Тело ===== */
+.modal-body {
+  display: flex;
+  flex-direction: column;
+}
 
-/* Кастомные радио-кнопки */
-.radio-group, .vertical-radio-list { display: flex; gap: 1.5rem; }
-.vertical-radio-list { flex-direction: column; gap: 0.75rem; }
+.form-group {
+  margin-bottom: 1.5rem;
+}
 
-.radio-item { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
+.form-group label {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+  font-size: 0.938rem;
+  color: #222;
+}
+
+/* Центрирование заголовков (рейтинг, отзыв, фото) */
+.form-group.center label {
+  text-align: center;
+}
+
+/* ===== Радио ===== */
+.radio-group {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.vertical-radio-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.radio-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.938rem;
+  color: #333;
+  position: relative;
+}
+
+/* Прячем нативный input, оставляем только кастомный кружок */
+.radio-item input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
 .radio-custom {
-  width: 1.25rem; height: 1.25rem;
-  border: 0.063rem solid #ddd;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 0.125rem solid #ddd;
   border-radius: 50%;
   display: inline-block;
   position: relative;
+  flex-shrink: 0;
+  transition: border-color 0.2s;
 }
+
+.radio-item:hover .radio-custom {
+  border-color: #64A07A;
+}
+
+input[type="radio"]:checked + .radio-custom {
+  border-color: #64A07A;
+}
+
 input[type="radio"]:checked + .radio-custom::after {
   content: "";
   position: absolute;
@@ -224,28 +295,122 @@ input[type="radio"]:checked + .radio-custom::after {
   border-radius: 50%;
 }
 
-/* Звезды */
-.stars-rating { font-size: 2rem; color: #ddd; cursor: pointer; display: flex; gap: 0.313rem; justify-content: center; }
-.star.active { color: #64A07A; }
+/* ===== Звёзды ===== */
+.stars-rating {
+  font-size: 2.5rem;
+  color: #e0e0e0;
+  cursor: pointer;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
 
+.star.active {
+  color: #64A07A;
+}
+
+/* ===== Текстовое поле ===== */
 textarea {
-  width: 100%; height: 7.5rem;
-  background: #F9F9F9;
+  width: 100%;
+  height: 7.5rem;
+  background: #f5f5f5;
   border: 0.063rem solid #eee;
   border-radius: 0.75rem;
   padding: 1rem;
   resize: none;
+  font-family: inherit;
+  font-size: 0.875rem;
+  color: #333;
 }
 
-.submit-review-btn {
+textarea::placeholder {
+  color: #aaa;
+  font-size: 0.875rem;
+}
+
+.char-count {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: #999;
+}
+
+/* ===== Фото ===== */
+.photo-upload-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.upload-slot {
+  width: 6.25rem;   /* 100px */
+  height: 6.25rem;
+  border: 0.063rem solid #ddd;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: #fafafa;
+  transition: border-color 0.2s;
+}
+
+.upload-slot:hover {
+  border-color: #64A07A;
+}
+
+.camera-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  opacity: 0.5;
+}
+
+.photo-preview {
+  width: 6.25rem;
+  height: 6.25rem;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  border: 0.063rem solid #eee;
+}
+
+.photo-preview img {
   width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ===== Кнопка отправки ===== */
+.submit-review-btn {
+  width: auto;
+  align-self: flex-end;
   background: #64A07A;
   color: #fff;
-  padding: 1rem;
+  padding: 0.875rem 2rem;
   border-radius: 1.875rem;
   border: none;
   font-weight: 600;
   cursor: pointer;
+  font-size: 0.938rem;
+  transition: opacity 0.2s;
 }
-.submit-review-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+.submit-review-btn:hover:not(:disabled) {
+  opacity: 0.92;
+}
+
+.submit-review-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* ===== Переходы ===== */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.25s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
 </style>
