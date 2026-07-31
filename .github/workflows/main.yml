@@ -26,6 +26,7 @@ jobs:
           echo "VITE_FIREBASE_MESSAGING_SENDER_ID=788752225889" >> .env
           echo "VITE_FIREBASE_APP_ID=1:788752225889:web:4c3f06ba5a20ec67583c20" >> .env
           echo "VITE_FIREBASE_VAPID_KEY=${{ secrets.VITE_FIREBASE_VAPID_KEY }}" >> .env
+          echo "VITE_VK_APP_ID=${{ secrets.VITE_VK_APP_ID }}" >> .env
 
       - name: Create firebase-messaging-sw.js
         run: |

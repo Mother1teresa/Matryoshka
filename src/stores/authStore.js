@@ -953,6 +953,23 @@ export const useAuthStore = defineStore("auth", {
         throw e;
       }
     },
+    async loginWithVK(vkData) {
+      try {
+        const res = await api.post('/auth/vk', {
+          accessToken: vkData.access_token,
+          userId: vkData.user_id,
+          email: vkData.email || null,
+        });
+        const userData = res.data;
+        if (userData && userData.id) {
+          this.login(userData);
+          return true;
+        }
+      } catch (e) {
+        console.error('VK login error:', e.response?.data || e);
+        throw e;
+      }
+    },
     async refreshToken() {
       if (!this.isAuthenticated || !this.user?.id) {
         console.log('[refreshToken] Пропуск: пользователь не авторизован');

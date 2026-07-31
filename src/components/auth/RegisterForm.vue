@@ -31,19 +31,8 @@
     <div class="form-or">или</div>
     <div class="form-using">
       <div class="form-using__title">Продолжить через</div>
-      <div>
-        <!-- <a class="form-using__item">
-          <img src="/src/assets/img/form/go-form.svg" alt="" />
-        </a> -->
-        <a class="form-using__item">
-          <img src="/src/assets/img/form/vk-form.svg" alt="" />
-        </a>
-        <!-- <a class="form-using__item">
-          <img src="/src/assets/img/form/max-form.svg" alt="" />
-        </a>
-        <a class="form-using__item">
-          <img src="/src/assets/img/form/tg-form.svg" alt="" />
-        </a> -->
+      <div class="vk-wrapper">
+        <div ref="vkContainer" class="vk-auth-container"></div>
       </div>
     </div> 
     <div class="form-noaccount">
@@ -64,6 +53,7 @@ import { ref,computed  } from "vue";
 import { useAuthStore } from "/src/stores/authStore.js"
 import { useModalStore } from "/src/stores/modal.js";
 import { notify } from "../../utils/notify";
+import { useVKAuth } from "/src/stores/useVKAuth.js";
 
 const modal = useModalStore();
 const auth = useAuthStore();
@@ -78,9 +68,38 @@ const errors = ref({
   password: false,
   password2: false
 })
+const vkContainer = ref(null);
 const cleanPhone = computed(() => {
   return phone.value.replace(/\D/g, '')
 })
+
+useVKAuth(vkContainer, {
+  appId: import.meta.env.VITE_VK_APP_ID,
+  redirectUrl: window.location.origin,
+  onSuccess: async (vkData) => {
+    try {
+      await auth.loginWithVK(vkData);
+      notify("Успешный вход через ВКонтакте");
+      modal.close();
+    } catch (e) {
+      if (e.response?.status === 404 || e.response?.status === 409) {
+        modal.registrationData = {
+          vkAccessToken: vkData.access_token,
+          vkUserId: vkData.user_id,
+          vkEmail: vkData.email,
+          name: name.value,
+          phone: cleanPhone.value,
+        };
+        modal.openEmail();
+        notify("Подтвердите Email для завершения регистрации");
+      } else {
+        notify(e.response?.data?.message || "Ошибка входа через ВК");
+      }
+    }
+  },
+  onError: () => notify("Ошибка авторизации ВКонтакте"),
+});
+
 async function submitRegister(){
   errors.value = {
     name: !name.value,
@@ -206,11 +225,11 @@ async function submitRegister(){
   justify-content: start;
   gap: 0.313rem;
 }
-.form-using div {
+/* .form-using div {
   display: flex;
   align-items: center;
   gap: 0.625rem;
-}
+} */
 .form-using__item {
   display: flex;
   align-items: center;
@@ -229,8 +248,19 @@ async function submitRegister(){
   margin-top: 0.313rem;
   margin-bottom: 0.75rem;
 }
-
 .form-noaccount__text{
   font-size: .9rem;
+}
+.vk-auth-container {
+  display: flex;
+  justify-content: center;
+  margin: 8px 0;
+}
+.vk-auth-container :deep(iframe) {
+  max-width: 100% !important;
+}
+.vk-wrapper {
+  width: 100%;
+  display: block;
 }
 </style>
