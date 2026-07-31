@@ -55,7 +55,7 @@ import { useRoute } from "vue-router";
 import { notify } from "/src/utils/notify";
 import heart from "/src/assets/img/icons/heart.svg";
 import heartFilled from "/src/assets/img/icons/heart-filled.svg";
-import { useFavoritesStore } from "/src/stores/favoritesStore";
+import { useFavoritesStore } from "/src/stores/favoritesStore.js";
 import { useAuthStore } from "/src/stores/authStore.js";
 import { useModalStore } from "/src/stores/modal.js";
 

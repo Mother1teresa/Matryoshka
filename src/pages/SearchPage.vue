@@ -110,7 +110,7 @@
 import { ref, computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "/src/stores/authStore.js";
-import { useFavoritesStore } from "/src/stores/favoritesStore";
+import { useFavoritesStore } from "/src/stores/favoritesStore.js";
 import { useModalStore } from "/src/stores/modal.js";
 import { useProductStore } from "/src/stores/product.js";
 import { notify } from "../utils/notify";

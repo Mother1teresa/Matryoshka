@@ -204,7 +204,6 @@ import NotFound from "../components/common/NotFound.vue";
 import { notify } from "../utils/notify";
 import { capitalizeFirst } from '/src/utils/formatters.js';
 
-import { useFavoritesStore } from "/src/stores/favoritesStore";
 import { useSubscriptionStore } from "../stores/subscriptionStore.js";
 import { useAuthStore } from "/src/stores/authStore.js";
 import { useModalStore } from "/src/stores/modal.js";
@@ -212,7 +211,7 @@ import { geocodeByQuery } from '/src/utils/geocode.js';
 
 import heart from "/src/assets/img/icons/heart.svg";
 import heartFilled from "/src/assets/img/icons/heart-filled.svg";
-import { useFavoritesStore } from "/src/stores/favoritesStore";
+import { useFavoritesStore } from "/src/stores/favoritesStore.js";
 const favStore = useFavoritesStore();
 
 const route = useRoute();
@@ -220,7 +219,6 @@ const router = useRouter();
 const auth = useAuthStore();
 const modal = useModalStore();
 const productStore = useProductStore();
-const favStore = useFavoritesStore();
 const subStore = useSubscriptionStore();
 
 const isReady = ref(false);

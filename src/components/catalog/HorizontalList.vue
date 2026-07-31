@@ -6,7 +6,7 @@ import { notify } from "../../utils/notify";
 import heart from "/src/assets/img/icons/heart.svg";
 import heartFilled from "/src/assets/img/icons/heart-filled.svg";
 import { categories } from "/src/data/categories.js";
-import { useFavoritesStore } from "/src/stores/favoritesStore";
+import { useFavoritesStore } from "/src/stores/favoritesStore.js";
 import { useAuthStore } from "/src/stores/authStore.js";
 import { useModalStore } from "/src/stores/modal.js";
 import { API_FILTER_FIELDS } from "/src/utils/filterToApiMapper.js"
