@@ -258,6 +258,7 @@ const emptyStateText = computed(() => {
   padding: 1.25rem;
   border-radius: 1.25rem;
   width: 60.875rem;
+  transition: width .8s;
 }
 .card-img {
   width: 7.875rem;
@@ -356,5 +357,13 @@ const emptyStateText = computed(() => {
   right: 0;
   width: 1.563rem;
   height: 1.5rem;
+}
+@media (max-width: 77rem) {
+  .horizontal-card{
+    width: 46.875rem;
+  }
+  .card-content{
+    width: 28.125rem;
+  }
 }
 </style>

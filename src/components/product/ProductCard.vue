@@ -11,11 +11,7 @@
       }"
     >
       <img
-        :src="
-          product.images
-            ? product.images[0]
-            : product.pictures?.[0]?.url || '/img/placeholder.png'
-        "
+        :src="(Array.isArray(product.images) ? product.images[0] : product.images) || product.image || '/img/placeholder.png'"
         alt=""
         class="product-img"
       />

@@ -254,21 +254,29 @@ const loadSellerData = async (sellerId) => {
 const loadSellerProducts = async (sellerId) => {
   try {
     const products = await auth.fetchAdvertsBySeller(sellerId);
-    sellerProducts.value = products.map(ad => ({
-      id: ad.id,
-      title: ad.title,
-      price: Number(ad.price) || 0,
-      images: ad.pictureUrls || [],
-      image: ad.pictureUrls?.[0] || '/src/assets/img/placeholder.png',
-      city: ad.address || ad.city || '',
-      category: ad.category,
-      section: ad.section || ad.subCategory || 'default',
-      subcategory: ad.subCategory || ad.subcategory || '',
-      sellerId: ad.userId || ad.sellerId,
-      attributes: ad.attributes || {},
-      description: ad.description || '',
-      createdAt: ad.createdAt,
-    }));
+    sellerProducts.value = products.map(ad => {
+      const pics = Array.isArray(ad.pictureUrls) 
+        ? ad.pictureUrls 
+        : ad.pictureUrls 
+          ? [ad.pictureUrls] 
+          : []
+
+      return {
+        id: ad.id,
+        title: ad.title,
+        price: Number(ad.price) || 0,
+        images: pics,
+        image: pics[0] || '/src/assets/img/placeholder.png',
+        city: ad.address || ad.city || '',
+        category: ad.category,
+        section: ad.section || ad.subCategory || 'default',
+        subcategory: ad.subCategory || ad.subcategory || '',
+        sellerId: ad.userId || ad.sellerId,
+        attributes: ad.attributes || {},
+        description: ad.description || '',
+        createdAt: ad.createdAt,
+      };
+    });
   } catch (err) {
     console.error("Ошибка загрузки товаров:", err);
     sellerProducts.value = [];
@@ -389,6 +397,7 @@ const playVideo = (video) => {
 .video-grid_block{display: grid; grid-template-columns: repeat(6, 13rem); gap: 0.938rem; padding-left: -1rem; padding-right: -1rem; border-radius: 0 0 1.25rem 1.25rem; }
 .video-preview { width: 100%; height: 15.438rem; margin-bottom: 0.375rem; position: relative; }
 .video-preview img { width: 100%; height: 100%; }
+.video-preview .video-thumb{ width: 100%; height: 100%; object-fit: cover; border-radius: 0.938rem;}
 .video-card { width: 100%; height: 20.313rem; background: white; border-radius: 0.938rem; padding: 0.938rem; }
 .video-info { text-align: end; }
 .video-title { font-size: .9rem; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; overflow: hidden; transition: all 0.3s; border-radius: 0; height: 3.6rem;}

@@ -583,7 +583,8 @@ export const useAuthStore = defineStore("auth", {
     async getAdvertById(id) {
       try {
         const res = await api.get(`/adverts/${id}`);
-        return res.data;
+        const data = Array.isArray(res.data) ? res.data[0] : res.data;  // ← добавлено
+        return data;
       } catch (e) {
         console.error("Ошибка загрузки объявления:", e);
         throw e;

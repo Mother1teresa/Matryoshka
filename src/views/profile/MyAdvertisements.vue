@@ -51,13 +51,13 @@
             </div>
             <div v-if="activeTab === 'archive'" class="archive-reason">Продал / Другая причина</div>
             <div class="ad-price">{{ ad.price.toLocaleString() }} ₽</div>
-            <div class="ad-stock">{{ ad.stock }} шт. в наличии</div>
+            <!-- <div class="ad-stock">{{ ad.stock }} шт. в наличии</div> -->
             <div class="ad-auto-pub">Автопубликация: осталось {{ ad.daysLeft }} дней</div>
             <p class="ad-description">{{ ad.description }}</p>
             <div class="ad-location">{{ ad.city }}</div>
           </div>
           <div class="ad-stats-block">
-            <div class="mini-preview-stats">
+            <!-- <div class="mini-preview-stats">
               <img :src="ad.image" class="preview-img-mini" @error="$event.target.style.display='none'" />
               <div class="stats-column">
                 <div class="stat-item">
@@ -73,7 +73,7 @@
                   <img src="/src/assets/img/icons/share.svg" /> {{ ad.shares }}
                 </div>
               </div>
-            </div>
+            </div> -->
             <button v-if="activeTab === 'active'" class="btn boost-btn">Увеличить продажи</button>
           </div>
         </div>
@@ -94,11 +94,12 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter,useRoute } from "vue-router";
 import { useAuthStore } from "/src/stores/authStore.js";
 import { notify } from "/src/utils/notify";
 
 const router = useRouter();
+const route = useRoute();
 const auth = useAuthStore();
 const activeMenuId = ref(null);
 const activeTab = ref("active");
@@ -153,7 +154,8 @@ const loadAdverts = async () => {
         status: status,
         category: ad.category || 'tovary',
         section: ad.subCategory || ad.section || 'default',
-        image: ad.pictures?.[0]?.pictureUrl || ad.thumbnailUrl || ad.image || '/src/assets/img/placeholder.png',
+        images: ad.pictureUrls || [],
+        image: ad.pictureUrls?.[0] || ad.thumbnailUrl || '/src/assets/img/placeholder.png',
         s3Key: ad.pictures?.[0]?.s3Key || ad.s3Key,
         videoId: ad.videoId
       };
@@ -272,9 +274,7 @@ onUnmounted(() => {
   flex-shrink: 0;
   margin: 1rem;
 }
-.ad-image-block img{
- border-radius: 1.25rem;
-}
+
 .preview-img-mini{
   width: 7rem;
   height: 9.688rem;
@@ -283,8 +283,9 @@ onUnmounted(() => {
 }
 .ad-image-block img {
   width: 100%;
-  height: auto;
-  object-fit: contain;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 1.25rem;
 }
 .ad-main-info {
   width: 100%;

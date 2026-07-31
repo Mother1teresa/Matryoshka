@@ -205,7 +205,13 @@ async function submitLogin(){
   max-width: 100% !important;
 }
 .vk-wrapper {
-  width: 100%;
+  width: 20%;
   display: block;
+}
+#hoezgo .VkIdWebSdk__button_hoezgo{
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0.375rem;
+  border-radius: 0.75rem;
 }
 </style>

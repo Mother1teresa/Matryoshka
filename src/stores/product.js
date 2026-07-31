@@ -83,23 +83,31 @@ export const useProductStore = defineStore("product", () => {
       const ads = Array.isArray(res.data) ? res.data : res.data?.items || []
       console.log('API returned ads:', ads.length)
 
-      products.value = ads.map(ad => ({
-        id: ad.id,
-        title: ad.title || 'Без названия',
-        price: Number(ad.price) || 0,
-        city: ad.address || ad.city || '',
-        address: ad.address || '',
-        category: ad.category || 'tovary',
-        section: ad.subCategory || ad.section || 'default',
-        subcategory: ad.subCategory || ad.subcategory || '',
-        sellerId: ad.userId || ad.sellerId,
-        images: ad.pictureUrls || [],
-        image: ad.pictureUrls?.[0] || '/src/assets/img/placeholder.png',
-        attributes: buildAttributes(ad),
-        description: ad.description || '',
-        createdAt: ad.createdAt,
-        ...ad
-      }))
+      products.value = ads.map(ad => {
+        const pics = Array.isArray(ad.pictureUrls) 
+          ? ad.pictureUrls 
+          : ad.pictureUrls 
+            ? [ad.pictureUrls] 
+            : []
+
+        return {
+          id: ad.id,
+          title: ad.title || 'Без названия',
+          price: Number(ad.price) || 0,
+          city: ad.address || ad.city || '',
+          address: ad.address || '',
+          category: ad.category || 'tovary',
+          section: ad.subCategory || ad.section || 'default',
+          subcategory: ad.subCategory || ad.subcategory || '',
+          sellerId: ad.userId || ad.sellerId,
+          images: pics,
+          image: pics[0] || '/src/assets/img/placeholder.png',
+          attributes: buildAttributes(ad),
+          description: ad.description || '',
+          createdAt: ad.createdAt,
+          ...ad
+        }
+      })
 
       lastFetchTime.value = Date.now()
       console.log('Products loaded:', products.value.length)
@@ -202,5 +210,6 @@ export const useProductStore = defineStore("product", () => {
     getProductsBySection,
     toggleLike,
     resetLikes,
+    buildAttributes
   }
 })

@@ -144,10 +144,6 @@ const declensionResults = (n) => {
   return 'результатов';
 };
 
-const onImageError = (e) => {
-  e.target.src = '/src/assets/img/placeholder.png';
-};
-
 const checkAuthAndRun = async (action, message = "Авторизуйтесь, чтобы продолжить") => {
   if (!auth.isAuthenticated) {
     modal.openLogin();
@@ -179,7 +175,7 @@ const searchProducts = async (q) => {
       city: p.city,
       category: p.category,
       section: p.section,
-      image: p.image,
+      image: p.image || '',
     }))
   } catch (e) {
     console.error("Ошибка поиска:", e)

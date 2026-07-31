@@ -207,6 +207,7 @@ import { capitalizeFirst } from '/src/utils/formatters.js';
 import { useSubscriptionStore } from "../stores/subscriptionStore.js";
 import { useAuthStore } from "/src/stores/authStore.js";
 import { useModalStore } from "/src/stores/modal.js";
+import { useReviewStore } from "/src/stores/reviews.js";
 import { geocodeByQuery } from '/src/utils/geocode.js';
 
 import heart from "/src/assets/img/icons/heart.svg";
@@ -220,6 +221,7 @@ const auth = useAuthStore();
 const modal = useModalStore();
 const productStore = useProductStore();
 const subStore = useSubscriptionStore();
+const reviewStore = useReviewStore(); 
 
 const isReady = ref(false);
 const isNumberShown = ref(false);
@@ -388,30 +390,37 @@ const loadProduct = async (id) => {
         };
       } else {
         const data = await auth.getAdvertById(id);
-        
-        if (!data || !data.id) {
+        const raw = Array.isArray(data) ? data[0] : data;
+
+        if (!raw || !raw.id) {
           notify("Объявление не найдено", "error");
           product.value = null;
           isReady.value = true;
           return;
         }
 
+        const pics = Array.isArray(raw.pictureUrls) 
+          ? raw.pictureUrls 
+          : raw.pictureUrls 
+            ? [raw.pictureUrls] 
+            : []
+
         product.value = {
-          id: data.id,
-          title: data.title || 'Без названия',
-          price: Number(data.price) || 0,
-          description: data.description || '',
-          city: data.address || data.city || '',
-          address: data.address || '',
-          coordinates: data.coordinates || null,
-          category: data.category || 'tovary',
-          section: data.section || data.subCategory || 'default',
-          subcategory: data.subCategory || data.subcategory || '',
-          sellerId: data.userId || data.sellerId,
-          images: data.pictureUrls || [],
-          image: data.pictureUrls?.[0] || data.thumbnailUrl || '/src/assets/img/placeholder.png',
-          attributes: productStore.buildAttributes?.(data) || buildAttributesFallback(data),
-          ...data
+          id: raw.id,
+          title: raw.title || 'Без названия',
+          price: Number(raw.price) || 0,
+          description: raw.description || '',
+          city: raw.address || raw.city || '',
+          address: raw.address || '',
+          coordinates: raw.coordinates || null,
+          category: raw.category || 'tovary',
+          section: raw.section || raw.subCategory || 'default',
+          subcategory: raw.subCategory || raw.subcategory || '',
+          sellerId: raw.userId || raw.sellerId,
+          images: pics,
+          image: pics[0] || raw.thumbnailUrl || '',
+          attributes: productStore.buildAttributes?.(raw) || {},
+          ...raw
         };
       }
 
@@ -555,17 +564,22 @@ const onSubscribeClick = () => {
   });
 };
 
-const onShowNumberClick = () => {
+const onShowNumberClick = (item) => {
+  if (!item?.seller?.phone) {
+    showCallModal.value = true;
+    return;
+  }
   checkAuthAndRun(() => { 
     isNumberShown.value = true; 
     showCallModal.value = true; 
   }, "Войдите, чтобы увидеть номер телефона");
 };
 
-const onWriteClick = async () => {
+const onWriteClick = async (item) => {
+  if (!item?.sellerId) return;
   checkAuthAndRun(async () => {
     try {
-      const roomId = await auth.createPrivateRoom(product.value.sellerId);
+      const roomId = await auth.createPrivateRoom(item.sellerId);
       router.push({ name: 'ChatDetail', params: { id: roomId } });
     } catch (err) {
       notify("Не удалось открыть чат", "error");
