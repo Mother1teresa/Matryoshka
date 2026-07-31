@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from "vue"
 import { useProductStore } from "/src/stores/product.js"
+import { useRegionModalStore } from "/src/stores/regionModal.js"
 import ProductCard from "/src/components/product/ProductCard.vue"
 
 const props = defineProps({
@@ -11,18 +12,24 @@ const props = defineProps({
 })
 
 const store = useProductStore()
+const region = useRegionModalStore()
 
-const products = computed(() => {
-  // Конкретная подкатегория: /tovary/fashion/men-clothes
+const baseProducts = computed(() => {
   if (props.subcategory) {
     return store.getProductsByCategory(props.category, props.subcategory)
   }
-  // Страница секции: /tovary/fashion
   if (props.section) {
     return store.getProductsBySection(props.category, props.section)
   }
-  // Просто категория: /tovary
   return store.getProductsByCategory(props.category)
+})
+
+const products = computed(() => {
+  if (!region.selectedRegion) return baseProducts.value
+  const city = region.selectedRegion.toLowerCase()
+  return baseProducts.value.filter(p =>
+    (p.city || p.address || '').toLowerCase().includes(city)
+  )
 })
 </script>
 

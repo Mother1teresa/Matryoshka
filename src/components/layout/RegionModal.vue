@@ -59,7 +59,18 @@ function initMap() {
     }
   });
 }
-
+function handleSearch() {
+  if (!searchQuery.value.trim()) return;
+  geocodeByQuery(searchQuery.value).then(result => {
+    if (result && map && placemark) {
+      const [lon, lat] = result.coordinates;
+      const coords = [lat, lon];
+      markerCoords.value = coords;
+      placemark.geometry.setCoordinates(coords);
+      map.setCenter(coords, 12);
+    }
+  });
+}
 // Автопоиск с debounce
 watch(searchQuery, (value) => {
   if (!isClient || !value.trim()) return;

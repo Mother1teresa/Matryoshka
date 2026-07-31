@@ -10,11 +10,15 @@ import { useFavoritesStore } from "/src/stores/favoritesStore";
 import { useAuthStore } from "/src/stores/authStore.js";
 import { useModalStore } from "/src/stores/modal.js";
 import { API_FILTER_FIELDS } from "/src/utils/filterToApiMapper.js"
+import { useRegionModalStore } from "/src/stores/regionModal.js"
+const region = useRegionModalStore()
 
 const favStore = useFavoritesStore();
 const auth = useAuthStore();
 const modal = useModalStore();
 const isNumberShown = ref(false);
+const currentPhone = ref('');
+const currentSellerName = ref('');
 
 const props = defineProps({
   category: String,
@@ -28,15 +32,20 @@ const router = useRouter();
 const store = useProductStore();
 
 
+
 const displayItems = computed(() => {
+  let items
   if (props.subcategory) {
-    return store.getProductsByCategory(props.category, props.subcategory)
+    items = store.getProductsByCategory(props.category, props.subcategory)
+  } else if (props.section) {
+    items = store.getProductsByCategory(props.category, props.section)
+  } else {
+    items = store.products
   }
-  if (props.section) {
-    return store.getProductsByCategory(props.category, props.section)
-  }
-  return store.products
-});
+  if (!region.selectedRegion) return items
+  const city = region.selectedRegion.toLowerCase()
+  return items.filter(p => (p.city || p.address || '').toLowerCase().includes(city))
+})
 
 const getImageUrl = (item) => {
   if (item.images && item.images.length > 0) {
@@ -70,8 +79,14 @@ const checkAuthAndRun = (
   action();
 };
 
-const onShowNumberClick = () => {
+const onShowNumberClick = (item) => {
+  if (!item?.seller?.phone) {
+    notify('Номер телефона не указан', 'error');
+    return;
+  }
   checkAuthAndRun(() => {
+    currentPhone.value = item.seller.phone;
+    currentSellerName.value = item.seller.name || 'Продавцу';
     isNumberShown.value = true;
   }, "Войдите, чтобы увидеть номер телефона");
 };
@@ -214,6 +229,18 @@ const emptyStateText = computed(() => {
       </div>
     </template>
   </div>
+  <Transition name="fade">
+    <div v-if="isNumberShown" class="modal-overlay" @click.self="isNumberShown = false">
+      <div class="confirm-call-card">
+        <p class="confirm-message">Позвонить <strong>{{ currentSellerName }}</strong>?</p>
+        <div class="phone-display">{{ currentPhone }}</div>
+        <div class="confirm-actions">
+          <button class="btn-black" @click="window.location.href = `tel:${currentPhone}`; isNumberShown = false">Позвонить</button>
+          <button class="btn-gray" @click="isNumberShown = false">Отмена</button>
+        </div>
+      </div>
+    </div>
+  </Transition>
 </template>
 
 <style scoped>

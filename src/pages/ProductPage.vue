@@ -25,11 +25,7 @@
         <div class="product-left">
           <h1 class="product-title">
             {{ product.title }}
-            <img
-              class="card-like"
-              :src="favStore.isFavorite(product.id) ? heartFilled : heart"
-              @click.stop="onLikeClick(product)"
-            />
+            <img class="card-like" :src="favStore.isFavorite(product.id) ? heartFilled : heart" @click.stop="onLikeClick(product)" />
           </h1>
           <!-- Галерея -->
           <div class="gallery">
@@ -216,6 +212,8 @@ import { geocodeByQuery } from '/src/utils/geocode.js';
 
 import heart from "/src/assets/img/icons/heart.svg";
 import heartFilled from "/src/assets/img/icons/heart-filled.svg";
+import { useFavoritesStore } from "/src/stores/favoritesStore";
+const favStore = useFavoritesStore();
 
 const route = useRoute();
 const router = useRouter();
@@ -381,43 +379,43 @@ const loadProduct = async (id) => {
   try {
     const cached = productStore.products.find(p => String(p.id) === String(id));
     
-    if (cached && cached.pictures?.length) {
-      product.value = {
-        ...cached,
-        images: cached.images || cached.pictures?.map(p => p.pictureUrl || p.url) || [],
-        image: cached.image || cached.pictures?.[0]?.pictureUrl || '/src/assets/img/placeholder.png',
-        attributes: cached.attributes || {},
-        coordinates: cached.coordinates || null,
-        address: cached.address || cached.city || '',
-      };
-    } else {
-      const data = await auth.getAdvertById(id);
-      
-      if (!data || !data.id) {
-        notify("Объявление не найдено", "error");
-        product.value = null;
-        isReady.value = true;
-        return;
-      }
+      if (cached && (cached.images?.length || cached.pictureUrls?.length)) {
+        product.value = {
+          ...cached,
+          images: cached.images || cached.pictureUrls || [],
+          image: cached.image || cached.pictureUrls?.[0] || '/src/assets/img/placeholder.png',
+          attributes: cached.attributes || {},
+          coordinates: cached.coordinates || null,
+          address: cached.address || cached.city || '',
+        };
+      } else {
+        const data = await auth.getAdvertById(id);
+        
+        if (!data || !data.id) {
+          notify("Объявление не найдено", "error");
+          product.value = null;
+          isReady.value = true;
+          return;
+        }
 
-      product.value = {
-        id: data.id,
-        title: data.title || 'Без названия',
-        price: Number(data.price) || 0,
-        description: data.description || '',
-        city: data.address || data.city || '',
-        address: data.address || '',
-        coordinates: data.coordinates || null,
-        category: data.category || 'tovary',
-        section: data.section || data.subCategory || 'default',
-        subcategory: data.subCategory || data.subcategory || '',
-        sellerId: data.userId || data.sellerId,
-        images: data.pictures?.map(p => p.pictureUrl || p.url) || [],
-        image: data.pictures?.[0]?.pictureUrl || data.thumbnailUrl || '/src/assets/img/placeholder.png',
-        attributes: productStore.buildAttributes?.(data) || buildAttributesFallback(data),
-        ...data
-      };
-    }
+        product.value = {
+          id: data.id,
+          title: data.title || 'Без названия',
+          price: Number(data.price) || 0,
+          description: data.description || '',
+          city: data.address || data.city || '',
+          address: data.address || '',
+          coordinates: data.coordinates || null,
+          category: data.category || 'tovary',
+          section: data.section || data.subCategory || 'default',
+          subcategory: data.subCategory || data.subcategory || '',
+          sellerId: data.userId || data.sellerId,
+          images: data.pictureUrls || [],
+          image: data.pictureUrls?.[0] || data.thumbnailUrl || '/src/assets/img/placeholder.png',
+          attributes: productStore.buildAttributes?.(data) || buildAttributesFallback(data),
+          ...data
+        };
+      }
 
     if (product.value?.sellerId) {
       await Promise.all([
@@ -473,7 +471,7 @@ const loadSimilarProducts = async () => {
 
 const getSimilarImageUrl = (item) => {
   if (item.images?.length) return item.images[0];
-  if (item.pictures?.[0]) return item.pictures[0].url || item.pictures[0];
+  if (item.pictureUrls?.length) return item.pictureUrls[0];
   if (item.image) return item.image;
   return '/src/assets/img/placeholder.png';
 };
@@ -544,14 +542,9 @@ const checkAuthAndRun = (action, message = "Авторизуйтесь, чтоб
 };
 
 const onLikeClick = (item) => {
-  if (!item) return;
   checkAuthAndRun(async () => {
-    try {
-      await favStore.toggleAdvertFavorite(item.id);
-      notify(favStore.isFavorite(item.id) ? "Добавлено в избранное" : "Удалено из избранного");
-    } catch (e) {
-      notify("Ошибка", "error");
-    }
+    await favStore.toggleAdvertFavorite(item.id);
+    notify(favStore.isFavorite(item.id) ? "Добавлено в избранное" : "Удалено из избранного");
   }, "Войдите, чтобы добавить в избранное");
 };
 

@@ -535,7 +535,7 @@ export const useAuthStore = defineStore("auth", {
     },
     async createAdvert(payload) {
       try {
-        const res = await api.post('/advert/create', payload);
+        const res = await api.post('/adverts', payload);
         notify("Объявление опубликовано!", "success");
         return res.data;
       } catch (e) {
@@ -550,7 +550,7 @@ export const useAuthStore = defineStore("auth", {
         return [];
       }
       try {
-        const res = await api.post('/advert', { userId: String(this.user.id), take: 50});
+        const res = await api.get('/adverts/my');
         return Array.isArray(res.data) ? res.data : [];
       } catch (e) {
         console.error("Ошибка загрузки:", e.response?.status, e.response?.data);
@@ -560,7 +560,7 @@ export const useAuthStore = defineStore("auth", {
     },
     async updateAdvert(payload) {
       try {
-        const res = await api.patch('/advert/update', payload);
+        const res = await api.patch('/adverts', payload);
         notify("Объявление обновлено!", "success");
         return res.data;
       } catch (e) {
@@ -571,13 +571,7 @@ export const useAuthStore = defineStore("auth", {
     },
     async deleteAdvert(id, s3Key = null) {
       try {
-        const dto = {
-          id: String(id),
-          ...(s3Key && { s3Key })
-        };
-        await api.delete('/advert', {
-          params: { advertDeleteRequestDTO: JSON.stringify(dto) }
-        });
+        await api.delete(`/adverts/${id}`);
         notify("Объявление удалено", "success");
         return true;
       } catch (e) {
@@ -588,7 +582,7 @@ export const useAuthStore = defineStore("auth", {
     },
     async getAdvertById(id) {
       try {
-        const res = await api.get(`/advert/${id}`);
+        const res = await api.get(`/adverts/${id}`);
         return res.data;
       } catch (e) {
         console.error("Ошибка загрузки объявления:", e);
@@ -601,7 +595,10 @@ export const useAuthStore = defineStore("auth", {
         return [];
       }
       try {
-        const res = await api.post('/advert', { userId: String(sellerId), take: 50});
+        const res = await api.post('/adverts/search', {
+          userId: String(sellerId),
+          take: 50
+        });
         return Array.isArray(res.data) ? res.data : [];
       } catch (e) {
         console.error("Ошибка загрузки товаров продавца:", e);

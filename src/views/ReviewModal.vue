@@ -52,10 +52,10 @@
             <label>Напишите отзыв</label>
             <textarea 
               v-model="form.text" 
-              placeholder="Подробно расскажите о ваших впечатлениях от общения и сделки"
-              maxlength="500"
+              placeholder="Напишите отзыв, не используйте нецензурную лексику и персональные данные"
+              maxlength="2000"
             ></textarea>
-            <span class="char-count">{{ form.text.length }}/500</span>
+            <span class="char-count">Не более 2 000 символов</span>
           </div>
 
           <!-- Блок: Фото -->
@@ -84,6 +84,7 @@
     </div>
   </Transition>
 </template>
+
 <script setup>
 import { ref, reactive, computed } from 'vue';
 import { useAuthStore } from "/src/stores/authStore.js";
@@ -138,7 +139,6 @@ const submitReview = async () => {
       for (const file of selectedFiles.value) {
         const uploaded = await uploadToMediaService(file, "review_photo", {});
         if (uploaded) {
-          // Как в примере с аватаром: cdnUrl || url || uploaded
           const url = uploaded.cdnUrl || uploaded.url || uploaded;
           if (url) imageUrls.push(url);
         }
@@ -175,7 +175,9 @@ const submitReview = async () => {
   }
 };
 </script>
+
 <style scoped>
+/* ===== Overlay ===== */
 .review-modal {
   background: #fff;
   width: 100%;
@@ -219,6 +221,9 @@ const submitReview = async () => {
 .modal-body {
   display: flex;
   flex-direction: column;
+  overflow: auto;
+  height: 38rem;
+  padding-right: 1rem;
 }
 
 .form-group {
@@ -226,7 +231,7 @@ const submitReview = async () => {
 }
 
 .form-group label {
-  display: block;
+  display: flex;
   margin-bottom: 0.75rem;
   font-weight: 500;
   font-size: 0.938rem;
@@ -247,7 +252,6 @@ const submitReview = async () => {
 .vertical-radio-list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
 }
 
 .radio-item {
@@ -260,7 +264,6 @@ const submitReview = async () => {
   position: relative;
 }
 
-/* Прячем нативный input, оставляем только кастомный кружок */
 .radio-item input[type="radio"] {
   position: absolute;
   opacity: 0;
@@ -343,7 +346,7 @@ textarea::placeholder {
 }
 
 .upload-slot {
-  width: 6.25rem;   /* 100px */
+  width: 6.25rem;
   height: 6.25rem;
   border: 0.063rem solid #ddd;
   border-radius: 0.75rem;
@@ -360,9 +363,9 @@ textarea::placeholder {
 }
 
 .camera-icon {
-  width: 1.5rem;
-  height: 1.5rem;
-  opacity: 0.5;
+  width: 3.5rem;
+  height: 3.5rem;
+  opacity: 0.8;
 }
 
 .photo-preview {
@@ -413,4 +416,5 @@ textarea::placeholder {
 .fade-leave-to {
   opacity: 0;
 }
+.form-group textarea::-webkit-scrollbar{width: 0 !important;}
 </style>

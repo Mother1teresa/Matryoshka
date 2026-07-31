@@ -3,7 +3,6 @@
   <section class="search-page">
     <div class="container">
       <div class="search-page_content">
-        <!-- Заголовок результатов -->
         <div v-if="lastQuery" class="results-title">
           <h1>Результаты по «{{ lastQuery }}»</h1>
           <span v-if="!loading">
@@ -11,19 +10,16 @@
           </span>
         </div>
 
-        <!-- Загрузка -->
         <div v-if="loading" class="loading">
           <div class="spinner"></div>
           <p>Поиск...</p>
         </div>
 
-        <!-- Нет результатов -->
         <div v-else-if="searched && !totalResults" class="empty">
           <p class="empty-title">Ничего не найдено</p>
           <p class="empty-text">По запросу «{{ lastQuery }}» ничего не найдено</p>
         </div>
 
-        <!-- Результаты: Товары -->
         <div v-if="products.length" class="results-section">
           <h2 class="section-title">Товары и объявления</h2>
           <div class="products-grid">
@@ -79,7 +75,6 @@
           </div>
         </div>
 
-        <!-- Результаты: Видео -->
         <div v-if="videos.length" class="results-section">
           <h2 class="section-title">Видео</h2>
           <div v-if="!auth.isAuthenticated" class="auth-overlay">
@@ -174,18 +169,9 @@ const onLikeClick = async (item) => {
   }, "Войдите...");
 };
 
-// === ПОИСК ТОВАРОВ: API ===
 const searchProducts = async (q) => {
-  const qLow = q.toLowerCase()
-  
   try {
-    // Один запрос к API с поиском
-    await productStore.fetchAdverts({ 
-      query: q, 
-      take: 50 
-    }, true) // всегда свежий запрос
-    
-    // Преобразуем загруженные товары в формат поиска
+    await productStore.fetchAdverts({ query: q, take: 50 }, true);
     return productStore.products.map(p => ({
       id: p.id,
       title: p.title,
@@ -201,7 +187,6 @@ const searchProducts = async (q) => {
   }
 }
 
-// === ПОИСК ВИДЕО ===
 const searchVideos = async (q) => {
   try {
     await auth.fetchWelcomeFeed({ page: 0, size: 50, seed: 0.5 });
@@ -260,7 +245,6 @@ const goToVideo = (id) => {
   router.push({ name: "shorts", params: { id } });
 };
 
-// Следим за изменением query в URL
 watch(
   () => route.query.q,
   (newQ) => {

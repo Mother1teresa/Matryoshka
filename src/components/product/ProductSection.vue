@@ -10,8 +10,6 @@
           v-for="product in displayProducts"
           :key="product.id"
           :product="product"
-          :isAuth="authStore.isAuthenticated"
-          @toggle-like="handleToggleLike"
         />
       </div>
     </div>
@@ -22,44 +20,26 @@
 import { computed, onMounted, watch } from "vue"
 import ProductCard from "./ProductCard.vue"
 import { useProductStore } from "/src/stores/product.js"
-import { useAuthStore } from "/src/stores/authStore.js"
+import { useRegionModalStore } from "/src/stores/regionModal.js"
 
 const productStore = useProductStore()
-const authStore = useAuthStore()
+const region = useRegionModalStore()
 
-const displayProducts = computed(() => productStore.products)
-const handleToggleLike = (productId) => {
-  if (!authStore.isAuthenticated) return
-  productStore.toggleLike(productId)
-  saveLikes()
-}
-
-const saveLikes = () => {
-  const likedIds = productStore.products
-    .filter(p => p.isLiked)
-    .map(p => p.id)
-  localStorage.setItem("likedProducts", JSON.stringify(likedIds))
-}
-
-const loadLikes = () => {
-  if (!authStore.isAuthenticated) return
-  const saved = localStorage.getItem("likedProducts")
-  if (!saved) return
-  const likedIds = JSON.parse(saved)
-  productStore.products.forEach(p => {
-    p.isLiked = likedIds.includes(p.id)
-  })
-}
-
-watch(() => authStore.isAuthenticated, (isAuth) => {
-  if (!isAuth) productStore.resetLikes()
-  else loadLikes()
+const displayProducts = computed(() => {
+  const all = productStore.products
+  if (!region.selectedRegion) return all
+  const city = region.selectedRegion.toLowerCase()
+  return all.filter(p => (p.city || p.address || '').toLowerCase().includes(city))
 })
 
-onMounted(() => {
-  productStore.fetchAdverts({}, true)
-  if (authStore.isAuthenticated) loadLikes()
-})
+const load = () => {
+  const filters = {}
+  if (region.selectedRegion) filters.address = region.selectedRegion
+  productStore.fetchAdverts(filters, true)
+}
+
+onMounted(load)
+watch(() => region.selectedRegion, load)
 </script>
 
 <style scoped>

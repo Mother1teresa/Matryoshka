@@ -42,6 +42,7 @@ import zagluhIcon from '/src/assets/img/zagluh/icon-zagluhka.svg';
 import { useAuthStore } from "/src/stores/authStore.js";
 import { useReviewStore } from "/src/stores/reviews.js";
 import { useProductStore } from "/src/stores/product.js";
+import { useFavoritesStore } from "/src/stores/favoritesStore.js";
 import { notify } from "/src/utils/notify";
 
 const showNotification = ref(false);
@@ -49,6 +50,7 @@ const notificationText = ref("");
 const auth = useAuthStore();
 const reviewStore = useReviewStore();
 const productStore = useProductStore();
+const favStore = useFavoritesStore();
 const maintenanceRef = ref(null);
 let globalPolling = null;
 let isInitializing = false;
@@ -69,7 +71,6 @@ const doPoll = () => {
   lastPollTime = now;
   if (!document.hidden && auth.isAuthenticated && auth.user?.id) {
     console.log('📡 Poll:', new Date().toLocaleTimeString());
-    auth.fetchUserChats().catch(console.error);
     auth.fetchUserNotifications().catch(console.error);
   }
 };
@@ -103,15 +104,15 @@ provide('openMaintenance', () => {
   maintenanceRef.value?.open() ?? console.log("MaintenanceModal ещё не инициализирован");
 });
 
-// Наблюдатель за авторизацией (отрабатывает при ручном входе/выходе на сайте)
+// Наблюдатель за авторизацией
 watch(
   () => auth.isAuthenticated,
   async (isAuth) => {
-    // 🔥 Защита: пока стор выполняет стартовый рефреш, вотчер полностью спит
     if (auth.isAuthLoading) return;
 
     if (!isAuth) {
       stopGlobalPolling();
+      favStore.clear();
       return;
     }
     if (isInitializing) return;
@@ -119,6 +120,7 @@ watch(
     try {
       await auth.fetchProfile();
       if (!auth.user?.id) return;
+      await favStore.fetchAdvertFavorites().catch(() => {});
       startGlobalPolling();
       await reviewStore.initUserReviews(auth.user.id);
     } catch (e) {
@@ -134,11 +136,6 @@ onMounted(async () => {
   window.addEventListener("storage", handleStorageChange);
   productStore.fetchAdverts();
   window.addEventListener("notify", handleNotify);
-  if (auth.isAuthenticated) {
-    const { useFavoritesStore } = await import("/src/stores/favoritesStore.js");
-    const favStore = useFavoritesStore();
-    await favStore.fetchAdvertFavorites().catch(() => {});
-  }
 
   if (auth.isAuthenticated) {
     try {
@@ -149,11 +146,13 @@ onMounted(async () => {
     } finally {
       auth.isAuthLoading = false;
     }
-    if (auth.isAuthenticated && !isInitializing) {
+
+    if (!isInitializing) {
       isInitializing = true;
       try {
         await auth.fetchProfile();
         if (auth.user?.id) {
+          await favStore.fetchAdvertFavorites().catch(() => {});
           startGlobalPolling();
           await reviewStore.initUserReviews(auth.user.id);
         }

@@ -53,8 +53,8 @@
 .error-visual {
   display: flex;
   align-items: center;
-  gap: 20px;
-  margin-bottom: 30px;
+  gap: 1.25rem;
+  margin-bottom: 3rem;
 }
 
 .error-number {
@@ -69,18 +69,18 @@
   height: 8.55rem;
 }
 .error-text {
-  font-size: 1.2rem;
+  font-size: 2rem;
   color: #2d2d2d;
-  margin-bottom: 40px;
+  margin-bottom: 3.063rem;
 }
 
 .back-btn {
   background-color: #76a084;
   color: white;
-  padding: 12px 35px;
-  border-radius: 12px;
+  padding: 1.25rem 1.375rem;
+  border-radius: 1rem;
   text-decoration: none;
-  font-size: 0.9rem;
+  font-size: 1rem;
   transition: opacity 0.3s;
 }
 

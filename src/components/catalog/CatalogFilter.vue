@@ -14,6 +14,8 @@ import {
   steeringWheelMap, coolingMap, genderMap, houseStateMap, engineTypeMap
 } from "/src/utils/filterToApiMapper.js"
 import { carModels, motoModels, truckModels, yachtModels, jetskiModels } from "/src/data/sharedFieldOptions.js"
+import { useRegionModalStore } from "/src/stores/regionModal.js"
+const region = useRegionModalStore()
 
 const router = useRouter()
 const route = useRoute()
@@ -134,11 +136,13 @@ const executeSearch = (updateUrl = true) => {
 
   cleanData.category = typeParam.value
 
-  // Определяем subCategory для бэка:
-  // 1. Выбрано в фильтре → его slug
-  // 2. Нет в фильтре → берём из URL (subcategory, а если его нет — section)
-  let targetSubcategory = null
+  // Город из модалки региона
+  if (region.selectedRegion) {
+    cleanData.address = region.selectedRegion
+  }
 
+  // Определяем subCategory...
+  let targetSubcategory = null
   if (form.value.subcategory) {
     const found = findSlugByName(form.value.subcategory)
     if (found) targetSubcategory = found.slug
@@ -149,7 +153,6 @@ const executeSearch = (updateUrl = true) => {
   if (!targetSubcategory && sectionParam.value) {
     targetSubcategory = sectionParam.value
   }
-
   if (targetSubcategory) {
     cleanData.subCategory = targetSubcategory
   }

@@ -1,4 +1,3 @@
-// /src/stores/product.js
 import { defineStore } from "pinia"
 import { ref } from "vue"
 import { api } from "/src/api/api.js"
@@ -76,9 +75,10 @@ export const useProductStore = defineStore("product", () => {
       if (filters.livingAreaTo != null) dto.livingAreaTo = Number(filters.livingAreaTo)
       if (filters.heightFrom != null) dto.heightFrom = Number(filters.heightFrom)
       if (filters.heightTo != null) dto.heightTo = Number(filters.heightTo)
+      if (filters.address) dto.address = filters.address
 
       if (!dto.take) dto.take = 50
-      const res = await api.post('/advert', dto)
+      const res = await api.post('/adverts/search', dto)
 
       const ads = Array.isArray(res.data) ? res.data : res.data?.items || []
       console.log('API returned ads:', ads.length)
@@ -93,8 +93,8 @@ export const useProductStore = defineStore("product", () => {
         section: ad.subCategory || ad.section || 'default',
         subcategory: ad.subCategory || ad.subcategory || '',
         sellerId: ad.userId || ad.sellerId,
-        images: ad.pictures?.map(p => p.pictureUrl || p.url) || [],
-        image: ad.pictures?.[0]?.pictureUrl || ad.thumbnailUrl || '/src/assets/img/placeholder.png',
+        images: ad.pictureUrls || [],
+        image: ad.pictureUrls?.[0] || '/src/assets/img/placeholder.png',
         attributes: buildAttributes(ad),
         description: ad.description || '',
         createdAt: ad.createdAt,
