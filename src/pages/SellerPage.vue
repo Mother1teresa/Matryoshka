@@ -83,13 +83,19 @@
             <div v-if="sellerVideos.length" class="video-grid_block">
               <div v-for="video in sellerVideos" :key="video.id" class="video-card">
                 <div class="video-preview" @click="playVideo(video)">
-                  <video 
+                  <video
+                    v-if="video.cdnUrl"
                     :src="video.cdnUrl"
+                    :poster="video.thumbnailUrl"
                     class="video-thumb"
                     preload="metadata"
                     muted
                     playsinline
                   ></video>
+                  <div v-else class="video-placeholder">
+                    <span>Видео недоступно</span>
+                  </div>
+                  <div class="video-play-icon">▶</div>
                 </div>
                 <div class="video-info">
                   <div class="video-title">{{ video.description }}</div>
@@ -285,7 +291,7 @@ const loadSellerProducts = async (sellerId) => {
 
 const loadSellerVideos = async (sellerId) => {
   try {
-    const videos = await auth.fetchVideosByUser(sellerId);
+    const videos = await auth.fetchUserMediaVideos(sellerId);
     sellerVideos.value = videos.map(v => ({
       ...v,
       author: {
@@ -344,42 +350,14 @@ const playVideo = (video) => {
 };
 </script>
 <style scoped>
-.seller-page-section {
-  margin-bottom: 3.188rem;
-}
-.reviews-container {
-  background: #ececec;
-  padding: 1.625rem 2rem 2rem 2rem;
-  border-radius: 0 0 1.25rem 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-.review-card {
-  background: white;
-  border-radius: 1.25rem;
-  padding: 1.5rem 1.5rem .8rem 1.5rem;
-}
-.review-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
+.seller-page-section { margin-bottom: 3.188rem;}
+.reviews-container { background: #ececec; padding: 1.625rem 2rem 2rem 2rem; border-radius: 0 0 1.25rem 1.25rem; display: flex; flex-direction: column; gap: 1rem;}
+.review-card { background: white; border-radius: 1.25rem; padding: 1.5rem 1.5rem .8rem 1.5rem;}
+.review-header { display: flex; justify-content: space-between; align-items: flex-start;}
 /* Стили ответа продавца */
-.reply-content {
-  margin-top: .3rem;
-}
-
-.reply-text {
-  font-size: 1rem;
-}
-.seller-tabs {
-  background: #ececec;
-  padding: 1.625rem 1rem 0 2rem;
-  border-radius: 1.25rem 1.25rem 0 0;
-  display: flex;
-  gap: 4rem; 
-}
+.reply-content { margin-top: .3rem;}
+.reply-text { font-size: 1rem;}
+.seller-tabs { background: #ececec; padding: 1.625rem 1rem 0 2rem; border-radius: 1.25rem 1.25rem 0 0; display: flex; gap: 4rem; }
 .desc-container { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 4px; }
 .desc-text { display: block; max-width: 100%; font-size: 1.5rem; }
 .seller-desc { width: 42.313rem; }
@@ -395,8 +373,10 @@ const playVideo = (video) => {
 .btn-subscribe-text.is-active { color: #808080; }
 .video-grid {background: #ececec; padding: 1.625rem 2rem 2rem 2rem;}
 .video-grid_block{display: grid; grid-template-columns: repeat(6, 13rem); gap: 0.938rem; padding-left: -1rem; padding-right: -1rem; border-radius: 0 0 1.25rem 1.25rem; }
-.video-preview { width: 100%; height: 15.438rem; margin-bottom: 0.375rem; position: relative; }
+.video-preview {  aspect-ratio: 9 / 16; margin-bottom: 0.375rem; position: relative; border-radius: 1rem; overflow: hidden;}
 .video-preview img { width: 100%; height: 100%; }
+.video-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #888; font-size: 0.9rem;}
+.video-play-icon { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: white; opacity: 0.85; pointer-events: none; text-shadow: 0 2px 8px rgba(0,0,0,0.4);}
 .video-preview .video-thumb{ width: 100%; height: 100%; object-fit: cover; border-radius: 0.938rem;}
 .video-card { width: 100%; height: 20.313rem; background: white; border-radius: 0.938rem; padding: 0.938rem; }
 .video-info { text-align: end; }

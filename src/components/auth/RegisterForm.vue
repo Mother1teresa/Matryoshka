@@ -264,9 +264,15 @@ async function submitRegister(){
   display: block;
 }
 #hoezgo .VkIdWebSdk__button_hoezgo{
-  width: 2.5rem;
-  height: 2.5rem;
-  padding: 0.375rem;
-  border-radius: 0.75rem;
+  width: 2.5rem !important;
+  height: 2.5rem !;
+  padding: 0.375rem !important;
+  border-radius: 0.75rem !important;
+}
+#xekcyg .VkIdWebSdk__button_xekcyg{
+  width: 2.5rem !important;
+  height: 2.5rem !;
+  padding: 0.375rem !important;
+  border-radius: 0.75rem !important;
 }
 </style>

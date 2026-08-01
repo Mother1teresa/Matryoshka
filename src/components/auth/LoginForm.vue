@@ -199,7 +199,7 @@ async function submitLogin(){
 .vk-auth-container {
   display: flex;
   justify-content: center;
-  margin: 8px 0;
+  margin: 0.5rem 0 !important;
 }
 .vk-auth-container :deep(iframe) {
   max-width: 100% !important;
@@ -209,9 +209,15 @@ async function submitLogin(){
   display: block;
 }
 #hoezgo .VkIdWebSdk__button_hoezgo{
-  width: 2.5rem;
-  height: 2.5rem;
-  padding: 0.375rem;
-  border-radius: 0.75rem;
+  width: 2.5rem !important;
+  height: 2.5rem !;
+  padding: 0.375rem !important;
+  border-radius: 0.75rem !important;
+}
+#xekcyg .VkIdWebSdk__button_xekcyg{
+  width: 2.5rem !important;
+  height: 2.5rem !;
+  padding: 0.375rem !important;
+  border-radius: 0.75rem !important;
 }
 </style>

@@ -5,8 +5,7 @@
         <button class="back-btn" @click="router.back()">
           <img src="/src/assets/img/icons/arrow-back.svg" />
         </button>
-
-        <div class="header-user-info">
+        <div class="header-user-info" @click="goToSellerProfile">
           <img :src="currentChat?.user?.avatar || maskAvatar" class="mini-avatar" />
           <div class="user-meta">
             <span class="name">{{ displayName }}</span>
@@ -15,48 +14,41 @@
             </span>
           </div>
         </div>
-
         <div class="header-product-info" v-if="currentChat?.productName">
           <img :src="currentChat?.productImage || '/src/assets/img/icons/box-icon.svg'" class="product-mini-photo" />
           <span>{{ currentChat.productName }}</span>
         </div>
-
-        <!-- 🔍 Поиск сообщений -->
         <div class="header-search">
           <div class="search-input-wrapper" :class="{ active: isSearchActive }">
             <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="Поиск сообщений"
-              class="search-input"
-            />
+            <input v-model="searchQuery" type="text" placeholder="Поиск сообщений" class="search-input" @keydown.enter.prevent="nextSearchResult" @keydown.shift.enter.prevent="prevSearchResult" />
             <button v-if="searchQuery" class="search-clear" @click="clearSearch">×</button>
           </div>
+          <div v-if="isSearchActive" class="search-nav">
+            <span class="search-counter">{{ searchResultsIds.length ? `${currentSearchIndex + 1} / ${searchResultsIds.length}` : '0 / 0' }}</span>
+            <button class="search-arrow" @click="prevSearchResult" :disabled="!searchResultsIds.length">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+            </button>
+            <button class="search-arrow" @click="nextSearchResult" :disabled="!searchResultsIds.length">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+          </div>
         </div>
-
         <div v-if="isTyping" class="typing-indicator">
           <span class="typing-dots"><span></span><span></span><span></span></span>
           печатает...
         </div>
       </header>
-
       <div class="messages-viewport" ref="scrollContainer">
-        <div v-if="isOrderPlaced && !isSearchActive" class="system-msg">Покупатель оформил заказ!</div>
-
-        <!-- Состояние поиска -->
-        <div v-if="isSearchActive && isSearching" class="search-state">Поиск...</div>
-        <div v-else-if="isSearchActive && messageList.length === 0" class="search-state">Сообщений не найдено</div>
-
-        <template v-for="(msg, index) in messageList" :key="msg.id">
+        <div v-if="isOrderPlaced" class="system-msg">Покупатель оформил заказ!</div>
+        <template v-for="(msg, index) in messages" :key="msg.id">
           <div v-if="shouldShowDate(msg, index)" class="sticky-date">
             <span>{{ formatStickyDate(msg.createdAt) }}</span>
           </div>
-
-          <div :class="['msg-bubble', msg.isMine ? 'sent' : 'received', { 'msg-error': msg.status === 'error' }]">
+          <div :data-msg-id="msg.id" :class="['msg-bubble', msg.isMine ? 'sent' : 'received', { 'msg-error': msg.status === 'error' }, { 'search-match': isSearchMatch(msg.id) }, { 'search-current': isSearchCurrent(msg.id) }]">
             <div class="msg-content">
               {{ msg.text }}
               <div class="msg-footer">
@@ -71,8 +63,7 @@
             </div>
           </div>
         </template>
-
-        <div v-if="showBotActions && !isSearchActive" class="bot-actions-row">
+        <div v-if="showBotActions" class="bot-actions-row">
           <p>Договорились ли вы о сделке с продавцом?</p>
           <div class="btns">
             <button class="btn bot-btn" @click="handleBotAnswer('yes')">Да</button>
@@ -80,13 +71,11 @@
             <button class="btn bot-btn" @click="handleBotAnswer('deciding')">Ещё решаем</button>
           </div>
         </div>
-
-        <div v-if="showReviewLink && !isSearchActive" class="review-invitation">
+        <div v-if="showReviewLink" class="review-invitation">
           <p>Сделка состоялась? Вы можете оставить отзыв продавцу.</p>
           <button class="review-link-btn" @click="openReviewModal">Оставить отзыв</button>
         </div>
       </div>
-
       <footer class="chat-input-bar">
         <div v-if="!auth.isStompConnected && !isLoading" class="connection-status offline">
           ⚠️ Нет соединения
@@ -104,14 +93,7 @@
         </div>
       </footer>
     </div>
-
-    <ReviewModal
-      :is-open="isReviewModalOpen"
-      :target-user-id="currentChat?.user?.id"
-      :chat-id="route.params.id"
-      @close="isReviewModalOpen = false"
-      @success="handleReviewSuccess"
-    />
+    <ReviewModal :is-open="isReviewModalOpen" :target-user-id="currentChat?.user?.id" :chat-id="route.params.id" @close="isReviewModalOpen = false" @success="handleReviewSuccess" />
   </div>
 </template>
 
@@ -132,26 +114,46 @@ const chatData = ref(null);
 const opponentProfile = ref(null);
 const isProfileLoading = ref(false);
 
-// ===== Поиск =====
 const searchQuery = ref("");
-const searchResults = ref([]);
+const searchResultsIds = ref([]);
+const currentSearchIndex = ref(0);
 const isSearching = ref(false);
 const searchAbortController = ref(null);
 let searchDebounce = null;
 
 const isSearchActive = computed(() => searchQuery.value.trim().length > 0);
-
-const messageList = computed(() => {
-  return isSearchActive.value ? searchResults.value : messages.value;
-});
+const isSearchMatch = (msgId) => isSearchActive.value && searchResultsIds.value.includes(msgId);
+const isSearchCurrent = (msgId) => isSearchActive.value && searchResultsIds.value[currentSearchIndex.value] === msgId;
 
 const clearSearch = () => {
   searchQuery.value = "";
-  searchResults.value = [];
+  searchResultsIds.value = [];
+  currentSearchIndex.value = 0;
   if (searchAbortController.value) {
     searchAbortController.value.abort();
     searchAbortController.value = null;
   }
+};
+
+const scrollToMessage = (msgId) => {
+  nextTick(() => {
+    const el = document.querySelector(`[data-msg-id="${msgId}"]`);
+    if (el && scrollContainer.value) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  });
+};
+
+const nextSearchResult = () => {
+  if (!searchResultsIds.value.length) return;
+  currentSearchIndex.value = (currentSearchIndex.value + 1) % searchResultsIds.value.length;
+  scrollToMessage(searchResultsIds.value[currentSearchIndex.value]);
+};
+
+const prevSearchResult = () => {
+  if (!searchResultsIds.value.length) return;
+  currentSearchIndex.value = (currentSearchIndex.value - 1 + searchResultsIds.value.length) % searchResultsIds.value.length;
+  scrollToMessage(searchResultsIds.value[currentSearchIndex.value]);
 };
 
 const searchMessages = async () => {
@@ -160,42 +162,21 @@ const searchMessages = async () => {
     clearSearch();
     return;
   }
-
   if (searchAbortController.value) searchAbortController.value.abort();
   searchAbortController.value = new AbortController();
-
   isSearching.value = true;
   try {
     const roomId = route.params.id;
     const token = auth.token || localStorage.getItem("token");
-    const res = await fetch(
-      `/api/chat/search-messages/${roomId}?query=${encodeURIComponent(query)}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
-        signal: searchAbortController.value.signal,
-      }
-    );
+    const res = await fetch(`/api/chat/search-messages/${roomId}?query=${encodeURIComponent(query)}`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+      signal: searchAbortController.value.signal,
+    });
     if (!res.ok) throw new Error(`Search failed: ${res.status}`);
     const data = await res.json();
-
-    searchResults.value = data.map((msg) => ({
-      id: msg.id,
-      text: msg.message,
-      senderId: msg.senderId,
-      isMine: msg.senderId === auth.user?.id,
-      isRead: msg.isRead || false,
-      time: msg.createdAt
-        ? new Date(msg.createdAt).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          })
-        : "",
-      createdAt: msg.createdAt,
-      status: "sent",
-    }));
+    searchResultsIds.value = data.map((msg) => msg.id).filter((id) => messages.value.some((m) => m.id === id));
+    currentSearchIndex.value = 0;
+    if (searchResultsIds.value.length) scrollToMessage(searchResultsIds.value[0]);
   } catch (e) {
     if (e.name !== "AbortError") {
       console.error("[Chat] Search error:", e);
@@ -209,14 +190,11 @@ const searchMessages = async () => {
 watch(searchQuery, (val) => {
   if (searchDebounce) clearTimeout(searchDebounce);
   if (!val.trim()) {
-    searchResults.value = [];
+    searchResultsIds.value = [];
     return;
   }
-  searchDebounce = setTimeout(() => {
-    searchMessages();
-  }, 300);
+  searchDebounce = setTimeout(() => searchMessages(), 300);
 });
-// ==================
 
 const currentChat = computed(() => {
   const roomId = route.params.id;
@@ -226,16 +204,9 @@ const currentChat = computed(() => {
       ...fromStore,
       user: {
         ...fromStore.user,
-        name:
-          opponentProfile.value?.name ||
-          fromStore.user?.name ||
-          "Пользователь",
-        avatar:
-          opponentProfile.value?.avatar ||
-          fromStore.user?.avatar ||
-          maskAvatar,
-        rating:
-          opponentProfile.value?.rating || fromStore.user?.rating || 0,
+        name: opponentProfile.value?.name || fromStore.user?.name || "Пользователь",
+        avatar: opponentProfile.value?.avatar || fromStore.user?.avatar || maskAvatar,
+        rating: opponentProfile.value?.rating || fromStore.user?.rating || 0,
       },
     };
   }
@@ -247,12 +218,18 @@ const displayName = computed(() => {
   return currentChat.value?.user?.name || "Пользователь";
 });
 
+const goToSellerProfile = () => {
+  const sellerId = currentChat.value?.user?.id;
+  if (sellerId) {
+    router.push({ name: "SellerPage", params: { id: sellerId } });
+  }
+};
+
 const loadOpponentProfile = async () => {
   if (isProfileLoading.value) return;
   const roomId = route.params.id;
   if (!roomId || !auth.user?.id) return;
   isProfileLoading.value = true;
-
   try {
     let room = auth.allChats.find((c) => String(c.id) === String(roomId));
     if (!room) {
@@ -266,14 +243,10 @@ const loadOpponentProfile = async () => {
     }
     const profile = await auth.fetchProfileById(opponentId);
     if (!profile) return;
-
     opponentProfile.value = profile;
     chatData.value = {
       id: roomId,
-      user: {
-        ...profile,
-        isOnline: room?.user?.isOnline || false,
-      },
+      user: { ...profile, isOnline: room?.user?.isOnline || false },
       productName: room?.productName || "",
       productImage: room?.productImage || "",
       price: room?.price || "",
@@ -298,7 +271,6 @@ const showReviewLink = ref(false);
 const isReviewModalOpen = ref(false);
 const isTyping = ref(false);
 
-// ===== STOMP =====
 let roomSubscription = null;
 let typingSubscription = null;
 let typingTimeout = null;
@@ -308,114 +280,48 @@ const chatMode = ref("none");
 const connectChat = async () => {
   const roomId = route.params.id;
   const userId = auth.user?.id;
-
-  console.log("[connectChat] START | roomId:", roomId, "| userId:", userId);
-
-  if (!userId || !roomId) {
-    console.warn("[connectChat] ⛔ Missing params");
-    return;
-  }
-
+  if (!userId || !roomId) return;
   try {
     const result = await auth.subscribeToRoom(roomId, handleIncomingMessage);
-    console.log(
-      "[connectChat] ✅ Подписка оформлена. Mode:",
-      result?.type,
-      "| Subscription:",
-      result?.subscription
-    );
-
     chatMode.value = result?.type || "none";
-
     if (result?.type === "websocket" && result.subscription) {
       roomSubscription = result.subscription;
-
       const client = auth.getSocket();
-      console.log("[connectChat] STOMP client connected?", client?.connected);
-
       if (client?.connected) {
-        const topic = `/topic/room/${roomId}/typing`;
-        console.log("[connectChat] Подписываемся на typing:", topic);
-
-        typingSubscription = client.subscribe(topic, (message) => {
+        typingSubscription = client.subscribe(`/topic/room/${roomId}/typing`, (message) => {
           const data = JSON.parse(message.body);
-          console.log("[STOMP] 📨 TYPING received:", data);
-
           if (data.senderId !== userId) {
             isTyping.value = true;
-            setTimeout(() => {
-              isTyping.value = false;
-            }, 3000);
+            setTimeout(() => { isTyping.value = false; }, 3000);
           }
         });
-      } else {
-        console.warn("[connectChat] STOMP client не подключён — typing не подписан");
       }
     }
   } catch (e) {
-    console.error("[connectChat] ❌ Error:", e);
+    console.error("[connectChat] Error:", e);
   }
 };
 
 const handleIncomingMessage = (msg) => {
-  console.log("[STOMP] 📨 ВХОДЯЩЕЕ сообщение:", {
-    id: msg.id,
-    senderId: msg.senderId,
-    text: msg.message,
-    isRead: msg.isRead,
-    createdAt: msg.createdAt,
-    raw: msg,
-  });
-  const pendingMsg = messages.value.find(
-    (m) => m.isMine && m.text === msg.message && m.senderId === msg.senderId
-  );
-
+  const pendingMsg = messages.value.find((m) => m.isMine && m.text === msg.message && m.senderId === msg.senderId);
   if (pendingMsg) {
-    console.log(
-      "[STOMP] 🔄 Это echo нашего сообщения. Обновляем ID:",
-      msg.id
-    );
     pendingMsg.id = msg.id;
     pendingMsg.status = "sent";
     pendingMsg.isRead = msg.isRead || false;
-    pendingMsg.time = msg.createdAt
-      ? new Date(msg.createdAt).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-      : pendingMsg.time;
+    pendingMsg.time = msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : pendingMsg.time;
     return;
   }
-
-  const exists = messages.value.some((m) => m.id === msg.id);
-  if (exists) {
-    console.log(
-      "[STOMP] ⚠️ Сообщение уже есть в списке, пропускаем. ID:",
-      msg.id
-    );
-    return;
-  }
-
+  if (messages.value.some((m) => m.id === msg.id)) return;
   messages.value.push({
     id: msg.id,
     text: msg.message,
     senderId: msg.senderId,
     isMine: msg.senderId === auth.user?.id,
     isRead: msg.isRead || false,
-    time: msg.createdAt
-      ? new Date(msg.createdAt).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-      : "",
+    time: msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "",
     createdAt: msg.createdAt,
     status: "sent",
   });
-  console.log(
-    "[STOMP] ➕ Сообщение добавлено в список. Всего сообщений:",
-    messages.value.length
-  );
-
   if (!msg.isMine && !msg.isRead && msg.id) {
     auth.markMessageAsRead(msg.id, route.params.id).then(() => {
       const localMsg = messages.value.find((m) => m.id === msg.id);
@@ -439,30 +345,19 @@ const handleTyping = () => {
     if (client?.connected && newMessage.value.trim()) {
       client.publish({
         destination: `/app/chat.typing/${route.params.id}`,
-        body: JSON.stringify({
-          senderId: auth.user?.id,
-          roomId: route.params.id,
-        }),
+        body: JSON.stringify({ senderId: auth.user?.id, roomId: route.params.id }),
       });
     }
   }, 300);
 };
 
-// ===== Messages =====
 const fetchMessages = async () => {
   if (abortController.value) abortController.value.abort();
   abortController.value = new AbortController();
-
   isLoading.value = true;
   try {
-    const data = await auth.fetchChatMessages(
-      route.params.id,
-      abortController.value.signal
-    );
-    messages.value = (data.messages || []).map((msg) => ({
-      ...msg,
-      status: "sent",
-    }));
+    const data = await auth.fetchChatMessages(route.params.id, abortController.value.signal);
+    messages.value = (data.messages || []).map((msg) => ({ ...msg, status: "sent" }));
     checkBotStatus(messages.value);
     nextTick(() => scrollToBottom());
     await markMessagesAsRead();
@@ -479,18 +374,10 @@ const fetchMessages = async () => {
 const sendMessage = async () => {
   const text = newMessage.value.trim();
   if (!text || isSending.value) return;
-
   const roomId = route.params.id;
-  console.log("[Chat] ✉️ Отправка сообщения:", {
-    roomId,
-    text,
-    senderId: auth.user?.id,
-  });
-
   isSending.value = true;
   newMessage.value = "";
   autoResize();
-
   const now = new Date();
   const localId = `local-${Date.now()}`;
   const localMsg = {
@@ -504,16 +391,13 @@ const sendMessage = async () => {
     createdAt: now.toISOString(),
   };
   messages.value.push(localMsg);
-  console.log("[Chat] 💾 Локальное сообщение создано:", localMsg);
   nextTick(() => scrollToBottom());
-
   try {
     await auth.sendMessage(roomId, text);
-    console.log("[Chat] ✅ Сервер принял сообщение");
     const msg = messages.value.find((m) => m.id === localId);
     if (msg) msg.status = "sent";
   } catch (e) {
-    console.error("[Chat] ❌ Ошибка отправки:", e);
+    console.error("[Chat] Ошибка отправки:", e);
     const msg = messages.value.find((m) => m.id === localId);
     if (msg) msg.status = "error";
     notify(e.message || "Не удалось отправить сообщение", "error");
@@ -523,26 +407,15 @@ const sendMessage = async () => {
 };
 
 const markMessagesAsRead = async () => {
-  const unreadIds = messages.value
-    .filter(
-      (m) =>
-        !m.isMine && !m.isRead && m.id && !String(m.id).startsWith("local-")
-    )
-    .map((m) => m.id);
-
+  const unreadIds = messages.value.filter((m) => !m.isMine && !m.isRead && m.id && !String(m.id).startsWith("local-")).map((m) => m.id);
   if (unreadIds.length === 0) return;
-
-  await Promise.allSettled(
-    unreadIds.map((id) => auth.markMessageAsRead(id, route.params.id))
-  );
-
+  await Promise.allSettled(unreadIds.map((id) => auth.markMessageAsRead(id, route.params.id)));
   unreadIds.forEach((id) => {
     const msg = messages.value.find((m) => m.id === id);
     if (msg) msg.isRead = true;
   });
 };
 
-// ===== Input =====
 const handleInput = () => {
   autoResize();
   handleTyping();
@@ -551,10 +424,7 @@ const handleInput = () => {
 const insertNewLine = (e) => {
   const start = e.target.selectionStart;
   const end = e.target.selectionEnd;
-  newMessage.value =
-    newMessage.value.substring(0, start) +
-    "\n" +
-    newMessage.value.substring(end);
+  newMessage.value = newMessage.value.substring(0, start) + "\n" + newMessage.value.substring(end);
   nextTick(() => {
     e.target.selectionStart = e.target.selectionEnd = start + 1;
     autoResize();
@@ -570,18 +440,14 @@ const autoResize = () => {
 
 const scrollToBottom = () => {
   if (scrollContainer.value) {
-    scrollContainer.value.scrollTo({
-      top: scrollContainer.value.scrollHeight,
-      behavior: "smooth",
-    });
+    scrollContainer.value.scrollTo({ top: scrollContainer.value.scrollHeight, behavior: "smooth" });
   }
 };
 
 const checkBotStatus = (msgs) => {
   const lastSellerMsg = [...msgs].reverse().find((m) => !m.isMine);
   if (lastSellerMsg) {
-    const diffHours =
-      (Date.now() - new Date(lastSellerMsg.createdAt)) / 3600000;
+    const diffHours = (Date.now() - new Date(lastSellerMsg.createdAt)) / 3600000;
     if (diffHours >= 24) showBotActions.value = true;
   }
 };
@@ -591,12 +457,6 @@ const handleBotAnswer = (answer) => {
   if (answer === "yes") showReviewLink.value = true;
 };
 
-const handleCreateOrder = () => {
-  isOrderPlaced.value = true;
-  nextTick(() => scrollToBottom());
-};
-
-// ===== Review Modal =====
 const openReviewModal = () => {
   isReviewModalOpen.value = true;
 };
@@ -612,10 +472,8 @@ const formatStickyDate = (dateStr) => {
   const now = new Date();
   const yesterday = new Date();
   yesterday.setDate(now.getDate() - 1);
-
   if (date.toDateString() === now.toDateString()) return "Сегодня";
   if (date.toDateString() === yesterday.toDateString()) return "Вчера";
-
   const options = { day: "numeric", month: "long" };
   if (date.getFullYear() !== now.getFullYear()) options.year = "numeric";
   return date.toLocaleDateString("ru-RU", options);
@@ -623,19 +481,13 @@ const formatStickyDate = (dateStr) => {
 
 const shouldShowDate = (msg, index) => {
   if (index === 0) return true;
-  const prev = messageList.value[index - 1];
+  const prev = messages.value[index - 1];
   if (!prev || !prev.createdAt || !msg.createdAt) return false;
-  const prevDate = new Date(prev.createdAt).toDateString();
-  const currDate = new Date(msg.createdAt).toDateString();
-  return prevDate !== currDate;
+  return new Date(prev.createdAt).toDateString() !== new Date(msg.createdAt).toDateString();
 };
 
-// ===== Lifecycle =====
 onMounted(() => {
-  loadOpponentProfile()
-    .then(() => fetchMessages())
-    .then(() => connectChat())
-    .catch((e) => console.error("[onMounted] Error:", e));
+  loadOpponentProfile().then(() => fetchMessages()).then(() => connectChat()).catch((e) => console.error("[onMounted] Error:", e));
 });
 
 onUnmounted(() => {
@@ -644,588 +496,107 @@ onUnmounted(() => {
   if (typingDebounce) clearTimeout(typingDebounce);
   if (searchDebounce) clearTimeout(searchDebounce);
   if (searchAbortController.value) searchAbortController.value.abort();
-
-  if (roomSubscription) {
-    roomSubscription.unsubscribe();
-    roomSubscription = null;
-  }
-  if (typingSubscription) {
-    typingSubscription.unsubscribe();
-    typingSubscription = null;
-  }
+  if (roomSubscription) { roomSubscription.unsubscribe(); roomSubscription = null; }
+  if (typingSubscription) { typingSubscription.unsubscribe(); typingSubscription = null; }
 });
 
-watch(
-  () => route.params.id,
-  (newId, oldId) => {
-    if (newId && newId !== oldId) {
-      messages.value = [];
-      showBotActions.value = false;
-      showReviewLink.value = false;
-      isOrderPlaced.value = false;
-      isReviewModalOpen.value = false;
-      isTyping.value = false;
-      opponentProfile.value = null;
-      chatData.value = null;
-      clearSearch();
-
-      if (roomSubscription) {
-        roomSubscription.unsubscribe();
-        roomSubscription = null;
-      }
-      if (typingSubscription) {
-        typingSubscription.unsubscribe();
-        typingSubscription = null;
-      }
-
-      loadOpponentProfile()
-        .then(() => fetchMessages())
-        .then(() => connectChat());
-    }
+watch(() => route.params.id, (newId, oldId) => {
+  if (newId && newId !== oldId) {
+    messages.value = [];
+    showBotActions.value = false;
+    showReviewLink.value = false;
+    isOrderPlaced.value = false;
+    isReviewModalOpen.value = false;
+    isTyping.value = false;
+    opponentProfile.value = null;
+    chatData.value = null;
+    clearSearch();
+    if (roomSubscription) { roomSubscription.unsubscribe(); roomSubscription = null; }
+    if (typingSubscription) { typingSubscription.unsubscribe(); typingSubscription = null; }
+    loadOpponentProfile().then(() => fetchMessages()).then(() => connectChat());
   }
-);
+});
 </script>
 <style scoped>
-.chat-dialog-window {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  height: 100dvh;
-  background: #fff;
-  overflow: hidden;
-  background: linear-gradient(
-    126.24deg,
-    rgba(211, 242, 163, 0.8) 1.06%,
-    rgba(108, 192, 139, 0.8) 52.82%,
-    rgba(7, 64, 80, 0.8) 100%
-  );
-  position: relative;
-}
-.chat-dialog-window::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: url("/src/assets/img/matreshka-pattern.png");
-  background-repeat: repeat;
-  background-size: 5.5rem;
-  opacity: 0.06;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.chat-header {
-  position: relative;
-  display: flex;
-  align-items: center;
-  padding: 0.625rem 1.75rem 0.625rem 0.313rem;
-  border-bottom: 1px solid #e5e5e5;
-  gap: 0.625rem;
-  flex-shrink: 0;
-  background: #ffffff;
-  box-shadow: 0px 3px 4px 0px #00000040;
-  z-index: 2;
-  height: 5.438rem;
-}
-
-.back-btn {
-  width: 1.625rem;
-  height: 100%;
-  border-radius: 0.625rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  flex-shrink: 0;
-  border: none;
-  background: #f44;
-  transition: transform 0.15s;
-}
-.back-btn:active {
-  transform: scale(0.95);
-}
-.back-btn img {
-  width: 1rem;
-  height: 1rem;
-  filter: brightness(0) invert(1);
-}
-
-.header-user-info {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-width: 0;
-  background: #e5e5e5;
-  padding: 0.438rem 0.5rem;
-  border-radius: 0.938rem;
-  width: 14rem;
-}
-.mini-avatar {
-  width: 3.148rem;
-  height: 3.148rem;
-  border-radius: 50%;
-  object-fit: cover;
-  flex-shrink: 0;
-}
-.user-meta {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-.user-meta .name {
-  font-size: 1.5rem;
-  color: #1a1a1a;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.online-status {
-  font-size: 0.9375rem;
-  color: #b9b9b9;
-}
-.online-status.is_online {
-  color: #4caf50;
-}
-
-.header-product-info {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: #fff;
-  padding: 0.375rem 0.875rem;
-  border-radius: 0.625rem;
-  font-size: 0.813rem;
-  color: #333;
-  max-width: 13rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-  border: 1px solid #eee;
-}
-.product-mini-photo {
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: 0.25rem;
-  object-fit: cover;
-  flex-shrink: 0;
-}
-
-/* 🔍 Поиск */
-.header-search {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-}
-.search-input-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-  width: 259px;
-  height: 36px;
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 20px;
-  padding: 0 28px 0 36px;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-.search-input-wrapper.active,
-.search-input-wrapper:focus-within {
-  border-color: #bdbdbd;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
-}
-.search-icon {
-  position: absolute;
-  left: 12px;
-  width: 16px;
-  height: 16px;
-  color: #888;
-  pointer-events: none;
-}
-.search-input {
-  width: 100%;
-  border: none;
-  background: transparent;
-  font-size: 0.875rem;
-  color: #1a1a1a;
-  outline: none;
-}
-.search-input::placeholder {
-  color: #888;
-}
-.search-clear {
-  position: absolute;
-  right: 8px;
-  background: none;
-  border: none;
-  color: #888;
-  cursor: pointer;
-  font-size: 1.25rem;
-  padding: 0;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  border-radius: 50%;
-  transition: background 0.15s;
-}
-.search-clear:hover {
-  background: #f0f0f0;
-  color: #555;
-}
-
-.typing-indicator {
-  position: absolute;
-  bottom: -1rem;
-  left: 3.2rem;
-  font-size: 0.7rem;
-  color: #4caf50;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  pointer-events: none;
-}
-.typing-dots {
-  display: flex;
-  gap: 2px;
-}
-.typing-dots span {
-  width: 4px;
-  height: 4px;
-  background: #4caf50;
-  border-radius: 50%;
-  animation: bounce 1.4s infinite ease-in-out both;
-}
-.typing-dots span:nth-child(1) {
-  animation-delay: -0.32s;
-}
-.typing-dots span:nth-child(2) {
-  animation-delay: -0.16s;
-}
-@keyframes bounce {
-  0%,
-  80%,
-  100% {
-    transform: scale(0);
-  }
-  40% {
-    transform: scale(1);
-  }
-}
-
-.messages-viewport {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1rem 20% 2.438rem 20%;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  background-attachment: fixed;
-  gap: 0.625rem;
-}
-
-.msg-bubble,
-.system-msg,
-.bot-actions-row,
-.review-invitation,
-.sticky-date,
-.search-state {
-  position: relative;
-  z-index: 1;
-}
-
-.sticky-date {
-  display: flex;
-  justify-content: center;
-  margin: 0.5rem 0;
-  pointer-events: none;
-}
-.sticky-date span {
-  background: rgba(0, 0, 0, 0.18);
-  color: #fff;
-  font-size: 0.75rem;
-  padding: 0.25rem 0.875rem;
-  border-radius: 1rem;
-  backdrop-filter: blur(2px);
-}
-
-.system-msg {
-  align-self: center;
-  background: rgba(0, 0, 0, 0.2);
-  color: #fff;
-  padding: 0.375rem 1.25rem;
-  border-radius: 1rem;
-  font-size: 0.8125rem;
-  margin: 0.5rem 0;
-  backdrop-filter: blur(4px);
-  text-align: center;
-}
-
-.search-state {
-  align-self: center;
-  color: rgba(0, 0, 0, 0.5);
-  font-size: 0.9375rem;
-  margin: 2rem 0;
-  text-align: center;
-}
-
-.msg-bubble {
-  max-width: 75%;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.9375rem;
-  line-height: 1.35;
-  word-break: break-word;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
-}
-.msg-bubble.received {
-  align-self: flex-start;
-  background: #fff;
-  border-radius: 0.75rem 0.75rem 0.75rem 0.25rem;
-  color: #1a1a1a;
-}
-.msg-bubble.sent {
-  align-self: flex-end;
-  background: #d4ffe4;
-  border-radius: 0.75rem 0.75rem 0.25rem 0.75rem;
-  color: #1a1a1a;
-}
-.msg-bubble.msg-error {
-  opacity: 0.8;
-  border: 1px solid #ff6b6b;
-}
-
-.msg-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-}
-.msg-footer {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.25rem;
-  margin-top: 0.125rem;
-}
-.msg-time {
-  font-size: 0.6875rem;
-  color: #8e8e93;
-}
-.msg-status-text {
-  font-size: 0.6875rem;
-  color: #8e8e93;
-}
-.msg-status-text.error {
-  color: #ff6b6b;
-}
-.msg-status {
-  display: flex;
-  align-items: center;
-}
-.tick-icon {
-  width: 0.675rem;
-  height: auto;
-  display: block;
-}
-
-.bot-actions-row {
-  width: 100%;
-  align-self: center;
-  background: #fff;
-  border: 1px solid #eee;
-  border-radius: 1.25rem;
-  padding: 1rem;
-  text-align: center;
-  max-width: 24rem;
-  margin: 0.75rem 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-}
-.bot-actions-row p {
-  font-size: 0.875rem;
-  margin-bottom: 0.75rem;
-  color: #1a1a1a;
-}
-.btns {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.5rem;
-}
-.bot-btn {
-  background: #fff;
-  border: 1px solid #dcdcdc;
-  padding: 0.5rem 1.25rem;
-  border-radius: 0.625rem;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.bot-btn:hover {
-  background: #f5f5f5;
-  border-color: #c0c0c0;
-}
-
-.review-invitation {
-  align-self: center;
-  background: #fff;
-  border-radius: 1.25rem;
-  padding: 1.25rem;
-  text-align: center;
-  max-width: 24rem;
-  margin: 0.75rem 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-}
-.review-invitation p {
-  font-size: 0.875rem;
-  color: #1a1a1a;
-  margin-bottom: 0.625rem;
-}
-.review-link-btn {
-  background: #64a07a;
-  color: #fff;
-  border: none;
-  padding: 0.625rem 1.25rem;
-  border-radius: 0.625rem;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 0.875rem;
-  transition: background 0.2s;
-}
-.review-link-btn:hover {
-  background: #5a906e;
-}
-
-.chat-input-bar {
-  display: grid;
-  align-items: center;
-  padding: 1.25rem 0.75rem;
-  gap: 1rem;
-  border-top: 1px solid #e5e5e5;
-  flex-shrink: 0;
-  margin: 0 2rem;
-}
-.messages-page-wrapper {
-  border-radius: 0 0 0.938rem 0.938rem;
-  overflow: hidden;
-}
-.connection-status {
-  width: 100%;
-  text-align: center;
-  font-size: 0.875rem;
-  padding: 0.2rem;
-  border-radius: 0.5rem;
-}
-.connection-status.offline {
-  color: #ff6b6b;
-  background: #fff0f0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 3.5rem;
-  width: 43%;
-  margin: 0 auto;
-  z-index: 1;
-  margin-bottom: 0.5rem;
-}
-.connection-status.loading {
-  color: #888;
-}
-.retry-btn {
-  background: #ff6b6b;
-  color: #fff;
-  border: none;
-  padding: 0.2rem 0.8rem;
-  border-radius: 0.25rem;
-  font-size: 0.875rem;
-  cursor: pointer;
-}
-.attach-btn {
-  width: 3rem;
-  height: 3rem;
-  border-radius: 0.938rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  flex-shrink: 0;
-  border: none;
-  background: transparent;
-  opacity: 0.55;
-  transition: opacity 0.2s;
-  background: #ffffff;
-}
-.attach-btn:hover {
-  opacity: 0.85;
-}
-.attach-btn img {
-  width: 1.25rem;
-  height: 1.25rem;
-}
-.chat-input-bar textarea {
-  border: 1px solid #e0e0e0;
-  background: #fff;
-  padding: 1rem 0.75rem;
-  border-radius: 0.938rem;
-  resize: none;
-  font-family: inherit;
-  font-size: 0.75rem;
-  outline: none;
-  min-height: 3.063rem;
-  overflow-y: auto;
-  color: #1a1a1a;
-  transition: border-color 0.2s;
-  width: 36.938rem;
-}
-.chat-input-bar textarea::-webkit-scrollbar,
-.chat-input-bar textarea::-webkit-scrollbar-thumb {
-  width: 0 !important;
-}
-.messages-viewport::-webkit-scrollbar-thumb {
-  background: #d4ffe4;
-}
-.chat-input-bar textarea::placeholder {
-  color: #bbb;
-}
-.chat-input-bar textarea:focus {
-  border-color: #bdbdbd;
-}
-.send-btn {
-  width: 3rem;
-  height: 3rem;
-  border-radius: 0.938rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  flex-shrink: 0;
-  border: none;
-  background: #ffffff;
-  transition: all 0.2s;
-}
-.send-btn:hover:not(:disabled) {
-  background: #666;
-}
-.send-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-.send-btn img {
-  width: 1.25rem;
-  height: 1.25rem;
-}
-
-.chat_footer-block {
-  display: flex;
-  gap: 0.563rem;
-  justify-content: center;
-  align-items: flex-end;
-  z-index: 2;
-}
+.chat-dialog-window{display:flex;flex-direction:column;height:100vh;height:100dvh;background:#fff;overflow:hidden;background:linear-gradient(126.24deg,rgba(211,242,163,.8) 1.06%,rgba(108,192,139,.8) 52.82%,rgba(7,64,80,.8) 100%);position:relative;}
+.chat-dialog-window::before{content:"";position:absolute;inset:0;background-image:url('/src/assets/img/matreshka-pattern.png');background-repeat:repeat;background-size:5.5rem;opacity:.06;pointer-events:none;z-index:0;}
+.chat-header{position:relative;display:flex;align-items:center;padding:.625rem 1.75rem .625rem .313rem;border-bottom:1px solid #e5e5e5;gap:.625rem;flex-shrink:0;background:#fff;box-shadow:0 3px 4px 0 rgba(0,0,0,.25);z-index:2;height:5.438rem;}
+.back-btn{width:1.625rem;height:100%;border-radius:.625rem;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;border:none;background:#f44;transition:transform .15s;}
+.back-btn:active{transform:scale(.95);}
+.back-btn img{width:1rem;height:1rem;filter:brightness(0) invert(1);}
+.header-user-info{display:flex;align-items:center;gap:.5rem;min-width:0;background:#e5e5e5;padding:.438rem .5rem;border-radius:.938rem;width:14rem;cursor:pointer;text-decoration:none;color:inherit;}
+.mini-avatar{width:3.148rem;height:3.148rem;border-radius:50%;object-fit:cover;flex-shrink:0;}
+.user-meta{display:flex;flex-direction:column;min-width:0;}
+.user-meta .name{font-size:1.5rem;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.online-status{font-size:.9375rem;color:#b9b9b9;}
+.online-status.is_online{color:#4caf50;}
+.header-product-info{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:.5rem;background:#fff;padding:.375rem .875rem;border-radius:.625rem;font-size:.813rem;color:#333;max-width:13rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #eee;}
+.product-mini-photo{width:1.75rem;height:1.75rem;border-radius:.25rem;object-fit:cover;flex-shrink:0;}
+.header-search{margin-left:auto;display:flex;align-items:center;gap:.5rem;}
+.search-input-wrapper{position:relative;display:flex;align-items:center;width:259px;height:36px;background:#fff;border:1px solid #e0e0e0;border-radius:20px;padding:0 28px 0 36px;transition:border-color .2s,box-shadow .2s;}
+.search-input-wrapper.active,.search-input-wrapper:focus-within{border-color:#bdbdbd;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.search-icon{position:absolute;left:12px;width:16px;height:16px;color:#888;pointer-events:none;}
+.search-input{width:100%;border:none;background:transparent;font-size:.875rem;color:#1a1a1a;outline:none;}
+.search-input::placeholder{color:#888;}
+.search-clear{position:absolute;right:8px;background:none;border:none;color:#888;cursor:pointer;font-size:1.25rem;padding:0;width:20px;height:20px;display:flex;align-items:center;justify-content:center;line-height:1;border-radius:50%;transition:background .15s;}
+.search-clear:hover{background:#f0f0f0;color:#555;}
+.search-nav{display:flex;align-items:center;gap:.25rem;background:#f5f5f5;border-radius:.625rem;padding:.125rem .375rem;}
+.search-counter{font-size:.75rem;color:#666;font-weight:500;min-width:2.5rem;text-align:center;user-select:none;}
+.search-arrow{width:1.5rem;height:1.5rem;border:none;background:transparent;border-radius:.375rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#555;transition:background .15s;}
+.search-arrow:hover:not(:disabled){background:#e0e0e0;}
+.search-arrow:disabled{opacity:.35;cursor:not-allowed;}
+.search-arrow svg{width:14px;height:14px;}
+.typing-indicator{position:absolute;bottom:-1rem;left:3.2rem;font-size:.7rem;color:#4caf50;display:flex;align-items:center;gap:.25rem;pointer-events:none;}
+.typing-dots{display:flex;gap:2px;}
+.typing-dots span{width:4px;height:4px;background:#4caf50;border-radius:50%;animation:bounce 1.4s infinite ease-in-out both;}
+.typing-dots span:nth-child(1){animation-delay:-.32s;}
+.typing-dots span:nth-child(2){animation-delay:-.16s;}
+@keyframes bounce{0%,80%,100%{transform:scale(0)}40%{transform:scale(1)}}
+.messages-viewport{flex:1;overflow-y:auto;padding:1rem 20% 2.438rem 20%;display:flex;flex-direction:column;position:relative;background-attachment:fixed;gap:.625rem;}
+.msg-bubble,.system-msg,.bot-actions-row,.review-invitation,.sticky-date{position:relative;z-index:1;}
+.sticky-date{display:flex;justify-content:center;margin:.5rem 0;pointer-events:none;}
+.sticky-date span{background:rgba(0,0,0,.18);color:#fff;font-size:.75rem;padding:.25rem .875rem;border-radius:1rem;backdrop-filter:blur(2px);}
+.system-msg{align-self:center;background:rgba(0,0,0,.2);color:#fff;padding:.375rem 1.25rem;border-radius:1rem;font-size:.8125rem;margin:.5rem 0;backdrop-filter:blur(4px);text-align:center;}
+.msg-bubble.search-match{box-shadow:0 0 0 2px #ffd700,0 1px 2px rgba(0,0,0,.08);transition:box-shadow .3s;}
+.msg-bubble.search-current{box-shadow:0 0 0 3px #ff9800,0 1px 2px rgba(0,0,0,.08);animation:pulse-current 1.5s ease-in-out infinite;}
+@keyframes pulse-current{0%,100%{box-shadow:0 0 0 3px #ff9800,0 1px 2px rgba(0,0,0,.08)}50%{box-shadow:0 0 0 5px rgba(255,152,0,.4),0 1px 2px rgba(0,0,0,.08)}}
+.msg-bubble{max-width:75%;padding:.5rem .75rem;font-size:.9375rem;line-height:1.35;word-break:break-word;box-shadow:0 1px 2px rgba(0,0,0,.08);}
+.msg-bubble.received{align-self:flex-start;background:#fff;border-radius:.75rem .75rem .75rem .25rem;color:#1a1a1a;}
+.msg-bubble.sent{align-self:flex-end;background:#d4ffe4;border-radius:.75rem .75rem .25rem .75rem;color:#1a1a1a;}
+.msg-bubble.msg-error{opacity:.8;border:1px solid #ff6b6b;}
+.msg-content{display:flex;flex-direction:column;gap:.125rem;}
+.msg-footer{display:flex;align-items:center;justify-content:flex-end;gap:.25rem;margin-top:.125rem;}
+.msg-time{font-size:.6875rem;color:#8e8e93;}
+.msg-status-text{font-size:.6875rem;color:#8e8e93;}
+.msg-status-text.error{color:#ff6b6b;}
+.msg-status{display:flex;align-items:center;}
+.tick-icon{width:.675rem;height:auto;display:block;}
+.bot-actions-row{width:100%;align-self:center;background:#fff;border:1px solid #eee;border-radius:1.25rem;padding:1rem;text-align:center;max-width:24rem;margin:.75rem 0;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.bot-actions-row p{font-size:.875rem;margin-bottom:.75rem;color:#1a1a1a;}
+.btns{display:flex;flex-wrap:wrap;justify-content:center;gap:.5rem;}
+.bot-btn{background:#fff;border:1px solid #dcdcdc;padding:.5rem 1.25rem;border-radius:.625rem;font-size:.875rem;cursor:pointer;transition:all .2s;}
+.bot-btn:hover{background:#f5f5f5;border-color:#c0c0c0;}
+.review-invitation{align-self:center;background:#fff;border-radius:1.25rem;padding:1.25rem;text-align:center;max-width:24rem;margin:.75rem 0;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.review-invitation p{font-size:.875rem;color:#1a1a1a;margin-bottom:.625rem;}
+.review-link-btn{background:#64a07a;color:#fff;border:none;padding:.625rem 1.25rem;border-radius:.625rem;cursor:pointer;font-weight:600;font-size:.875rem;transition:background .2s;}
+.review-link-btn:hover{background:#5a906e;}
+.chat-input-bar{display:grid;align-items:center;padding:1.25rem .75rem;gap:1rem;border-top:1px solid #e5e5e5;flex-shrink:0;margin:0 2rem;}
+.messages-page-wrapper{border-radius:0 0 .938rem .938rem;overflow:hidden;}
+.connection-status{width:100%;text-align:center;font-size:.875rem;padding:.2rem;border-radius:.5rem;}
+.connection-status.offline{color:#ff6b6b;background:#fff0f0;display:flex;align-items:center;justify-content:center;gap:3.5rem;width:43%;margin:0 auto;z-index:1;margin-bottom:.5rem;}
+.connection-status.loading{color:#888;}
+.retry-btn{background:#ff6b6b;color:#fff;border:none;padding:.2rem .8rem;border-radius:.25rem;font-size:.875rem;cursor:pointer;}
+.attach-btn{width:3rem;height:3rem;border-radius:.938rem;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;border:none;background:transparent;opacity:.55;transition:opacity .2s;background:#fff;}
+.attach-btn:hover{opacity:.85;}
+.attach-btn img{width:1.25rem;height:1.25rem;}
+.chat-input-bar textarea{border:1px solid #e0e0e0;background:#fff;padding:1rem .75rem;border-radius:.938rem;resize:none;font-family:inherit;font-size:.75rem;outline:none;min-height:3.063rem;overflow-y:auto;color:#1a1a1a;transition:border-color .2s;width:36.938rem;}
+.chat-input-bar textarea::-webkit-scrollbar,.chat-input-bar textarea::-webkit-scrollbar-thumb{width:0!important;}
+.messages-viewport::-webkit-scrollbar-thumb{background:#d4ffe4;}
+.chat-input-bar textarea::placeholder{color:#bbb;}
+.chat-input-bar textarea:focus{border-color:#bdbdbd;}
+.send-btn{width:3rem;height:3rem;border-radius:.938rem;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;border:none;background:#fff;transition:all .2s;}
+.send-btn:hover:not(:disabled){background:#666;}
+.send-btn:disabled{opacity:.4;cursor:not-allowed;}
+.send-btn img{width:1.25rem;height:1.25rem;}
+.chat_footer-block{display:flex;gap:.563rem;justify-content:center;align-items:flex-end;z-index:2;}
 </style>

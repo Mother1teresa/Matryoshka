@@ -1186,6 +1186,31 @@ export const useAuthStore = defineStore("auth", {
         this.isVideosLoading = false;
       }
     },
+    async fetchUserMediaVideos(userId) {
+      if (!userId) {
+        console.log("fetchUserMediaVideos: userId не передан");
+        return [];
+      }
+      try {
+        const res = await api.get(`/media/${userId}/videos`);
+        const rawVideos = Array.isArray(res.data) ? res.data : [];
+        return rawVideos.map(v => ({
+          id: v.id,
+          fileName: v.fileName || '',
+          description: v.description || 'Описание ролика временно недоступно',
+          extension: v.extension || '',
+          s3Key: v.s3Key || v.fileName || v.id,
+          cdnUrl: v.cdnUrl || '',
+          thumbnailUrl: v.thumbnailUrl || '',
+          type: v.type || '',
+          mimeType: v.mimeType || '',
+          userId: v.userId,
+        }));
+      } catch (e) {
+        console.error("Ошибка загрузки медиа-видео пользователя:", e);
+        return [];
+      }
+    },
     async deleteVideo(s3Key) {
       if (!this.user?.id) return false;
       try {
