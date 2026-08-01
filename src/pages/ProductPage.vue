@@ -76,13 +76,7 @@
             <h3>Адрес</h3>
             <p class="address-text">{{ product.address }}</p>
             <div v-if="mapCoordinates" class="product-map">
-              <yandex-map :settings="{ location: { center: mapCoordinates, zoom: 15 }}" width="100%" height="300px">
-                <yandex-map-default-scheme-layer />
-                <yandex-map-default-features-layer />
-                <yandex-map-marker :coordinates="mapCoordinates">
-                  <div class="map-pin">📍</div>
-                </yandex-map-marker>
-              </yandex-map>
+              <div id="product-map-container" style="width: 100%; height: 100%;"></div>
             </div>
             <div v-else-if="product.address && isGeocoding" class="no-map">
               <p>Определяем координаты на карте...</p>
@@ -191,7 +185,7 @@
   <NotFound v-else />
 </template>
 <script setup>
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, computed, watch, onMounted, nextTick, onBeforeUnmount } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useProductStore } from "/src/stores/product.js";
 import { productLabels, getLabel, formatValue, getFieldGroups, isChipActive } from "/src/stores/productLabels.js";
@@ -232,7 +226,70 @@ const similarProducts = ref([]);
 const seller = ref(null);
 const mapCoordinates = ref(null);
 const isGeocoding = ref(false);
+const isClient = typeof window !== 'undefined';
+let productMap = null;
+let productPlacemark = null;
+let ymapsReady = false;
 
+function waitForYmaps(timeout = 10000) {
+  return new Promise((resolve, reject) => {
+    const start = Date.now();
+    const check = () => {
+      if (window.ymaps) {
+        window.ymaps.ready(() => {
+          ymapsReady = true;
+          resolve();
+        });
+      } else if (Date.now() - start > timeout) {
+        reject(new Error('Yandex Maps API не загрузился'));
+      } else {
+        setTimeout(check, 300);
+      }
+    };
+    check();
+  });
+}
+
+function destroyProductMap() {
+  if (!isClient) return;
+  if (productMap) {
+    try { productMap.destroy(); } catch (e) {}
+    productMap = null;
+    productPlacemark = null;
+  }
+}
+
+function initProductMap(coords) {
+  if (!isClient || !window.ymaps) {
+    console.warn('Yandex Maps API не доступен');
+    return;
+  }
+  destroyProductMap();
+
+  const container = document.getElementById('product-map-container');
+  if (!container) {
+    console.warn('Контейнер #product-map-container не найден');
+    return;
+  }
+  container.innerHTML = '';
+
+  productMap = new window.ymaps.Map('product-map-container', {
+    center: coords,
+    zoom: 15,
+    controls: ['zoomControl']
+  }, {
+    copyrightLogoVisible: false,
+    copyrightProvidersVisible: false,
+    copyrightUaVisible: false,
+    suppressMapOpenBlock: true
+  });
+
+  productPlacemark = new window.ymaps.Placemark(coords, {}, {
+    preset: 'islands#redIcon'
+  });
+
+  productMap.geoObjects.add(productPlacemark);
+}
 // === КАРТА ===
 const hasCoordinatesFromApi = computed(() => {
   return Array.isArray(product.value?.coordinates) && 
@@ -261,8 +318,12 @@ const renderStars = (rating) => {
 // === ГЕОКОДИРОВАНИЕ ===
 const resolveCoordinates = async () => {
   if (hasCoordinatesFromApi.value) {
-    const [lng, lat] = product.value.coordinates;
-    mapCoordinates.value = [Number(lng), Number(lat)];
+    const [first, second] = product.value.coordinates;
+    if (Math.abs(first) > 50) {
+      mapCoordinates.value = [Number(second), Number(first)];
+    } else {
+      mapCoordinates.value = [Number(first), Number(second)];
+    }
     return;
   }
 
@@ -277,6 +338,11 @@ const resolveCoordinates = async () => {
     address = address[0].toUpperCase() + address.slice(1);
     // Обновляем в продукте тоже
     product.value.address = address;
+  }
+  if (mapCoordinates.value) {
+    nextTick(() => {
+      setTimeout(() => initProductMap(mapCoordinates.value), 200);
+    });
   }
 
   isGeocoding.value = true;
@@ -375,20 +441,21 @@ const loadProduct = async (id) => {
   similarProducts.value = [];
   seller.value = null;
   mapCoordinates.value = null;
+  destroyProductMap();
 
   try {
-    const cached = productStore.products.find(p => String(p.id) === String(id));
+    // const cached = productStore.products.find(p => String(p.id) === String(id));
     
-      if (cached && (cached.images?.length || cached.pictureUrls?.length)) {
-        product.value = {
-          ...cached,
-          images: cached.images || cached.pictureUrls || [],
-          image: cached.image || cached.pictureUrls?.[0] || '/src/assets/img/placeholder.png',
-          attributes: cached.attributes || {},
-          coordinates: cached.coordinates || null,
-          address: cached.address || cached.city || '',
-        };
-      } else {
+    //   if (cached && (cached.images?.length || cached.pictureUrls?.length)) {
+    //     product.value = {
+    //       ...cached,
+    //       images: cached.images || cached.pictureUrls || [],
+    //       image: cached.image || cached.pictureUrls?.[0] || '/src/assets/img/placeholder.png',
+    //       attributes: cached.attributes || {},
+    //       coordinates: cached.coordinates || null,
+    //       address: raw.address || raw.city || raw.location || '',
+    //     };
+    //   } else {
         const data = await auth.getAdvertById(id);
         const raw = Array.isArray(data) ? data[0] : data;
 
@@ -410,8 +477,8 @@ const loadProduct = async (id) => {
           title: raw.title || 'Без названия',
           price: Number(raw.price) || 0,
           description: raw.description || '',
-          city: raw.address || raw.city || '',
-          address: raw.address || '',
+          city: raw.city || raw.address || '',
+          address: raw.address || raw.city || '',
           coordinates: raw.coordinates || null,
           category: raw.category || 'tovary',
           section: raw.section || raw.subCategory || 'default',
@@ -419,10 +486,10 @@ const loadProduct = async (id) => {
           sellerId: raw.userId || raw.sellerId,
           images: pics,
           image: pics[0] || raw.thumbnailUrl || '',
-          attributes: productStore.buildAttributes?.(raw) || {},
+          attributes: raw.attributes || raw || {},
           ...raw
         };
-      }
+      // }
 
     if (product.value?.sellerId) {
       await Promise.all([
@@ -450,12 +517,25 @@ const loadSimilarProducts = async () => {
     await productStore.fetchAdverts({
       category: product.value.category,
       section: product.value.section,
-      // subCategory: product.value.section,
+      subCategory: product.value.subcategory || product.value.section,
+      city: product.value.city,
       take: 6
     }, true);
     
+    const currentId = String(product.value.id);
+    const currentPrice = Number(product.value.price) || 0;
+    
     similarProducts.value = productStore.products
-      .filter(p => String(p.id) !== String(product.value.id))
+      .filter(p => {
+        const sameId = String(p.id) === currentId;
+        const sameSection = (p.section || p.subcategory) === (product.value.section || product.value.subcategory);
+        const sameCity = !product.value.city || p.city === product.value.city;
+
+        const pPrice = Number(p.price) || 0;
+        const priceMatch = currentPrice === 0 || (pPrice >= currentPrice * 0.5 && pPrice <= currentPrice * 1.5);
+        
+        return !sameId && sameSection && sameCity && priceMatch;
+      })
       .slice(0, 5)
       .map(ad => ({
         id: ad.id,
@@ -465,10 +545,10 @@ const loadSimilarProducts = async () => {
         category: ad.category,
         section: ad.section,
         subcategory: ad.subcategory,
-        images: ad.images,
-        image: ad.image,
+        images: ad.images || ad.pictureUrls,
+        image: ad.image || ad.pictureUrls?.[0],
         description: ad.description,
-        sellerId: ad.sellerId,
+        sellerId: ad.sellerId || ad.userId,
       }));
   } catch (e) {
     console.error('Ошибка загрузки похожих:', e);
@@ -596,7 +676,10 @@ watch(() => route.params.id, (newId) => {
   if (newId) loadProduct(newId);
 }, { immediate: true });
 
-onMounted(() => {
+onMounted(async () => {
+  if (isClient && window.ymaps) {
+    try { await waitForYmaps(); } catch (e) { console.warn('Карта недоступна:', e); }
+  }
   Fancybox.bind("[data-fancybox='gallery']", { Hash: false });
 });
 
@@ -605,494 +688,97 @@ watch(() => product.value?.title, (newTitle) => {
     document.title = `${newTitle} — купить на Матрешка`;
   }
 }, { immediate: true });
+onBeforeUnmount(() => {
+  destroyProductMap();
+});
 </script>
 <style scoped>
-.product-layout {
-  display: grid;
-  gap: 3.125rem;
-  grid-template-columns: repeat(2, 1fr);
-}
-.product-left {
-  flex: 1;
-  background-color: white;
-  border-radius: 1.25rem;
-  padding: 1.375rem 1.875rem;
-  width: 54.75rem;
-}
-
-.product-right {
-  width: 20.813rem;
-  height: fit-content;
-}
+.product-layout { display: grid; gap: 3.125rem; grid-template-columns: repeat(2, 1fr);}
+.product-left { flex: 1; background-color: white; border-radius: 1.25rem; padding: 1.375rem 1.875rem; width: 54.75rem;}
+.product-right { min-width: 20.813rem; height: fit-content;}
 /* Заголовок */
-.product-title {
-  margin-bottom: 1.563rem;
-  font-weight: 600;
-  display: flex;
-  align-items: start;
-  justify-content: space-between;
-}
-.product-title .card-like{
-  width: 2.188rem;
-  height: 1.938rem;
-}
+.product-title { margin-bottom: 1.563rem; font-weight: 600; display: flex; align-items: start; justify-content: space-between; position: relative;}
+.product-title .card-like{ width: 2.188rem; height: 1.938rem; z-index: 1;}
 /* Галерея */
-.gallery {
-  gap: 2rem;
-  display: grid;
-  grid-template-columns: repeat(1, 36.875rem 14.375rem);
-}
-
-.main-image {
-  width: 36.875rem;
-  height: 20.625rem;
-  object-fit: cover;
-  border-radius: 0.625rem;
-  cursor: pointer;
-}
-
-.thumbs {
-  width: 12.5rem;
-  display: grid;
-  gap: 0.875rem;
-  grid-template-columns: repeat(2, 5.625rem);
-  grid-template-rows: repeat(4, 4.25rem);
-  grid-auto-flow: column;
-  overflow: hidden;
-}
-
-.thumbs img {
-  width: 5.625rem;
-  height: 4.25rem;
-  object-fit: cover;
-  cursor: pointer;
-  border-radius: 0.313rem;
-  opacity: 0.6;
-  transition: .3s;
-}
-
-.thumbs img.active {
-  opacity: 1;
-  border: 2px solid var(--btn-bg);
-}
-
+.gallery { gap: 2rem; display: grid; grid-template-columns: repeat(1, 36.875rem 14.375rem);}
+.main-image { width: 36.875rem; height: 20.625rem; object-fit: cover; border-radius: 0.625rem; cursor: pointer;}
+.thumbs { width: 12.5rem; display: grid; gap: 0.875rem; grid-template-columns: repeat(2, 5.625rem); grid-template-rows: repeat(4, 4.25rem); grid-auto-flow: column; overflow: hidden;}
+.thumbs img { width: 5.625rem; height: 4.25rem; object-fit: cover; cursor: pointer; border-radius: 0.313rem; opacity: 0.6; transition: .3s;}
+.thumbs img.active { opacity: 1; border: 2px solid var(--btn-bg);}
 /* Детали */
-.product-details {
-  margin-top: 2.188rem;
-}
-.product-details h3{
-  font-weight: 600;
-  font-size: 1.5rem;
-  margin-bottom: 0.625rem;
-}
-.details-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 20.75rem);
-  gap: 0.625rem;
-  font-size: 1.25rem;
-}
-
-.detail-row {
-  display: flex;
-  gap: 0.625rem;
-}
-.label {
-  color: #888;
-  font-size: 1.35rem;
-}
-.value {
-  font-weight: 500;
-  font-size: 1.35rem;
-}
-/* Описание */
-.product-description {
-  margin-top: 2.188rem;
-}
-.product-description h3{
-  font-weight: 600;
-  font-size: 1.5rem;
-  margin-bottom: 1.5rem;
-}
-.product-description p{
-  font-size: 1.35rem;
-}
-/* Правая колонка */
-.price-card {
-  background-color: white; 
-  border-radius: 1.25rem;
-  padding: 1.375rem 1.875rem;
-}
-.price-extra {
-  color: #b7b7b7;
-  font-size: 1rem;
-  font-size: 1rem;
-  font-weight: 400;
-}
-.seller-card__btns{
-  display: flex;
-  margin-top: 4.313rem;
-  gap: 1rem;
-}
-.price {
-  font-size: 2rem;
-  font-weight: 600;
-}
-.location {
-  margin: .5rem 0 0;
-  color: #666;
-}
-
-.btn.secondary {
-  background: #F5F5F5;
-  width: 4.388rem;
-  height: 3.438rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 1.25rem;
-}
-.seller-card {
-  margin-top: 0.625rem;
-  background-color: white; 
-  border-radius: 1.25rem;
-  padding: 1rem 1rem 1.313rem 1rem;
-}
-.seller {
-  display: flex;
-  gap: 1.75rem;
-}
-.avatar {
-  width: 4.525rem;
-  height: 4.525rem;
-  border-radius: 50%;
-  margin-left: 0.938rem;
-  object-fit: cover;
-}
-.name,.rating{
-  margin-bottom: .5rem;
-  transition: opacity .3s;
-}
-.rating{
-  font-weight: 600;
-  margin-top: 0.438rem;
-}
-.name:hover{
-  opacity: 0.6;
-}
-.seller-card__block{
-  font-size: 1.25rem;
-}
-.type{
-  margin-bottom: 0.875rem;
-}
-.subscribe{
-color: var(--btn-bg);
-  transition:
-    opacity 0.3s
-}
-.subscribe:hover{
-  opacity: 70%;
-}
-.primary{
-  background-color: var(--btn-bg);
-  font-size: 1.25rem;
-  color: white;
-  width: 14.375rem;
-  height: 3.438rem;
-  text-align: center;
-  border-radius: 1.25rem;
-}
-.secondary img{
-  width: 2.575rem;
-  height: 2.525rem;
-}
-.is-active{
-  color: red;
-}
-.confirm-call-card {
-  background: white;
-  padding: 2rem 1.75rem 1.475rem 1.75rem;
-  border-radius: 2.188rem;
-  max-width: 39.063rem;
-  width: 100%;
-  text-align: left;
-}
-
-.confirm-message {
-  font-size: 1.25rem;
-  color: #000;
-  margin-bottom: 1.25rem;
-}
-.confirm-actions {
-  display: flex;
-  justify-content: center;
-  gap: 1.25rem;
-}
-.btn-black {
-  /* flex: 1; */
-  text-align: center;
-  width: 10.375rem;
-  height: 3.563rem;
-  background: #000;
-  color: #fff;
-  border: none;
-  border-radius: 1rem;
-  font-weight:500;
-  cursor: pointer;
-  font-size: 1.25rem;
-}
-
-.btn-gray {
-  /* flex: 1; */
-  width: 10.375rem;
-  height: 3.563rem;
-  text-align: center;
-  background: #D8D8D8; 
-  color: #000;
-  border: none;
-  border-radius: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  font-size: 1.25rem;
-}
-
-.details-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  column-gap: 3rem;
-  row-gap: 1rem;
-  margin-top: 1rem;
-}
-
-.detail-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px dashed #e0e0e0;
-  padding-bottom: 0.25rem;
-}
-
-.detail-row.full-width-row {
-  grid-column: span 2;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.5rem;
-  border-bottom: none;
-  padding-bottom: 0;
-  margin-top: 0.5rem;
-}
-
-.details-chips-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  width: 100%;
-}
-
-@media (max-width: 77rem) {
-  .product-left {
-    width: 47.75rem;
-  }
-  .main-image{
-    width: 100%;
-  }
-  .gallery{
-    grid-template-columns: repeat(1, 29.8rem 12.375rem);
-  }
-}
-/* Группы деталей */
-.details-group {
-  margin-bottom: 2rem;
-}
-
-.details-group h3 {
-  font-weight: 600;
-  font-size: 1.25rem;
-  margin-bottom: 1rem;
-  color: #333;
-}
-
-/* Сетка для обычных полей */
-.details-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem 2rem;
-}
-
-/* Строка детали */
-.detail-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem 0;
-  border-bottom: 1px dashed #e0e0e0;
-}
-
-.detail-row.full-width-row {
-  grid-column: span 2;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.75rem;
-  border-bottom: none;
-}
-
+.product-details { margin-top: 2.188rem;}
+.product-details h3{ font-weight: 600; font-size: 1.5rem; margin-bottom: 0.625rem;}
+.details-grid { display: grid; grid-template-columns: repeat(2, 20.75rem); gap: 0.625rem; font-size: 1.25rem;}
+.detail-row { display: flex; gap: 0.625rem;}
+.label { color: #888; font-size: 1.35rem;}
+.value { font-weight: 500; font-size: 1.35rem;}
+.product-description { margin-top: 2.188rem;}
+.product-description h3{ font-weight: 600; font-size: 1.5rem; margin-bottom: 1.5rem;}
+.product-description p{ font-size: 1.35rem;}
+.price-card { background-color: white;  border-radius: 1.25rem; padding: 1.375rem 1.875rem;}
+.price-extra { color: #b7b7b7; font-size: 1rem; font-size: 1rem; font-weight: 400;}
+.seller-card__btns{ display: flex; margin-top: 4.313rem; gap: 1rem;}
+.price { font-size: 2rem; font-weight: 600;}
+.location { margin: .5rem 0 0; color: #666;}
+.btn.secondary { background: #F5F5F5; width: 4.388rem; height: 3.438rem; display: flex; align-items: center; justify-content: center; border-radius: 1.25rem;}
+.seller-card { margin-top: 0.625rem; background-color: white;  border-radius: 1.25rem; padding: 1rem 1rem 1.313rem 1rem;}
+.seller { display: flex; gap: 1.75rem;}
+.avatar { width: 4.525rem; height: 4.525rem; border-radius: 50%; margin-left: 0.938rem; object-fit: cover;}
+.name,.rating{ margin-bottom: .5rem; transition: opacity .3s;}
+.rating{ font-weight: 600; margin-top: 0.438rem;}
+.name:hover{ opacity: 0.6;}
+.seller-card__block{ font-size: 1.25rem;}
+.type{ margin-bottom: 0.875rem;}
+.subscribe{ color: var(--btn-bg);transition:opacity 0.3s}
+.subscribe:hover{ opacity: 70%;}
+.primary{ background-color: var(--btn-bg); font-size: 1.25rem; color: white; width: 14.375rem; height: 3.438rem; text-align: center; border-radius: 1.25rem;}
+.secondary img{ width: 2.575rem; height: 2.525rem;}
+.is-active{ color: red;}
+.confirm-call-card { background: white; padding: 2rem 1.75rem 1.475rem 1.75rem; border-radius: 2.188rem; max-width: 39.063rem; width: 100%; text-align: left;}
+.confirm-message { font-size: 1.25rem; color: #000; margin-bottom: 1.25rem;}
+.confirm-actions { display: flex; justify-content: center; gap: 1.25rem;}
+.btn-black { text-align: center; width: 10.375rem; height: 3.563rem; background: #000; color: #fff; border: none; border-radius: 1rem; font-weight:500; cursor: pointer; font-size: 1.25rem;}
+.btn-gray { width: 10.375rem; height: 3.563rem; text-align: center; background: #D8D8D8;  color: #000; border: none; border-radius: 1rem; font-weight: 500; cursor: pointer; font-size: 1.25rem;}
+.details-grid { display: grid; grid-template-columns: repeat(2, 1fr); column-gap: 3rem; row-gap: 1rem; margin-top: 1rem;}
+.detail-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e0e0e0; padding-bottom: 0.25rem;}
+.detail-row.full-width-row { grid-column: span 2; display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; border-bottom: none; padding-bottom: 0; margin-top: 0.5rem;}
+.details-chips-group {display: flex;flex-wrap: wrap;gap: 0.75rem;width: 100%;}
+@media (max-width: 77rem) { .product-left { width: 47.75rem; } .main-image{ width: 100%;} .gallery{ grid-template-columns: repeat(1, 29.8rem 12.375rem);}}
+.details-group { margin-bottom: 2rem;}
+.details-group h3 { font-weight: 600; font-size: 1.25rem; margin-bottom: 1rem; color: #333;}
+.details-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem 2rem;}
+.detail-row { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px dashed #e0e0e0;}
+.detail-row.full-width-row { grid-column: span 2; flex-direction: column; align-items: flex-start; gap: 0.75rem; border-bottom: none;}
 /* Чипсы */
 /* .details-chips-group {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
 } */
-
-.detail-chip-item {
-  background-color: #e8e8e8;
-  color: #666;
-  padding: 0.4rem 1rem;
-  border-radius: 0.5rem;
-  font-size: 0.9rem;
-  transition: all 0.2s;
-}
-
-.detail-chip-item.chip-active {
-  background-color: #5b9279;
-  color: white;
-}
-.product-address-section {
-  margin-top: 2.188rem;
-  padding: 1.5rem;
-  background: white;
-  border-radius: 1.25rem;
-}
-.product-address-section h3 {
-  font-weight: 600;
-  font-size: 1.5rem;
-  margin-bottom: 1rem;
-}
-.address-text {
-  font-size: 1.15rem;
-  color: #333;
-  margin-bottom: 1rem;
-}
-.product-map {
-  width: 100%;
-  height: 18.75rem;
-  border-radius: 0.625rem;
-  overflow: hidden;
-}
-.map-pin {
-  font-size: 2rem;
-  transform: translate(-50%, -100%);
-}
-
-.similar-products {
-  margin-top: 3rem;
-  margin-bottom: 3rem;
-}
-.similar-title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-bottom: 1.5rem;
-}
-.similar-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.625rem;
-}
-.horizontal-card {
-  display: flex;
-  gap: 1.25rem;
-  background: white;
-  padding: 1.25rem;
-  border-radius: 1.25rem;
-  width: 60.875rem;
-}
-.card-img {
-  width: 7.875rem;
-  height: 11.188rem;
-  object-fit: cover;
-  border-radius: 1.25rem;
-}
-.card-title {
-  font-weight: 400;
-  width: 90%;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  height: 3rem;
-}
-.card-price-row {
-  display: flex;
-  align-items: baseline;
-  gap: 0.6rem;
-  margin: 0.5rem 0;
-}
-.card-price {
-  font-size: 1.45rem;
-  font-weight: 600;
-  color: #000;
-}
-.card-location {
-  color: #666;
-  font-size: 0.9rem;
-}
-.card-description {
-  color: #7c7c7c;
-  font-size: 0.938rem;
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.card-footer-info {
-  margin-top: auto;
-  color: #b0b0b0;
-  font-size: 0.875rem;
-  text-transform: capitalize;
-}
-.card-content__rigth {
-  display: none;
-  transition: all 0.3s;
-}
-.horizontal-card:hover .card-content__rigth {
-  display: block;
-}
-.card-content__rigth-btns {
-  display: grid;
-  align-content: center;
-  align-items: center;
-  height: 100%;
-  width: 12.813rem;
-  gap: 0.688rem;
-}
-.card-like {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 1.563rem;
-  height: 1.5rem;
-}
-.card-content {
-  display: flex;
-  flex-direction: column;
-  width: 35.125rem;
-  min-height: 100%;
-  position: relative;
-}
-.card-btn {
-  background: var(--btn-bg);
-  color: white;
-  padding: 0.5rem 0;
-  text-align: center;
-  border-radius: 0.313rem;
-  border: none;
-  cursor: pointer;
-}
-.card-btn:last-child {
-  background-color: white;
-  border: 1px solid var(--btn-bg);
-  color: var(--btn-bg);
-}
+.detail-chip-item { background-color: #e8e8e8; color: #666; padding: 0.4rem 1rem; border-radius: 0.5rem; font-size: 0.9rem; transition: all 0.2s;}
+.detail-chip-item.chip-active { background-color: #5b9279; color: white;}
+.product-address-section { margin-top: 2.188rem; padding: 1.5rem; background: white; border-radius: 1.25rem;}
+.product-address-section h3 { font-weight: 600; font-size: 1.5rem; margin-bottom: 1rem;}
+.address-text { font-size: 1.15rem; color: #333; margin-bottom: 1rem;}
+.product-map { width: 100%; height: 18.75rem; border-radius: 0.625rem; overflow: hidden;}
+.map-pin { font-size: 2rem; transform: translate(-50%, -100%);}
+.similar-products { margin-top: 3rem; margin-bottom: 3rem; width: 54.75rem;}
+.similar-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem;}
+.similar-list { display: flex; flex-direction: column; gap: 0.625rem;}
+.horizontal-card { display: flex; gap: 1.25rem; background: white; padding: 1.25rem; border-radius: 1.25rem; width: 54.75rem;}
+.card-img { width: 7.875rem; height: 11.188rem; object-fit: cover; border-radius: 1.25rem;}
+.card-title { font-weight: 400; width: 90%; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 3rem;}
+.card-price-row { display: flex; align-items: baseline;gap: 0.6rem;margin: 0.5rem 0;}
+.card-price { font-size: 1.45rem; font-weight: 600; color: #000;}
+.card-location { color: #666; font-size: 0.9rem;}
+.card-description {color: #7c7c7c;font-size: 0.938rem;margin-top: 0.5rem;margin-bottom: 0.5rem;display: -webkit-box;-webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;}
+.card-footer-info { margin-top: auto; color: #b0b0b0; font-size: 0.875rem; text-transform: capitalize;}
+.card-content__rigth { display: none; transition: all 0.3s;}
+.horizontal-card:hover .card-content__rigth { display: block;}
+.card-content__rigth-btns { display: grid; align-content: center; align-items: center; height: 100%; width: 12.813rem; gap: 0.688rem;}
+.card-like { position: absolute; top: 0; right: 0; width: 1.563rem; height: 1.5rem;}
+.card-content { display: flex; flex-direction: column; width: 23.125rem; min-height: 100%; position: relative;}
+.card-btn { background: var(--btn-bg); color: white; padding: 0.5rem 0; text-align: center; border-radius: 0.313rem; border: none; cursor: pointer;}
+.card-btn:last-child { background-color: white; border: 1px solid var(--btn-bg); color: var(--btn-bg);}
+.product-map { width: 100%; height: 18.75rem; border-radius: 0.625rem; overflow: hidden; background: #f5f5f5;}
 </style>

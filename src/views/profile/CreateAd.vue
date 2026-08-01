@@ -142,13 +142,23 @@
             {{ locationLabel }} <span class="required">*</span>
             <span class="hint">Укажите адрес</span>
           </h3>
-          <div class="input-wrapper">
+          <div class="input-wrapper" style="position: relative;">
             <input 
               v-model="searchQuery" 
               class="f-input" 
               :class="{ 'error-border': v$.address.$error }" 
               placeholder="Введите адрес..." 
+              @input="onAddressInput"
             />
+            <ul v-if="addressSuggestions.length" class="suggestions-list">
+              <li 
+                v-for="(s, i) in addressSuggestions" 
+                :key="i" 
+                @click="selectSuggestion(s)"
+              >
+                {{ s.displayName }}
+              </li>
+            </ul>
           </div>
           <div id="map-container-ad" class="map-container-ad"></div>
         </section>
@@ -218,6 +228,40 @@ const photos = ref([]);
 const photoPreviews = ref([]); 
 const isEditMode = computed(() => !!route.params.id);
 const advertId = computed(() => route.params.id);
+const addressSuggestions = ref([]);
+
+async function onAddressInput() {
+  if (!window.ymaps || !searchQuery.value || searchQuery.value.length < 3) {
+    addressSuggestions.value = [];
+    return;
+  }
+  try {
+    const res = await window.ymaps.suggest(searchQuery.value);
+    addressSuggestions.value = res.slice(0, 5);
+  } catch (e) {
+    addressSuggestions.value = [];
+  }
+}
+
+function selectSuggestion(suggestion) {
+  searchQuery.value = suggestion.displayName;
+  addressSuggestions.value = [];
+  form.address = suggestion.displayName;
+  // Геокодируем для получения координат
+  window.ymaps.geocode(suggestion.displayName, { results: 1 }).then(res => {
+    const obj = res.geoObjects.get(0);
+    if (obj) {
+      const coords = obj.geometry.getCoordinates();
+      form.coordinates = coords;
+      if (map && placemark) {
+        map.setCenter(coords, 14);
+        placemark.geometry.setCoordinates(coords);
+      } else {
+        initMap(coords);
+      }
+    }
+  });
+}
 
 // ═══════════════════════════════════════════════════════════
 // ФОРМА
@@ -1555,4 +1599,7 @@ margin-top: 2.438rem; border-radius: 1.875rem;}
 .card-disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(100%);}
 /* Активная карточка в режиме редактирования — подсвечиваем */
 .section-disabled .category-card.active { opacity: 1;filter: none;box-shadow: 0 0 0 2px #4CAF50;}
+.suggestions-list {position: absolute;top: 100%;left: 0;right: 0;background: white;border: 1px solid #e0e0e0;border-radius: 0.625rem;z-index: 100;list-style: none;padding: 0;margin: 4px 0 0;max-height: 200px;overflow-y: auto;}
+.suggestions-list li {padding: 0.75rem 1rem;cursor: pointer;transition: 0.15s;}
+.suggestions-list li:hover {background: #f5f5f5;}
 </style>

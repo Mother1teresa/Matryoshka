@@ -255,7 +255,23 @@ export const fieldGroups = {
       ]
     }
   ],
-  
+  // === Мотоциклы / Мототехника ===
+  moto: [
+    {
+      title: "Характеристики",
+      fields: [
+        { key: "brand", type: "text", label: "Марка" },
+        { key: "model", type: "text", label: "Модель" },
+        { key: "year", type: "text", label: "Год выпуска" },
+        { key: "mileage", type: "text", suffix: "км", label: "Пробег" },
+        { key: "engineType", type: "text", label: "Двигатель" },
+        { key: "engineCapacity", type: "text", suffix: "см³", label: "Объём" },
+        { key: "power", type: "text", suffix: "л.с.", label: "Мощность" },
+        { key: "color", type: "text", label: "Цвет" },
+        { key: "condition", type: "text", label: "Состояние" },
+      ]
+    }
+  ],
   // === Яхты ===
   yachts: [
     {

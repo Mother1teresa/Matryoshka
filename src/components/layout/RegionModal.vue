@@ -12,6 +12,7 @@ const isClient = typeof window !== 'undefined';
 let map = null;
 let placemark = null;
 let searchTimeout = null;
+const suggestions = ref([]);
 
 function initMap() {
   if (!isClient || !window.ymaps) {
@@ -73,23 +74,36 @@ function handleSearch() {
 }
 // Автопоиск с debounce
 watch(searchQuery, (value) => {
-  if (!isClient || !value.trim()) return;
-  
+  if (!isClient || !value.trim()) {
+    suggestions.value = [];
+    return;
+  }
+
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(async () => {
+    if (window.ymaps && window.ymaps.suggest) {
+      try {
+        const res = await window.ymaps.suggest(value);
+        suggestions.value = res.slice(0, 5);
+      } catch (e) {
+        suggestions.value = [];
+      }
+    }
     const result = await geocodeByQuery(value);
-    if (result) {
+    if (result && map && placemark) {
       const [lon, lat] = result.coordinates;
       const coords = [lat, lon];
       markerCoords.value = coords;
-      
-      if (placemark && map) {
-        placemark.geometry.setCoordinates(coords);
-        map.setCenter(coords, 12, { duration: 300 });
-      }
+      placemark.geometry.setCoordinates(coords);
+      map.setCenter(coords, 12, { duration: 300 });
     }
-  }, 500);
+  }, 400);
 });
+function selectSuggestion(suggestion) {
+  searchQuery.value = suggestion.displayName || suggestion.value;
+  suggestions.value = [];
+  handleSearch();
+}
 
 function confirmSelection() {
   const [lat, lon] = markerCoords.value;
@@ -132,11 +146,22 @@ watch(() => modal.isOpen, (open) => {
       <h3 class="title">Город или регион</h3>
 
       <div class="input-wrapper">
-        <input
-          v-model="searchQuery"
-          placeholder="Поиск города..."
-          @keyup.enter="handleSearch"
-        />
+        <div style="position: relative; flex: 1;">
+          <input
+            v-model="searchQuery"
+            placeholder="Поиск города..."
+            @keyup.enter="handleSearch"
+          />
+          <ul v-if="suggestions.length" class="suggestions-list">
+            <li
+              v-for="(s, i) in suggestions"
+              :key="i"
+              @mousedown.prevent="selectSuggestion(s)"
+            >
+              {{ s.displayName || s.value }}
+            </li>
+          </ul>
+        </div>
       </div>
       <p class="subtitle">Укажите своё местоположение</p>
       <div id="map-container" class="map-container"></div>
@@ -156,80 +181,19 @@ watch(() => modal.isOpen, (open) => {
 </template>
 
 <style scoped>
-.region-card {
-  background: white;
-  width: 90%;
-  max-width: 37.5rem;
-  border-radius: 2.5rem;
-  padding: 2.5rem;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-}
-.input-wrapper {
-  display: flex;
-  gap: 10px;
-  margin: 16px 0;
-}
-.input-wrapper input {
-  flex: 1;
-  padding: 12px 16px;
-  background: #f2f2f2;
-  border: 1px solid transparent;
-  border-radius: 12px;
-  outline: none;
-}
-.input-wrapper input:focus {
-  border-color: #76a58f;
-}
-.btn-search {
-  padding: 0 20px;
-  background: #eee;
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-}
-.subtitle {
-  font-size: 0.9rem;
-  color: #666;
-  margin-bottom: 8px;
-}
-.map-container {
-  width: 100%;
-  height: 250px;
-  border-radius: 16px;
-  overflow: hidden;
-  border: 1px solid #eee;
-  display: block;
-  position: relative;
-}
-.footer-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 24px;
-}
-.radius-block {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #666;
-}
-.radius-block input {
-  width: 60px;
-  background: #f2f2f2;
-  border: none;
-  padding: 8px;
-  border-radius: 8px;
-  text-align: center;
-}
-.btn-confirm {
-  background: #76a58f;
-  color: white;
-  border: none;
-  padding: 12px 30px;
-  border-radius: 12px;
-  font-weight: 600;
-  cursor: pointer;
-}
+.region-card { background: white; width: 90%; max-width: 37.5rem; border-radius: 2.5rem; padding: 2.5rem; box-shadow: 0 10px 25px rgba(0,0,0,0.1);}
+.input-wrapper { display: flex; gap: 0.625rem; margin: 1rem 0;}
+.input-wrapper input { flex: 1; width: 100%; padding: 0.75rem 1rem; background: #f2f2f2; border: 1px solid transparent; border-radius: 0.75rem; outline: none;}
+.input-wrapper input:focus { border-color: #76a58f;}
+.btn-search { padding: 0 20px; background: #eee; border: none; border-radius: 0.75rem; cursor: pointer;}
+.subtitle { font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;}
+.map-container { width: 100%; height: 250px; border-radius: 1rem; overflow: hidden; border: 1px solid #eee; display: block; position: relative;}
+.footer-row { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem;}
+.radius-block { display: flex; align-items: center; gap: 0.5rem; color: #666;}
+.radius-block input { width: 60px; background: #f2f2f2; border: none; padding: 0.5rem; border-radius: 0.5rem;text-align: center;}
+.btn-confirm { background: #76a58f; color: white; border: none; padding: 0.75rem 1.875rem; border-radius: 0.75rem; font-weight: 600; cursor: pointer;}
 .my-marker { font-size: 30px; position: absolute; transform: translate(-50%, -100%); }
-
+.suggestions-list { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: white; border: 1px solid #e0e0e0; border-radius: 0.75rem; z-index: 100; list-style: none; padding: 6px 0; margin: 0; max-height: 220px; overflow-y: auto; box-shadow: 0 4px 16px rgba(0,0,0,0.08);}
+.suggestions-list li { padding: 0.625rem 1rem; cursor: pointer; font-size: 0.95rem; color: #333; transition: background 0.15s;}
+.suggestions-list li:hover {background: #f5f5f5;}
 </style>
