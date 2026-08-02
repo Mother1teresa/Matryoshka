@@ -57,7 +57,7 @@ export const useReviewStore = defineStore('reviews', () => {
         targetUserId: r.targetUserId,
         authorId: r.authorId,
         author: r.authorName || 'Пользователь',
-        userAvatar: r.authorAvatarUrl || '/src/assets/img/mask-avatar.png',
+        userAvatar: r.authorAvatarUrl || '/img/users/mask-avatar.png',
         rating: r.rating || 0,
         text: r.comment || '',
         date: r.createdAt,

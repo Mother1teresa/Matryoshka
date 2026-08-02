@@ -36,10 +36,10 @@
               </div>
               <div class="fav-video-main">
                 <router-link :to="{ name: 'shorts', params: { id: video.id } }">
-                  <h3 class="video-title">{{ video.fileName || 'Без названия' }}</h3>
+                  <h3 class="video-title">{{ video.description || 'Без названия' }}</h3>
                 </router-link>
                 <div class="video-stats">
-                  <div class="stat"><img src="/src/assets/img/icons/eye.svg" /> {{ video.viewsCount || 0 }}</div>
+                  <div class="stat"><img src="/src/assets/img/icons/eye.svg" /> {{ video.views || 0 }}</div>
                   <div class="stat"><img src="/src/assets/img/icons/heart.svg" /> {{ video.likes || 0 }}</div>
                   <div class="stat"><img src="/src/assets/img/icons/comment.svg" /> {{ video.commentsCount || 0 }}</div>
                 </div>
@@ -356,7 +356,7 @@ onMounted(() => {
   height: 15.625rem;
   flex-shrink: 0;
 }
-.fav-video-preview img {
+.fav-video-preview img,.fav-video-preview video{
   width: 100%; height: 100%;
   border-radius: 0.938rem;
   object-fit: cover;

@@ -129,7 +129,7 @@
                 <div class="review-meta">
                   <div class="deal-status">Сделка состоялась</div>
                   <div class="stars-row">{{ '★'.repeat(review.rating) }}{{ '☆'.repeat(5 - review.rating) }}</div>
-                  <div class="review-date">{{ review.date }}</div>
+                  <div class="review-date">{{ formatDate(review.date) }}</div>
                 </div>
               </div>
               <!-- Ответ продавца -->
@@ -161,6 +161,7 @@ import { useAuthStore } from "/src/stores/authStore.js";
 import { useModalStore } from "/src/stores/modal.js";
 import { useReviewStore } from "/src/stores/reviews.js";
 import { notify } from "/src/utils/notify";
+import { formatDate } from "/src/utils/formatters.js"
 
 import Header from '../components/layout/Header.vue';
 import ProductCard from "/src/components/product/ProductCard.vue";

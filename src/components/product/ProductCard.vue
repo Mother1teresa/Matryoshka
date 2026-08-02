@@ -86,7 +86,7 @@ const onLikeClick = async (item) => {
 <style scoped>
 .product-card {
   border: 1px solid transparent;
-  width: 12.938rem;
+  /* width: 12.938rem; */
   min-height: 16.375rem;
   background-color: white;
   padding: 0.875rem 0.75rem 0.813rem 0.813rem;
