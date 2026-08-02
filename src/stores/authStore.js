@@ -122,14 +122,6 @@ export const useAuthStore = defineStore("auth", {
         console.log('[initSocket] NO USER ID');
         return null;
       }
-      if (this._stompClient && !this._stompClient.connected) {
-        return this._stompClient;
-      }
-      const token = localStorage.getItem("token");
-      if (!token) {
-        console.warn('[initSocket] JWT token not found in localStorage');
-        return null;
-      }
 
       let sockJsUrl;
       if (import.meta.env.DEV) {
@@ -137,15 +129,11 @@ export const useAuthStore = defineStore("auth", {
       } else {
         sockJsUrl = `/chat-websocket`;
       }
-      const urlWithToken = `${sockJsUrl}?access_token=${encodeURIComponent(token)}`;
       const client = new Client({
-        webSocketFactory: () => new SockJS(urlWithToken, null, {
+        webSocketFactory: () => new SockJS(sockJsUrl, null, {
           transports: ['websocket'],
           withCredentials: true,
         }),
-        connectHeaders: {
-          Authorization: `Bearer ${token}`
-        },
         debug: (str) => {
           if (str.includes('<<< PONG') || str.includes('>>> PING')) return;
           console.log('[STOMP DEBUG]', str);
@@ -938,9 +926,6 @@ export const useAuthStore = defineStore("auth", {
         const res = await api.post("/auth/login", { login: email, password });
         const userData = res.data;
         if (userData && userData.id) {
-          if (userData.token) {
-            localStorage.setItem("token", userData.token);
-          }
           this.login(userData);
           if (userData.city) {
             useRegionModalStore().setRegion(
@@ -965,9 +950,6 @@ export const useAuthStore = defineStore("auth", {
         const responseData = res.data;
         console.log('registerAPI response:', responseData);
         if (responseData && responseData.id) {
-          if (userData.token) {
-            localStorage.setItem("token", userData.token);
-          }
           const userToLogin = {
             ...responseData,
             email: userData.email,
@@ -1328,7 +1310,6 @@ export const useAuthStore = defineStore("auth", {
       this.disconnectSocket();
       this.stopFCM();
       this.stopAllPolling();
-      localStorage.removeItem("token");
       this.isAuthenticated = false;
       this.user = null;
       this.isAuthLoading = false;

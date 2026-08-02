@@ -24,10 +24,12 @@
     <div v-else-if="field.type === 'number'" class="input-with-suffix">
       <input 
         :value="modelValue" 
-        @input="$emit('update:modelValue', $event.target.valueAsNumber !== undefined ? $event.target.valueAsNumber : $event.target.value)"
+        @input="handleNumberInput"
         type="number" 
         :placeholder="field.placeholder || '0'" 
-        class="f-input" 
+        class="f-input"
+        :min="field.min"
+        :max="field.max"
       />
       <span v-if="field.suffix" class="suffix">{{ field.suffix }}</span>
     </div>
@@ -202,6 +204,15 @@ import { computed } from 'vue';
 import Multiselect from 'vue-multiselect';
 import 'vue-multiselect/dist/vue-multiselect.css';
 import { carModels } from '/src/data/sharedFieldOptions.js';
+
+const handleNumberInput = (e) => {
+  let val = e.target.value;
+  if (props.field.maxLength && val.length > props.field.maxLength) {
+    val = val.slice(0, props.field.maxLength);
+    e.target.value = val;
+  }
+  emit('update:modelValue', val !== '' ? Number(val) : '');
+};
 
 const props = defineProps({
   field: { type: Object, required: true },

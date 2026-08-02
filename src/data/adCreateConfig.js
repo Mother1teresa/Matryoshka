@@ -344,8 +344,11 @@ export const adCreateConfig = {
               label: 'Год выпуска', 
               type: 'number', 
               required: true,
-              placeholder: '0',
-              suffix: 'г.'
+              placeholder: '2020',
+              suffix: 'г.',
+              min: 1900,
+              max: new Date().getFullYear() + 1,
+              maxLength: 4
             },
             { 
               key: 'color', 
@@ -500,7 +503,10 @@ export const adCreateConfig = {
               key: 'year', 
               label: 'Год выпуска', 
               type: 'number', 
-              suffix: 'г.' 
+              suffix: 'г.',
+              min: 1900,
+              max: new Date().getFullYear() + 1,
+              maxLength: 4
             },
             { 
               key: 'color', 
@@ -620,7 +626,10 @@ export const adCreateConfig = {
                 key: 'year', 
                 label: 'Год выпуска', 
                 type: 'number', 
-                suffix: 'г.' 
+                suffix: 'г.',
+                min: 1900,
+                max: new Date().getFullYear() + 1,
+                maxLength: 4
               },
               { 
                 key: 'length', 
@@ -718,7 +727,10 @@ export const adCreateConfig = {
                 key: 'year', 
                 label: 'Год выпуска', 
                 type: 'number', 
-                suffix: 'г.' 
+                suffix: 'г.',
+                min: 1900,
+                max: new Date().getFullYear() + 1,
+                maxLength: 4
               },
               { 
                 key: 'power', 
@@ -801,7 +813,10 @@ export const adCreateConfig = {
               key: 'year', 
               label: 'Год выпуска', 
               type: 'number', 
-              suffix: 'г.' 
+              suffix: 'г.',
+              min: 1900,
+              max: new Date().getFullYear() + 1,
+              maxLength: 4
             },
             { 
               key: 'condition', 
@@ -1254,9 +1269,12 @@ export const adCreateConfig = {
               },
               { 
                 key: 'year_built', 
-                label: 'Год постройки', 
+                label: 'Год постройки',  
                 type: 'number', 
-                suffix: 'г.' 
+                suffix: 'г.',
+                min: 1900,
+                max: new Date().getFullYear() + 1,
+                maxLength: 4
               },
               { 
                 key: 'status', 
