@@ -113,6 +113,7 @@ const messages = ref([]);
 const chatData = ref(null);
 const opponentProfile = ref(null);
 const isProfileLoading = ref(false);
+const currentRoomId = ref(null);
 
 const searchQuery = ref("");
 const searchResultsIds = ref([]);
@@ -219,11 +220,11 @@ const displayName = computed(() => {
 });
 
 const goToSellerProfile = () => {
-  const sellerId = currentChat.value?.user?.id;
+  const sellerId = currentChat.value?.user?.id || opponentProfile.value?.id;
   if (sellerId) {
     router.push({ name: "SellerPage", params: { id: sellerId } });
   }
-}; 
+};
 
 const loadOpponentProfile = async () => {
   if (isProfileLoading.value) return;
@@ -236,9 +237,19 @@ const loadOpponentProfile = async () => {
       await auth.fetchUserChats();
       room = auth.allChats.find((c) => String(c.id) === String(roomId));
     }
-    const opponentId = room?.user?.id;
+    let opponentId = room?.user?.id;
+    // Fallback: если комнаты нет в списке, пытаемся достать opponentId из сообщений
     if (!opponentId) {
-      console.warn("[loadOpponentProfile] opponentId не найден в данных комнаты");
+      try {
+        const data = await auth.fetchChatMessages(roomId);
+        const opponentMsg = (data.messages || []).find((m) => String(m.senderId) !== String(auth.user?.id));
+        opponentId = opponentMsg?.senderId;
+      } catch (e) {
+        console.warn("[loadOpponentProfile] Не удалось получить opponentId из сообщений:", e);
+      }
+    }
+    if (!opponentId) {
+      console.warn("[loadOpponentProfile] opponentId не найден");
       return;
     }
     const profile = await auth.fetchProfileById(opponentId);
@@ -277,6 +288,13 @@ let typingTimeout = null;
 let typingDebounce = null;
 const chatMode = ref("none");
 
+const stompPublish = (destination, body = {}) => {
+  const client = auth.getSocket();
+  if (client?.connected) {
+    client.publish({ destination, body: JSON.stringify(body) });
+  }
+};
+
 const connectChat = async () => {
   const roomId = route.params.id;
   const userId = auth.user?.id;
@@ -295,6 +313,7 @@ const connectChat = async () => {
             setTimeout(() => { isTyping.value = false; }, 3000);
           }
         });
+        stompPublish(`/app/chat.enterRoom/${roomId}`);
       }
     }
   } catch (e) {
@@ -487,10 +506,12 @@ const shouldShowDate = (msg, index) => {
 };
 
 onMounted(() => {
+  currentRoomId.value = route.params.id;
   loadOpponentProfile().then(() => fetchMessages()).then(() => connectChat()).catch((e) => console.error("[onMounted] Error:", e));
 });
 
 onUnmounted(() => {
+  if (currentRoomId.value) stompPublish(`/app/chat.leaveRoom/${currentRoomId.value}`);
   if (abortController.value) abortController.value.abort();
   if (typingTimeout) clearTimeout(typingTimeout);
   if (typingDebounce) clearTimeout(typingDebounce);
@@ -502,6 +523,7 @@ onUnmounted(() => {
 
 watch(() => route.params.id, (newId, oldId) => {
   if (newId && newId !== oldId) {
+    if (oldId) stompPublish(`/app/chat.leaveRoom/${oldId}`);
     messages.value = [];
     showBotActions.value = false;
     showReviewLink.value = false;
@@ -513,10 +535,12 @@ watch(() => route.params.id, (newId, oldId) => {
     clearSearch();
     if (roomSubscription) { roomSubscription.unsubscribe(); roomSubscription = null; }
     if (typingSubscription) { typingSubscription.unsubscribe(); typingSubscription = null; }
+    currentRoomId.value = newId;
     loadOpponentProfile().then(() => fetchMessages()).then(() => connectChat());
   }
 });
 </script>
+
 <style scoped>
 .chat-dialog-window{display:flex;flex-direction:column;height:100vh;height:100dvh;background:#fff;overflow:hidden;background:linear-gradient(126.24deg,rgba(211,242,163,.8) 1.06%,rgba(108,192,139,.8) 52.82%,rgba(7,64,80,.8) 100%);position:relative;}
 .chat-dialog-window::before{content:"";position:absolute;inset:0;background-image:url('/src/assets/img/matreshka-pattern.png');background-repeat:repeat;background-size:5.5rem;opacity:.06;pointer-events:none;z-index:0;}
@@ -524,11 +548,11 @@ watch(() => route.params.id, (newId, oldId) => {
 .back-btn{width:1.625rem;height:100%;border-radius:.625rem;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;border:none;background:#f44;transition:transform .15s;}
 .back-btn:active{transform:scale(.95);}
 .back-btn img{width:1rem;height:1rem;filter:brightness(0) invert(1);}
-.header-user-info{display:flex;align-items:center;gap:.5rem;min-width:0;background:#e5e5e5;padding:.438rem .5rem;border-radius:.938rem;width:14rem;}
+.header-user-info{display:flex;align-items:center;gap:.5rem;min-width:0;background:#e5e5e5;padding:.438rem .5rem;border-radius:.938rem;width:14rem;cursor:pointer;}
 .mini-avatar{width:3.148rem;height:3.148rem;border-radius:50%;object-fit:cover;flex-shrink:0;}
-.user-meta{display:flex;flex-direction:column;min-width:0;cursor:pointer;}
+.user-meta{display:flex;flex-direction:column;min-width:0;}
 .user-meta .name{font-size:1.5rem;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .15s;}
-.user-meta:hover .name{color:#64a07a;}
+.header-user-info:hover .user-meta .name{color:#64a07a;}
 .online-status{font-size:.9375rem;color:#b9b9b9;}
 .online-status.is_online{color:#4caf50;}
 .header-product-info{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:.5rem;background:#fff;padding:.375rem .875rem;border-radius:.625rem;font-size:.813rem;color:#333;max-width:13rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #eee;}
