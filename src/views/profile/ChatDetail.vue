@@ -238,7 +238,6 @@ const loadOpponentProfile = async () => {
       room = auth.allChats.find((c) => String(c.id) === String(roomId));
     }
     let opponentId = room?.user?.id;
-    // Fallback: если комнаты нет в списке, пытаемся достать opponentId из сообщений
     if (!opponentId) {
       try {
         const data = await auth.fetchChatMessages(roomId);
