@@ -10,6 +10,17 @@ export const api = axios.create({
   baseURL: "/api",
   withCredentials: true,
 });
+const addAuthToken = (config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers = config.headers || {};
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+};
+
+api.interceptors.request.use(addAuthToken);
+authApi.interceptors.request.use(addAuthToken);
 
 let isRefreshing = false;
 let failedQueue = [];
