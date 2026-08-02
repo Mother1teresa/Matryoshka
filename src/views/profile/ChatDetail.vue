@@ -223,7 +223,7 @@ const goToSellerProfile = () => {
   if (sellerId) {
     router.push({ name: "SellerPage", params: { id: sellerId } });
   }
-};
+}; 
 
 const loadOpponentProfile = async () => {
   if (isProfileLoading.value) return;
@@ -524,10 +524,11 @@ watch(() => route.params.id, (newId, oldId) => {
 .back-btn{width:1.625rem;height:100%;border-radius:.625rem;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;border:none;background:#f44;transition:transform .15s;}
 .back-btn:active{transform:scale(.95);}
 .back-btn img{width:1rem;height:1rem;filter:brightness(0) invert(1);}
-.header-user-info{display:flex;align-items:center;gap:.5rem;min-width:0;background:#e5e5e5;padding:.438rem .5rem;border-radius:.938rem;width:14rem;cursor:pointer;text-decoration:none;color:inherit;}
+.header-user-info{display:flex;align-items:center;gap:.5rem;min-width:0;background:#e5e5e5;padding:.438rem .5rem;border-radius:.938rem;width:14rem;}
 .mini-avatar{width:3.148rem;height:3.148rem;border-radius:50%;object-fit:cover;flex-shrink:0;}
-.user-meta{display:flex;flex-direction:column;min-width:0;}
-.user-meta .name{font-size:1.5rem;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.user-meta{display:flex;flex-direction:column;min-width:0;cursor:pointer;}
+.user-meta .name{font-size:1.5rem;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .15s;}
+.user-meta:hover .name{color:#64a07a;}
 .online-status{font-size:.9375rem;color:#b9b9b9;}
 .online-status.is_online{color:#4caf50;}
 .header-product-info{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:.5rem;background:#fff;padding:.375rem .875rem;border-radius:.625rem;font-size:.813rem;color:#333;max-width:13rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #eee;}

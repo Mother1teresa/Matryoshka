@@ -340,18 +340,18 @@ export const useAuthStore = defineStore("auth", {
         this.allChats.forEach(c => {
           existingMap.set(String(c.id), c);
           if (c.userA && c.userB) {
-            existingMap.set(`${c.userA}_${c.userB}`, c);
-            existingMap.set(`${c.userB}_${c.userA}`, c);
+            existingMap.set(`${c.userA}:${c.userB}`, c);
+            existingMap.set(`${c.userB}:${c.userA}`, c);
           }
         });
 
         // Базовый список чатов с opponentId
         const baseChats = rooms
           .map((room) => {
-            const pseudoId = `${room.userA}_${room.userB}`;
+            const pseudoId = `${room.userA}:${room.userB}`;
             const existing = existingMap.get(String(room.id)) 
               || existingMap.get(pseudoId) 
-              || existingMap.get(`${room.userB}_${room.userA}`);
+              || existingMap.get(`${room.userB}:${room.userA}`);
             const opponentId = String(room.userA) === String(this.user.id) ? room.userB : room.userA;
 
             return { raw: room, existing, pseudoId, opponentId };
@@ -1099,7 +1099,7 @@ export const useAuthStore = defineStore("auth", {
     async fetchVideos() {
       this.isVideosLoading = true;
       try {
-        const res = await api.get('/media/video', {
+        const res = await api.get('/media/videos', {
           params: { userId: this.user?.id }
         });
         const rawVideos = Array.isArray(res.data) ? res.data : [];
@@ -1160,7 +1160,7 @@ export const useAuthStore = defineStore("auth", {
     async fetchVideosByUser(userId) {
       this.isVideosLoading = true;
       try {
-        const res = await api.get('/media/video', {
+        const res = await api.get('/media/videos', {
           params: { userId }
         });
         const rawVideos = Array.isArray(res.data) ? res.data : [];
