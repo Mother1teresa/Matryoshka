@@ -37,6 +37,8 @@ export const useAuthStore = defineStore("auth", {
         fcmToken: null,
         _fcmUnsubscribe: null,
         _isFetchingChats: false,
+        _activeRoomId: null,
+        _activeRoomHandler: null,
       };
     } catch (e){
       console.error("Auth parse error:", e);
@@ -87,7 +89,14 @@ export const useAuthStore = defineStore("auth", {
     getSocket() {
       return this._stompClient;
     },
-
+    setActiveRoom(roomId, handler) {
+      this._activeRoomId = roomId;
+      this._activeRoomHandler = handler;
+    },
+    clearActiveRoom() {
+      this._activeRoomId = null;
+      this._activeRoomHandler = null;
+    },
     waitForStompConnect(timeout = 15000) {
       return new Promise((resolve, reject) => {
         if (this._stompClient?.connected) {
@@ -147,6 +156,19 @@ export const useAuthStore = defineStore("auth", {
         reconnectAttempts = 0;
         connectCallbacks.forEach(cb => cb(client));
         connectCallbacks = [];
+
+        // ⬇️ Автоподписка на активную комнату при reconnect
+        if (this._activeRoomId && this._activeRoomHandler) {
+          console.log(`[STOMP] Auto-subscribing to active room ${this._activeRoomId}`);
+          client.subscribe(`/topic/room/${this._activeRoomId}`, (message) => {
+            const body = JSON.parse(message.body);
+            this._activeRoomHandler(body);
+          });
+          client.publish({
+            destination: `/app/chat.enterRoom/${this._activeRoomId}`,
+            body: JSON.stringify({ userId: this.user?.id })
+          });
+        }
       };
       client.onDisconnect = () => {
         console.log('[STOMP] 🔌 Disconnected');
@@ -181,12 +203,9 @@ export const useAuthStore = defineStore("auth", {
     },
     disconnectSocket() {
       console.log('[disconnectSocket]');
+      this.clearActiveRoom();
       if (this._stompClient) {
-        try {
-          this._stompClient.deactivate();
-        } catch (e) {
-          console.error('[disconnectSocket] Error:', e);
-        }
+        try {this._stompClient.deactivate();} catch (e) {console.error('[disconnectSocket] Error:', e); }
         this._stompClient = null;
       }
       this._stompConnected = false;
@@ -289,6 +308,7 @@ export const useAuthStore = defineStore("auth", {
         });
         onMessage?.(body);
       });
+      this.setActiveRoom(roomId, onMessage);
       console.log(`[subscribeToRoom] ✅ WebSocket subscription for room ${roomId}`);
       return { type: 'websocket', subscription };
     },

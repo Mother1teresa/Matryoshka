@@ -125,7 +125,7 @@ const submitReview = async () => {
     const imageUrls = [];
     if (selectedFiles.value.length > 0) {
       for (const file of selectedFiles.value) {
-        const uploaded = await uploadToMediaService(file, "review_photo", {});
+        const uploaded = await uploadToMediaService(file, "REVIEW_PHOTOS", {});
         if (uploaded) {
           const url = uploaded.cdnUrl || uploaded.url || uploaded;
           if (url) imageUrls.push(url);

@@ -42,6 +42,13 @@
           печатает...
         </div>
       </header>
+      <input 
+        ref="fileInput" 
+        type="file" 
+        hidden 
+        accept="image/*,video/*" 
+        @change="handleFileSelect" 
+      />
       <div class="messages-viewport" ref="scrollContainer">
         <div v-if="isOrderPlaced" class="system-msg">Покупатель оформил заказ!</div>
         <template v-for="(msg, index) in messages" :key="msg.id">
@@ -50,7 +57,22 @@
           </div>
           <div :data-msg-id="msg.id" :class="['msg-bubble', msg.isMine ? 'sent' : 'received', { 'msg-error': msg.status === 'error' }, { 'search-match': isSearchMatch(msg.id) }, { 'search-current': isSearchCurrent(msg.id) }]">
             <div class="msg-content">
-              {{ msg.text }}
+              <div v-if="msg.mediaUrl" class="msg-media">
+                <img 
+                  v-if="msg.mediaType !== 'VIDEOS'" 
+                  :src="msg.mediaUrl" 
+                  class="chat-media-img" 
+                  @click="openMedia(msg.mediaUrl)"
+                />
+                <video 
+                  v-else 
+                  :src="msg.mediaUrl" 
+                  class="chat-media-video" 
+                  controls 
+                  preload="metadata"
+                />
+              </div>
+              <span v-if="msg.text">{{ msg.text }}</span>
               <div class="msg-footer">
                 <span v-if="msg.status === 'sending'" class="msg-status-text">отправка...</span>
                 <span v-else-if="msg.status === 'error'" class="msg-status-text error">ошибка</span>
@@ -83,9 +105,9 @@
         </div>
         <div v-if="isLoading" class="connection-status loading">Загрузка...</div>
         <div class="chat_footer-block">
-          <button class="attach-btn">
-            <img src="/src/assets/img/icons/clip.svg" />
-          </button>
+          <button class="attach-btn" @click="fileInput?.click()">
+          <img src="/src/assets/img/icons/clip.svg" />
+        </button>
           <textarea ref="textareaRef" v-model="newMessage" @input="handleInput" placeholder="Сообщение" @keydown.enter.exact.prevent="sendMessage" @keydown.enter.shift.exact="insertNewLine" @keydown.enter.ctrl.exact.prevent="sendMessage" rows="1" maxlength="2000"></textarea>
           <button class="send-btn" @click="sendMessage" :disabled="isSending || !newMessage.trim()">
             <img src="/src/assets/img/icons/send-plane.svg" />
@@ -104,6 +126,7 @@ import { useAuthStore } from "/src/stores/authStore.js";
 import { notify } from "/src/utils/notify";
 import ReviewModal from "../ReviewModal.vue";
 import maskAvatar from "/img/users/mask-avatar.png";
+import { uploadToMediaService } from "/src/utils/uploadService.js";
 
 const router = useRouter();
 const route = useRoute();
@@ -114,6 +137,7 @@ const chatData = ref(null);
 const opponentProfile = ref(null);
 const isProfileLoading = ref(false);
 const currentRoomId = ref(null);
+const fileInput = ref(null);
 
 const searchQuery = ref("");
 const searchResultsIds = ref([]);
@@ -121,6 +145,74 @@ const currentSearchIndex = ref(0);
 const isSearching = ref(false);
 const searchAbortController = ref(null);
 let searchDebounce = null;
+
+const handleFileSelect = async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  const isVideo = file.type.startsWith("video/");
+  const mediaType = isVideo ? "VIDEOS" : "CHAT_MEDIA";
+
+  isSending.value = true;
+  try {
+    const uploaded = await uploadToMediaService(file, mediaType, {}, (percent) => {
+      console.log(`[Chat] Upload progress: ${percent}%`);
+    });
+    await sendMediaMessage(uploaded);
+  } catch (err) {
+    console.error("[Chat] Upload error:", err);
+    notify("Не удалось загрузить файл", "error");
+  } finally {
+    isSending.value = false;
+    e.target.value = "";
+  }
+};
+const sendMediaMessage = async (media) => {
+  const roomId = route.params.id;
+  const client = await auth.waitForStompConnect(10000);
+  if (!client?.connected) {
+    notify("Нет соединения", "error");
+    return;
+  }
+
+  const text = newMessage.value.trim();
+  const payload = {
+    senderId: auth.user?.id,
+    message: text,
+    mediaId: media.id,
+    mediaUrl: media.cdnUrl,
+    mediaType: media.type,
+    thumbnailUrl: media.thumbnailUrl
+  };
+
+  client.publish({
+    destination: `/app/chat.sendMessage/${roomId}`,
+    body: JSON.stringify(payload)
+  });
+
+  const now = new Date();
+  messages.value.push({
+    id: `local-${Date.now()}`,
+    text: text,
+    senderId: auth.user?.id,
+    isMine: true,
+    isRead: false,
+    status: "sent",
+    time: now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    createdAt: now.toISOString(),
+    mediaUrl: media.cdnUrl,
+    mediaType: media.type,
+    thumbnailUrl: media.thumbnailUrl
+  });
+
+  newMessage.value = "";
+  autoResize();
+  nextTick(() => scrollToBottom());
+};
+
+const openMedia = (url) => {
+  window.open(url, "_blank");
+};
 
 const isSearchActive = computed(() => searchQuery.value.trim().length > 0);
 const isSearchMatch = (msgId) => isSearchActive.value && searchResultsIds.value.includes(msgId);
@@ -290,7 +382,9 @@ const chatMode = ref("none");
 const stompPublish = (destination, body = {}) => {
   const client = auth.getSocket();
   if (client?.connected) {
-    client.publish({ destination, body: JSON.stringify(body) });
+    client.publish({
+      destination, body: JSON.stringify({ ...body, userId: auth.user?.id })
+    });
   }
 };
 
@@ -312,7 +406,7 @@ const connectChat = async () => {
             setTimeout(() => { isTyping.value = false; }, 3000);
           }
         });
-        stompPublish(`/app/chat.enterRoom/${roomId}`);
+        stompPublish(`/app/chat.enterRoom/${roomId}`, { userId });
       }
     }
   } catch (e) {
@@ -336,9 +430,15 @@ const handleIncomingMessage = (msg) => {
     senderId: msg.senderId,
     isMine: msg.senderId === auth.user?.id,
     isRead: msg.isRead || false,
-    time: msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "",
+    time: msg.createdAt 
+      ? new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) 
+      : "",
     createdAt: msg.createdAt,
     status: "sent",
+    // ← новые поля для медиа
+    mediaUrl: msg.mediaUrl || msg.cdnUrl || null,
+    mediaType: msg.mediaType || null,
+    thumbnailUrl: msg.thumbnailUrl || null
   });
   if (!msg.isMine && !msg.isRead && msg.id) {
     auth.markMessageAsRead(msg.id, route.params.id).then(() => {
@@ -510,7 +610,8 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  if (currentRoomId.value) stompPublish(`/app/chat.leaveRoom/${currentRoomId.value}`);
+  if (currentRoomId.value) { stompPublish(`/app/chat.leaveRoom/${currentRoomId.value}`, { userId: auth.user?.id });}
+  auth.clearActiveRoom();
   if (abortController.value) abortController.value.abort();
   if (typingTimeout) clearTimeout(typingTimeout);
   if (typingDebounce) clearTimeout(typingDebounce);
@@ -522,7 +623,8 @@ onUnmounted(() => {
 
 watch(() => route.params.id, (newId, oldId) => {
   if (newId && newId !== oldId) {
-    if (oldId) stompPublish(`/app/chat.leaveRoom/${oldId}`);
+    if (oldId) stompPublish(`/app/chat.leaveRoom/${oldId}`, { userId: auth.user?.id });
+    auth.clearActiveRoom();
     messages.value = [];
     showBotActions.value = false;
     showReviewLink.value = false;
@@ -623,4 +725,7 @@ watch(() => route.params.id, (newId, oldId) => {
 .send-btn:disabled{opacity:.4;cursor:not-allowed;}
 .send-btn img{width:1.25rem;height:1.25rem;}
 .chat_footer-block{display:flex;gap:.563rem;justify-content:center;align-items:flex-end;z-index:2;}
+.msg-media { margin-bottom: 0.25rem; }
+.chat-media-img { max-width: 260px; max-height: 200px; border-radius: 0.5rem; cursor: pointer; object-fit: cover; display: block;}
+.chat-media-video { max-width: 260px; max-height: 200px; border-radius: 0.5rem; display: block;}
 </style>

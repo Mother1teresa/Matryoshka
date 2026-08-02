@@ -148,7 +148,7 @@ const onPublish = async () => {
   try {
     const createdMedia = await uploadToMediaService(
       form.file, 
-      "video", 
+      "VIDEOS", 
       {
         title: form.title || 'Без названия',
         description: form.description.trim(),

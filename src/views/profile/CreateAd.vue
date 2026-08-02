@@ -1161,7 +1161,7 @@ const publishAd = async () => {
     const uploadedUrls = [];
     for (const file of photos.value) {
       if (file instanceof File) {
-        const media = await uploadToMediaService(file, "image", { title: "ad_photo" });
+        const media = await uploadToMediaService(file, "PHOTOS", { title: "ad_photo" });
         if (media?.cdnUrl || media?.url) {
           uploadedUrls.push({ pictureUrl: media.cdnUrl || media.url });
         }

@@ -2,8 +2,10 @@ import axios from "axios";
 import { api } from "/src/api/api.js";
 
 const getFileInfo = (file, type) => {
-  const fallbackExt = type === "video" ? "mp4" : "jpg";
-  const fallbackMime = type === "video" ? "video/mp4" : "image/jpeg";
+  // Новые enum-значения: VIDEOS, PHOTOS, REVIEW_PHOTOS, CHAT_MEDIA
+  const isVideo = type === "VIDEOS";
+  const fallbackExt = isVideo ? "mp4" : "jpg";
+  const fallbackMime = isVideo ? "video/mp4" : "image/jpeg";
 
   const extension = file.name?.includes('.') 
     ? file.name.split('.').pop().toLowerCase() 
@@ -24,7 +26,7 @@ const getFileInfo = (file, type) => {
   };
 };
 
-export const uploadToMediaService = async (file, type = "video", metadata = {}, onProgress = null) => {
+export const uploadToMediaService = async (file, type = "VIDEOS", metadata = {}, onProgress = null) => {
   if (!file) return null;
 
   try {
@@ -48,7 +50,6 @@ export const uploadToMediaService = async (file, type = "video", metadata = {}, 
       }
     });
 
-    // === ПРОВЕРКА: если пользователь разлогинился — не делаем create ===
     const { useAuthStore } = await import("/src/stores/authStore.js");
     const auth = useAuthStore();
     if (!auth.isAuthenticated || !auth.user?.id) {
@@ -56,7 +57,9 @@ export const uploadToMediaService = async (file, type = "video", metadata = {}, 
       throw new Error("Пользователь не авторизован");
     }
 
-    const isImage = type === "image" || type === "review_photo" || ['jpg', 'jpeg', 'png', 'webp'].includes(extension);
+    const isImage = type === "PHOTOS" || type === "REVIEW_PHOTOS" || type === "CHAT_MEDIA" 
+      || ['jpg', 'jpeg', 'png', 'webp'].includes(extension);
+    
     const resolvedTitle = isImage ? "" : (metadata.title || file.name);
     
     // Сохраняем метаданные в сервисе
