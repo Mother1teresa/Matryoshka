@@ -98,6 +98,7 @@
               </div>
             </div>
             <div class="location">{{ product.city }}</div>
+            <div class="location">{{ formatDate(product.createdAt) }}</div>
           </div>
           <!-- Продавец -->
           <div class="seller-card">
@@ -118,7 +119,7 @@
               <button class="btn primary" @click="onShowNumberClick">
                 Показать номер
               </button>
-              <button class="btn secondary" @click="onWriteClick">
+              <button class="btn secondary" @click="onWriteClick" v-if="!isOwnVideo(video)">
                 <img src="/src/assets/img/mes.svg" />
               </button>
             </div>
@@ -212,6 +213,7 @@ const favStore = useFavoritesStore();
 const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
+const authStore = useAuthStore();
 const modal = useModalStore();
 const productStore = useProductStore();
 const subStore = useSubscriptionStore();
@@ -231,6 +233,10 @@ let productMap = null;
 let productPlacemark = null;
 let ymapsReady = false;
 
+const isOwnVideo = (video) => {
+  if (!video?.author?.id || !authStore.user?.id) return false;
+  return String(video.author.id) === String(authStore.user.id);
+};
 function waitForYmaps(timeout = 10000) {
   return new Promise((resolve, reject) => {
     const start = Date.now();
@@ -264,31 +270,38 @@ function initProductMap(coords) {
     console.warn('Yandex Maps API не доступен');
     return;
   }
-  destroyProductMap();
 
-  const container = document.getElementById('product-map-container');
-  if (!container) {
-    console.warn('Контейнер #product-map-container не найден');
-    return;
-  }
-  container.innerHTML = '';
+  window.ymaps.ready(() => {
+    destroyProductMap();
 
-  productMap = new window.ymaps.Map('product-map-container', {
-    center: coords,
-    zoom: 15,
-    controls: ['zoomControl']
-  }, {
-    copyrightLogoVisible: false,
-    copyrightProvidersVisible: false,
-    copyrightUaVisible: false,
-    suppressMapOpenBlock: true
+    const container = document.getElementById('product-map-container');
+    if (!container) {
+      console.warn('Контейнер #product-map-container не найден');
+      return;
+    }
+    container.innerHTML = '';
+
+    try {
+      productMap = new window.ymaps.Map('product-map-container', {
+        center: coords,
+        zoom: 15,
+        controls: ['zoomControl']
+      }, {
+        copyrightLogoVisible: false,
+        copyrightProvidersVisible: false,
+        copyrightUaVisible: false,
+        suppressMapOpenBlock: true
+      });
+
+      productPlacemark = new window.ymaps.Placemark(coords, {}, {
+        preset: 'islands#redIcon'
+      });
+
+      productMap.geoObjects.add(productPlacemark);
+    } catch (e) {
+      console.error('Ошибка создания карты:', e);
+    }
   });
-
-  productPlacemark = new window.ymaps.Placemark(coords, {}, {
-    preset: 'islands#redIcon'
-  });
-
-  productMap.geoObjects.add(productPlacemark);
 }
 // === КАРТА ===
 const hasCoordinatesFromApi = computed(() => {
@@ -317,6 +330,7 @@ const renderStars = (rating) => {
 };
 // === ГЕОКОДИРОВАНИЕ ===
 const resolveCoordinates = async () => {
+  // Если координаты пришли с API
   if (hasCoordinatesFromApi.value) {
     const [first, second] = product.value.coordinates;
     if (Math.abs(first) > 50) {
@@ -324,6 +338,7 @@ const resolveCoordinates = async () => {
     } else {
       mapCoordinates.value = [Number(first), Number(second)];
     }
+    nextTick(() => setTimeout(() => initProductMap(mapCoordinates.value), 200));
     return;
   }
 
@@ -333,26 +348,21 @@ const resolveCoordinates = async () => {
     return;
   }
 
-  // Автозаглавная первая буква
+  // Авто-заглавная
   if (address.length > 0 && address[0] !== address[0].toUpperCase()) {
     address = address[0].toUpperCase() + address.slice(1);
-    // Обновляем в продукте тоже
     product.value.address = address;
-  }
-  if (mapCoordinates.value) {
-    nextTick(() => {
-      setTimeout(() => initProductMap(mapCoordinates.value), 200);
-    });
   }
 
   isGeocoding.value = true;
   try {
     const result = await geocodeByQuery(address);
     if (result && result.coordinates) {
-      const coords = Array.isArray(result.coordinates) 
-        ? result.coordinates 
+      const coords = Array.isArray(result.coordinates)
+        ? result.coordinates
         : [result.coordinates.lng, result.coordinates.lat];
       mapCoordinates.value = coords;
+      nextTick(() => setTimeout(() => initProductMap(mapCoordinates.value), 200));
     } else {
       mapCoordinates.value = null;
     }

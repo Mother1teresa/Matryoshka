@@ -3,26 +3,43 @@
     <h2 class="page-title">Отзывы</h2>
     <div v-if="reviewStore.isLoading" class="loading-state">Загрузка отзывов...</div>
     <div v-else class="reviews-content">
+      <!-- Белая карточка: аватар + инфо + empty-state (если нет отзывов) -->
       <div class="reviews-summary">
         <div class="summary-card">
           <img :src="auth.userAvatar" class="large-avatar" />
-          <div class="rating-badge">
-            <span class="rating-num">{{ userRating }}</span>
-            <!-- {{ reviewStore.getRatingById(auth.user?.id) }} -->
-            <span class="stars">{{ userStars }}</span>
-            <span class="reviews-count">{{ reviewsCount }} отзывов</span>
-            <!-- {{ reviewStore.renderStars(reviewStore.getRatingById(auth.user?.id)) }} -->
+          <div class="summary-info">
+            <div class="user-name">{{ userName }}</div>
+            <div class="user-type">{{ userType }}</div>
+
+            <div v-if="userRating > 0" class="rating-badge">
+              <span class="rating-num">{{ userRating }}</span>
+              <span class="stars">{{ userStars }}</span>
+              <!-- <span class="reviews-count">{{ reviewsCount }} отзывов</span> -->
+            </div>
+            <div v-else class="empty-hint">
+              Отвечайте на отзывы, так вы будете более лояльны к клиентам
+            </div>
           </div>
         </div>
+
+        <!-- Empty-state внутри той же белой карточки -->
+        <div v-if="reviews.length === 0" class="empty-state">
+          <div class="empty-title">У вас пока нет отзывов</div>
+          <div class="empty-subtitle">Разместите объявление или опубликуйте мини-видео</div>
+        </div>
       </div>
+
       <!-- Список отзывов -->
       <div v-if="reviews.length > 0" class="reviews-list">
         <div v-for="review in reviews" :key="review.id" class="review-card">
           <div class="review-header">
             <div class="user-info">
-              <img v-if="review.userAvatar" :src="review.userAvatar" class="user-avatar" alt="Аватар автора"/>
-              <div v-else class="user-avatar-placeholder" :style="{ backgroundColor: getUserColor(review.author) }">
-                {{ review.author?.charAt(0).toUpperCase() }}
+              <div class="user-info_av">
+                <img v-if="review.userAvatar" :src="review.userAvatar" class="user-avatar" alt="Аватар автора"/>
+                <div v-else class="user-avatar-placeholder" :style="{ backgroundColor: getUserColor(review.author) }">
+                  {{ review.author?.charAt(0).toUpperCase() }}
+                </div>
+                <div class="stars-row">{{ reviewStore.renderStars(review.rating) }}</div>
               </div>
               <div class="user-details">
                 <div class="user-name">{{ review.author }}</div>
@@ -30,11 +47,11 @@
               </div>
             </div>
             <div class="review-meta">
-              <div class="stars-row">{{ reviewStore.renderStars(review.rating) }}</div>
+              <div class="review-meta_unt"><img src="/src/assets/img/icons/settings-gear.svg" alt="settings" /></div>
               <div class="review-date">{{ reviewStore.formatDate(review.date) }}</div>
             </div>
           </div>
-          
+
           <!-- Ответ продавца -->
           <div v-if="review.reply" class="seller-reply">
             <img :src="auth.userAvatar" class="reply-avatar" />
@@ -43,16 +60,16 @@
               <div class="reply-text">{{ review.reply }}</div>
             </div>
           </div>
-          
+
           <!-- Форма ответа -->
           <div v-else-if="activeReplyFields[review.id]" class="reply-form-container">
             <div class="seller-reply">
               <img :src="auth.userAvatar" class="reply-avatar" />
               <div class="reply-content" style="flex: 1;">
                 <div class="reply-label">Ответ продавца</div>
-                <input 
-                  type="text" 
-                  placeholder="Напишите ответ..." 
+                <input
+                  type="text"
+                  placeholder="Напишите ответ..."
                   v-model="replyTexts[review.id]"
                   @keyup.enter="sendReply(review.id)"
                 />
@@ -62,17 +79,16 @@
               </button>
             </div>
           </div>
-          
+
           <div v-else-if="isOwnProfile" class="reply-actions">
             <button class="reply-button" @click="toggleReplyField(review.id)">Ответить</button>
           </div>
         </div>
       </div>
-      
-      <div v-else class="empty-state">У вас пока нет отзывов</div>
     </div>
   </div>
 </template>
+
 <script setup>
 import { ref, computed } from 'vue';
 import { useAuthStore } from "/src/stores/authStore.js";
@@ -85,8 +101,11 @@ const reviewStore = useReviewStore();
 const replyTexts = ref({});
 const activeReplyFields = ref({});
 
-const userRating = computed(() => reviewStore.getRatingById(auth.user?.id));
-const userStars = computed(() => reviewStore.renderStars(userRating.value));
+const userRating = computed(() => auth.user?.rating || 0);
+const userStars = computed(() => {
+  const r = Math.round(userRating.value);
+  return '★'.repeat(r) + '☆'.repeat(5 - r);
+});
 const reviewsCount = computed(() => reviewStore.getReviewsCountById(auth.user?.id));
 const reviews = computed(() => reviewStore.reviews || []);
 const isOwnProfile = computed(() => true);
@@ -108,198 +127,204 @@ async function sendReply(reviewId) {
   try {
     await reviewStore.addReply(reviewId, text, auth.user?.id);
     activeReplyFields.value[reviewId] = false;
-    delete replyTexts.value[reviewId]; 
+    delete replyTexts.value[reviewId];
   } catch (e) {
     console.error("Не удалось отправить ответ", e);
-    notify("Не удалось отправить ответ")
+    notify("Не удалось отправить ответ");
   }
 }
 </script>
+
 <style scoped>
 .reviews-container {
   padding: 2rem 0;
 }
+.reviews-content {
+  margin-top: 2.5rem;
+}
 .reviews-summary {
   display: flex;
-  justify-content: center;
-  margin-bottom: 0.938rem;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
   background-color: white;
-  border-radius: 0.625rem;
-  padding: 1rem 0;
+  border-radius: 1.25rem;
+  padding: 2.25rem 1.25rem;
 }
 .summary-card {
-  text-align: center;
-  display: grid;
-  justify-items: center;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+.summary-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+.user-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #242424;
+}
+.user-type {
+  font-size: 1rem;
+  color: #262626;
 }
 .stars {
   color: var(--btn-bg);
   letter-spacing: 2px;
   font-size: 2.65rem;
 }
-.summary-avatar {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  margin-bottom: 10px;
-  border: 2px solid #eee;
-}
-.big-rating {
-  font-size: 2.5rem;
-  font-weight: 700;
-  display: block;
-}
-.reviews-list{
-  border: 1px solid #D0D0D0;
-  background: #F5F5F5;
-  border-radius: 0.625rem;
-  padding: 0.625rem;
-}
-.review-card {
-  margin-bottom: 0.5rem;
-  padding: 0.625rem 0.625rem 0.688rem 0.625rem;
-  border-bottom: 1px solid #f0f0f0;
-  background: #FFFFFF;
-  border-radius: 0.625rem;
-}
-.review-body{
-  margin-bottom: .4rem;
-}
-.review-main {
-  display: flex;
-  gap: 1.5rem;
-}
-.user-initials {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  color: #fff;
+.rating-badge {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  font-size: 1.2rem;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+.rating-num {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+.reviews-count {
+  font-size: 0.875rem;
+  color: #888;
+  margin-left: 0.25rem;
+}
+.empty-hint {
+  font-size: 0.875rem;
+  color: #888;
+  margin-top: 0.25rem;
+}
+.empty-state {
+  padding-left: 7.75rem; /* 6.25rem аватар + 1.5rem gap */
+}
+.empty-title {
+  font-size: 1rem;
+  color: #1a1a1a;
+  margin-bottom: 0.25rem;
+}
+.empty-subtitle {
+  font-size: 0.875rem;
+  color: #888;
+}
+.large-avatar {
+  width: 6.25rem;
+  height: 6.25rem;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.review-card {
+  margin-bottom: 1.25rem;
+  /* padding: 0.625rem 0.625rem 0.688rem 0.625rem; */
+  background: #FFFFFF;
+  border-radius: 0.625rem;
+  overflow: hidden;
+}
+.review-body {
+  margin-bottom: .4rem;
 }
 .review-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 0.5rem;
+  position: relative;
 }
-.status-tag {
+.user-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+.user-avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.user-avatar-placeholder {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 600;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+.user-info_av{
+ padding: 1.5rem 2rem;
+}
+.user-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1.5rem 0.875rem;
+  border-left: 1px solid #858685
+}
+.user-name {
+  font-weight: 600;
+  color: #1a1a1a;
+}
+.review-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+.review-meta_unt{
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 4.375rem;
+
+}
+.stars-row {
+  color: var(--btn-bg);
+  letter-spacing: 1px;
+}
+.review-date {
   font-size: 0.75rem;
   color: #999;
 }
-.product-link {
-  color: #888;
-  font-size: 0.9rem;
-  margin-bottom: 0.5rem;
-}
-.reply-block {
-  margin-top: 1rem;
+.seller-reply {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  padding: 0.75rem;
   background: #f9f9f9;
-  padding: 1rem;
-  border-radius: 12px;
+  border-radius: 0.625rem;
 }
-.reply-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.8rem;
-  color: #999;
-  margin-bottom: 5px;
-}
-.mini-avatar {
-  width: 24px;
-  height: 24px;
+.reply-avatar {
+  width: 2rem;
+  height: 2rem;
   border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
 }
-.reply-form {
-  margin-top: 1rem;
-}
-.input-wrapper {
+.reply-content {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  background: #f5f5f5;
-  padding: 8px 15px;
-  border-radius: 25px;
+  flex-direction: column;
+  gap: 0.25rem;
 }
-.input-wrapper input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  outline: none;
-  font-size: 0.9rem;
-}
-.send-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  transition: opacity 0.2s;
-}
-.send-btn:hover {
-  opacity: 0.7;
-}
-.empty-state {
-  text-align: center;
-  padding: 3rem;
-  color: #999;
-  background: #fcfcfc;
-  border-radius: 12px;
-  border: 1px dashed #eee;
-  font-size: 1rem;
-}
-.reply-actions{
-  margin-left: 4.375rem;
+.reply-label {
+  font-size: 0.75rem;
+  color: #888;
 }
 .reply-text {
   color: #2D2D2D;
+  font-size: 0.9375rem;
 }
-
-/* Стили для формы ввода */
-.reply-form-container{
-  margin-left: 4.375rem;
-  width: 80%;
-} 
-.seller-reply {
-  margin-left: 0;
-  align-items: center; 
-  width: 100%;
-  padding: .5rem 0.35rem .65rem .6rem;
-  border-radius: 0.625rem;
+.reply-actions {
+  margin-left: 3.25rem;
+  margin-top: 0.5rem;
 }
-.seller-reply input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  outline: none;
-  font-size: 0.813rem;
-  color: #262626;
-}
-.seller-reply input::placeholder {
-  color: #8E8C8C;
-}
-.send-reply-btn {
-  background: white;
-  border: none;
-  cursor: pointer;
-  align-items: center;
-  display: flex;
-  transition: transform 0.2s;
-  width: 2.945rem;
-  height: 3.125rem;
-  border-radius: 0.938rem;
-}
-.send-reply-btn img{
-  width: 2.558rem;
-  height: 2.558rem;
-}
-.send-reply-btn:hover {
-  transform: scale(1.1);
-}
-/* Кнопка "Ответить" */
 .reply-button {
   background: none;
   border: none;
@@ -307,10 +332,54 @@ async function sendReply(reviewId) {
   font-size: 0.813rem;
   cursor: pointer;
   padding: 0;
-  margin-top: 8px;
   text-decoration: none;
 }
 .reply-button:hover {
   text-decoration: underline;
+}
+.reply-form-container {
+  margin-left: 3.25rem;
+  margin-top: 0.5rem;
+}
+.reply-form-container .seller-reply {
+  align-items: center;
+  width: 100%;
+  padding: 0.5rem 0.35rem 0.65rem 0.6rem;
+}
+.reply-form-container input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 0.813rem;
+  color: #262626;
+}
+.reply-form-container input::placeholder {
+  color: #8E8C8C;
+}
+.send-reply-btn {
+  background: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s;
+  width: 2.945rem;
+  height: 3.125rem;
+  border-radius: 0.938rem;
+  flex-shrink: 0;
+}
+.send-reply-btn img {
+  width: 2.558rem;
+  height: 2.558rem;
+}
+.send-reply-btn:hover {
+  transform: scale(1.1);
+}
+.loading-state {
+  text-align: center;
+  padding: 3rem;
+  color: #888;
 }
 </style>

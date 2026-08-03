@@ -139,6 +139,7 @@ watch(isModalOpen, (newVal) => {
 .stars {
   letter-spacing: 2px;
   font-size: 2.25rem;
+  color: var(--btn-bg);
 }
 .user-type {
   font-size: 1.25rem;

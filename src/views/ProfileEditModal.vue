@@ -29,7 +29,25 @@
             </div>
             <div class="form-group">
               <label>Город</label>
-              <input v-model="form.city" :class="{ 'error-field': errors.city }" type="text" placeholder="Ваш город" class="local-prof"/>
+              <div style="position: relative; width: 100%;">
+                <input 
+                  v-model="form.city" 
+                  :class="{ 'error-field': errors.city }" 
+                  type="text" 
+                  placeholder="Ваш город" 
+                  class="local-prof"
+                  @blur="hideCitySuggestions"
+                />
+                <ul v-if="citySuggestions.length" class="suggestions-list">
+                  <li 
+                    v-for="(s, i) in citySuggestions" 
+                    :key="i" 
+                    @mousedown.prevent="selectCitySuggestion(s)"
+                  >
+                    {{ s.displayName || s.value }}
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
           <div v-if="isCompany" class="employee-section">
@@ -104,7 +122,30 @@ const showEmployee = ref(false);
 let cityTimeout = null;
 const errors = reactive({});
 const currentBlobUrl = ref(null);
+const citySuggestions = ref([]);
+let citySuggestTimeout = null;
 
+function hideCitySuggestions() {
+  setTimeout(() => { citySuggestions.value = []; }, 200);
+}
+async function fetchCitySuggestions(query) {
+  if (!window.ymaps || !window.ymaps.suggest || !query || query.length < 3) {
+    citySuggestions.value = [];
+    return;
+  }
+  try {
+    const res = await window.ymaps.suggest(query);
+    citySuggestions.value = res.slice(0, 5);
+  } catch (e) {
+    console.error('Ошибка подсказок города:', e);
+    citySuggestions.value = [];
+  }
+}
+function selectCitySuggestion(suggestion) {
+  const displayName = suggestion.displayName || suggestion.value;
+  form.city = displayName;
+  citySuggestions.value = [];
+}
 // ID редактируемого сотрудника
 const editingEmployeeId = ref(null);
 const form = reactive({name: "",phone: "",email: "",city: "",type: "PRIVATE_PERSON",description: "",avatar: "",avatarFile: null,employeeName: "",employeePosition: null,});
@@ -241,7 +282,16 @@ const handleSave = async () => {
   }
 };
 
-watch(() => form.city, (val) => { console.log('City input changed:', val); if (!val || val.length < 3) {console.log('City too short, skipping');return; }clearTimeout(cityTimeout); cityTimeout = setTimeout(async () => {console.log('Searching city:', val);const result = await geocodeByQuery(val);console.log('Geocode result:', result);if (result) {form.city = result.name;console.log('City updated to:', result.name);}}, 1000);});
+watch(() => form.city, (val) => {
+  if (!val || val.length < 3) {
+    citySuggestions.value = [];
+    return;
+  }
+  clearTimeout(citySuggestTimeout);
+  citySuggestTimeout = setTimeout(() => {
+    fetchCitySuggestions(val);
+  }, 300);
+});
 watch(showEmployee, (val) => {if (!val) {form.employeeName = "";form.employeePosition = null;delete errors.employeeName;delete errors.employeePosition;}});
 watch(isCompany, (newVal) => {if (!newVal) {showEmployee.value = false;}});
 watch(() => form.employeePosition, (val) => {if (val) delete errors.employeePosition;});
@@ -378,171 +428,45 @@ textarea {
   transition: background 0.3s ease;
   z-index: 2;
 }
-.camera-icon {
-  width: 5.5rem;
-  height: 5.5rem;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
-  transition: transform 0.3s ease;
-}
-.avatar-wrapper:hover .avatar-overlay {
-  background: rgba(219, 219, 219, 0.415); 
-}
-.avatar-wrapper:hover .camera-icon {
-  transform: scale(1.05); 
-}
-.avatar-overlay.has-photo {
-  background: rgba(61, 61, 61, 0.5);
-}
-.avatar-overlay.has-photo .camera-icon {
-  opacity: 0.7;
-  filter: invert(1) brightness(10); 
-}
-.avatar-wrapper:hover .avatar-overlay.has-photo {
-  background: rgba(0, 0, 0, 0.4);
-}
-.upload-btn img {
-  width: 5.5rem;
-  height: 5.5rem;
-}
-.placeholder-btn{
-  width: 100%;
-  height: 100%;
-  background: #f5f5f5;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.user-id{
-  text-align: center;
-}
-.about-field h3{
-  font-size: 1.8rem; 
-  text-align: center;
-  margin-bottom: 0.75rem;
-}
-.about-field textarea{
-  width: 100%;
-  height: 17.634rem;
-  border-radius: 0.625rem;
-  border: 1px solid #D0D0D0;
-  color: #000000;
-  Resize: none;
-}
-.about-field textarea::placeholder{
-  color: #D0D0D0;
-}
-.employee-inputs .form-group label{
- width: auto;
- white-space: nowrap;
-}
-.multiselect-container{
-  width: 100%;
-  min-height: 3rem !important;
-  height: 3.1rem !important;
-  border: 1px solid #e0e0e0;
-  border-radius: 0.625rem !important;
-}
-input::placeholder{
-  color: #adadad;
-}
-.employee-inputs{
-  margin: 2.5rem 0;
-}
-.local-prof{
-  text-transform: capitalize; 
-}
-.local-prof::placeholder{
-  text-transform:none;
-}
-.locked-input {
-  background-color: #f0f0f0 !important;
-  cursor: not-allowed;
-  color: #777;
-}
-.readonly-field label{
-  display: grid;
-}
-.readonly-field label span{
-  color: #999;
-  font-size: 0.5em;
-}
-.error-field {
-  border: 1px solid #ff4d4f !important;
-  border-radius: 0.625rem;
-}
-.multiselect__caret {
-  position: absolute; right: 0.75rem; top: 50%; width: 0.75rem; height: 0.75rem; margin-top: -0.375rem;
-  background-image: url("/src/assets/img/arr-select.svg");
-  background-repeat: no-repeat; background-size: contain; transition: transform 0.3s; z-index: 1; pointer-events: none;
-}
-:deep(.multiselect--active .multiselect){
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
-}
+.camera-icon {width: 5.5rem;height: 5.5rem;filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));transition: transform 0.3s ease;}
+.avatar-wrapper:hover .avatar-overlay {background: rgba(219, 219, 219, 0.415); }
+.avatar-wrapper:hover .camera-icon {transform: scale(1.05); }
+.avatar-overlay.has-photo {background: rgba(61, 61, 61, 0.5);}
+.avatar-overlay.has-photo .camera-icon {opacity: 0.7;filter: invert(1) brightness(10); }
+.avatar-wrapper:hover .avatar-overlay.has-photo {background: rgba(0, 0, 0, 0.4);}
+.upload-btn img {width: 5.5rem;height: 5.5rem;}
+.placeholder-btn{width: 100%;height: 100%;background: #f5f5f5;border: none;cursor: pointer;display: flex;align-items: center;justify-content: center;}
+.user-id{text-align: center;}
+.about-field h3{font-size: 1.8rem; text-align: center;margin-bottom: 0.75rem;}
+.about-field textarea{width: 100%;height: 17.634rem;border-radius: 0.625rem;border: 1px solid #D0D0D0;color: #000000;Resize: none;}
+.about-field textarea::placeholder{color: #D0D0D0;}
+.employee-inputs .form-group label{width: auto;white-space: nowrap;}
+.multiselect-container{width: 100%;min-height: 3rem !important;height: 3.1rem !important;border: 1px solid #e0e0e0;border-radius: 0.625rem !important;}
+input::placeholder{color: #adadad;}
+.employee-inputs{margin: 2.5rem 0;}
+.local-prof{text-transform: capitalize; }
+.local-prof::placeholder{text-transform:none;}
+.locked-input {background-color: #f0f0f0 !important;cursor: not-allowed;color: #777;}
+.readonly-field label{display: grid;}
+.readonly-field label span{color: #999;font-size: 0.5em;}
+.error-field {border: 1px solid #ff4d4f !important;border-radius: 0.625rem;}
+.multiselect__caret {position: absolute; right: 0.75rem; top: 50%; width: 0.75rem; height: 0.75rem; margin-top: -0.375rem;background-image: url("/src/assets/img/arr-select.svg");background-repeat: no-repeat; background-size: contain; transition: transform 0.3s; z-index: 1; pointer-events: none;}
+:deep(.multiselect--active .multiselect){border-bottom-left-radius: 0;border-bottom-right-radius: 0;}
 :deep(.multiselect--active .multiselect__caret) { transform: rotate(180deg); }
 :deep(.multiselect__select) { display: none !important; }
 /* Фикс текста */
-:deep(.multiselect__single) { 
-  color: #000 !important; font-size: 1rem !important; 
-  padding-left: 0 !important; margin-bottom: 0 !important; background: transparent !important; display: block !important;
-}
-:deep(.multiselect__tags) { 
-  min-height: 3rem !important; height: 3rem !important; background: #fff !important; padding: 0.75rem;
-  border-radius: 0.625rem; display: flex !important; align-items: center !important;
-  transition: all .1s; font-size: 1.2rem; border: 0 solid transparent;
-}
+:deep(.multiselect__single) { color: #000 !important; font-size: 1rem !important; padding-left: 0 !important; margin-bottom: 0 !important; background: transparent !important; display: block !important;}
+:deep(.multiselect__tags) { min-height: 3rem !important; height: 3rem !important; background: #fff !important; padding: 0.75rem;border-radius: 0.625rem; display: flex !important; align-items: center !important;transition: all .1s; font-size: 1.2rem; border: 0 solid transparent;}
 /* :deep(.multiselect){min-height: auto !important; height: auto !important;} */
 :deep(.multiselect__placeholder) { color: #A8A1A1 !important; margin: 0 !important; padding: 0 !important; font-size: 1.2rem; }
 :deep(.multiselect__option--highlight) {background: var(--btn-bg) !important; color: #fff !important; font-weight: 600;}
 :deep(.multiselect__option::after) { display: none !important; }
-:deep(.multiselect__option){
-  display: grid;
-  align-items: center;
-  padding: 0.75rem;
-  min-height: auto;
-  line-height: 1rem;
-  text-decoration: none;
-  text-transform: none;
-  vertical-align: middle;
-  position: relative;
-  cursor: pointer;
-  white-space: normal;
-  font-size: 1rem;
-}
-:deep(.multiselect__content-wrapper) {
-  position: absolute;
-  display: block;
-  background: #fff;
-  width: 100%;
-  max-height: 15rem !important;
-  overflow: auto;
-  border: 1px solid #e8e8e8;
-  border-top: none;
-  border-bottom-left-radius: 0.938rem;
-  border-bottom-right-radius: 0;
-  z-index: 50;
-  -webkit-overflow-scrolling: touch;
-  transition: all .35s;
-}
-:deep(.multiselect__tag){
-  padding: 0.25rem 1.2rem 0.25rem 0.425rem;
-  border-radius: 0.313rem;
-  margin-right: 0.125rem;
-  background: #41b883;
-  margin-bottom: 0rem;
-  white-space: wrap;
-  overflow: hidden;
-  max-width: 100%;
-  text-overflow: ellipsis;
-  font-size: 0.875rem;
-}
-:deep(.multiselect__tag-icon) {
-  margin-left: 0.438rem;
-  width: 1.25rem;
-}
-:deep(.multiselect__option--selected){
-  color: var(--btn-bg);
-}
+:deep(.multiselect__option){display: grid;align-items: center;padding: 0.75rem;min-height: auto;line-height: 1rem;text-decoration: none;text-transform: none;vertical-align: middle;position: relative;cursor: pointer;white-space: normal;font-size: 1rem;}
+:deep(.multiselect__content-wrapper) {position: absolute;display: block;background: #fff;width: 100%;max-height: 15rem !important;overflow: auto;border: 1px solid #e8e8e8;border-top: none;border-bottom-left-radius: 0.938rem;border-bottom-right-radius: 0;z-index: 50;-webkit-overflow-scrolling: touch;transition: all .35s;}
+:deep(.multiselect__tag){padding: 0.25rem 1.2rem 0.25rem 0.425rem;border-radius: 0.313rem;margin-right: 0.125rem;background: #41b883;margin-bottom: 0rem;white-space: wrap;overflow: hidden;max-width: 100%;text-overflow: ellipsis;font-size: 0.875rem;}
+:deep(.multiselect__tag-icon) {margin-left: 0.438rem;width: 1.25rem;}
+:deep(.multiselect__option--selected){color: var(--btn-bg);}
+.suggestions-list {position: absolute;top: calc(100% + 4px);left: 0;right: 0;background: white;border: 1px solid #e0e0e0;border-radius: 0.625rem;z-index: 100;list-style: none;padding: 0;margin: 0;max-height: 200px;overflow-y: auto;box-shadow: 0 4px 16px rgba(0,0,0,0.08);}
+.suggestions-list li {padding: 0.75rem 1rem;cursor: pointer;font-size: 0.95rem;color: #333;transition: background 0.15s;}
+.suggestions-list li:hover {background: #f5f5f5;}
 </style>

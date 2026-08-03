@@ -2,57 +2,59 @@
   <div class="profile-layout container">
     <!-- Боковое меню -->
     <aside class="profile-sidebar" :class="{ 'is-collapsed': isCollapsed }">
-      <div class="sidebar-header">
-        <!-- <button class="collapse-btn" @click="isCollapsed = !isCollapsed">
-          <img src="/src/assets/img/icons/arr-collapse.svg" alt="toggle" :class="{ 'is-rotated': isCollapsed }" />
-        </button> -->
-        <router-link to="/" class="logo" :class="{ 'hidden-content': isCollapsed }">
-          <span>Матрёшка</span>
-        </router-link>
-        <router-link to="/profile/info" class="user-foto" :class="{ 'hidden-content': isCollapsed }">
-          <div class="user-foto_block">
-            <img
-              :src="auth.userAvatar"
-              class="user-avatar"
-            />
-            <span class="user-name">{{ auth.user?.name }}</span>
-          </div>
-          <div class="user-brief" :class="{ 'hidden-content': isCollapsed }">
-            <div class="rating">
-              <p>{{ userRating  }}</p>
-              <span>{{ userStars }}</span>
+      <div class="profile-sidebar_block">
+        <div class="sidebar-header">
+          <!-- <button class="collapse-btn" @click="isCollapsed = !isCollapsed">
+            <img src="/src/assets/img/icons/arr-collapse.svg" alt="toggle" :class="{ 'is-rotated': isCollapsed }" />
+          </button> -->
+          <router-link to="/" class="logo" :class="{ 'hidden-content': isCollapsed }">
+            <span>Матрёшка</span>
+          </router-link>
+          <router-link to="/profile/info" class="user-foto" :class="{ 'hidden-content': isCollapsed }">
+            <div class="user-foto_block">
+              <img
+                :src="auth.userAvatar"
+                class="user-avatar"
+              />
+              <span class="user-name">{{ auth.user?.name }}</span>
             </div>
+            <div class="user-brief" :class="{ 'hidden-content': isCollapsed }">
+              <div class="rating">
+                <p>{{ userRating  }}</p>
+                <span>{{ userStars }}</span>
+              </div>
+            </div>
+          </router-link>
+          
+        </div>
+        <nav class="profile-nav">
+          <div class="profile-nav_a">
+            <router-link to="/profile/advertisements":class="{ 'hidden-content': isCollapsed }">Мои объявления</router-link>
+            <router-link to="/profile/videos":class="{ 'hidden-content': isCollapsed }">Мои ролики</router-link>
+            <!-- <router-link to="/profile/create-ad":class="{ 'hidden-content': isCollapsed }">Создать объявление</router-link> -->
+            <!-- <a class="locked-link" @click="openMaintenance":class="{ 'hidden-content': isCollapsed }">Заказы</a>
+            <a class="locked-link" @click="openMaintenance":class="{ 'hidden-content': isCollapsed }">Отклики</a>
+            <a class="locked-link" @click="openMaintenance":class="{ 'hidden-content': isCollapsed }">Резюме</a> -->
+            <router-link to="/profile/favorites":class="{ 'hidden-content': isCollapsed }">Избранное</router-link>
+            <!-- <a class="locked-link" @click="openMaintenance":class="{ 'hidden-content': isCollapsed }">Приглашайте друзей</a> -->
+            <router-link to="/profile/messages":class="{ 'hidden-content': isCollapsed }">Сообщения
+              <!-- <span v-if="auth.unreadMessagesCount > 0" class="badge-count">
+                {{ auth.unreadMessagesCount }}
+              </span> -->
+            </router-link>
+            <router-link to="/profile/notifications":class="{ 'hidden-content': isCollapsed }">Уведомления
+              <!-- <span v-if="auth.unreadNotificationsCount > 0" class="badge-count">
+                {{ auth.unreadNotificationsCount }}
+              </span> -->
+            </router-link>
+            <router-link to="/profile/reviews":class="{ 'hidden-content': isCollapsed }">Отзывы</router-link>
+            <router-link to="/profile/info" :class="{ 'hidden-content': isCollapsed }">Мои данные</router-link>
           </div>
-        </router-link>
-        
+          <div class="nav-footer">
+            <button class="edu-btn" @click="handleEduClick">Обучение</button>
+          </div>
+        </nav>
       </div>
-      <nav class="profile-nav">
-        <div class="profile-nav_a">
-          <router-link to="/profile/advertisements":class="{ 'hidden-content': isCollapsed }">Мои объявления</router-link>
-          <router-link to="/profile/videos":class="{ 'hidden-content': isCollapsed }">Мои ролики</router-link>
-          <!-- <router-link to="/profile/create-ad":class="{ 'hidden-content': isCollapsed }">Создать объявление</router-link> -->
-          <!-- <a class="locked-link" @click="openMaintenance":class="{ 'hidden-content': isCollapsed }">Заказы</a>
-          <a class="locked-link" @click="openMaintenance":class="{ 'hidden-content': isCollapsed }">Отклики</a>
-          <a class="locked-link" @click="openMaintenance":class="{ 'hidden-content': isCollapsed }">Резюме</a> -->
-          <router-link to="/profile/favorites":class="{ 'hidden-content': isCollapsed }">Избранное</router-link>
-          <!-- <a class="locked-link" @click="openMaintenance":class="{ 'hidden-content': isCollapsed }">Приглашайте друзей</a> -->
-          <router-link to="/profile/messages":class="{ 'hidden-content': isCollapsed }">Сообщения
-            <!-- <span v-if="auth.unreadMessagesCount > 0" class="badge-count">
-              {{ auth.unreadMessagesCount }}
-            </span> -->
-          </router-link>
-          <router-link to="/profile/notifications":class="{ 'hidden-content': isCollapsed }">Уведомления
-            <!-- <span v-if="auth.unreadNotificationsCount > 0" class="badge-count">
-              {{ auth.unreadNotificationsCount }}
-            </span> -->
-          </router-link>
-          <!-- <router-link to="/profile/reviews":class="{ 'hidden-content': isCollapsed }">Отзывы</router-link> -->
-          <router-link to="/profile/info" :class="{ 'hidden-content': isCollapsed }">Мои данные</router-link>
-        </div>
-        <div class="nav-footer">
-          <button class="edu-btn" @click="handleEduClick">Обучение</button>
-        </div>
-      </nav>
     </aside>
     <main class="profile-main">
       <router-view />
@@ -97,7 +99,7 @@ const unavailableRoutes = [
   width: 15.625rem;
   padding: 2.188rem 1rem 5.25rem 0;
   background: #f5f5f5;
-  border-right: 1px solid #000000;
+  /* border-right: 1px solid #000000; */
   position: relative;
   transition: width 0.3s ease;
   /* overflow: hidden;  */

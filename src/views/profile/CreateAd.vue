@@ -148,15 +148,15 @@
               class="f-input" 
               :class="{ 'error-border': v$.address.$error }" 
               placeholder="Введите адрес..." 
-              @input="onAddressInput"
+              @blur="hideSuggestions"
             />
             <ul v-if="addressSuggestions.length" class="suggestions-list">
               <li 
                 v-for="(s, i) in addressSuggestions" 
                 :key="i" 
-                @click="selectSuggestion(s)"
+                @mousedown.prevent="selectSuggestion(s)"
               >
-                {{ s.displayName }}
+                {{ s.displayName || s.value }}
               </li>
             </ul>
           </div>
@@ -229,40 +229,49 @@ const photoPreviews = ref([]);
 const isEditMode = computed(() => !!route.params.id);
 const advertId = computed(() => route.params.id);
 const addressSuggestions = ref([]);
+let suggestTimeout = null;
 
-async function onAddressInput() {
-  if (!window.ymaps || !searchQuery.value || searchQuery.value.length < 3) {
+function hideSuggestions() {
+  setTimeout(() => {
+    addressSuggestions.value = [];
+  }, 200);
+}
+async function fetchSuggestions(query) {
+  if (!window.ymaps || !window.ymaps.suggest || !query || query.length < 3) {
     addressSuggestions.value = [];
     return;
   }
   try {
-    const res = await window.ymaps.suggest(searchQuery.value);
+    const res = await window.ymaps.suggest(query);
     addressSuggestions.value = res.slice(0, 5);
   } catch (e) {
+    console.error('Ошибка подсказок:', e);
     addressSuggestions.value = [];
   }
 }
-
 function selectSuggestion(suggestion) {
-  searchQuery.value = suggestion.displayName;
+  const displayName = suggestion.displayName || suggestion.value;
+  searchQuery.value = displayName;
   addressSuggestions.value = [];
-  form.address = suggestion.displayName;
-  // Геокодируем для получения координат
-  window.ymaps.geocode(suggestion.displayName, { results: 1 }).then(res => {
-    const obj = res.geoObjects.get(0);
-    if (obj) {
-      const coords = obj.geometry.getCoordinates();
-      form.coordinates = coords;
-      if (map && placemark) {
-        map.setCenter(coords, 14);
-        placemark.geometry.setCoordinates(coords);
-      } else {
-        initMap(coords);
-      }
-    }
-  });
-}
+  form.address = displayName;
 
+  // Геокодируем ТОЛЬКО после выбора — для координат и карты
+  if (window.ymaps && window.ymaps.geocode) {
+    window.ymaps.geocode(displayName, { results: 1 }).then(res => {
+      const obj = res.geoObjects.get(0);
+      if (obj) {
+        const coords = obj.geometry.getCoordinates();
+        form.coordinates = coords;
+        if (map && placemark) {
+          map.setCenter(coords, 14);
+          placemark.geometry.setCoordinates(coords);
+        } else {
+          initMap(coords);
+        }
+      }
+    }).catch(e => console.error('Геокодирование не удалось:', e));
+  }
+}
 // ═══════════════════════════════════════════════════════════
 // ФОРМА
 // ═══════════════════════════════════════════════════════════
@@ -963,35 +972,19 @@ async function initMapWithUserCity() {
 
 watch(searchQuery, (query) => {
   if (!isClient) return;
-  
   form.address = query;
   if (query && query.length > 0 && query[0] !== query[0].toUpperCase()) {
     searchQuery.value = query[0].toUpperCase() + query.slice(1);
     return;
   }
-  
-  clearTimeout(searchTimeout);
-  if (!searchQuery.value || searchQuery.value.length < 3) return;
-  
-  searchTimeout = setTimeout(async () => {
-    if (!window.ymaps) return;
-    try {
-      const res = await window.ymaps.geocode(searchQuery.value, { results: 1 });
-      const obj = res.geoObjects.get(0);
-      if (obj) {
-        const coords = obj.geometry.getCoordinates();
-        form.coordinates = coords;
-        if (map && placemark) {
-          map.setCenter(coords, 14);
-          placemark.geometry.setCoordinates(coords);
-        } else {
-          initMap(coords);
-        }
-      }
-    } catch (e) {
-      console.error('Поиск адреса не удалось:', e);
-    }
-  }, 600);
+  clearTimeout(suggestTimeout);
+  if (!query || query.length < 3) {
+    addressSuggestions.value = [];
+    return;
+  }
+  suggestTimeout = setTimeout(() => {
+    fetchSuggestions(query);
+  }, 300);
 }, { immediate: true });
 
 // ═══════════════════════════════════════════════════════════
@@ -1323,7 +1316,8 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   destroyMap();
-  clearTimeout(searchTimeout);
+  clearTimeout(searchTimeout); 
+  clearTimeout(suggestTimeout);
 });
 </script>
 <style scoped>

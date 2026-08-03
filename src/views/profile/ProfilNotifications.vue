@@ -24,18 +24,13 @@ watch(
     <h2 class="page-title">Уведомления</h2>
     <div v-if="isLoading" class="loading-state">Загрузка...</div>
     <div v-else class="notifications-list">
-      <div 
-        v-for="item in notifications" 
-        :key="item.id" 
-        class="notification-card"
-        :class="{ 'unread': !item.is_read }">
+      <div v-for="item in notifications" :key="item.id" class="notification-card" :class="{ 'unread': !item.is_read }">
         <div class="notification-content">
           <h3 class="notification-title">{{ item.title }}</h3>
           <p class="notification-text">{{ item.message }}</p>
           <!-- <p v-if="item.reason" class="reason">
             Причина: {{ item.reason }}
           </p> -->
-
         </div>
         <div class="notification-meta">
           <span class="date">{{ item.date }}</span>
@@ -52,38 +47,34 @@ watch(
 .notifications-list {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 1.25rem;
   overflow-y: auto;
-  border: 1px solid #D0D0D0;
-  background-color: #F5F5F5;
 }
-
 .notification-card {
   background: #fff;
   border-radius: 1.25rem;
-  padding: 0.75rem 1.25rem 1.25rem 1.25rem;
-  display: grid;
-  gap: 0.469rem;
+  padding: 1.25rem 1.875rem 1.25rem 1.25rem;
+  display: flex;
+  gap: 0.625rem;
 }
-
+.notification-content{
+  width: 54.438rem;
+}
 .notification-title {
-  font-weight: 400;
-  margin-bottom: 0.469rem;
+  font-weight: 700;
 }
-
 .notification-text {
-  font-size: 0.875rem;
+  font-size: 1rem;
   color: #7C7C7C;
 }
-
 .notification-meta {
   text-align: right;
-  font-size: 0.75rem;
-  color: #999;
-  min-width: 80px;
+  font-size: 1rem;
+  color: #8E8C8C;
+  min-width: 7.5rem;
 }
 .reason{
-font-size: 0.875rem;
-margin-top: .3rem;
+  font-size: 0.875rem;
+  margin-top: .3rem;
 }
 </style>
