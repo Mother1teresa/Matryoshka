@@ -82,28 +82,39 @@
                 <!-- dropdown -->
                 <transition name="fade">
                   <div v-if="showProfileMenu" class="profile-menu">
-                    <div class="rating" v-if="auth.user?.id">{{ userRating }} <span>{{ userStars }}</span></div>
+                    <div class="rating" v-if="auth.user?.id">
+                      {{ userRating }}
+                      <span class="stars-row">
+                        <img
+                          v-for="n in 5"
+                          :key="n"
+                          :src="n <= Math.round(userRating) ? '/src/assets/img/form/star.png' : '/src/assets/img/form/star_1.png'"
+                          class="star-icon"
+                          alt="★"
+                        />
+                      </span>
+                    </div>
                       <div class="profile-menu_links">
-                      <!-- {{ reviewStore.renderStars(reviewStore.getRatingById(auth.user.id)) }} -->
                       <router-link to="/profile/info" @click="showProfileMenu = false" class="profile-menu_link">Мои данные</router-link>
                       <router-link to="/profile/videos" @click="showProfileMenu = false" class="profile-menu_link">Мои ролики</router-link>
                       <router-link to="/profile/advertisements" @click="showProfileMenu = false" class="profile-menu_link">Мои объявления</router-link>
                       <router-link to="/profile/create-ad" @click="showProfileMenu = false" class="profile-menu_link">Создать объявление</router-link>
                       <!-- <router-link to="/profile/orders" @click="showProfileMenu = false" class="profile-menu_link">Заказы</router-link> -->
-                      <a class="profile-menu_link locked-link" @click="openMaintenance">Заказы</a>
+                      <!-- <a class="profile-menu_link locked-link" @click="openMaintenance">Заказы</a> -->
                       <router-link to="/profile/favorites" @click="showProfileMenu = false" class="profile-menu_link">Избранное</router-link>
                       <!-- <router-link to="/profile/referral" @click="showProfileMenu = false" class="profile-menu_link">Приглашайте друзей</router-link>
                       <router-link to="/profile/responses" @click="showProfileMenu = false" class="profile-menu_link">Отклики</router-link> -->
-                      <a class="profile-menu_link locked-link" @click="openMaintenance">Приглашайте друзей</a>
-                      <a class="profile-menu_link locked-link" @click="openMaintenance">Отклики</a>
+                      <!-- <a class="profile-menu_link locked-link" @click="openMaintenance">Приглашайте друзей</a> -->
+                      <!-- <a class="profile-menu_link locked-link" @click="openMaintenance">Отклики</a> -->
                       <router-link to="/profile/messages" @click="showProfileMenu = false" class="profile-menu_link">Сообщения 
-                        <span v-if="auth.unreadMessagesCount > 0" class="badge-count">
-                        {{ auth.unreadMessagesCount }}
-                      </span></router-link>
+                        <!-- <span v-if="auth.unreadMessagesCount > 0" class="badge-count">
+                          {{ auth.unreadMessagesCount }}
+                        </span> -->
+                      </router-link>
                       <router-link to="/profile/notifications" @click="showProfileMenu = false" class="profile-menu_link">Уведомления
-                        <span v-if="auth.unreadNotificationsCount > 0" class="badge-count">
+                        <!-- <span v-if="auth.unreadNotificationsCount > 0" class="badge-count">
                           {{ auth.unreadNotificationsCount }}
-                        </span>
+                        </span> -->
                       </router-link>
                       <a href="" target="_blank" class="profile-menu_link">
                         Поддержка
@@ -170,10 +181,7 @@ const showLogoutConfirm = ref(false);
 
 const searchQuery = ref("");
 const userRating = computed(() => auth.user?.rating || 0);
-const userStars = computed(() => {
-  const r = Math.round(userRating.value);
-  return '★'.repeat(r) + '☆'.repeat(5 - r);
-});
+
 const currentRegionName = computed(() => region.selectedRegion || "Регион");
 const goToSearch = () => {
   const query = searchQuery.value.trim();
@@ -202,7 +210,6 @@ function confirmLogout() {
 function cancelLogout() {
   showLogoutConfirm.value = false;
 }
-
 function handleClickOutside(event) {
   if (profileWrapper.value && !profileWrapper.value.contains(event.target)) {
     showProfileMenu.value = false;
@@ -211,7 +218,6 @@ function handleClickOutside(event) {
 onMounted(() => {
   document.addEventListener("click", handleClickOutside);
 });
-
 onBeforeUnmount(() => {
   document.removeEventListener("click", handleClickOutside);
 });
@@ -220,7 +226,6 @@ const lockedRoutes = [
   '/profile/referral',
   '/profile/responses',
 ];
-
 const checkAuthAndRun = (action, message = "Авторизуйтесь, чтобы продолжить") => {
   if (!auth.isAuthenticated) {
     modal.openLogin();
@@ -229,299 +234,66 @@ const checkAuthAndRun = (action, message = "Авторизуйтесь, чтоб
   }
   action();
 };
-
 const handleCreateAd = () => {
   checkAuthAndRun(() => {
     router.push('/profile/create-ad');
   }, "Войдите, чтобы создать объявление");
 };
-
 const handleCreateVideo = () => {
   checkAuthAndRun(() => {
     router.push('/profile/videos');
   }, "Войдите, чтобы создать мини-видео");
 };
 </script>
-
 <style scoped>
-.header {
-  position: relative;
-  background: #fff;
-  padding: 1.375rem 0 1.813rem;
-  /* box-shadow: 0 2px 5px rgba(0,0,0,0.05); */
-  border-bottom: 6px solid #dddddd;
-}
-.header__top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1rem;
-}
-.header__center {
-  display: flex;
-  gap: 15px;
-}
-.header__right {
-  display: flex;
-  gap: 0.813rem;
-  align-items: flex-start;
-  width: 17.5rem;
-  justify-content: flex-end;
-  height: 6.625rem;
-}
-.header__right-false {
-  display: grid;
-  gap: 0.813rem;
-}
-.header__bottom {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-/* -------- Элементы -------- */
-.search-input {
-  font-size: 1.25rem;
-  border: none;
-  width: 90%;
-}
-.search-input::placeholder {
-  color: #929292;
-  font-size: 1.25rem;
-}
-.search-img {
-  display: flex;
-  align-items: center;
-  gap: 0.825rem;
-  width: 75%;
-}
-.search-input__box {
-  flex: 0.55;
-  display: flex;
-  justify-content: space-between;
-  padding: 0.25rem 0.26rem 0.27rem 0.75rem;
-  border-radius: 1.625rem;
-  border: 1px solid #ddd;
-  height: 3.17rem;
-}
-.search-input__box img {
-  width: 1.5rem;
-  height: 1.5rem;
-  object-fit: fill;
-}
-.btn-light {
-  background: var(--bg-profil);
-  border: none;
-  cursor: pointer;
-  display: flex;
-  gap: 0.25rem;
-  align-items: center;
-  justify-content: center;
-  width: 95%;
-  border-radius: 0.938rem;
-  height: 2.125rem;
-  padding: 0.625rem 1.5rem;
-}
-.btn-login {
-  padding: 0.625rem 1.188rem;
-  height: auto;
-}
-.btn-light img {
-  width: 1.45rem;
-  height: 1.45rem;
-}
-.btn-search {
-  background: var(--btn-bg);
-  color: white;
-  border: none;
-  padding: 0.688rem 1.969rem;
-  border-radius: 1.25rem;
-  cursor: pointer;
-}
-.btn-category {
-  background: white;
-  border: 1px solid var(--btn-bg);
-  color: var(--btn-bg);
-  padding: 0.563rem 0.688rem 0.563rem 0.313rem;
-  border-radius: 1.25rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-weight: 400;
-  transition: opacity 0.3s;
-}
-.btn-category img {
-  width: 2.063rem;
-  height: auto;
-}
-.profile {
-  display: grid;
-  align-items: center;
-  gap: 0.313rem;
-  cursor: pointer;
-  background-color: var(--bg-profil);
-  border-radius: 1rem;
-  padding: 0.563rem 0.675rem 0.375rem 1.25rem;
-  height: -webkit-fill-available;
-  height: stretch;
-}
-
-.avatar {
-  width: 3.75rem;
-  height: 3.75rem;
-  border-radius: 50%;
-  object-fit: cover;
-}
-.header__right-true {
-  display: flex;
-  gap: 0.8rem;
-}
-.header__right-icons {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-}
-.header__right-block {
-  display: grid;
-  gap: 0.75rem;
-}
-.icon {
-  background-color: var(--bg-profil);
-  border-radius: 1rem;
-  width: 3.75rem;
-  height: 3.75rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
-.icon img {
-  width: auto;
-  height: auto;
-}
-.icon:first-child img {
-  width: 1.8rem;
-  height: 1.8rem;
-}
-.icon:last-child img {
-  width: 1.8rem;
-  height: 1.9rem;
-}
-.icon .badge-count{
-  right: 0;
-  top: 0;
-}
-.profile-block {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-}
-.arr-profil {
-  width: 1rem;
-  height: 1.5rem;
-}
-.header__right-true .btn-light {
-  width: 100%;
-  text-transform: capitalize;
-}
-.profile-wrapper {
-  position: relative;
-}
-.profile-wrapper .profile span{
-  width: 4.85rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  display: inline-block;
-}
+.header {position: relative;background: #fff;padding: 1.375rem 0 1.813rem;border-bottom: 6px solid #dddddd;}
+.header__top {display: flex;justify-content: space-between;align-items: flex-start;margin-bottom: 1rem;}
+.header__center {display: flex;gap: 15px;}
+.header__right {display: flex;gap: 0.813rem;align-items: flex-start;width: 17.5rem;justify-content: flex-end;height: 6.625rem;}
+.header__right-false {display: grid;gap: 0.813rem;}
+.header__bottom {display: flex;gap: 0.5rem;align-items: center;}
+.search-input {font-size: 1.25rem;border: none;width: 90%;}
+.search-input::placeholder {color: #929292;font-size: 1.25rem;}
+.search-img {display: flex;align-items: center;gap: 0.825rem;width: 75%;}
+.search-input__box {flex: 0.55;display: flex;justify-content: space-between;padding: 0.25rem 0.26rem 0.27rem 0.75rem;border-radius: 1.625rem;border: 1px solid #ddd;height: 3.17rem;}
+.search-input__box img {width: 1.5rem;height: 1.5rem;object-fit: fill;}
+.btn-light {background: var(--bg-profil);border: none;cursor: pointer;display: flex;gap: 0.25rem;align-items: center;justify-content: center;width: 95%;border-radius: 0.938rem;height: 2.125rem;padding: 0.625rem 1.5rem; font-size: 0.938rem; font-weight: 700;}
+.btn-login {padding: 0.625rem 1.188rem;height: auto;}
+.btn-light img {width: 1.45rem;height: 1.45rem;}
+.btn-search {background: var(--btn-bg);color: white;border: none;padding: 0.688rem 1.969rem;border-radius: 1.25rem;cursor: pointer;}
+.btn-category {background: white;border: 1px solid var(--btn-bg);color: var(--btn-bg);padding: 0.563rem 0.688rem 0.563rem 0.313rem;border-radius: 1.25rem;cursor: pointer;display: flex;align-items: center;gap: 0.25rem;font-weight: 400;transition: opacity 0.3s;}
+.btn-category img {width: 2.063rem;height: auto;}
+.profile {display: grid;align-items: center;gap: 0.313rem;cursor: pointer;background-color: var(--bg-profil);border-radius: 1rem;padding: 0.563rem 0.675rem 0.375rem 1.25rem;height: -webkit-fill-available;height: stretch;}
+.avatar {width: 3.75rem;height: 3.75rem;border-radius: 50%;object-fit: cover;}
+.header__right-true {display: flex;gap: 0.8rem;}
+.header__right-icons {display: flex;justify-content: flex-end;gap: 0.5rem;}
+.header__right-block {display: grid;gap: 0.75rem;}
+.icon {background-color: var(--bg-profil);border-radius: 1rem;width: 3.75rem;height: 3.75rem;display: flex;align-items: center;justify-content: center;position: relative;}
+.icon img {width: auto;height: auto;}
+.icon:first-child img {width: 1.8rem;height: 1.8rem;}
+.icon:last-child img {width: 1.8rem;height: 1.9rem;}
+.icon .badge-count{right: 0;top: 0;}
+.profile-block {display: flex;align-items: center;gap: 0.8rem;}
+.arr-profil {width: 1rem;height: 1.5rem;}
+.header__right-true .btn-light {width: 100%;text-transform: capitalize;}
+.profile-wrapper {position: relative;}
+.profile-wrapper .profile span{width: 4.85rem;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;display: inline-block; font-size: 0.938rem; font-weight: 700;}
 /* стрелка */
-.arr-profil {
-  transition: transform 0.3s;
-}
-
-.arr-profil.rotate {
-  transform: rotate(180deg);
-}
-
-/* dropdown */
-.profile-menu {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 0.625rem;
-  width: 16.25rem;
-  background: var(--bg-profil);
-  border-radius: 0.938rem;
-  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.15);
-  padding: 0.938rem 0;
-  z-index: 10;
-  /* font-size: 1.25rem; */
-}
-.profile-menu_links{
-  display: grid;
-  gap: 0;
-}
-.profile-menu .profile-menu_link {
-  padding: 0.625rem 0.938rem;
-  cursor: pointer;
-  border-radius: 0.5rem;
-  position: relative;
-}
-.profile-menu_link a{
- position: relative;
-}
-.profile-menu_link .badge-count{
-  top: 0;
-}
-.profile-menu .profile-menu_link:hover {
-  background: #e7e7e7;
-  border-radius: 0;
-}
-
-.logout {
-  color: red;
-}
-
-/* рейтинг */
-.rating {
-  font-weight: bold;
-  margin-bottom: 0.625rem;
-  font-size: 1.5rem;
-  padding-left: 1rem;
-}
-
-/* modal */
-.logout-modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.3);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 10;
-}
-.logout-box {
-  background: white;
-  padding: 1.563rem;
-  border-radius: 1rem;
-}
-.logout-actions {
-  display: flex;
-  gap: 0.625rem;
-  margin-top: 0.938rem;
-}
-.logout-actions .btn-light {
-  height: auto;
-  border-radius: 1.25rem;
-}
-.header__right-false_poder{
-  background: var(--bg-profil);
-  width: 5.438rem;
-  height: 5.438rem;
-  border-radius: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+.arr-profil {transition: transform 0.3s;}
+.arr-profil.rotate {transform: rotate(180deg);}
+.profile-menu {position: absolute;top: 100%;right: 0;margin-top: 0.625rem;width: 16.25rem;background: var(--bg-profil);border-radius: 0.938rem;box-shadow: 0 4px 4px rgba(0, 0, 0, 0.15);padding: 0.938rem 0;z-index: 10;}
+.profile-menu_links{display: grid;gap: 0;}
+.profile-menu .profile-menu_link {padding: 0.625rem 0.938rem;cursor: pointer;border-radius: 0.5rem;position: relative;}
+.profile-menu_link a{position: relative;}
+.profile-menu_link .badge-count{top: 0;}
+.profile-menu .profile-menu_link:hover {background: #e7e7e7;border-radius: 0;}
+.logout {color: red;}
+.rating {font-weight: bold;margin-bottom: 0.625rem;font-size: 1.5rem;padding-left: 1rem;}
+.logout-modal {position: fixed;inset: 0;background: rgba(0, 0, 0, 0.3);display: flex;justify-content: center;align-items: center;z-index: 10;}
+.logout-box {background: white;padding: 1.563rem;border-radius: 1rem;}
+.logout-actions {display: flex;gap: 0.625rem;margin-top: 0.938rem;}
+.logout-actions .btn-light {height: auto;border-radius: 1.25rem;}
+.header__right-false_poder{background: var(--bg-profil);width: 5.438rem;height: 5.438rem;border-radius: 1rem;display: flex;align-items: center;justify-content: center;}
+.stars-row {display: inline-flex;align-items: center;gap: 0.15rem;margin-left: 0.25rem;}
+.star-icon {width: 1rem;height: 1rem;}
 </style>

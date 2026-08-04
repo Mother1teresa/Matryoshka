@@ -3,31 +3,23 @@
     <transition name="fade-fast" mode="out-in">
       <div v-if="!isCreating" key="list">
         <div class="header-row">
-          <h2 class="page-title">Мои ролики</h2>
-          <button v-if="activeTab === 'active'" class="btn promo-btn">
-            Продвижение
-          </button>
-        </div>
-        <div class="create-video-section">
-          <div class="create-box">
-            <div class="camera-icon-circle">
-              <img src="/src/assets/img/icons/camera.svg" alt="camera" />
-            </div>
-            <button class="btn create-btn" @click="isCreating = true">Создать свой ролик</button>
-          </div>
+          <h2 class="page-title">Мои ролики
+            <button class="btn create-btn" @click="isCreating = true">Создать ролик</button>
+          </h2>
         </div>
         <div class="create-video__block">
-          <!-- Табы -->
           <div class="tabs-nav">
             <button
               :class="{ active: activeTab === 'active' }"
               @click="activeTab = 'active'">
-              Действующие
+              Действующие 
+              <!-- <span class="tab-count">{{ counts.active }}</span> -->
             </button>
             <button
               :class="{ active: activeTab === 'archive' }"
               @click="activeTab = 'archive'">
-              Архив
+              Архив 
+              <!-- <span class="tab-count">{{ counts.archive }}</span> -->
             </button>
           </div>
           <div class="tab-content">
@@ -328,23 +320,28 @@ const handleVideoCreated = (createdMedia) => {
 }
 .tabs-nav {
   display: flex;
-  gap: 4rem;
+  gap: 0rem;
+  border-radius: 0.625rem;
   margin-bottom: 1.625rem;
+  background: var(--bg-defort);
+  width: fit-content;
+  padding: 0.125rem 0.25rem;
 }
 .tabs-nav button {
-  padding-bottom: 0.625rem;
+  padding: 1rem 3.188rem;
   background: none;
   border: none;
-  font-size: 1.5rem;
-  color: #000000;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #858685;
   cursor: pointer;
   position: relative;
-  border-radius: 0;
-  border-bottom: 1px solid #020202;
+  background: var(--bg-defort);
+  border-radius: 0.625rem;
 }
 .tabs-nav button.active {
-  border-bottom: 1px solid #64a07a;
-  color: #64a07a;
+  color: var(--bg-defort);
+  background: var(--btn-bg);
 }
 
 .create-box {
@@ -361,16 +358,12 @@ const handleVideoCreated = (createdMedia) => {
 }
 .create-btn {
   background-color: var(--btn-bg);
-  width: 100%;
+  width: fit-content;
   font-size: 1.25rem;
   color: white;
-  padding: 0.438rem 0.688rem;
+  padding: 1.125rem 0.938rem;
   text-align: center;
-}
-.create-video__block {
-  border: 1px solid #d0d0d0;
-  border-radius: 0.625rem;
-  padding: 1rem 0.625rem;
+  font-weight: 700;
 }
 /* Кнопка три точки */
 .menu-dots-btn {
@@ -522,14 +515,31 @@ const handleVideoCreated = (createdMedia) => {
   gap: 1rem;
   margin-top: 1.5rem;
 }
-
-.modal-overlay {
-  pointer-events: auto;
+.modal-overlay {pointer-events: auto;}
+.confirm-modal {pointer-events: all;position: relative;z-index: 2;}
+.tabs-nav button.active .tab-count{color: #00000094;}
+.empty-messages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 6.25rem 1.25rem;
+  color: #888;
 }
-
-.confirm-modal {
-  pointer-events: all;
-  position: relative;
-  z-index: 2;
+.empty-icon {
+  font-size: 7rem; 
+  margin-bottom: 0.25rem;
+  opacity: .6;
+}
+.empty-messages h3 {
+  color: #333;
+  margin-bottom: 0.625rem;
+}
+.empty-messages p {
+  max-width: 18.75rem;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  margin-bottom: 1.563rem;
 }
 </style>

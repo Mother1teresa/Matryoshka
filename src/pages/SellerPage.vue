@@ -22,7 +22,15 @@
                   {{ sellerType }}
                 </div>
                 <div class="rating-block" v-if="seller.rating !== undefined">
-                  <div class="rating">{{ seller.rating }} <span>{{ renderStars(seller.rating) }}</span></div>
+                  <div class="rating">{{ seller.rating }} <span class="stars">
+                    <img
+                      v-for="n in 5"
+                      :key="n"
+                      :src="n <= Math.round(seller.rating || 0) ? '/src/assets/img/form/star.png' : '/src/assets/img/form/star_1.png'"
+                      class="star-icon"
+                      alt="★"
+                    />
+                  </span></div>
                 </div>
               </div>
               <div class="seller-desc">
@@ -128,7 +136,15 @@
                 </div>
                 <div class="review-meta">
                   <div class="deal-status">Сделка состоялась</div>
-                  <div class="stars-row">{{ '★'.repeat(review.rating) }}{{ '☆'.repeat(5 - review.rating) }}</div>
+                  <div class="stars-row">
+                    <img
+                      v-for="n in 5"
+                      :key="n"
+                      :src="n <= Math.round(review.rating) ? '/src/assets/img/form/star_1.png' : '/src/assets/img/form/star.png'"
+                      class="star-icon"
+                      alt="★"
+                    />
+                  </div>
                   <div class="review-date">{{ formatDate(review.date) }}</div>
                 </div>
               </div>
@@ -181,10 +197,6 @@ const seller = ref(null);
 const sellerProducts = ref([]);
 const sellerVideos = ref([]);
 
-const renderStars = (rating) => {
-  const r = Math.round(Number(rating) || 0);
-  return '★'.repeat(r) + '☆'.repeat(5 - r);
-};
 const sellerName = computed(() => {
   return seller.value?.name || seller.value?.username || seller.value?.companyName || 'Продавец';
 });
@@ -391,6 +403,9 @@ const playVideo = (video) => {
 .rating-block { margin-bottom: 0.563rem; }
 .rating { font-size: 1.5rem; font-weight: 600; }
 .products-grid-wrapper{background: #ececec; padding: 1.625rem 2rem 2rem 2rem; border-radius: 0 0 1.25rem 1.25rem;}
+.stars {display: flex;gap: 0.125rem;align-items: center;}
+.star-icon {width: 1.25rem;height: 1.25rem;}
+.stars-row {display: flex;gap: 0.125rem;}
 
 @media (max-width: 77rem) { .products,.video-grid_block { display: grid; grid-template-columns: repeat(5, 12.2rem); gap: 1rem; background: #ececec;}}
 </style>

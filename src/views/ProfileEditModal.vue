@@ -469,4 +469,15 @@ input::placeholder{color: #adadad;}
 .suggestions-list {position: absolute;top: calc(100% + 4px);left: 0;right: 0;background: white;border: 1px solid #e0e0e0;border-radius: 0.625rem;z-index: 100;list-style: none;padding: 0;margin: 0;max-height: 200px;overflow-y: auto;box-shadow: 0 4px 16px rgba(0,0,0,0.08);}
 .suggestions-list li {padding: 0.75rem 1rem;cursor: pointer;font-size: 0.95rem;color: #333;transition: background 0.15s;}
 .suggestions-list li:hover {background: #f5f5f5;}
+.checkbox-container input{
+  border: 2px solid #858685;
+  border-radius: 0.313rem !important;
+  border-color: #858685 !important;
+  width: 1.438rem !important;
+  height: 1.125rem !important;
+}
+.auth-forgot__check input:checked {
+  background: var(--btn-bg);
+  border-color: transparent !important;
+}
 </style>

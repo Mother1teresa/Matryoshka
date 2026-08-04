@@ -110,7 +110,18 @@
                 <router-link :to="{ name: 'SellerPage', params: { id: product?.sellerId } }" class="name">
                   {{ sellerName }}
                 </router-link>
-                <div class="rating">{{ sellerRating }} {{ renderStars(sellerRating) }}</div>
+                <div class="rating">
+                  {{ sellerRating }}
+                  <span class="stars">
+                    <img
+                      v-for="n in 5"
+                      :key="n"
+                      :src="n <= Math.round(sellerRating) ? '/src/assets/img/form/star.png' : '/src/assets/img/form/star_1.png'"
+                      class="star-icon"
+                      alt="★"
+                    />
+                  </span>
+                </div>
                 <div class="type">{{ sellerType }}</div>
                 <!-- <button class="btn subscribe" @click="onSubscribeClick" :class="{ 'is-active': subStore.isSubscribed(product?.sellerId) }">{{ subStore.isSubscribed(product?.sellerId) ? 'Отписаться' : 'Подписаться' }} </button> -->
               </div>
@@ -324,10 +335,6 @@ const sellerRating = computed(() => {
   return seller.value?.rating || 0;
 });
 
-const renderStars = (rating) => {
-  const r = Math.round(Number(rating) || 0);
-  return '★'.repeat(r) + '☆'.repeat(5 - r);
-};
 // === ГЕОКОДИРОВАНИЕ ===
 const resolveCoordinates = async () => {
   // Если координаты пришли с API
@@ -735,7 +742,8 @@ onBeforeUnmount(() => {
 .seller { display: flex; gap: 1.75rem;}
 .avatar { width: 4.525rem; height: 4.525rem; border-radius: 50%; margin-left: 0.938rem; object-fit: cover;}
 .name,.rating{ margin-bottom: .5rem; transition: opacity .3s;}
-.rating{ font-weight: 600; margin-top: 0.438rem;}
+.rating .stars {display: inline-flex;gap: 0.125rem;margin-left: 0.25rem;vertical-align: middle;}
+.star-icon {width: 1.1rem;height: 1.1rem;}
 .name:hover{ opacity: 0.6;}
 .seller-card__block{ font-size: 1.25rem;}
 .type{ margin-bottom: 0.875rem;}

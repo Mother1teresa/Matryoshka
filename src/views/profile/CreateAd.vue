@@ -2,7 +2,6 @@
   <div class="create-ad-page">
     <div class="container">
       <h1 class="page-title">{{ isEditMode ? 'Редактировать объявление' : 'Создать объявление' }}</h1>
-      
       <!-- Хлебные крошки -->
       <nav class="breadcrumbs">
         <template v-for="(crumb, index) in breadcrumbs" :key="index">
@@ -116,6 +115,7 @@
               placeholder="Напишите что-нибудь о своём объявлении"
             ></textarea>
           </div>
+          <span class="char-count">Не более 2 000 символов</span>
         </section>
 
         <!-- Фотографии -->
@@ -1298,7 +1298,14 @@ const publishAd = async () => {
     
   } catch (e) {
     console.error('Ошибка публикации:', e);
-    notify('Не удалось сохранить объявление', 'error');
+    // Вывод ошибок валидации с бэка
+    if (e.response?.data && typeof e.response.data === 'object') {
+      Object.entries(e.response.data).forEach(([field, msg]) => {
+        if (msg) notify(String(msg), 'error');
+      });
+    } else {
+      notify('Не удалось сохранить объявление', 'error');
+    }
   } finally {
     isSubmitting.value = false;
   }
@@ -1596,4 +1603,5 @@ margin-top: 2.438rem; border-radius: 1.875rem;}
 .suggestions-list {position: absolute;top: 100%;left: 0;right: 0;background: white;border: 1px solid #e0e0e0;border-radius: 0.625rem;z-index: 100;list-style: none;padding: 0;margin: 4px 0 0;max-height: 200px;overflow-y: auto;}
 .suggestions-list li {padding: 0.75rem 1rem;cursor: pointer;transition: 0.15s;}
 .suggestions-list li:hover {background: #f5f5f5;}
+.char-count{display:block;margin-top:.5rem;font-size:.75rem;color:#999;}
 </style>

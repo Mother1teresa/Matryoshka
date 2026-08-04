@@ -188,7 +188,7 @@ onUnmounted(() => {
   width: 2.5rem;
   height: 2.5rem;
   border: 3px solid #e5e7eb;
-  border-top-color: #64a07a;
+  border-top-color: var(--btn-bg);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -263,7 +263,7 @@ onUnmounted(() => {
   justify-content: space-between;
   padding: 0.6rem 1.3rem;
   color: white;
-  background-color: #64a07a; 
+  background-color: var(--btn-bg); 
   box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
   border-radius: 0.625rem;
   width: 13.25rem;

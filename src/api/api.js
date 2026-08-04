@@ -26,12 +26,26 @@ const doLogout = (auth, message = "Сессия истекла. Войдите �
   notify(message, "error");
   auth.logout();
 };
+// ⬇️ Универсальная проверка на 502 и обрыв связи
+const handleServerUnavailable = (error) => {
+  if (!error.response) {
+    notify("Нет соединения с сервером. Проверьте интернет.", "error");
+    return true;
+  }
+  if (error.response.status === 502) {
+    notify("Сервер взят в работу. Попробуйте позже.", "error");
+    return true;
+  }
+  return false;
+};
 
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    if (handleServerUnavailable(error)) {
+      return Promise.reject(error);
+    }
     const originalRequest = error.config;
-    if (!error.response) return Promise.reject(error);
 
     const { status, data } = error.response;
     const url = originalRequest?.url || "";
@@ -89,10 +103,10 @@ api.interceptors.response.use(
 authApi.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (!error.response) return Promise.reject(error);
-    
+    if (handleServerUnavailable(error)) {
+      return Promise.reject(error);
+    }
     const { status, data } = error.response;
-    
     if (status === 401 || data?.code === "SESSION_EXPIRED") {
       const { useAuthStore } = await import("/src/stores/authStore.js");
       doLogout(useAuthStore());

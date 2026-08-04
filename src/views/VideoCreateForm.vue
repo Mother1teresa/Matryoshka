@@ -23,6 +23,18 @@
           </label>
         </div>
       </div>
+      <div class="upload_info-video">
+        Требования к видео:<br>
+        <ul>
+          <li>Формат: MP4.</li>
+          <li>Соотношение сторон: 9:16.</li>
+          <li>Рекомендуемое разрешение: 1080 × 1920.</li>
+          <li>Длительность: до 60 секунд.</li>
+          <li>Видео должно быть качественным, без сильных искажений, размытости и посторонних надписей.</li>
+          <li>Звук должен быть корректным, если он присутствует.</li>
+          <li>Видео не должно нарушать правила сайта.</li>
+        </ul>
+      </div>
       <div class="upload-fields">
         <div class="field-group">
           <label><span>Аа</span> Описание <span style="color: red">*</span></label>
@@ -182,13 +194,13 @@ const onPublish = async () => {
 <style scoped>
 .video-upload-container { padding: 1.25rem; margin: 0 auto; }
 .back-nav { cursor: pointer; display: flex; align-items: center; gap: 0.625rem; margin-bottom: 1.875rem; font-size: 1.125rem; color: #333; }
-.upload-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 3.5rem; }
+.upload-grid { display: grid; grid-template-columns: 1fr .9fr 1fr; gap: 1.5rem; }
 .upload-zone {
   border: 2px dashed #ccc;
   border-radius: 1.25rem;
   aspect-ratio: 9/16;
   max-height: 56.688rem;
-  width: 100%;
+  /* width: 70%; */
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -197,6 +209,32 @@ const onPublish = async () => {
   cursor: pointer;
   overflow: hidden;
   position: relative;
+  height: 95%;
+}
+.upload_info-video{
+  font-size: 0.813rem;
+  color: #858685;
+}
+.upload_info-video li{
+  list-style: disc;
+  margin-bottom: .25rem;
+}
+.upload_info-video ul{
+  padding-left: 1.25rem;
+}
+.upload-fields{
+  /* width: 80%; */
+}
+.checkbox-container input{
+  border: 2px solid #858685;
+  border-radius: 0.313rem !important;
+  border-color: #858685 !important;
+  width: 1.438rem !important;
+  height: 1.125rem !important;
+}
+.auth-forgot__check input:checked {
+  background: var(--btn-bg);
+  border-color: transparent !important;
 }
 .video-preview-player { width: 100%; height: 100%; object-fit: cover; }
 .field-group { margin-bottom: 1.25rem; background: #F9F9F9; border-radius: 1.25rem; padding: 0.938rem;}
@@ -213,11 +251,11 @@ const onPublish = async () => {
   height: 10.938rem;
 }
 .textarea-description{
-  font-size: 1.2rem;
+  font-size: 0.875;
   height: 20.688rem;
 }
 .empty-stub { background: #fdf2f2; padding: 0.75rem; border-radius: 0.625rem; color: #b91c1c; font-size: 1rem; border: 1px solid #fee2e2; }
-.publish-btn { background: var(--btn-bg); color: white; width: 23.563rem; height: 3.5rem; padding: 0.875rem 0; border-radius: 1.25rem; font-size: 1.5rem; border: none; cursor: pointer; text-align: center;}
+.publish-btn { background: var(--btn-bg); color: white; width: 100%; height: 3.5rem; padding: 0.875rem 0; border-radius: 1.25rem; font-size: 1.5rem; border: none; cursor: pointer; text-align: center;}
 .publish-btn:disabled { background: #ccc; cursor: not-allowed; }
 .status-screen { height: 60vh; display: flex; justify-content: center; align-items: center; }
 .status-card {  background: white; padding: 3.75rem; border-radius: 1.875rem; text-align: center;  box-shadow: 0 10px 30px rgba(0,0,0,0.05); width: 100%; max-width: 500px;}
@@ -259,7 +297,7 @@ const onPublish = async () => {
 .author-info {
   display: flex;
   align-items: center;
-  width: 29rem;
+  width: 20rem;
   gap: 0.813rem;
 }
 .author-avatar {

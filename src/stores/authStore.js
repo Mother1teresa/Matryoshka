@@ -247,32 +247,31 @@ export const useAuthStore = defineStore("auth", {
 
     async initFCM() {
       if (!this.user?.id) return;
+      if (this.fcmToken) return;
       const token = await getFCMToken();
       if (!token) return;
       this.fcmToken = token;
       try {
         await api.post('/notifications', {
           userId: String(this.user.id),
-          token: token
+          token
         });
-        console.log('[FCM] Токен зарегистрирован');
+        console.log('[FCM] Токен зарегистрирован на бэкенде');
       } catch (e) {
-        console.error('[FCM] Ошибка регистрации:', e);
+        console.error('[FCM] Ошибка регистрации на бэкенде:', e);
       }
-      this._fcmUnsubscribe = listenToMessages((payload) => {
-        const { title, body } = payload.notification || {};
-        notify(body || title || 'Новое уведомление', 'info');
-        const newNote = {
-          id: payload.data?.notificationId || Date.now(),
-          title: title || 'Уведомление',
-          message: body || '',
-          date: new Date().toLocaleDateString('ru-RU'),
-          time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-          is_read: false,
-          createdAt: new Date().toISOString()
-        };
-        this.allNotifications.unshift(newNote);
-      });
+      if (!this._fcmUnsubscribe) {
+        this._fcmUnsubscribe = listenToMessages((payload) => {
+          const { title, body } = payload.notification || {};
+          notify(body || title || 'Новое уведомление', 'info');
+
+          this.allNotifications.unshift({
+            id: payload.data?.notificationId || Date.now(),
+            message: body || title || 'Новое уведомление',
+            createdAt: new Date().toISOString()
+          });
+        });
+      }
     },
     stopFCM() {
       if (this._fcmUnsubscribe) {
@@ -1053,6 +1052,7 @@ export const useAuthStore = defineStore("auth", {
           role: newRole,
           editable: editable,
           rating: rawData.rating || 0,
+          createdAt: rawData.createdAt,
         };
         this.user = updatedUser;
         console.log('this.user.editable ПОСЛЕ:', this.user?.editable);
@@ -1254,25 +1254,29 @@ export const useAuthStore = defineStore("auth", {
       return result ? result.name : null;
     },
     async fetchUserNotifications() {
-      if (!this.user?.id) {
-        console.log("Невозможно загрузить уведомления: user.id отсутствует");
+      if (!this.user?.id) return;
+
+      if (!this.fcmToken) {
+        await this.initFCM();
+      }
+      if (!this.fcmToken) {
+        console.log('[Notifications] FCM токен не получен');
         return;
       }
+
       this.isNotificationsLoading = true;
       try {
         const res = await api.get('/notifications');
-        this.allNotifications = (res.data || []).map(n => ({
+        const list = (res.data || []).map(n => ({
           id: n.id,
-          title: 'Уведомление',
           message: n.message,
-          date: n.createdAt ? new Date(n.createdAt).toLocaleDateString('ru-RU') : '',
-          time: n.createdAt ? new Date(n.createdAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : '',
-          is_read: false,
           createdAt: n.createdAt
         }));
+        this.allNotifications = list.sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        );
       } catch (e) {
-        console.error("Ошибка уведомлений:", e);
-        this.allNotifications = [];
+        console.error('Ошибка загрузки уведомлений:', e);
       } finally {
         this.isNotificationsLoading = false;
       }

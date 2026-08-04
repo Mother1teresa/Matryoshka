@@ -1,13 +1,11 @@
 <template>
   <div class="general-container ads-page">
     <div class="header-row">
-      <h2 class="page-title">Мои объявления</h2>
-      <button class="btn promo-btn">Продвижение</button>
+      <h2 class="page-title">Мои объявления
+        <router-link to="/profile/create-ad" class="btn go-to-ads-btn">Создать объявления</router-link>
+      </h2>
     </div>
     <div class="tabs-nav">
-      <button :class="{ active: activeTab === 'drafts' }" @click="activeTab = 'drafts'">
-        Черновики <span class="tab-count">{{ counts.drafts }}</span>
-      </button>
       <button :class="{ active: activeTab === 'active' }" @click="activeTab = 'active'">
         Действующие <span class="tab-count">{{ counts.active }}</span>
       </button>
@@ -35,8 +33,8 @@
                   {{ ad.title }}
                 </router-link>
               </h3>
-              <button class="menu-dots-btn" @click.stop="toggleMenu(ad.id)">
-                <span></span><span></span><span></span>
+              <button class="menu-gear-btn" @click.stop="toggleMenu(ad.id)">
+                <img src="/src/assets/img/icons/settings-gear.svg" alt="menu" />
               </button>
               <div v-if="activeMenuId === ad.id" class="video-dropdown-menu">
                 <button @click="editAd(ad.id)">Редактировать</button>
@@ -49,12 +47,12 @@
                 <button class="delete-btn" @click="handleDelete(ad)">Удалить</button>
               </div>
             </div>
-            <div v-if="activeTab === 'archive'" class="archive-reason">Продал / Другая причина</div>
+            <div class="ad-location"><img src="/src/assets/img/location_on.svg" />{{ ad.city }}</div>
+            <p class="ad-description">{{ ad.description }}</p>
+            <!-- <div v-if="activeTab === 'archive'" class="archive-reason">Продал / Другая причина</div> -->
             <div class="ad-price">{{ ad.price.toLocaleString() }} ₽</div>
             <!-- <div class="ad-stock">{{ ad.stock }} шт. в наличии</div> -->
-            <div class="ad-auto-pub">Автопубликация: осталось {{ ad.daysLeft }} дней</div>
-            <p class="ad-description">{{ ad.description }}</p>
-            <div class="ad-location">{{ ad.city }}</div>
+            <!-- <div class="ad-auto-pub">Автопубликация: осталось {{ ad.daysLeft }} дней</div> -->
           </div>
           <div class="ad-stats-block">
             <!-- <div class="mini-preview-stats">
@@ -74,7 +72,7 @@
                 </div>
               </div>
             </div> -->
-            <button v-if="activeTab === 'active'" class="btn boost-btn">Увеличить продажи</button>
+            <!-- <button v-if="activeTab === 'active'" class="btn boost-btn">Увеличить продажи</button> -->
           </div>
         </div>
       </div>
@@ -174,7 +172,6 @@ const currentAds = computed(() => {
 });
 
 const counts = computed(() => ({
-  drafts: myAds.value.filter(ad => ad.status === 'drafts').length,
   active: myAds.value.filter(ad => ad.status === 'active').length,
   archive: myAds.value.filter(ad => ad.status === 'archive').length,
 }));
@@ -232,31 +229,36 @@ onUnmounted(() => {
 }
 .tabs-nav {
   display: flex;
-  gap: 4rem;
+  gap: 0rem;
+  border-radius: 0.625rem;
   margin-bottom: 1.625rem;
+  background: var(--bg-defort);
+  width: fit-content;
+  padding: 0.125rem 0.25rem;
 }
 .tabs-nav button {
-  padding-bottom: 0.625rem;
+  padding: 1rem 3.188rem;
   background: none;
   border: none;
-  font-size: 1.5rem;
-  color: #000000;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #858685;
   cursor: pointer;
   position: relative;
-  border-radius: 0;
-  border-bottom: 1px solid #020202;
+  background: var(--bg-defort);
+  border-radius: 0.625rem;
 }
 .tabs-nav button.active {
-  border-bottom: 1px solid #64a07a;
-  color: #64a07a;
+  color: var(--bg-defort);
+  background: var(--btn-bg);
 }
-.tabs-nav button.active .tab-count{
-    color: #00000094;
-}
+.tabs-nav button.active .tab-count{color: var(--bg-defort);}
 .tab-count {
-  font-size: 1.2rem;
-  color: #8E8C8C;
-  margin-left: 0.313rem;
+  position: absolute;
+  font-size: 1.25rem;
+  font-weight: 700;
+  top: .3rem;
+  color: #858685;
   vertical-align: super;
 }
 .ad-card-horizontal {
@@ -304,11 +306,14 @@ onUnmounted(() => {
 }
 .ad-title {
   font-size: 1.5rem;
-  margin-bottom: 0.563rem;
+  margin-bottom: 2rem;
 }
 .ad-price {
   font-size: 1.5rem;
   margin-bottom: 0.313rem;
+  padding: 0.438rem 1rem;
+  background: var(--btn-bg);
+  font-weight: 700;
 }
 .ad-stock, .ad-auto-pub,.archive-reason {
   font-size: 1rem;
@@ -318,16 +323,19 @@ onUnmounted(() => {
   color: #aaa;
 }
 .ad-description {
-  margin: 0 0 0.938rem 0;
-  line-height: 1.1;
+  margin: 1.25rem 0 1.25rem 0;
+  font-size: 1rem;
+  color: #858685;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  width: 90%;
+  width: 31.625rem;
 }
 .ad-location {
   margin-top: auto;
+  display: flex;
+  gap: 1.563rem;
 }
 .ad-stats-block {
   display: flex;
@@ -399,26 +407,28 @@ onUnmounted(() => {
 /* Выпадашка */
 .video-dropdown-menu {
   position: absolute;
-  top: 1rem;
-  right: 0.8rem;
+  top: calc(100% + 0.25rem);
+  right: 0;
   background: var(--btn-bg);
-  border-radius: 0.938rem;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  z-index: 1;
-  max-width: 13.975rem;
-  color: #f5f5f5;
+  border-radius: 1.25rem;
   overflow: hidden;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  min-width: 12rem;
+  box-shadow: 0 0.5rem 1.25rem rgba(0,0,0,0.1);
 }
 .video-dropdown-menu button {
-  width: 100%;
-  padding: 0.6rem 1rem;
-  border: none;
   background: none;
+  border: none;
+  color: var(--bg-defort);
+  padding: 1rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 600;
   text-align: left;
-  font-size: 0.955rem;
   cursor: pointer;
-  border-radius: 0;
-  transition: 0.3s;
+  transition: background 0.2s;
+  white-space: nowrap;
 }
 .video-dropdown-menu button:first-child {
   padding-top: 0.8rem;
@@ -428,12 +438,66 @@ onUnmounted(() => {
   padding-bottom: 0.8rem;
 }
 .video-dropdown-menu button:hover {
-  background: #388253;
-  color: white;
+  background: rgba(0,0,0,0.08);
+}
+
+.video-dropdown-menu button + button {
+  border-top: 1px solid rgba(255,255,255,0.2);
 }
 .video-dropdown-menu .delete-btn {
-  /* color: #89140e; */
-  border-top: 1px solid #eee !important;
-  border-radius: 0;
+  color: #ffdddd;
+}
+.page-title .go-to-ads-btn{
+  font-weight: 700;
+  font-size: 1.25rem;
+  padding: 1.125rem 1rem;
+  background: var(--btn-bg);
+  color: #F5F5F5;
+  transition: opacity .3s;
+  border-radius: 1.25rem;
+}
+.menu-gear-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 3.5rem;
+  height: 3.5rem;
+  background: var(--btn-bg);
+  border: none;
+  border-radius: 0 0 0 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+}
+.menu-gear-btn img {
+  width: 1.5rem;
+  height: 1.5rem;
+  filter: brightness(0) invert(1);
+}
+.empty-messages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 6.25rem 1.25rem;
+  color: #888;
+}
+.empty-icon {
+  font-size: 7rem; 
+  margin-bottom: 0.25rem;
+  opacity: .6;
+}
+.empty-messages h3 {
+  color: #333;
+  margin-bottom: 0.625rem;
+}
+.empty-messages p {
+  max-width: 18.75rem;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  margin-bottom: 1.563rem;
 }
 </style>

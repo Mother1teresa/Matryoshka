@@ -220,37 +220,8 @@ onUnmounted(() => {
     </div>
   </div>
 </template>
-
 <style scoped>
-.messages-page {
-  max-width: 680px;
-  margin: 0 auto;
-  padding: 24px 16px;
-  background: #f5f5f5;
-  min-height: 100vh;
-}
-
-.page-title {
-  text-align: center;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #111;
-  margin-bottom: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.unread-badge {
-  background: #ff4757;
-  color: #fff;
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 2px 10px;
-  border-radius: 12px;
-}
-
+.unread-badge {background: #ff4757;color: #fff;font-size: 0.75rem;font-weight: 600;padding: 2px 10px;border-radius: 12px;}
 /* Плашка Матрёшка */
 .matreshka-banner {
   display: flex;
@@ -264,195 +235,31 @@ onUnmounted(() => {
   transition: box-shadow 0.2s;
   height: 8.938rem;
 }
-
-.matreshka-banner:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-.matreshka-avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex-shrink: 0;
-}
-
-.matreshka-text {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.matreshka-name {
-  font-weight: 700;
-  font-size: 0.9375rem;
-  color: #111;
-}
-
-.matreshka-desc {
-  font-size: 0.8125rem;
-  color: #888;
-  line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-/* Список чатов */
-.chats-lists{
-  border: 1px solid #D0D0D0;
-  height: 100%;
-  border-radius: 0.625rem;
-  padding: 0.625rem 0.625rem 0.625rem 0.438rem;
-  overflow: scroll;
-  height: 50rem;
-}
-
-.chats-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.313rem;
-}
-
-.chat-card {
-  display: flex;
-  align-items: flex-start;
-  gap: 1.875rem;
-  background: #fff;
-  border-radius: 1.25rem;
-  padding: 1.25rem 0.938rem 0.625rem 0.938rem;
-  cursor: pointer;
-  /* box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06); */
-  transition: box-shadow 0.2s, transform 0.15s;
-  height: 8.938rem;
-}
-
-.chat-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  transform: translateY(-1px);
-}
-
-.chat-left {
-  flex-shrink: 0;
-  position: relative;
-}
-
-.user-avatar {
-  width: 2.813rem;
-  height: 2.813rem;
-  border-radius: 3.438rem;
-  object-fit: cover;
-  position: absolute;
-  left: 30%;
-  top: -1rem;
-}
-.user-foto{
-  width: 7.063rem;
-  height: 7.063rem;
-  border-radius: 1.563rem;
-}
-.chat-center {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.user-name {
-  font-weight: 400;
-  font-size: 1.5rem;
-  margin-left: -.6rem;
-}
-
-.product-title {
-  font-size: 0.875rem;
-}
-
-.last-message {
-  font-size: 0.875rem;
-  color: #7C7C7C;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-}
-
-.last-message.unread {
-  font-weight: 600;
-  color: #111;
-}
-
-.you-label {
-  color: #2ecc71;
-  font-weight: 500;
-}
-
-.chat-right {
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.5rem;
-  min-width: 5rem;
-  height: 100%;
-  justify-content: flex-end;
-}
-
-.price-block {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.price {
-  font-weight: 700;
-  font-size: 0.9375rem;
-  color: #111;
-}
-
-.mini-product-thumb {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  object-fit: cover;
-}
-
-.meta-block {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.bell-icon {
-  width: 18px;
-  height: 18px;
-  color: #888;
-}
-
-.time {
-  font-size: 1rem;
-  color: #8E8C8C;
-}
-
-.loading-state {
-  text-align: center;
-  padding: 3rem 1rem;
-  color: #888;
-  font-size: 0.9375rem;
-}
-
-.empty-messages {
-  text-align: center;
-  padding: 4rem 1rem;
-  background: #fff;
-  border-radius: 16px;
-}
-
-.empty-messages h3 {
-  font-size: 1.0625rem;
-  color: #888;
-  font-weight: 500;
-}
+.matreshka-banner:hover {box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);}
+.matreshka-avatar {width: 48px;height: 48px;border-radius: 50%;object-fit: cover;flex-shrink: 0;}
+.matreshka-text {display: flex;flex-direction: column;gap: 4px;}
+.matreshka-name {font-weight: 700;font-size: 0.9375rem;color: #111;}
+.matreshka-desc {font-size: 0.8125rem;color: #888;line-height: 1.4;display: -webkit-box;-webkit-line-clamp: 2;-webkit-box-orient: vertical;overflow: hidden;}
+.chats-lists{border: 1px solid #D0D0D0;height: 100%;border-radius: 0.625rem;padding: 0.625rem 0.625rem 0.625rem 0.438rem;overflow: scroll;height: 50rem;}
+.chats-list {display: flex;flex-direction: column;gap: 0.313rem;}
+.chat-card {display: flex;align-items: flex-start;gap: 1.875rem;background: #fff;border-radius: 1.25rem;padding: 1.25rem 0.938rem 0.625rem 0.938rem;cursor: pointer;/* box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06); */transition: box-shadow 0.2s, transform 0.15s;height: 8.938rem;}
+.chat-card:hover {box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);transform: translateY(-1px);}
+.chat-left {flex-shrink: 0;position: relative;}
+.user-avatar {width: 2.813rem;height: 2.813rem;border-radius: 3.438rem;object-fit: cover;position: absolute;left: 30%;top: -1rem;}
+.user-foto{width: 7.063rem;height: 7.063rem;border-radius: 1.563rem;}
+.chat-center {flex: 1;min-width: 0;display: flex;flex-direction: column;gap: 3px;}
+.user-name {font-weight: 400;font-size: 1.5rem;margin-left: -.6rem;}
+.product-title {font-size: 0.875rem;}
+.last-message {font-size: 0.875rem;color: #7C7C7C;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;max-width: 100%;}
+.last-message.unread {font-weight: 600;color: #111;}
+.you-label {color: #2ecc71;font-weight: 500;}
+.chat-right {flex-shrink: 0;display: flex;flex-direction: column;align-items: flex-end;gap: 0.5rem;min-width: 5rem;height: 100%;justify-content: flex-end;}
+.price-block {display: flex;align-items: center;gap: 8px;}
+.price {font-weight: 700;font-size: 0.9375rem;color: #111;}
+.mini-product-thumb {width: 32px;height: 32px;border-radius: 8px;object-fit: cover;}
+.meta-block {display: flex;align-items: center;gap: 6px;}
+.bell-icon {width: 18px;height: 18px;color: #888;}
+.time {font-size: 1rem;color: #8E8C8C;}
+.empty-messages {text-align: center;padding: 4rem 1rem;background: #fff;border-radius: 1.25rem;margin-top: 2.5rem;}
+.empty-messages h3 {font-size: 1.0625rem;color: #888;font-weight: 500;}
 </style>

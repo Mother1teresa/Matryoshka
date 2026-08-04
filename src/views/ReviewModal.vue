@@ -35,7 +35,14 @@
           <div class="form-group center">
             <label>Оцените пользователя</label>
             <div class="stars-rating">
-              <span v-for="star in 5" :key="star" :class="['star', { active: star <= form.rating }]" @click="form.rating = star">★</span>
+              <img
+                v-for="star in 5"
+                :key="star"
+                :src="star <= form.rating ? '/src/assets/img/form/star_1.png' : '/src/assets/img/form/star.png'"
+                :class="['star', { active: star <= form.rating }]"
+                @click="form.rating = star"
+                alt="★"
+              />
             </div>
           </div>
 
@@ -177,8 +184,10 @@ const submitReview = async () => {
 .radio-item:hover .radio-custom{border-color:#64A07A;}
 input[type="radio"]:checked+.radio-custom{border-color:#64A07A;}
 input[type="radio"]:checked+.radio-custom::after{content:"";position:absolute;inset:.25rem;background:#64A07A;border-radius:50%;}
-.stars-rating{font-size:2.5rem;color:#e0e0e0;cursor:pointer;display:flex;gap:.5rem;justify-content:center;}
-.star.active{color:#64A07A;}
+.stars-rating{display:flex;gap:.5rem;justify-content:center;cursor:pointer;}
+.star{width:2.5rem;height:2.5rem;transition:transform .15s;}
+.star:hover{transform:scale(1.15);}
+.star.active{opacity:1;}
 textarea{width:100%;height:7.5rem;background:#f5f5f5;border:.063rem solid #eee;border-radius:.75rem;padding:1rem;resize:none;font-family:inherit;font-size:.875rem;color:#333;}
 textarea::placeholder{color:#aaa;font-size:.875rem;}
 .char-count{display:block;margin-top:.5rem;font-size:.75rem;color:#999;}

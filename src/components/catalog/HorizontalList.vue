@@ -9,14 +9,15 @@ import { categories } from "/src/data/categories.js";
 import { useFavoritesStore } from "/src/stores/favoritesStore.js";
 import { useAuthStore } from "/src/stores/authStore.js";
 import { useModalStore } from "/src/stores/modal.js";
-import { API_FILTER_FIELDS } from "/src/utils/filterToApiMapper.js"
-import { useRegionModalStore } from "/src/stores/regionModal.js"
-const region = useRegionModalStore()
+import { useRegionModalStore } from "/src/stores/regionModal.js";
+
+const region = useRegionModalStore();
 
 const favStore = useFavoritesStore();
 const auth = useAuthStore();
 const modal = useModalStore();
 const isNumberShown = ref(false);
+const isPhoneLoading = ref(false);
 const currentPhone = ref('');
 const currentSellerName = ref('');
 
@@ -31,21 +32,19 @@ const route = useRoute();
 const router = useRouter();
 const store = useProductStore();
 
-
-
 const displayItems = computed(() => {
-  let items
+  let items;
   if (props.subcategory) {
-    items = store.getProductsByCategory(props.category, props.subcategory)
+    items = store.getProductsByCategory(props.category, props.subcategory);
   } else if (props.section) {
-    items = store.getProductsByCategory(props.category, props.section)
+    items = store.getProductsByCategory(props.category, props.section);
   } else {
-    items = store.products
+    items = store.products;
   }
-  if (!region.selectedRegion) return items
-  const city = region.selectedRegion.toLowerCase()
-  return items.filter(p => (p.city || p.address || '').toLowerCase().includes(city))
-})
+  if (!region.selectedRegion) return items;
+  const city = region.selectedRegion.toLowerCase();
+  return items.filter(p => (p.city || p.address || '').toLowerCase().includes(city));
+});
 
 const getImageUrl = (item) => {
   if (item.images && item.images.length > 0) {
@@ -78,23 +77,42 @@ const checkAuthAndRun = (
   }
   action();
 };
-
-const onShowNumberClick = (item) => {
-  if (!item?.seller?.phone) {
-    notify('Номер телефона не указан', 'error');
+const onShowNumberClick = async (item) => {
+  const sellerId = item.sellerId || item.userId;
+  if (!sellerId) {
+    notify('Продавец не найден', 'error');
     return;
   }
-  checkAuthAndRun(() => {
-    currentPhone.value = item.seller.phone;
-    currentSellerName.value = item.seller.name || 'Продавцу';
-    isNumberShown.value = true;
+
+  checkAuthAndRun(async () => {
+    isPhoneLoading.value = true;
+    try {
+      const profile = await auth.fetchProfileById(sellerId);
+      if (!profile?.phone) {
+        notify('Номер телефона не указан', 'error');
+        return;
+      }
+      currentPhone.value = profile.phone;
+      currentSellerName.value = profile.name || 'Продавцу';
+      isNumberShown.value = true;
+    } catch (e) {
+      console.error('Ошибка загрузки профиля продавца:', e);
+      notify('Не удалось загрузить номер телефона', 'error');
+    } finally {
+      isPhoneLoading.value = false;
+    }
   }, "Войдите, чтобы увидеть номер телефона");
 };
 
 const onWriteClick = async (item) => {
+  const sellerId = item.sellerId || item.userId;
+  if (!sellerId) {
+    notify('Продавец не найден', 'error');
+    return;
+  }
   checkAuthAndRun(async () => {
     try {
-      const roomId = await auth.createPrivateRoom(item.sellerId);
+      const roomId = await auth.createPrivateRoom(sellerId);
       router.push({ name: 'ChatDetail', params: { id: roomId } });
     } catch (err) {
       notify("Не удалось открыть чат", "error");
@@ -220,7 +238,14 @@ const emptyStateText = computed(() => {
         <div class="card-content__rigth">
           <div class="card-content__rigth-btns">
             <a class="btn card-btn" @click="onWriteClick(item)">Написать</a>
-            <button class="btn card-btn" @click="onShowNumberClick(item)">Показать номер</button>
+            <!-- ⬇️ disabled + текст при загрузке -->
+            <button
+              class="btn card-btn"
+              :disabled="isPhoneLoading"
+              @click="onShowNumberClick(item)"
+            >
+              {{ isPhoneLoading ? 'Загрузка...' : 'Показать номер' }}
+            </button>
           </div>
         </div>
       </div>
@@ -292,6 +317,10 @@ const emptyStateText = computed(() => {
   background-color: white;
   border: 1px solid var(--btn-bg);
   color: var(--btn-bg);
+}
+.card-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 .card-content {
   display: flex;

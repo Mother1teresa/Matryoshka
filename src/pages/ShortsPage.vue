@@ -100,7 +100,15 @@
                     </router-link>
                     <div class="rating-badge">
                       <span class="rating-num">{{ video.author?.rating || 0 }}</span>
-                      <span class="stars">{{ renderStars(video.author?.rating) }}</span>
+                      <span class="stars">
+                        <img
+                          v-for="n in 5"
+                          :key="n"
+                          :src="n <= Math.round(video.author?.rating || 0) ? '/src/assets/img/form/star.png' : '/src/assets/img/form/star_1.png'"
+                          class="star-icon"
+                          alt="★"
+                        />
+                      </span>
                       <!-- <span v-if="isOwnVideo(video)" class="own-badge">Это ваш ролик</span> -->
                       <!-- <button v-else-if="video.author?.id" class="btn-primary" 
                         :class="{'is-active': subStore.isSubscribed(video.author?.id)}" 
@@ -241,11 +249,6 @@ const isMuted = ref(true);
 const isScrolling = ref(false);
 const activeVideoId = ref(null);
 let scrollTimeout = null;
-
-const renderStars = (rating) => {
-  const r = Math.round(Number(rating) || 0);
-  return '★'.repeat(r) + '☆'.repeat(5 - r);
-};
 
 const buildCommentTree = (comments) => {
   if (!comments?.length) return [];
@@ -926,7 +929,8 @@ onUnmounted(() => {
   color: #1a1a1a;
   width: auto;
 }
-.stars { letter-spacing: 0px; font-size: 1.35rem;}
+.stars { display: flex; gap: 0.125rem; }
+.star-icon { width: 1.1rem; height: 1.1rem; }
 .btn-primary {
   width: 6.875rem;
   background: #6aaa7d;

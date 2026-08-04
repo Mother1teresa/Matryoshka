@@ -8,24 +8,28 @@
         <div class="summary-card">
           <img :src="auth.userAvatar" class="large-avatar" />
           <div class="summary-info">
-            <div class="user-name">{{ userName }}</div>
-            <div class="user-type">{{ userType }}</div>
-
+            <div class="user-type">{{ userRole === 'COMPANY' ? 'Компания' : 'Частное лицо' }}</div>
             <div v-if="userRating > 0" class="rating-badge">
               <span class="rating-num">{{ userRating }}</span>
-              <span class="stars">{{ userStars }}</span>
+              <div class="stars">
+                <img
+                  v-for="n in 5"
+                  :key="n"
+                  :src="n <= Math.round(userRating) ? '/src/assets/img/form/star.png' : '/src/assets/img/form/star_1.png'"
+                  class="star-icon"
+                  alt="★"
+                />
+              </div>
               <!-- <span class="reviews-count">{{ reviewsCount }} отзывов</span> -->
             </div>
-            <div v-else class="empty-hint">
+            <div v-if="userRating > 0" class="empty-hint">
               Отвечайте на отзывы, так вы будете более лояльны к клиентам
             </div>
+            <div v-if="userRating === 0" class="empty-state">
+              <div class="empty-title">У вас пока нет отзывов</div>
+              <div class="empty-subtitle">Разместите объявление или опубликуйте мини-видео</div>
+            </div>
           </div>
-        </div>
-
-        <!-- Empty-state внутри той же белой карточки -->
-        <div v-if="reviews.length === 0" class="empty-state">
-          <div class="empty-title">У вас пока нет отзывов</div>
-          <div class="empty-subtitle">Разместите объявление или опубликуйте мини-видео</div>
         </div>
       </div>
 
@@ -39,7 +43,15 @@
                 <div v-else class="user-avatar-placeholder" :style="{ backgroundColor: getUserColor(review.author) }">
                   {{ review.author?.charAt(0).toUpperCase() }}
                 </div>
-                <div class="stars-row">{{ reviewStore.renderStars(review.rating) }}</div>
+                <div class="stars-row">
+                  <img
+                    v-for="n in 5"
+                    :key="n"
+                    :src="n <= Math.round(review.rating) ? '/src/assets/img/form/star_1.png' : '/src/assets/img/form/star.png'"
+                    class="star-icon"
+                    alt="★"
+                  />
+                </div>
               </div>
               <div class="user-details">
                 <div class="user-name">{{ review.author }}</div>
@@ -102,10 +114,6 @@ const replyTexts = ref({});
 const activeReplyFields = ref({});
 
 const userRating = computed(() => auth.user?.rating || 0);
-const userStars = computed(() => {
-  const r = Math.round(userRating.value);
-  return '★'.repeat(r) + '☆'.repeat(5 - r);
-});
 const reviewsCount = computed(() => reviewStore.getReviewsCountById(auth.user?.id));
 const reviews = computed(() => reviewStore.reviews || []);
 const isOwnProfile = computed(() => true);
@@ -136,12 +144,8 @@ async function sendReply(reviewId) {
 </script>
 
 <style scoped>
-.reviews-container {
-  padding: 2rem 0;
-}
-.reviews-content {
-  margin-top: 2.5rem;
-}
+.reviews-container {padding: 2.188rem 0;}
+.reviews-content {margin-top: 1.25rem;}
 .reviews-summary {
   display: flex;
   flex-direction: column;
@@ -156,36 +160,20 @@ async function sendReply(reviewId) {
   align-items: center;
   gap: 1.5rem;
 }
-.summary-info {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.25rem;
-}
+
 .user-name {
   font-size: 1.25rem;
   font-weight: 700;
   color: #242424;
 }
 .user-type {
-  font-size: 1rem;
+  font-size: 1.25rem;
   color: #262626;
+  font-weight: 700;
 }
 .stars {
-  color: var(--btn-bg);
-  letter-spacing: 2px;
-  font-size: 2.65rem;
-}
-.rating-badge {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.25rem;
-}
-.rating-num {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #1a1a1a;
+  gap: 0.125rem;
 }
 .reviews-count {
   font-size: 0.875rem;
@@ -193,12 +181,12 @@ async function sendReply(reviewId) {
   margin-left: 0.25rem;
 }
 .empty-hint {
-  font-size: 0.875rem;
-  color: #888;
-  margin-top: 0.25rem;
+  font-size: 0.813rem;
+  color: #858685;
+  margin-top: 0.313rem;
 }
 .empty-state {
-  padding-left: 7.75rem; /* 6.25rem аватар + 1.5rem gap */
+  text-align: left;
 }
 .empty-title {
   font-size: 1rem;
@@ -282,11 +270,10 @@ async function sendReply(reviewId) {
   top: 0;
   right: 0;
   width: 4.375rem;
-
 }
 .stars-row {
-  color: var(--btn-bg);
-  letter-spacing: 1px;
+  display: flex;
+  gap: 0.125rem;
 }
 .review-date {
   font-size: 0.75rem;

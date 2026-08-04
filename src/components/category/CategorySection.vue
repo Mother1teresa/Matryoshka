@@ -18,7 +18,10 @@
           <img src="/src/assets/img/catalog/catalog4.svg" />
           Недвижимость
         </router-link>
-        <button class="category" @click="menu.open()">Все категории</button>
+        <router-link to="/animals" class="category">
+          <img src="/src/assets/img/catalog/catalog8.svg" />
+          Животные
+        </router-link>
         <router-link to="/rabota" class="category">
           <img src="/src/assets/img/catalog/catalog5.svg" alt="" />
           Работа
@@ -31,10 +34,8 @@
           <img src="/src/assets/img/catalog/catalog7.svg" />
           Путешествия
         </router-link>
-        <router-link to="/animals" class="category">
-          <img src="/src/assets/img/catalog/catalog8.svg" />
-          Животные
-        </router-link>
+        
+        <button class="category" @click="menu.open()">Все категории</button>
       </div>
     </div>
   </section>

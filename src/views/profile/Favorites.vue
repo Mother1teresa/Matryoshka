@@ -1,24 +1,23 @@
 <template>
   <div class="general-container favorites-page">
     <div class="favorites-header">
-      <div class="header-row">
-        <h2 class="page-title">Избранные</h2>
-      </div>
-      <div class="custom-select-wrapper" v-click-outside="closeDropdown">
-        <div class="select-header" @click="isDropdownOpen = !isDropdownOpen">
-          <span>{{ selectedType === 'videos' ? 'Мини-видео' : 'Объявления' }}</span>
-          <span class="arrow-icon" :class="{ 'is-rotated': isDropdownOpen }"></span>
-        </div>
-        <transition name="fade">
-          <div v-if="isDropdownOpen" class="select-options">
-            <div class="option" @click="changeType('videos')">Мини-видео</div>
-            <div class="option" @click="changeType('items')">Объявления</div>
+        <h2 class="page-title">Избранные
+          <div class="custom-select-wrapper" v-click-outside="closeDropdown">
+            <div class="select-header" @click="isDropdownOpen = !isDropdownOpen">
+              <span>{{ selectedType === 'videos' ? 'Мини-видео' : 'Объявления' }}</span>
+              <span class="arrow-icon" :class="{ 'is-rotated': isDropdownOpen }"></span>
+            </div>
+            <transition name="fade">
+              <div v-if="isDropdownOpen" class="select-options">
+                <div class="option" @click="changeType('videos')">Мини-видео</div>
+                <div class="option" @click="changeType('items')">Объявления</div>
+              </div>
+            </transition>
           </div>
-        </transition>
-      </div>
+        </h2>
     </div>
     <div class="favorites-content">
-      <div v-if="isLoading" class="loading-plug">Загрузка...</div>
+      <div v-if="isLoading" class="loading-state">Загрузка...</div>
       <template v-else-if="currentItems.length > 0">
         <!-- Тип: Видео -->
         <template v-if="selectedType === 'videos'">
@@ -104,8 +103,8 @@
       </template>
 
       <!-- Пустое состояние -->
-      <div v-else class="empty-state">
-        <p>В избранном пока ничего нет</p>
+      <div v-else class="empty-messages">
+        <h3>В избранном пока ничего нет</h3>
       </div>
     </div>
 
@@ -270,100 +269,55 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.favorites-header {
-  display: grid;
-  align-items: center;
-  margin-bottom: 2rem;
-  width: 100%;
-}
-.custom-select-wrapper {
-  position: relative;
-  width: 15rem;
-  display: flex;
-  justify-content: flex-end;
-  width: 100%;
-}
-.select-header {
-  background: #fff;
-  padding: 1.063rem;
-  border-radius: 1.25rem;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  cursor: pointer;
-  width: 18.25rem;
-  gap: 3.625rem;
-  position: relative;
-}
-.select-header span{font-size: 1.5rem;font-weight: 1;}
+.favorites-header {display: grid;align-items: center;width: 100%;}
+.custom-select-wrapper {position: relative;width: 15rem;display: flex;justify-content: flex-end;width: 100%;}
+.page-title {width: 100%;padding: 1.125rem 1.25rem;display: flex;justify-content: space-between;align-items: center;gap: 1rem;}
+.custom-select-wrapper {position: relative;width: 15.188rem; display: flex;justify-content: flex-end;}
+.select-header span{font-size: 1.25rem;font-weight: 700;}
 .arrow-icon {
   width: 0.75rem;
   height: 0.75rem;
-  border-right: 0.125rem solid #000;
-  border-bottom: 0.125rem solid #000;
+  border-right: 0.125rem solid var(--bg-defort);
+  border-bottom: 0.125rem solid var(--bg-defort);
   transform: translateY(-0.25rem) rotate(45deg);
   transition: transform 0.3s ease;
   flex-shrink: 0; 
-  margin-right: 1.25rem;
+  margin-right: 0;
 }
-
-.arrow-icon.is-rotated {
-  transform: translateY(0.25rem) rotate(-135deg);
-}
+.arrow-icon.is-rotated {transform: translateY(0.25rem) rotate(-135deg);}
 .is-rotated { transform: rotate(180deg); }
-
+.select-header {
+  background: var(--btn-bg);
+  color: var(--bg-defort);
+  padding: 1.125rem 1.5rem;
+  border-radius: 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  width: 100%;
+  gap: 1rem;
+  position: relative;
+}
 .select-options {
   position: absolute;
-  top: 110%;
+  top: calc(100% + 0.25rem);
   right: 0;
-  width: fit-content;
-  background: #fff;
+  width: 100%;
+  background: #518E68;
   border-radius: 1.25rem;
   overflow: hidden;
   z-index: 10;
-  box-shadow: 0 0.5rem 1.25rem rgba(0,0,0,0.1);
-  width: 18.25rem;
+  box-shadow: none;
 }
-
-.option {
-  padding: 1rem 1.25rem;
-  cursor: pointer;
-  font-size: 1.25rem;
-}
-.option:hover { background: #f5f5f5; }
-.favorites-content{
-   border: 1px solid #D9D9D9;
-   padding: 0.625rem;
-   border-radius: 0.625rem;
-}
-.fav-video-card {
-  display: flex;
-  gap: 1.5rem;
-  justify-content: space-between;
-  background: #fff;
-  padding: 0.625rem 0.938rem;
-  border-radius: 1.25rem;
-  /* margin-bottom: 1.25rem; */
-  box-shadow: 0 0.25rem 0.938rem rgba(0,0,0,0.03);
-}
-.fav-video-card_block{
-  display: flex; gap: 1.25rem;
-  width: 100%;
-}
-
-.fav-video-preview {
-  width: 12.5rem;
-  height: 15.625rem;
-  flex-shrink: 0;
-}
-.fav-video-preview img,.fav-video-preview video{
-  width: 100%; height: 100%;
-  border-radius: 0.938rem;
-  object-fit: cover;
-}
-
+.option {padding: 1.125rem 1.5rem;cursor: pointer;font-size: 1.25rem;color: var(--bg-defort);font-weight: 700;}
+.option:hover {background: rgba(0, 0, 0, 0.08); }
+.favorites-content{margin-top: 2.5rem;}
+.fav-video-card {display: flex;gap: 1.5rem;justify-content: space-between;background: #fff;padding: 0.625rem 0.938rem;border-radius: 1.25rem;/* margin-bottom: 1.25rem; */box-shadow: 0 0.25rem 0.938rem rgba(0,0,0,0.03);}
+.fav-video-card_block{display: flex; gap: 1.25rem;width: 100%;}
+.fav-video-preview {width: 12.5rem;height: 15.625rem;flex-shrink: 0;}
+.fav-video-preview img,.fav-video-preview video{width: 100%; height: 100%;border-radius: 0.938rem;object-fit: cover;}
 .fav-video-main { width: 61%; display: grid;}
-
 .video-title {
   font-size: 1.25rem;
   margin-bottom: 0.625rem;
@@ -373,15 +327,8 @@ onMounted(() => {
   overflow: hidden;
   height: 3.6rem;
 }
-.video-stats {
-  display: grid;
-  gap: 0.313rem;
-  margin-bottom: 0.625rem;
-}
-.stat {
-  display: flex; align-items: center; gap: 0.4rem;
-  font-size: 0.875rem; color: #333;
-}
+.video-stats {display: grid;gap: 0.313rem;margin-bottom: 0.625rem;}
+.stat {display: flex; align-items: center; gap: 0.4rem;font-size: 0.875rem; color: #333}
 .stat img { width: 1.688rem; }
 .linked-product-box {
   background: #FBFBFB;
@@ -416,7 +363,6 @@ onMounted(() => {
 .author-info { display: flex; align-items: center; gap: 0.625rem; }
 .author-avatar { width: 3.125rem; height: 3.125rem; border-radius: 50%; }
 .author-name { font-weight: 400; font-size: 1rem; }
-
 .action-btns { width: 11.313rem; display: flex; flex-direction: column; gap: 0.188rem; }
 .btn-green { background: var(--btn-bg); color: white; padding: 0.313rem 0; text-align: center; border-radius: 0.313rem; border: none; cursor: pointer; font-size: 0.825rem;}
 .btn-outline { background-color: white; border: 1px solid var(--btn-bg) !important; color: var(--btn-bg); padding: 0.313rem 0; text-align: center; font-size: 0.825rem; border-radius: 0.313rem; border: none; cursor: pointer; }
@@ -431,7 +377,6 @@ onMounted(() => {
   box-shadow: 0 0.25rem 1.25rem rgba(0, 0, 0, 0.03);
   position: relative;
 }
-
 /* Блок изображения */
 .ad-img-container {
   width: 13.75rem;
@@ -445,25 +390,17 @@ onMounted(() => {
   justify-content: center;
 }
 .ad-main-img { width: 100%; height: 100%; object-fit: cover; }
-
 /* Контент */
 .ad-content-info { width: 100%; display: grid; }
-
 .ad-title-row { display: flex; justify-content: space-between; align-items: flex-start; }
 .ad-title { font-size: 1.25rem; font-weight: 600; color: #000; margin-bottom: 0.5rem; }
 .fav-heart { width: 1.5rem; cursor: pointer; }
-
 .ad-price { font-size: 1.375rem; font-weight: 700; margin-bottom: 0.625rem; }
-
 .ad-details-tags { display: flex; gap: 0.75rem; margin-bottom: 0.5rem; color: #333; font-size: 0.875rem; }
-
 .ad-location { display: flex; align-items: center; gap: 0.313rem; font-size: 0.875rem; color: #333; margin-bottom: 0.625rem; }
 .pin { width: 0.875rem; }
-
 .ad-desc { font-size: 0.875rem; color: #888; line-height: 1.3; margin-bottom: 0.75rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-
 .ad-category-label { font-size: 0.813rem; color: #AAA; }
-
 /* Правый блок */
 .ad-seller-actions {
   width: 12.5rem;
@@ -474,10 +411,11 @@ onMounted(() => {
   border-left: 0.063rem solid #F0F0F0;
   padding-left: 1.5rem;
 }
-
 .seller-brief { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
 .seller-avatar { width: 3.75rem; height: 3.75rem; border-radius: 0.625rem; object-fit: cover; }
 .seller-name { font-size: 0.875rem; font-weight: 500; text-align: center; }
 .action-buttons { width: 100%; display: flex; flex-direction: column; gap: 0.5rem; }
 .ad-date { font-size: 0.75rem; color: #7C7C7C; margin-top: 0.5rem; text-align: right; width: 100%;}
+.empty-messages {text-align: center;padding: 4rem 1rem;background: #fff;border-radius: 1.25rem;margin-top: 2.5rem;}
+.empty-messages h3 {font-size: 1.0625rem;color: #888;font-weight: 500;}
 </style>
