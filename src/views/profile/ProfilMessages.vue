@@ -177,7 +177,7 @@ onUnmounted(() => {
 
           <div class="chat-center">
             <div class="user-name">{{ chat.user?.name || 'Пользователь' }}</div>
-            <div class="product-title">{{ chat.productName }}</div>
+            <div class="product-title" v-if="chat.price">{{ chat.productName }} <span class="price">{{ chat.price.toLocaleString() }} ₽</span></div>
             <div
               class="last-message"
               :class="{ unread: chat.unreadCount > 0 }"
@@ -189,7 +189,6 @@ onUnmounted(() => {
 
           <div class="chat-right">
             <div class="price-block" v-if="chat.price">
-              <span class="price">{{ chat.price }}</span>
               <img
                 v-if="chat.productImage"
                 :src="chat.productImage"
@@ -225,22 +224,22 @@ onUnmounted(() => {
 /* Плашка Матрёшка */
 .matreshka-banner {
   display: flex;
-  gap: 2.375rem;
+  gap: 1.25rem;
   background: #fff;
   border-radius: 1.25rem;
-  padding: 1.25rem 1.25rem 1.25rem 0;
-  margin-bottom: 1.75rem;
+  padding: 0;
+  margin-bottom: 1.25rem;
   text-decoration: none;
   color: inherit;
   transition: box-shadow 0.2s;
   height: 8.938rem;
 }
 .matreshka-banner:hover {box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);}
-.matreshka-avatar {width: 48px;height: 48px;border-radius: 50%;object-fit: cover;flex-shrink: 0;}
-.matreshka-text {display: flex;flex-direction: column;gap: 4px;}
-.matreshka-name {font-weight: 700;font-size: 0.9375rem;color: #111;}
-.matreshka-desc {font-size: 0.8125rem;color: #888;line-height: 1.4;display: -webkit-box;-webkit-line-clamp: 2;-webkit-box-orient: vertical;overflow: hidden;}
-.chats-lists{border: 1px solid #D0D0D0;height: 100%;border-radius: 0.625rem;padding: 0.625rem 0.625rem 0.625rem 0.438rem;overflow: scroll;height: 50rem;}
+.matreshka-avatar {width: 5.625rem;height: 5.625rem;border-radius: 50%;object-fit: cover;flex-shrink: 0; margin: 1.65rem 0 1.65rem 1.875rem;}
+.matreshka-text {display: flex;flex-direction: column;gap: 1.25rem; margin: 0.938rem 0; }
+.matreshka-name {font-weight: 700;font-size: 1.5rem;color: #000000;}
+.matreshka-desc {width: 34.5rem; font-size: 1rem;color: #8E8C8C;line-height: 1.2;display: -webkit-box;-webkit-line-clamp: 2;-webkit-box-orient: vertical;overflow: hidden;}
+.chats-lists{height: 100%; margin-top: 2.5rem;}
 .chats-list {display: flex;flex-direction: column;gap: 0.313rem;}
 .chat-card {display: flex;align-items: flex-start;gap: 1.875rem;background: #fff;border-radius: 1.25rem;padding: 1.25rem 0.938rem 0.625rem 0.938rem;cursor: pointer;/* box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06); */transition: box-shadow 0.2s, transform 0.15s;height: 8.938rem;}
 .chat-card:hover {box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);transform: translateY(-1px);}
@@ -248,14 +247,14 @@ onUnmounted(() => {
 .user-avatar {width: 2.813rem;height: 2.813rem;border-radius: 3.438rem;object-fit: cover;position: absolute;left: 30%;top: -1rem;}
 .user-foto{width: 7.063rem;height: 7.063rem;border-radius: 1.563rem;}
 .chat-center {flex: 1;min-width: 0;display: flex;flex-direction: column;gap: 3px;}
-.user-name {font-weight: 400;font-size: 1.5rem;margin-left: -.6rem;}
+.user-name {font-weight: 700;font-size: 1.5rem;margin-left: -.6rem;}
 .product-title {font-size: 0.875rem;}
-.last-message {font-size: 0.875rem;color: #7C7C7C;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;max-width: 100%;}
+.last-message {font-size: 1rem;color: #8E8C8C;white-space: nowrap;text-overflow: ellipsis;width: 34.5rem; line-height: 1.2;display: -webkit-box;-webkit-line-clamp: 2;-webkit-box-orient: vertical;overflow: hidden;}
 .last-message.unread {font-weight: 600;color: #111;}
 .you-label {color: #2ecc71;font-weight: 500;}
 .chat-right {flex-shrink: 0;display: flex;flex-direction: column;align-items: flex-end;gap: 0.5rem;min-width: 5rem;height: 100%;justify-content: flex-end;}
 .price-block {display: flex;align-items: center;gap: 8px;}
-.price {font-weight: 700;font-size: 0.9375rem;color: #111;}
+.price {font-weight: 700;font-size: 0.9375rem;color: white; padding: 0.313rem 0.875rem; background: var(--btn-bg);}
 .mini-product-thumb {width: 32px;height: 32px;border-radius: 8px;object-fit: cover;}
 .meta-block {display: flex;align-items: center;gap: 6px;}
 .bell-icon {width: 18px;height: 18px;color: #888;}

@@ -21,41 +21,66 @@
       <template v-else-if="currentItems.length > 0">
         <!-- Тип: Видео -->
         <template v-if="selectedType === 'videos'">
-          <div v-for="video in currentItems" :key="video.id" class="fav-video-card">
-            <div class="fav-video-card_block">
-              <div class="fav-video-preview">
-                <video
-                  v-if="video.cdnUrl"
-                  :src="video.cdnUrl"
-                  preload="metadata"
-                  muted
-                  playsinline
-                ></video>
-                <img v-else :src="video.thumbnail || '/src/assets/img/video/placeholder.svg'" alt="thumbnail" />
-              </div>
-              <div class="fav-video-main">
-                <router-link :to="{ name: 'shorts', params: { id: video.id } }">
-                  <h3 class="video-title">{{ video.description || 'Без названия' }}</h3>
-                </router-link>
-                <div class="video-stats">
-                  <div class="stat"><img src="/src/assets/img/icons/eye.svg" /> {{ video.views || 0 }}</div>
-                  <div class="stat"><img src="/src/assets/img/icons/heart.svg" /> {{ video.likes || 0 }}</div>
-                  <div class="stat"><img src="/src/assets/img/icons/comment.svg" /> {{ video.commentsCount || 0 }}</div>
+          <div class="videos-grid">
+            <div v-for="video in currentItems" :key="video.id" class="fav-video-card">
+              <div class="fav-video-card_block">
+                <div class="fav-video-preview">
+                  <video
+                    v-if="video.cdnUrl"
+                    :src="video.cdnUrl"
+                    preload="metadata"
+                    muted
+                    playsinline
+                  ></video>
+                  <img v-else :src="video.thumbnail || '/src/assets/img/video/placeholder.svg'" alt="thumbnail" />
+                  <img :src="video.author?.avatar || '/img/users/mask-avatar.png'" class="author-avatar" />
+                  <div class="video-overlay">
+                    <span class="duration">{{ video.duration || "0:11" }}</span>
+                  </div>
+                </div>
+                <button
+                  class="menu-dots-btn"
+                  @click.stop="toggleMenu(video.id)">
+                  <img src="/src/assets/img/settings-gear3.svg" alt="">
+                </button>
+                    <!-- Выпадающее меню -->
+                <div v-if="activeMenuId === video.id" class="video-dropdown-menu">
+                  <!-- <button
+                    v-if="!video.isArchived"
+                    @click.stop="handleArchive(video.id, true)">
+                    В архив
+                  </button> 
+                    <button v-else @click.stop="handleArchive(video.id, false)">
+                    Опубликовать заново
+                  </button> -->
+                  <button class="delete-btn" @click.stop="openConfirm(video.id)">
+                    Удалить
+                  </button>
+                </div>
+                <div class="fav-video-main">
+                  <router-link :to="{ name: 'shorts', params: { id: video.id } }">
+                    <h3 class="video-title">{{ video.description || 'Без названия' }}</h3>
+                  </router-link>
+                  <div class="video-stats">
+                    <div class="stat"><img src="/src/assets/img/icons/eye.svg" /> {{ video.views || 0 }}</div>
+                    <div class="stat"><img src="/src/assets/img/icons/heart.svg" /> {{ video.likes || 0 }}</div>
+                    <div class="stat"><img src="/src/assets/img/icons/comment.svg" /> {{ video.commentsCount || 0 }}</div>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="fav-video-right">
-              <div class="fav-icon-active" @click="removeFromFavorites(video.id)">
-                <img src="/src/assets/img/icons/heart-filled.svg" />
-              </div>
-              <div class="author-info">
-                <img :src="video.author?.avatar || '/img/users/mask-avatar.png'" class="author-avatar" />
-                <span class="author-name">{{ video.author?.username || 'Пользователь' }}</span>
-              </div>
-              <div class="action-btns">
-                <router-link :to="{ name: 'shorts', params: { id: video.id } }">
-                  <button class="btn btn-green">Посмотреть видео</button>
-                </router-link>
+              <div class="fav-video-right">
+                <!-- <div class="fav-icon-active" @click="removeFromFavorites(video.id)">
+                  <img src="/src/assets/img/icons/heart-filled.svg" />
+                </div> -->
+                <!-- <div class="author-info">
+                  <img :src="video.author?.avatar || '/img/users/mask-avatar.png'" class="author-avatar" />
+                  <span class="author-name">{{ video.author?.username || 'Пользователь' }}</span>
+                </div> -->
+                <div class="action-btns">
+                  <router-link :to="{ name: 'shorts', params: { id: video.id } }">
+                    <button class="btn btn-green">Посмотреть видео</button>
+                  </router-link>
+                </div>
               </div>
             </div>
           </div>
@@ -126,6 +151,19 @@
         </div>
       </div>
     </Transition>
+    <transition name="fade">
+      <div v-if="isConfirmOpen" class="modal-overlay" @click.self="closeConfirm">
+        <div class="confirm-modal" @click.stop>
+          <div class="confirm-modal__content">
+            <h2>Вы действительно хотите удалить мини-видео? </h2>
+          </div>
+          <div class="confirm-modal__actions">
+            <button type="button" class="btn go-to-ads-btn" @click="confirmDelete">Да, удалить</button>
+            <button class="btn btn-close" @click="closeConfirm">Нет, я ошибся</button>
+          </div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -150,6 +188,28 @@ const isLoading = ref(false);
 const showCallModal = ref(false);
 const callModalPhone = ref('');
 const callModalName = ref('');
+const activeMenuId = ref(null);
+const isConfirmOpen = ref(false);
+const selectedVideoId = ref(null);
+
+const toggleMenu = (id) => {
+  activeMenuId.value = activeMenuId.value === id ? null : id;
+};
+const openConfirm = (id) => {
+  selectedVideoId.value = id;
+  isConfirmOpen.value = true;
+  activeMenuId.value = null;
+};
+
+const closeConfirm = () => {
+  isConfirmOpen.value = false;
+  selectedVideoId.value = null;
+};
+const confirmDelete = async () => {
+  if (!selectedVideoId.value) return;
+  await removeFromFavorites(selectedVideoId.value);
+  closeConfirm();
+};
 
 const closeDropdown = () => { isDropdownOpen.value = false; };
 
@@ -365,21 +425,33 @@ onMounted(() => {
 .option {padding: 1.125rem 1.5rem;cursor: pointer;font-size: 1.25rem;color: var(--bg-defort);font-weight: 700;}
 .option:hover {background: rgba(0, 0, 0, 0.08); }
 .favorites-content{margin-top: 2.5rem;}
-.fav-video-card {display: flex;gap: 1.5rem;justify-content: space-between;background: #fff;padding: 0.625rem 0.938rem;border-radius: 1.25rem;/* margin-bottom: 1.25rem; */box-shadow: 0 0.25rem 0.938rem rgba(0,0,0,0.03);}
-.fav-video-card_block{display: flex; gap: 1.25rem;width: 100%;}
-.fav-video-preview {width: 12.5rem;height: 15.625rem;flex-shrink: 0;}
-.fav-video-preview img,.fav-video-preview video{width: 100%; height: 100%;border-radius: 0.938rem;object-fit: cover;}
-.fav-video-main { width: 61%; display: grid;}
+.fav-video-card {background: #fff;padding: 0.625rem 0.938rem 0.938rem 0.938rem;border-radius: 1.25rem; position: relative;}
+.fav-video-card_block{width: 100%;}
+.fav-video-preview {width: 12.5rem;height: 15.625rem;flex-shrink: 0; position: relative; overflow: hidden;}
+.fav-video-preview img,.fav-video-preview video{width: 100%; height: 100%;border-radius: 1.25rem;object-fit: cover;}
+.fav-video-main { width: 100%; display: grid; margin-top: 1.125rem;}
 .video-title {
-  font-size: 1.25rem;
-  margin-bottom: 0.625rem;
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 1.563rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  height: 4.375rem;
+}
+.video-title{
+  display: inline-block;
+  text-transform: lowercase;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  height: 3.6rem;
 }
-.video-stats {display: grid;gap: 0.313rem;margin-bottom: 0.625rem;}
+.video-title::first-letter {
+  text-transform: uppercase;
+}
+.video-stats {display: flex; justify-content: space-between;gap: 0.938rem;margin-bottom: 0.625rem;}
 .stat {display: flex; align-items: center; gap: 0.4rem;font-size: 0.875rem; color: #333}
 .stat img { width: 1.688rem; }
 .linked-product-box {
@@ -408,15 +480,16 @@ onMounted(() => {
 .fav-video-right {
   display: flex; flex-direction: column;
   gap: 0.625rem;
-  align-items: flex-end;
-  width: 12.5rem;
+  align-items: center;
+  width: 100%;
+  margin-top: 1rem;
 }
 .fav-icon-active img { width: 1.5rem; cursor: pointer; }
 .author-info { display: flex; align-items: center; gap: 0.625rem; }
-.author-avatar { width: 3.125rem; height: 3.125rem; border-radius: 50%; }
+.author-avatar { width: 4rem !important; height: 4rem !important; border-radius: 0 3.125rem 0 1.25rem !important; position: absolute; bottom: -1rem; left: -1rem;}
 .author-name { font-weight: 400; font-size: 1rem; }
-.action-btns { width: 11.313rem; display: flex; flex-direction: column; gap: 0.188rem; }
-.btn-green { background: var(--btn-bg); color: white; padding: 0.313rem 0; text-align: center; border-radius: 0.313rem; border: none; cursor: pointer; font-size: 0.825rem;}
+.action-btns { width: 11.313rem; display: flex; flex-direction: column; gap: 0.188rem; align-items: center;}
+.btn-green { background: var(--btn-bg); color: white; padding: 0.938rem; text-align: center; border-radius: 1.25rem; border: none; cursor: pointer; font-size: 0.825rem;}
 .btn-outline { background-color: white; border: 1px solid var(--btn-bg) !important; color: var(--btn-bg); padding: 0.313rem 0; text-align: center; font-size: 0.825rem; border-radius: 0.313rem; border: none; cursor: pointer; }
 .fav-video-card + .fav-video-card{ margin-bottom: 1.25rem; }
 .fav-ad-horizontal {
@@ -471,6 +544,67 @@ onMounted(() => {
   border-left: 0.063rem solid #F0F0F0;
   padding-left: 1.5rem;
 }
+.menu-dots-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 2.75rem;
+  height: 2.938rem;
+  background: var(--btn-bg);
+  border: none;
+  border-radius: 0 1.25rem 0 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  transition: all .3s;
+}
+
+.menu-dots-btn img {
+  width: 1.688rem;
+  height: 1.563rem;
+  filter: brightness(0) invert(1);
+}
+.video-dropdown-menu {
+  position: absolute;
+  top: 3.813rem;
+  right: 0.8rem;
+  background: var(--btn-bg);
+  border-radius: 0.938rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  z-index: 1;
+  width: 11.975rem;
+  max-width: 13.975rem;
+  color: #f5f5f5;
+  overflow: hidden;
+}
+.video-dropdown-menu button {
+  width: 100%;
+  padding: 0.813rem 1rem;
+  border: none;
+  background: none;
+  text-align: left;
+  font-size: 0.955rem;
+  cursor: pointer;
+  border-radius: 0;
+  transition: 0.3s;
+}
+.video-dropdown-menu button:first-child {
+  padding-top: 0.8rem;
+}
+.video-dropdown-menu button:last-child {
+  padding-top: 0.8rem;
+  padding-bottom: 0.8rem;
+}
+.video-dropdown-menu button:hover {
+  background: #388253;
+  color: white;
+}
+.video-dropdown-menu .delete-btn {
+  /* border-top: 1px solid #eee !important; */
+  border-radius: 0;
+}
 .seller-brief { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
 .seller-avatar { width: 3.75rem; height: 3.75rem; border-radius: 0.625rem; object-fit: cover; }
 .seller-name { font-size: 1rem; font-weight: 700; text-align: center; }
@@ -478,4 +612,13 @@ onMounted(() => {
 .ad-date { font-size: 0.75rem; color: #7C7C7C; margin-top: 0.5rem; text-align: right; width: 100%;}
 .empty-messages {text-align: center;padding: 4rem 1rem;background: #fff;border-radius: 1.25rem;margin-top: 2.5rem;}
 .empty-messages h3 {font-size: 1.0625rem;color: #888;font-weight: 500;}
+.videos-grid {display: grid;grid-template-columns: repeat(4, 1fr);gap: 1.25rem;}
+.video-overlay .duration { right: 0rem;bottom: 0rem;}
+.confirm-modal{padding: 1.875rem;background: white;border-radius: 2.188rem;}
+.confirm-modal__content{display: grid;gap: 1rem;justify-items: center;font-weight: 700;}
+.confirm-modal__actions{display: flex;justify-content: center;gap: 1.25rem;margin-top: 2.938rem;font-size: 1.25rem;}
+.go-to-ads-btn{ width: fit-content;padding: 0.938rem 1.875rem;border-radius: 1rem;font-size: 1.25rem;}
+.btn-close{background: #D8D8D8; border-radius: 1rem; padding: 0.938rem 1.125rem;}
+.modal-overlay {pointer-events: auto;}
+.confirm-modal {pointer-events: all;position: relative;z-index: 2;}
 </style>

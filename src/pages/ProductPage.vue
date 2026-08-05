@@ -176,16 +176,10 @@
       <Transition name="fade">
         <div v-if="showCallModal" class="modal-overlay" @click.self="showCallModal = false">
           <div class="confirm-call-card">
-            <p class="confirm-message">
-              Позвонить <strong>{{ seller?.name || 'Продавцу' }}</strong>?
-            </p>
-            <div class="phone-display">
-              {{ formatPhone(seller?.phone) }}
-            </div>
+            <p class="confirm-message">Позвонить <strong>{{ callModalName  }}</strong>?</p>
+            <div class="phone-display">{{ formatPhone(callModalPhone) }}</div>
             <div class="confirm-actions">
-              <button class="btn-black" @click="handleCall(seller?.phone)">
-                Позвонить
-              </button>
+              <button class="btn-black" @click="handleCall(callModalPhone)">Позвонить</button>
               <button class="btn-gray" @click="showCallModal = false">Отмена</button>
             </div>
           </div>
@@ -219,6 +213,7 @@ import { geocodeByQuery } from '/src/utils/geocode.js';
 import heart from "/src/assets/img/icons/heart.svg";
 import heartFilled from "/src/assets/img/icons/heart-filled.svg";
 import { useFavoritesStore } from "/src/stores/favoritesStore.js";
+import { formatDate } from "/src/utils/formatters.js"
 const favStore = useFavoritesStore();
 
 const route = useRoute();
@@ -243,6 +238,8 @@ const isClient = typeof window !== 'undefined';
 let productMap = null;
 let productPlacemark = null;
 let ymapsReady = false;
+const callModalPhone = ref('');
+const callModalName = ref('');
 
 const isOwnProduct = computed(() => {
   if (!product.value?.sellerId || !authStore.user?.id) return false;
@@ -657,9 +654,10 @@ const breadcrumbSubName = computed(() => {
 });
 
 const previewImages = computed(() => product.value?.images?.slice(0, 8) || []);
-const formatPrice = (price) => price ? price.toLocaleString("ru-RU") : "0";
+const formatPrice = (price) => {const num = Number(price); return num ? num.toLocaleString("ru-RU") : "0";};
 
 const openFullGallery = (index = 0) => {
+  if (!product.value?.images?.length) return;
   const allImages = product.value.images.map(src => ({ src, type: "image" }));
   Fancybox.show(allImages, { startIndex: index });
 };
@@ -692,11 +690,14 @@ const onSubscribeClick = () => {
 const onShowNumberClick = (item) => {
   const target = item || product.value;
   const phone = target?.seller?.phone || seller.value?.phone;
+  const name = target?.seller?.name || seller.value?.name || 'Продавцу';
   if (!phone) {
     notify('Номер телефона не указан', 'error');
     return;
   }
   checkAuthAndRun(() => { 
+    callModalPhone.value = phone;
+    callModalName.value = name;
     showCallModal.value = true; 
   }, "Войдите, чтобы увидеть номер телефона");
 };

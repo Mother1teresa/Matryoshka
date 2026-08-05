@@ -381,7 +381,6 @@ const handleVideoCreated = (createdMedia) => {
   text-align: center;
   font-weight: 700;
 }
-/* Кнопка три точки */
 .menu-dots-btn {
   position: absolute;
   top: -.1rem;
@@ -474,6 +473,17 @@ const handleVideoCreated = (createdMedia) => {
   font-size: 1rem;
   font-weight: 700;
   color: #242424;
+}
+.video-description{
+  display: inline-block;
+  text-transform: lowercase;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.video-description::first-letter {
+  text-transform: uppercase;
 }
 .tabs-nav button span {
   font-size: 1.2rem;
