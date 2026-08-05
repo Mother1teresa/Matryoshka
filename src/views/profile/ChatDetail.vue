@@ -2,22 +2,26 @@
   <div class="messages-page-wrapper">
     <div class="chat-dialog-window">
       <header class="chat-header">
-        <button class="back-btn" @click="router.back()">
-          <img src="/src/assets/img/icons/arrow-back.svg" />
-        </button>
-        <div class="header-user-info" @click="goToSellerProfile">
-          <img :src="currentChat?.user?.avatar || maskAvatar" class="mini-avatar" />
-          <div class="user-meta">
-            <span class="name">{{ displayName }}</span>
-            <span :class="['online-status', { is_online: currentChat?.user?.isOnline }]">
-              {{ currentChat?.user?.isOnline ? "в сети" : "был(а) недавно" }}
-            </span>
+        <div class="header-user-info_block">
+          <div class="header-user-info" @click="goToSellerProfile">
+            <img :src="currentChat?.user?.avatar || maskAvatar" class="mini-avatar" />
+            <div class="user-meta">
+              <span class="name">{{ displayName }}</span>
+              <span :class="['online-status', { is_online: currentChat?.user?.isOnline }]">
+                {{ currentChat?.user?.isOnline ? "в сети" : "был(а) недавно" }}
+              </span>
+            </div>
+          </div>
+          <div class="header-product-info" v-if="currentChat?.productName">
+            <img :src="currentChat?.productImage || '/src/assets/img/icons/box-icon.svg'" class="product-mini-photo" />
+            <span>{{ currentChat.productName }}</span>
           </div>
         </div>
-        <div class="header-product-info" v-if="currentChat?.productName">
-          <img :src="currentChat?.productImage || '/src/assets/img/icons/box-icon.svg'" class="product-mini-photo" />
-          <span>{{ currentChat.productName }}</span>
-        </div>
+        
+        <button class="back-btn" @click="router.back()">
+          Выйти с чата
+        </button>
+        
         <div class="header-search">
           <div class="search-input-wrapper" :class="{ active: isSearchActive }">
             <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -645,26 +649,26 @@ watch(() => route.params.id, (newId, oldId) => {
 <style scoped>
 .chat-dialog-window{display:flex;flex-direction:column;height:100vh;height:100dvh;background:#fff;overflow:hidden;background:linear-gradient(126.24deg,rgba(211,242,163,.8) 1.06%,rgba(108,192,139,.8) 52.82%,rgba(7,64,80,.8) 100%);position:relative;}
 .chat-dialog-window::before{content:"";position:absolute;inset:0;background-image:url('/src/assets/img/matreshka-pattern.png');background-repeat:repeat;background-size:5.5rem;opacity:.06;pointer-events:none;z-index:0;}
-.chat-header{position:relative;display:flex;align-items:center;padding:.625rem 1.75rem .625rem .313rem;border-bottom:1px solid #e5e5e5;gap:.625rem;flex-shrink:0;background:#fff;box-shadow:0 3px 4px 0 rgba(0,0,0,.25);z-index:2;height:5.438rem;}
-.back-btn{width:1.625rem;height:100%;border-radius:.625rem;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;border:none;background:#f44;transition:transform .15s;}
+.chat-header{position:relative;display:flex; align-items: flex-start; justify-content: space-between; gap:.625rem;flex-shrink:0;z-index:2;height:5.438rem;}
+.back-btn{font-size:1.5rem;font-weight: 700; border-radius: 0 0 1.875rem 1.875rem ;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:1rem 1.25rem;flex-shrink:0;border:none;background:#858685;transition:transform .15s; box-shadow: 0px 2px 2px 0px #00000040; color: var(--bg-defort);}
 .back-btn:active{transform:scale(.95);}
 .back-btn img{width:1rem;height:1rem;filter:brightness(0) invert(1);}
-.header-user-info{display:flex;align-items:center;gap:.5rem;min-width:0;background:#e5e5e5;padding:.438rem .5rem;border-radius:.938rem;width:14rem;cursor:pointer;}
+.header-user-info{display:flex;align-items:center;gap:0.625rem;cursor:pointer;}
 .mini-avatar{width:3.148rem;height:3.148rem;border-radius:50%;object-fit:cover;flex-shrink:0;}
 .user-meta{display:flex;flex-direction:column;min-width:0;}
-.user-meta .name{font-size:1.5rem;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .15s;}
+.user-meta .name{font-size:1.5rem; font-weight:700; color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .15s;}
 .header-user-info:hover .user-meta .name{color:#64a07a;}
-.online-status{font-size:.9375rem;color:#b9b9b9;}
+.online-status{font-size: 0.938rem;color:#b9b9b9;}
 .online-status.is_online{color:#4caf50;}
 .header-product-info{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:.5rem;background:#fff;padding:.375rem .875rem;border-radius:.625rem;font-size:.813rem;color:#333;max-width:13rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #eee;}
 .product-mini-photo{width:1.75rem;height:1.75rem;border-radius:.25rem;object-fit:cover;flex-shrink:0;}
-.header-search{margin-left:auto;display:flex;align-items:center;gap:.5rem;}
-.search-input-wrapper{position:relative;display:flex;align-items:center;width:259px;height:36px;background:#fff;border:1px solid #e0e0e0;border-radius:20px;padding:0 28px 0 36px;transition:border-color .2s,box-shadow .2s;}
+.header-search{display:flex;align-items:center;gap:.5rem; background: #FFFFFF99; box-shadow: 0px 2px 2px 0px #00000040; padding: 1.25rem 1.875rem; width: 24.063rem; height: 100%; border-radius: 0 0 0 2.5rem;}
+.search-input-wrapper{position:relative;display:flex;align-items:center;width:100%;height:100%;background:#fff;border:1px solid #e0e0e0;border-radius:1.5rem;padding:0 1.75rem 0 2.5rem;transition:border-color .2s,box-shadow .2s;}
 .search-input-wrapper.active,.search-input-wrapper:focus-within{border-color:#bdbdbd;box-shadow:0 1px 4px rgba(0,0,0,.06);}
-.search-icon{position:absolute;left:12px;width:16px;height:16px;color:#888;pointer-events:none;}
+.search-icon{position:absolute;left:0.75rem;width:1rem;height:1rem;color:#888;pointer-events:none;}
 .search-input{width:100%;border:none;background:transparent;font-size:.875rem;color:#1a1a1a;outline:none;}
 .search-input::placeholder{color:#888;}
-.search-clear{position:absolute;right:8px;background:none;border:none;color:#888;cursor:pointer;font-size:1.25rem;padding:0;width:20px;height:20px;display:flex;align-items:center;justify-content:center;line-height:1;border-radius:50%;transition:background .15s;}
+.search-clear{position:absolute;right:8px;background:none;border:none;color:#888;cursor:pointer;font-size:1.25rem;padding:0;width:1.5rem;height:1.5rem;display:flex;align-items:center;justify-content:center;line-height:1;border-radius:50%;transition:background .15s;}
 .search-clear:hover{background:#f0f0f0;color:#555;}
 .search-nav{display:flex;align-items:center;gap:.25rem;background:#f5f5f5;border-radius:.625rem;padding:.125rem .375rem;}
 .search-counter{font-size:.75rem;color:#666;font-weight:500;min-width:2.5rem;text-align:center;user-select:none;}
@@ -677,21 +681,22 @@ watch(() => route.params.id, (newId, oldId) => {
 .typing-dots span{width:4px;height:4px;background:#4caf50;border-radius:50%;animation:bounce 1.4s infinite ease-in-out both;}
 .typing-dots span:nth-child(1){animation-delay:-.32s;}
 .typing-dots span:nth-child(2){animation-delay:-.16s;}
+.header-user-info_block{background: var(--bg-defort); padding: 1.25rem 1.875rem; box-shadow: 0px 2px 2px 0px #00000040; width: 24.063rem; border-radius: 0 0 2.5rem 0;}
 @keyframes bounce{0%,80%,100%{transform:scale(0)}40%{transform:scale(1)}}
 .messages-viewport{flex:1;overflow-y:auto;padding:1rem 20% 2.438rem 20%;display:flex;flex-direction:column;position:relative;background-attachment:fixed;gap:.625rem;}
 .msg-bubble,.system-msg,.bot-actions-row,.review-invitation,.sticky-date{position:relative;z-index:1;}
 .sticky-date{display:flex;justify-content:center;margin:.5rem 0;pointer-events:none;}
-.sticky-date span{background:rgba(0,0,0,.18);color:#fff;font-size:.75rem;padding:.25rem .875rem;border-radius:1rem;backdrop-filter:blur(2px);}
-.system-msg{align-self:center;background:rgba(0,0,0,.2);color:#fff;padding:.375rem 1.25rem;border-radius:1rem;font-size:.8125rem;margin:.5rem 0;backdrop-filter:blur(4px);text-align:center;}
+.sticky-date span{background: #00000047;color:#fff;font-size:1rem;padding:0.313rem 1rem;border-radius:0.625rem;backdrop-filter:blur(2px);}
+.system-msg{align-self:center;background:rgba(0,0,0,.2);color:#fff;padding:0.313rem 1rem;border-radius:0.625rem;font-size:.8125rem;margin:.5rem 0;backdrop-filter:blur(4px);text-align:center;}
 .msg-bubble.search-match{box-shadow:0 0 0 2px #ffd700,0 1px 2px rgba(0,0,0,.08);transition:box-shadow .3s;}
 .msg-bubble.search-current{box-shadow:0 0 0 3px #ff9800,0 1px 2px rgba(0,0,0,.08);animation:pulse-current 1.5s ease-in-out infinite;}
 @keyframes pulse-current{0%,100%{box-shadow:0 0 0 3px #ff9800,0 1px 2px rgba(0,0,0,.08)}50%{box-shadow:0 0 0 5px rgba(255,152,0,.4),0 1px 2px rgba(0,0,0,.08)}}
 .msg-bubble{max-width:75%;padding:.5rem .75rem;font-size:.9375rem;line-height:1.35;word-break:break-word;box-shadow:0 1px 2px rgba(0,0,0,.08);}
-.msg-bubble.received{align-self:flex-start;background:#fff;border-radius:.75rem .75rem .75rem .25rem;color:#1a1a1a;}
-.msg-bubble.sent{align-self:flex-end;background:#d4ffe4;border-radius:.75rem .75rem .25rem .75rem;color:#1a1a1a;}
+.msg-bubble.received{align-self:flex-start;background:#fff;border-radius:0.938rem 0.938rem 0.938rem .25rem;color:#1a1a1a;}
+.msg-bubble.sent{align-self:flex-end;background:#d4ffe4;border-radius:0.938rem 0.938rem .25rem 0.938rem;color:#1a1a1a;}
 .msg-bubble.msg-error{opacity:.8;border:1px solid #ff6b6b;}
 .msg-content{display:flex;flex-direction:column;gap:.125rem;}
-.msg-footer{display:flex;align-items:center;justify-content:flex-end;gap:.25rem;margin-top:.125rem;}
+.msg-footer{display:flex;align-items:center;justify-content:flex-end;gap:0.313rem;margin-top:.125rem;}
 .msg-time{font-size:.6875rem;color:#8e8e93;}
 .msg-status-text{font-size:.6875rem;color:#8e8e93;}
 .msg-status-text.error{color:#ff6b6b;}

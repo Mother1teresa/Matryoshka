@@ -20,7 +20,7 @@ export const useProductStore = defineStore("product", () => {
     }
 
     isLoading.value = true
-    console.log('=== fetchAdverts START ===', filters)
+    // console.log('=== fetchAdverts START ===', filters)
     const parseBool = (val) => {
       if (typeof val === 'boolean') return val
       if (typeof val === 'string') return val === 'true' || val === '1'

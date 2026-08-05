@@ -6,7 +6,6 @@
           <h3>Отзыв</h3>
           <button class="close-btn" @click="$emit('close')">×</button>
         </header>
-
         <div class="modal-body">
           <div class="form-group">
             <label>Вы договорились о сделке?</label>
@@ -21,7 +20,6 @@
               </label>
             </div>
           </div>
-
           <div v-if="form.dealConfirmed === 'no'" class="form-group">
             <label>Чем всё закончилось?</label>
             <div class="vertical-radio-list">
@@ -31,7 +29,6 @@
               </label>
             </div>
           </div>
-
           <div class="form-group center">
             <label>Оцените пользователя</label>
             <div class="stars-rating">
@@ -45,13 +42,11 @@
               />
             </div>
           </div>
-
           <div class="form-group center">
             <label>Напишите отзыв</label>
             <textarea v-model="form.text" placeholder="Напишите отзыв, не используйте нецензурную лексику и персональные данные" maxlength="2000"></textarea>
             <span class="char-count">Не более 2 000 символов</span>
           </div>
-
           <div class="form-group center">
             <label>Добавьте фотографии, если есть</label>
             <div class="photo-upload-grid">
@@ -65,7 +60,6 @@
               </div>
             </div>
           </div>
-
           <button class="submit-review-btn" :disabled="!isFormValid || isSubmitting" @click="submitReview">
             {{ isSubmitting ? 'Отправка...' : 'Оставить отзыв' }}
           </button>

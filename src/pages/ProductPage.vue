@@ -76,7 +76,7 @@
             <h3>Адрес</h3>
             <p class="address-text">{{ product.address }}</p>
             <div v-if="mapCoordinates" class="product-map">
-              <div id="product-map-container" style="width: 100%; height: 100%;"></div>
+              <div ref="mapContainer" style="width: 100%; height: 100%;"></div>
             </div>
             <div v-else-if="product.address && isGeocoding" class="no-map">
               <p>Определяем координаты на карте...</p>
@@ -98,14 +98,12 @@
               </div>
             </div>
             <div class="location">{{ product.city }}</div>
-            <div class="location">{{ formatDate(product.createdAt) }}</div>
+            <div class="data">{{ formatDate(product.createdAt) }}</div>
           </div>
           <!-- Продавец -->
           <div class="seller-card">
             <div class="seller">
-              <router-link :to="{ name: 'SellerPage', params: { id: product?.sellerId } }">
-                <img :src="seller?.avatar || '/img/users/mask-avatar.png'" class="avatar" />
-              </router-link>
+              
               <div class="seller-card__block">
                 <router-link :to="{ name: 'SellerPage', params: { id: product?.sellerId } }" class="name">
                   {{ sellerName }}
@@ -125,6 +123,9 @@
                 </div>
                 <!-- <button class="btn subscribe" @click="onSubscribeClick" :class="{ 'is-active': subStore.isSubscribed(product?.sellerId) }">{{ subStore.isSubscribed(product?.sellerId) ? 'Отписаться' : 'Подписаться' }} </button> -->
               </div>
+              <router-link :to="{ name: 'SellerPage', params: { id: product?.sellerId } }">
+                <img :src="seller?.avatar || '/img/users/mask-avatar.png'" class="avatar" />
+              </router-link>
             </div>
             <div class="seller-card__btns">
               <button class="btn primary" @click="onShowNumberClick(product)">
@@ -281,6 +282,7 @@ let ymapsReady = false;
 const callModalPhone = ref('');
 const callModalName = ref('');
 const linkedVideos = ref([]);
+const mapContainer = ref(null);
 
 const loadLinkedVideos = async () => {
   if (!product.value?.sellerId || !product.value?.id) return;
@@ -345,24 +347,28 @@ function destroyProductMap() {
 }
 
 function initProductMap(coords) {
-  if (!isClient || !window.ymaps) {
-    console.warn('Yandex Maps API не доступен');
+  if (!isClient || !window.ymaps || !mapContainer.value) {
+    console.warn('Карта недоступна: нет DOM или API');
     return;
   }
 
+  destroyProductMap();
+
   window.ymaps.ready(() => {
-    destroyProductMap();
-
-    const container = document.getElementById('product-map-container');
-    if (!container) {
-      console.warn('Контейнер #product-map-container не найден');
-      return;
-    }
-    container.innerHTML = '';
-
     try {
-      productMap = new window.ymaps.Map('product-map-container', {
-        center: coords,
+      const center = Array.isArray(coords) && coords.length === 2
+        ? [Number(coords[0]), Number(coords[1])]
+        : coords;
+
+      // Валидация
+      if (!center || Math.abs(center[0]) > 90 || Math.abs(center[1]) > 180) {
+        console.error('Невалидные координаты:', center);
+        mapCoordinates.value = null;
+        return;
+      }
+
+      productMap = new window.ymaps.Map(mapContainer.value, {
+        center: center,
         zoom: 15,
         controls: ['zoomControl']
       }, {
@@ -372,7 +378,7 @@ function initProductMap(coords) {
         suppressMapOpenBlock: true
       });
 
-      productPlacemark = new window.ymaps.Placemark(coords, {}, {
+      productPlacemark = new window.ymaps.Placemark(center, {}, {
         preset: 'islands#redIcon'
       });
 
@@ -402,18 +408,29 @@ const sellerType = computed(() => {
 const sellerRating = computed(() => {
   return seller.value?.rating || 0;
 });
+// === УНИВЕРСАЛЬНАЯ НОРМАЛИЗАЦИЯ КООРДИНАТ ===
+const normalizeCoords = (coords) => {
+  if (!coords) return null;
+  let [a, b] = Array.isArray(coords) ? coords : [coords.lat, coords.lng];
+  a = Number(a);
+  b = Number(b);
+  if (isNaN(a) || isNaN(b)) return null;
+  if (Math.abs(a) > 90) {
+    return [b, a];
+  }
+  return [a, b];
+};
 
 // === ГЕОКОДИРОВАНИЕ ===
 const resolveCoordinates = async () => {
-  // Если координаты пришли с API
   if (hasCoordinatesFromApi.value) {
-    const [first, second] = product.value.coordinates;
-    if (Math.abs(first) > 50) {
-      mapCoordinates.value = [Number(second), Number(first)];
+    const norm = normalizeCoords(product.value.coordinates);
+    if (norm) {
+      mapCoordinates.value = norm;
+      nextTick(() => setTimeout(() => initProductMap(mapCoordinates.value), 200));
     } else {
-      mapCoordinates.value = [Number(first), Number(second)];
+      mapCoordinates.value = null;
     }
-    nextTick(() => setTimeout(() => initProductMap(mapCoordinates.value), 200));
     return;
   }
 
@@ -423,21 +440,21 @@ const resolveCoordinates = async () => {
     return;
   }
 
-  // Авто-заглавная
-  if (address.length > 0 && address[0] !== address[0].toUpperCase()) {
-    address = address[0].toUpperCase() + address.slice(1);
-    product.value.address = address;
-  }
-
   isGeocoding.value = true;
   try {
     const result = await geocodeByQuery(address);
-    if (result && result.coordinates) {
-      const coords = Array.isArray(result.coordinates)
-        ? result.coordinates
-        : [result.coordinates.lng, result.coordinates.lat];
+    if (result?.coordinates) {
+      let coords;
+      if (Array.isArray(result.coordinates)) {
+        coords = result.coordinates.map(Number);
+      } else {
+        coords = [Number(result.coordinates.lat), Number(result.coordinates.lng)];
+      }
+      if (Math.abs(coords[0]) > 90 || Math.abs(coords[1]) > 180) {
+        coords = [coords[1], coords[0]];
+      }
       mapCoordinates.value = coords;
-      nextTick(() => setTimeout(() => initProductMap(mapCoordinates.value), 200));
+      nextTick(() => initProductMap(coords));
     } else {
       mapCoordinates.value = null;
     }
@@ -803,10 +820,10 @@ onBeforeUnmount(() => {
 </script>
 <style scoped>
 .product-layout { display: grid; gap: 3.125rem; grid-template-columns: repeat(2, 1fr);}
-.product-left { flex: 1; background-color: white; border-radius: 1.25rem; padding: 1.375rem 1.875rem; width: 54.75rem;}
+.product-left { flex: 1; background-color: white; border-radius: 1.25rem; padding: 1.375rem 1.875rem; width: 54.75rem; position: relative;}
 .product-right { min-width: 20.813rem; height: fit-content;}
 /* Заголовок */
-.product-title { margin-bottom: 1.563rem; font-weight: 700; display: flex; align-items: start; justify-content: space-between; position: relative;}
+.product-title { margin-bottom: 1.563rem; font-weight: 700; display: flex; align-items: start; justify-content: space-between; }
 .product-title{
   display: inline-block;
   text-transform: lowercase;
@@ -834,17 +851,18 @@ onBeforeUnmount(() => {
 .seller-card__btns{ display: flex; margin-top: 1.313rem; gap: 1rem;}
 .price { font-size: 1.5rem; padding: 0.438rem 1rem; background: var(--btn-bg); font-weight: 700; width: fit-content; color: var(--bg-defort); border-radius: 0.625rem;}
 .location { margin: 1.3755rem 0 0; color: #242424; font-size: 1.25rem; font-weight: 700;}
+.data{font-size: .8rem; color: #888;}
 .btn.secondary { background: #F5F5F5; width: 4.188rem; height: 3.438rem; display: flex; align-items: center; justify-content: center; border-radius: 1.25rem;}
 .seller-card { margin-top: 0.625rem; background-color: white;  border-radius: 1.25rem; padding: 1rem 1rem 1.313rem 1rem;}
-.seller { display: flex; gap: 1.75rem;}
+.seller { display: flex; gap: 1rem;}
 .avatar { width: 5.125rem; height: 5.125rem; border-radius: 50%; margin-left: 0.938rem; object-fit: cover;}
-.name{font-size: 2rem; font-weight: 700; color: #242424; margin-bottom: 0.438rem;}
-.rating{ margin-bottom: .5rem; transition: opacity .3s;}
+.name{font-size: 2rem; font-weight: 700; color: #242424; }
+.rating{ margin-bottom: .5rem; transition: opacity .3s; display: flex;align-items: baseline; gap: 0.125rem; color: #262626;}
 .rating .stars {display: inline-flex;gap: 0.125rem;margin-left: 0.25rem;vertical-align: middle;}
-.star-icon {width: 1.1rem;height: 1.1rem;}
+.star-icon {width: 1.25rem;height: 1.25rem;}
 .name:hover{ opacity: 0.6;}
 .seller-card__block{ font-size: 1.25rem;}
-.type{ margin-bottom: 0.875rem; font-size: 1.25rem; font-weight: 700;}
+.type{ margin-bottom: 0.875rem; margin-top: 0.438rem;font-size: 1.25rem; font-weight: 700;}
 .subscribe{ color: var(--btn-bg);transition:opacity 0.3s}
 .subscribe:hover{ opacity: 70%;}
 .primary{ background-color: var(--btn-bg); font-size: 1.25rem; color: white; width: 14.375rem; height: 3.438rem; text-align: center; border-radius: 1.25rem;}
@@ -876,9 +894,10 @@ onBeforeUnmount(() => {
 .product-address-section { margin-top: 2.188rem; padding: 1.5rem; background: white; border-radius: 1.25rem;}
 .product-address-section h3 { font-weight: 600; font-size: 1.5rem; margin-bottom: 1rem;}
 .address-text { font-size: 1.15rem; color: #333; margin-bottom: 1rem;}
-.product-map { width: 100%; height: 18.75rem; border-radius: 0.625rem; overflow: hidden;}
+.product-map { width: 100%; height: 18rem; border-radius: 0.625rem; overflow: hidden; margin-top: 0.75rem;}
 .map-pin { font-size: 2rem; transform: translate(-50%, -100%);}
 .similar-products { margin-top: 3rem; margin-bottom: 3rem; width: 54.75rem;}
+
 .similar-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem;}
 .similar-list { display: flex; flex-direction: column; gap: 0.625rem;}
 .horizontal-card { display: flex; gap: 1.25rem; background: white; padding: 1.25rem; border-radius: 1.25rem; width: 54.75rem;}
@@ -914,6 +933,7 @@ onBeforeUnmount(() => {
 .video-fav-btn {position: absolute;top: 0.75rem;right: 0.75rem;width: 2.25rem;height: 2.25rem;background: rgba(255, 255, 255, 0.95);border: none;border-radius: 50%;display: flex;align-items: center;justify-content: center;cursor: pointer;z-index: 3;padding: 0;box-shadow: 0 2px 8px rgba(0,0,0,0.08);transition: transform 0.2s ease, background 0.2s ease;}
 .video-fav-btn:hover {transform: scale(1.1);background: #fff;}
 .video-fav-icon {width: 1.125rem;height: 1.125rem;}
-@media (max-width: 77rem) {.videos-grid {grid-template-columns: repeat(3, 1fr);}}
-@media (max-width: 48rem) {.videos-grid {grid-template-columns: repeat(2, 1fr);}}
+@media (max-width: 77rem) {.videos-grid {grid-template-columns: repeat(3, 1fr);}
+.similar-products .horizontal-card{width: 47.75rem;}  
+.similar-products.card-content{width: 21.125rem;}}
 </style>

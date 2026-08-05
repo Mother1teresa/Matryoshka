@@ -183,7 +183,12 @@ watch(() => modal.isOpen, (open) => {
 <style scoped>
 .region-card { background: white; width: 90%; max-width: 37.5rem; border-radius: 2.5rem; padding: 2.5rem; box-shadow: 0 10px 25px rgba(0,0,0,0.1);}
 .input-wrapper { display: flex; gap: 0.625rem; margin: 1rem 0;}
-.input-wrapper input { text-transform: capitalize; flex: 1; width: 100%; padding: 0.75rem 1rem; background: #f2f2f2; border: 1px solid transparent; border-radius: 0.75rem; outline: none;}
+.input-wrapper input { flex: 1; width: 100%; padding: 0.75rem 1rem; background: #f2f2f2; border: 1px solid transparent; border-radius: 0.75rem; outline: none;}
+input{
+  display: inline-block;
+  text-transform: lowercase;
+}
+input::first-letter { text-transform: uppercase;}
 .input-wrapper input:focus { border-color: #76a58f;}
 .btn-search { padding: 0 20px; background: #eee; border: none; border-radius: 0.75rem; cursor: pointer;}
 .subtitle { font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;}

@@ -247,7 +247,6 @@ const handleSave = async () => {
         console.log("Сотрудник не изменился, пропускаем update-employee");
       }
     }
-
     let finalAvatarUrl = auth.user?.avatarUrl || '';
     if (form.avatarFile) {
       const uploaded = await uploadToMediaService(form.avatarFile, "PHOTOS", {});
@@ -255,7 +254,6 @@ const handleSave = async () => {
         finalAvatarUrl = uploaded.cdnUrl || uploaded.url || uploaded;
       }
     }
-
     const updateData = {
       name: form.name,
       email: form.email,
@@ -300,134 +298,23 @@ onBeforeUnmount(() => {clearTimeout(cityTimeout);});
 </script>
 
 <style scoped>
-.edit-modal {
-  background: white;
-  width: 100%;
-  max-width: 41.625rem;
-  border-radius: 2.5rem;
-  position: relative;
-  max-height: 90vh;
-  overflow: hidden; 
-  display: flex;
-  flex-direction: column;
-}
-.modal-body {
-  overflow-y: auto; 
-  scrollbar-width: thin;
-  scrollbar-color: #76a87e transparent;
-  padding: 1.875rem 3.125rem 3.25rem 3.125rem;
-  border-radius: 2.5rem;
-}
-
-.type-toggle {
-  display: flex;
-  background: #F4F4F4;
-  border-radius: 0.625rem;
-  padding: 0.325rem;
-  width: 26rem;
-  height: 3.925rem;
-  margin: 1.438rem auto 2.188rem auto;
-}
-.type-toggle button {
-  flex: 1;
-  padding: 0.833rem 0;
-  width: 12.625rem;
-  text-align: center;
-  border: none;
-  background: none;
-  border-radius: 0.48rem;
-  cursor: pointer;
-  font-weight: 500;
-  font-size: 1.3rem;
-  color: #616161;
-}
-.type-toggle button.active {
-  background: #76a87e;
-  color: white;
-}
-.block__save-button{
-  display: flex;
-  justify-content: center;
-}
-.close-x{
-  font-size: 2.25rem;
-  position: absolute;
-  top: 0.8rem;
-  right: 1.4rem;
-}
-.save-button {
-  width: 8.438rem;
-  height: 3rem;
-  background: #76a87e;
-  color: white;
-  border: none;
-  border-radius: 1.875rem;
-  margin-top: 1.25rem;
-  cursor: pointer;
-  text-align: center;
-}
-.form-group {
-  display: flex;
-  gap: 1.375rem;
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
-.photo-section{
-  display: grid;
-  justify-items: center;
-  gap: 0.938rem;
-  margin-bottom: 1.438rem;
-}
-.form-group label {
-  width: 9.25rem;
-  font-size: 1.4rem;
-  color: #333;
-}
-.form-group input,
-.form-group select,
-textarea {
-  width: 100%;
-  border: 1px solid #e0e0e0;
-  padding: 0.75rem;
-  border-radius: 0.625rem;
-  font-size: 1.2rem;
-}
-.employee-inputs .form-group input::placeholder{
-  color: #A8A1A1 !important;
-}
-.avatar-wrapper {
-  border: 1px solid #e2e2e2;
-  width: 9.375rem;
-  height: 9.375rem;
-  border-radius: 50%;
-  background-color: #F8F9FA;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
-  transition: all 0.3s ease;
-}
-.edit-avatar{
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  position: absolute;
-  top: 0;
-  left: 0;
-}
-.avatar-overlay {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0); 
-  transition: background 0.3s ease;
-  z-index: 2;
-}
+.edit-modal {background: white;width: 100%;max-width: 41.625rem;border-radius: 2.5rem;position: relative;max-height: 90vh;overflow: hidden; display: flex;flex-direction: colum}
+.modal-body {overflow-y: auto; scrollbar-width: thin;scrollbar-color: #76a87e transparent;padding: 1.875rem 3.125rem 3.25rem 3.125rem;border-radius: 2.5rem;}
+.type-toggle {display: flex;background: #F4F4F4;border-radius: 0.625rem;padding: 0.325rem;width: 26rem;height: 3.925rem;margin: 1.438rem auto 2.188rem auto;}
+.type-toggle button {flex: 1;padding: 0.833rem 0;width: 12.625rem;text-align: center;border: none;background: none;border-radius: 0.48rem;cursor: pointer;font-weight: 500;font-size: 1.3rem;color: #616161;}
+.type-toggle button.active {background: #76a87e;color: white;}
+.block__save-button{display: flex;justify-content: center;}
+.close-x{font-size: 2.25rem;position: absolute;top: 0.8rem;right: 1.4rem;}
+.save-button {width: 8.438rem;height: 3rem;background: #76a87e;color: white;border: none;border-radius: 1.875rem;margin-top: 1.25rem;cursor: pointer;text-align: center;}
+.form-group {display: flex;gap: 1.375rem;align-items: center;margin-bottom: 1.5rem;}
+.photo-section{display: grid;justify-items: center;gap: 0.938rem;margin-bottom: 1.438rem;}
+.form-group label {width: 9.25rem;font-size: 1.4rem;color: #333;}
+.form-group input,.form-group select,
+textarea {width: 100%;border: 1px solid #e0e0e0;padding: 0.75rem;border-radius: 0.625rem;font-size: 1.2rem;}
+.employee-inputs .form-group input::placeholder{color: #A8A1A1 !important;}
+.avatar-wrapper {border: 1px solid #e2e2e2;width: 9.375rem;height: 9.375rem;border-radius: 50%;background-color: #F8F9FA;cursor: pointer;display: flex;align-items: center;justify-content: center;position: relative;overflow: hidden;transition: all 0.3s ease;}
+.edit-avatar{width: 100%;height: 100%;object-fit: cover;position: absolute;top: 0;left: 0;}
+.avatar-overlay {position: absolute;width: 100%;height: 100%;display: flex;align-items: center;justify-content: center;background: rgba(255, 255, 255, 0); transition: background 0.3s ease;z-index: 2;}
 .camera-icon {width: 5.5rem;height: 5.5rem;filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));transition: transform 0.3s ease;}
 .avatar-wrapper:hover .avatar-overlay {background: rgba(219, 219, 219, 0.415); }
 .avatar-wrapper:hover .camera-icon {transform: scale(1.05); }
@@ -469,15 +356,6 @@ input::placeholder{color: #adadad;}
 .suggestions-list {position: absolute;top: calc(100% + 4px);left: 0;right: 0;background: white;border: 1px solid #e0e0e0;border-radius: 0.625rem;z-index: 100;list-style: none;padding: 0;margin: 0;max-height: 200px;overflow-y: auto;box-shadow: 0 4px 16px rgba(0,0,0,0.08);}
 .suggestions-list li {padding: 0.75rem 1rem;cursor: pointer;font-size: 0.95rem;color: #333;transition: background 0.15s;}
 .suggestions-list li:hover {background: #f5f5f5;}
-.checkbox-container input{
-  border: 2px solid #858685;
-  border-radius: 0.313rem !important;
-  border-color: #858685 !important;
-  width: 1.438rem !important;
-  height: 1.125rem !important;
-}
-.auth-forgot__check input:checked {
-  background: var(--btn-bg);
-  border-color: transparent !important;
-}
+.checkbox-container input{border: 2px solid #858685;border-radius: 0.313rem !important;border-color: #858685 !important;width: 1.438rem !important;height: 1.125rem !important;}
+.auth-forgot__check input:checked {background: var(--btn-bg);border-color: transparent !important;}
 </style>

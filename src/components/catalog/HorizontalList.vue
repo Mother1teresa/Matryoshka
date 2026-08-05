@@ -203,10 +203,10 @@ const emptyStateText = computed(() => {
           <div class="card-price-row">
             <span class="card-price">
               <template v-if="item.category === 'rabota' && item.salary">
-                {{ item.salary.toLocaleString() }} ₽
+                {{ Number(item.salary|| 0).toLocaleString('ru-RU') }} ₽
               </template>
               <template v-else-if="item.price">
-                {{ item.price.toLocaleString() }} ₽
+                {{ Number(item.price || 0).toLocaleString('ru-RU') }} ₽ 
                 <span
                   v-if="item.category === 'nedvizhimost' && (subcategory === 'rent' || $route.params.subcategory === 'rent')"
                   class="price-period"
@@ -219,7 +219,7 @@ const emptyStateText = computed(() => {
               class="price-extra"
               v-if="item.category === 'nedvizhimost' && (subcategory === 'rent' || $route.params.subcategory === 'rent') && item.attributes?.area"
             >
-              {{ Math.round(item.price / item.attributes.area).toLocaleString() }} ₽ за м2
+              {{ Math.round(item.price / item.attributes.area).toLocaleString('ru-RU') }} ₽ за м2
             </span>
           </div>
           <div class="card-location">

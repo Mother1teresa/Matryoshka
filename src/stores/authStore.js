@@ -12,7 +12,6 @@ import { getFCMToken, listenToMessages } from '/src/firebase.js';
 import { notify } from "/src/utils/notify";
 
 let stompClient = null;
-let refreshTimer = null;
 let connectCallbacks = [];
 
 export const useAuthStore = defineStore("auth", {
@@ -63,7 +62,6 @@ export const useAuthStore = defineStore("auth", {
     }
   },
   getters: {
-    
     userAvatar: (state) =>
       state.user?.avatarUrl || state.user?.avatar || maskAvatar,
     formattedPhone: (state) => {
@@ -246,11 +244,22 @@ export const useAuthStore = defineStore("auth", {
     },
 
     async initFCM() {
-      if (!this.user?.id) return;
-      if (this.fcmToken) return;
-      const token = await getFCMToken();
-      if (!token) return;
+      if (!this.user?.id) return { token: null, status: 'no-user' };
+
+      // Пробуем восстановить из localStorage
+      if (!this.fcmToken) {
+        this.fcmToken = localStorage.getItem('fcm_token');
+      }
+      if (this.fcmToken) return { token: this.fcmToken, status: 'granted' };
+
+      const { token, status } = await getFCMToken();
+      
+      if (!token) {
+        return { token: null, status };
+      }
+
       this.fcmToken = token;
+      localStorage.setItem('fcm_token', token);
       try {
         await api.post('/notifications', {
           userId: String(this.user.id),
@@ -264,7 +273,6 @@ export const useAuthStore = defineStore("auth", {
         this._fcmUnsubscribe = listenToMessages((payload) => {
           const { title, body } = payload.notification || {};
           notify(body || title || 'Новое уведомление', 'info');
-
           this.allNotifications.unshift({
             id: payload.data?.notificationId || Date.now(),
             message: body || title || 'Новое уведомление',
@@ -272,6 +280,7 @@ export const useAuthStore = defineStore("auth", {
           });
         });
       }
+      return { token, status: 'granted' };
     },
     stopFCM() {
       if (this._fcmUnsubscribe) {
@@ -920,8 +929,13 @@ export const useAuthStore = defineStore("auth", {
       };
       this.isAuthLoading = false;
       this.saveToStorage();
-      this.startRefreshTimer();
       this.initFCM().catch(console.error);
+    },
+    async init() {
+      if (this.isAuthenticated && this.user?.id) {
+        await this.initFCM();
+        await this.fetchUserNotifications();
+      }
     },
     async loginAPI({ email, password }) {
       try {
@@ -1258,15 +1272,8 @@ export const useAuthStore = defineStore("auth", {
     },
     async fetchUserNotifications() {
       if (!this.user?.id) return;
-
-      if (!this.fcmToken) {
-        await this.initFCM();
-      }
-      if (!this.fcmToken) {
-        console.log('[Notifications] FCM токен не получен');
-        return;
-      }
-
+      await this.initFCM();
+      
       this.isNotificationsLoading = true;
       try {
         const res = await api.get('/notifications');
@@ -1284,38 +1291,11 @@ export const useAuthStore = defineStore("auth", {
         this.isNotificationsLoading = false;
       }
     },
-    startRefreshTimer() {
-      this.stopRefreshTimer();
-      if (!this.isAuthenticated || !this.user?.id) {
-        console.log('[startRefreshTimer] Пропуск: пользователь не авторизован');
-        return;
-      }
-      console.log('[startRefreshTimer] Запущен, интервал 15 минут');
-      refreshTimer = setInterval(async () => {
-        if (!this.isAuthenticated || !this.user?.id) {
-          console.log('[refreshTimer] Пользователь разлогинен, останавливаем таймер');
-          this.stopRefreshTimer();
-          return;
-        }
-        try {
-          await this.refreshToken();
-        } catch (e) {
-          console.error('[refreshTimer] Ошибка рефреша:', e);
-          this.logout();
-        }
-      }, 15 * 60 * 1000);
-    },
-    stopRefreshTimer() {
-      if (refreshTimer) {
-        clearInterval(refreshTimer);
-        refreshTimer = null;
-        console.log('[stopRefreshTimer] Таймер остановлен');
-      }
-    },
     async logout() {
-      this.stopRefreshTimer();
       this.disconnectSocket();
       this.stopFCM();
+      localStorage.removeItem('fcm_token');
+      this.fcmToken = null;
       this.stopAllPolling();
       this.isAuthenticated = false;
       this.user = null;

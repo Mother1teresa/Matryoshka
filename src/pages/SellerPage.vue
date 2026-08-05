@@ -7,7 +7,6 @@
         <router-link to="/">Главная</router-link>
         <span> → {{ sellerName }}</span>
       </div>
-      
       <!-- Карточка продавца -->
       <div class="seller-card-main">
         <div class="seller-header-flex">
@@ -26,7 +25,7 @@
                     <img
                       v-for="n in 5"
                       :key="n"
-                      :src="n <= Math.round(seller.rating || 0) ? '/src/assets/img/form/star.png' : '/src/assets/img/form/star_1.png'"
+                      :src="n <= Math.round(seller.rating || 0) ? '/img/users/star.png' : '/img/users/star_1.png'"
                       class="star-icon"
                       alt="★"
                     />
@@ -104,9 +103,28 @@
                     <span>Видео недоступно</span>
                   </div>
                   <div class="video-play-icon">▶</div>
+                  <!-- Длительность -->
+                  <div class="video-overlay">
+                    <span class="duration">{{ video.duration || "0:11" }}</span>
+                  </div>
                 </div>
                 <div class="video-info">
                   <div class="video-title">{{ video.description }}</div>
+                  <!-- Статистика -->
+                  <div class="stats-line">
+                    <div class="stat">
+                      <img src="/src/assets/img/icons/eye.svg" />
+                      {{ video.viewsCount || video.views || "" }}
+                    </div>
+                    <div class="stat">
+                      <img src="/src/assets/img/icons/heart.svg" />
+                      {{ video.likes || video.likesCount || "" }}
+                    </div>
+                    <div class="stat">
+                      <img src="/src/assets/img/icons/comment.svg" />
+                      {{ video.commentsCount || "" }}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -214,22 +232,24 @@ const sellerReviews = computed(() => reviewStore.reviews);
 const membershipText = computed(() => {
   if (!seller.value?.createdAt) return 'На Матрёшке недавно';
   
-  const date = new Date(seller.value.createdAt);
+  const created = new Date(seller.value.createdAt);
   const now = new Date();
-  const diffMs = now - date;
-  const diffMonth = Math.floor(diffMs / (1000 * 60 * 60 * 24 * 30));
+  const months = (now.getFullYear() - created.getFullYear()) * 12 + (now.getMonth() - created.getMonth());
   
-  if (diffMonth < 1) return 'На Матрёшке меньше месяца';
-  
-  const lastDigit = diffMonth % 10;
-  const lastTwo = diffMonth % 100;
-  let suffix = 'месяцев';
-  if (lastTwo < 11 || lastTwo > 14) {
-    if (lastDigit === 1) suffix = 'месяц';
-    else if (lastDigit >= 2 && lastDigit <= 4) suffix = 'месяца';
+  // Меньше месяца — показываем дату
+  if (months < 1) {
+    return `На Матрёшке с ${created.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}`;
   }
   
-  return `На Матрёшке ${diffMonth} ${suffix}`;
+  const plural = (n, [one, two, five]) => {
+    const l2 = n % 100, l = n % 10;
+    return (l2 > 10 && l2 < 20) ? five : l === 1 ? one : (l > 1 && l < 5) ? two : five;
+  };
+  
+  if (months < 12) return `На Матрёшке ${months} ${plural(months, ['месяц', 'месяца', 'месяцев'])}`;
+  
+  const years = Math.floor(months / 12);
+  return `На Матрёшке ${years} ${plural(years, ['год', 'года', 'лет'])}`;
 });
 
 // === ЗАГРУЗКА ДАННЫХ ===
@@ -364,47 +384,51 @@ const playVideo = (video) => {
 </script>
 <style scoped>
 .seller-page-section { margin-bottom: 3.188rem;}
-.reviews-container { background: #ececec; padding: 1.625rem 2rem 2rem 2rem; border-radius: 0 0 1.25rem 1.25rem; display: flex; flex-direction: column; gap: 1rem;}
+.reviews-container { display: flex; flex-direction: column; gap: 1rem;}
 .review-card { background: white; border-radius: 1.25rem; padding: 1.5rem 1.5rem .8rem 1.5rem;}
 .review-header { display: flex; justify-content: space-between; align-items: flex-start;}
 /* Стили ответа продавца */
 .reply-content { margin-top: .3rem;}
 .reply-text { font-size: 1rem;}
-.seller-tabs { background: #ececec; padding: 1.625rem 1rem 0 2rem; border-radius: 1.25rem 1.25rem 0 0; display: flex; gap: 4rem; }
+.seller-tabs { display: flex; gap: 0rem; border-radius: 0.625rem; margin-bottom: 3.25rem; background: var(--bg-defort); width: fit-content; padding: 0.125rem 0.25rem; }
 .desc-container { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 4px; }
-.desc-text { display: block; max-width: 100%; font-size: 1.5rem; }
-.seller-desc { width: 42.313rem; }
-.desc-text.is-collapsed { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 25rem; font-size: 1.5rem; }
-.btn-more { color: var(--btn-bg); background: none; border: none; cursor: pointer; font-weight: 400; padding: 0; font-size: 1.5rem; }
+.desc-text { display: block; max-width: 100%; font-size: 1.25rem; color: #858685; }
+.seller-desc { width: 42.313rem; margin-top: 1.375rem;}
+.desc-text.is-collapsed { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 25rem; }
+.btn-more { color: var(--btn-bg); background: none; border: none; cursor: pointer; font-weight: 400; padding: 0; font-size: 1.25rem; }
 .products { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.938rem; padding-left: -1rem; padding-right: -1rem; }
-.seller-tabs button { font-size: 2rem; border-bottom: 1px solid black; border-radius: 0; background: none; cursor: pointer; }
-.seller-tabs button.active { border-bottom: 1px solid var(--btn-bg); color: var(--btn-bg); }
+.seller-tabs button { padding: 1rem 3.188rem; background: none; border: none; font-size: 1.25rem; font-weight: 700; color: #858685; cursor: pointer; position: relative; background: var(--bg-defort); border-radius: 0.625rem; }
+.seller-tabs button.active { color: var(--bg-defort); background: var(--btn-bg); }
 .seller-logo { width: 7.625rem; height: 7.625rem; border-radius: 50%; object-fit: cover; }
 .seller-header-flex { display: flex; justify-content: space-between; }
 .seller-info-left { display: flex; gap: 1.625rem; }
 .btn-subscribe-text { color: var(--btn-bg); background: none; border: none; cursor: pointer; font-size: 1.5rem; }
 .btn-subscribe-text.is-active { color: #808080; }
-.video-grid {background: #ececec; padding: 1.625rem 2rem 2rem 2rem;}
-.video-grid_block{display: grid; grid-template-columns: repeat(6, 13rem); gap: 0.938rem; padding-left: -1rem; padding-right: -1rem; border-radius: 0 0 1.25rem 1.25rem; }
-.video-preview {  aspect-ratio: 9 / 16; margin-bottom: 0.375rem; position: relative; border-radius: 1rem; overflow: hidden;}
+.stats-line {display: flex; justify-content: space-between;gap: 0.938rem;}
+.stat {display: flex; align-items: center; gap: 0.4rem;font-size: 0.875rem; color: #333}
+.stat img { width: 1.688rem; }
+.video-grid_block{display: grid; grid-template-columns: repeat(5, 15.813rem); gap: 0.938rem; padding-left: -1rem; padding-right: -1rem; border-radius: 0 0 1.25rem 1.25rem; }
+.video-preview { height: 20.125rem;width: 100%; aspect-ratio: 9 / 16; position: relative; border-radius: 1rem; overflow: hidden; height: 20.125rem;}
 .video-preview img { width: 100%; height: 100%; }
 .video-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #888; font-size: 0.9rem;}
 .video-play-icon { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: white; opacity: 0.85; pointer-events: none; text-shadow: 0 2px 8px rgba(0,0,0,0.4);}
 .video-preview .video-thumb{ width: 100%; height: 100%; object-fit: cover; border-radius: 0.938rem;}
-.video-card { width: 100%; height: 20.313rem; background: white; border-radius: 0.938rem; padding: 0.938rem; }
-.video-info { text-align: end; }
-.video-title { font-size: .9rem; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; overflow: hidden; transition: all 0.3s; border-radius: 0; height: 3.6rem;}
+.video-card { width: 100%; height: 28rem; background: white; border-radius: 1.25rem; padding: 0.625rem 0.625rem 0.938rem 0.625rem;}
+.video-title { font-size: 1rem; font-weight: 700; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; transition: all 0.3s; border-radius: 0; height: 3.6rem; text-align: justify; display: inline-block;text-transform: lowercase;}
+.video-title::first-letter {text-transform: uppercase;}
+.duration{bottom: 0; right: 0;}
+.video-info{margin-top: 0.938rem;}
 .video-date { color: #7c7c7c; font-size: 0.875rem;}
-.seller-card-main { background-color: white; margin-bottom: 1.25rem; padding: 1.438rem; border-radius: 1.25rem; }
+.seller-card-main { background-color: white; margin-bottom: 1.25rem; padding: 1.438rem; border-radius: 1.25rem; position: relative;}
 .seller-info-right { text-align: end; }
-.experience { font-size: 1.5rem; margin-bottom: 1.125rem; }
-.seller-name-row h1 { margin-bottom: 0.875rem; }
-.seller-type { margin-bottom: 0.875rem; font-size: 1.5rem; }
+.experience { font-size: 1rem; position: absolute; bottom: 1.25rem; right: 1.25rem; color: #858685;}
+.seller-name-row h1 { margin-bottom: 1.5rem; font-size: 1.5rem; font-weight: 700;display: inline-block;text-transform: lowercase;}
+.seller-name-row h1::first-letter {text-transform: uppercase;}
+.seller-type { margin-bottom: 0.938rem; font-size: 1.25rem; font-weight: 700;}
 .rating-block { margin-bottom: 0.563rem; }
-.rating { font-size: 1.5rem; font-weight: 600; }
-.products-grid-wrapper{background: #ececec; padding: 1.625rem 2rem 2rem 2rem; border-radius: 0 0 1.25rem 1.25rem;}
+.rating { font-size: 1.25rem; font-weight: 700; display: flex; gap: 0.563rem;color: #262626;line-height: 1;height: 1rem;align-items: stretch;}
 .stars {display: flex;gap: 0.125rem;align-items: center;}
-.star-icon {width: 1.25rem;height: 1.25rem;}
+.star-icon {width: 1.5rem;height: 1.5rem;}
 .stars-row {display: flex;gap: 0.125rem;}
 
 @media (max-width: 77rem) { .products,.video-grid_block { display: grid; grid-template-columns: repeat(5, 12.2rem); gap: 1rem; background: #ececec;}}

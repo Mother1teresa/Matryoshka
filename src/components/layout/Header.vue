@@ -62,7 +62,7 @@
                 </div>
                 <button class="btn-light" @click="region.open()">
                   <img src="/src/assets/img/location_on.svg" />
-                  {{ currentRegionName }}
+                  <span>{{ currentRegionName }}</span>
                 </button>
               </div>
               <!-- профиль -->
@@ -251,23 +251,25 @@ const handleCreateVideo = () => {
 .header__center {display: flex;gap: 15px;}
 .header__right {display: flex;gap: 0.813rem;align-items: flex-start;width: 17.5rem;justify-content: flex-end;height: 6.625rem;}
 .header__right-false {display: grid;gap: 0.813rem;}
-.header__bottom {display: flex;gap: 0.5rem;align-items: center;}
+.header__bottom {display: flex;gap: 0.813rem;align-items: center;}
 .search-input {font-size: 1.25rem;border: none;width: 90%;}
 .search-input::placeholder {color: #929292;font-size: 1.25rem;}
 .search-img {display: flex;align-items: center;gap: 0.825rem;width: 75%;}
 .search-input__box {flex: 0.55;display: flex;justify-content: space-between;padding: 0.25rem 0.26rem 0.27rem 0.75rem;border-radius: 1.625rem;border: 1px solid #ddd;height: 3.17rem;}
 .search-input__box img {width: 1.5rem;height: 1.5rem;object-fit: fill;}
-.btn-light {background: var(--bg-profil);border: none;cursor: pointer;display: flex;gap: 0.25rem;align-items: center;justify-content: center;width: 95%;border-radius: 0.938rem;height: 2.125rem;padding: 0.625rem 1.5rem; font-size: 0.938rem; font-weight: 700;}
+.btn-light {background: var(--bg-profil);border: none;cursor: pointer;display: flex;gap: 0.25rem;align-items: center;justify-content: center;width: 95%;border-radius: 0.938rem;height: 2.125rem;padding: 0.625rem 1.5rem; font-size: 0.938rem; font-weight: 700; }
+.btn-light span{ max-width: 6rem;text-transform: lowercase; -webkit-box-orient: vertical;-webkit-line-clamp: 1;overflow: hidden;  display: -webkit-box;}
+.btn-light span::first-letter { text-transform: uppercase;}
 .btn-login {padding: 0.625rem 1.188rem;height: auto;}
 .btn-light img {width: 1.45rem;height: 1.45rem;}
 .btn-search {background: var(--btn-bg);color: white;border: none;padding: 0.688rem 1.969rem;border-radius: 1.25rem;cursor: pointer;}
-.btn-category {background: white;border: 1px solid var(--btn-bg);color: var(--btn-bg);padding: 0.563rem 0.688rem 0.563rem 0.313rem;border-radius: 1.25rem;cursor: pointer;display: flex;align-items: center;gap: 0.25rem;font-weight: 400;transition: opacity 0.3s;}
+.btn-category {background: white;color: var(--btn-bg);cursor: pointer;display: flex;align-items: center;gap: 0.25rem;font-weight: 700;transition: opacity 0.3s;}
 .btn-category img {width: 2.063rem;height: auto;}
 .profile {display: grid;align-items: center;gap: 0.313rem;cursor: pointer;background-color: var(--bg-profil);border-radius: 1rem;padding: 0.563rem 0.675rem 0.375rem 1.25rem;height: -webkit-fill-available;height: stretch;}
 .avatar {width: 3.75rem;height: 3.75rem;border-radius: 50%;object-fit: cover;}
 .header__right-true {display: flex;gap: 0.8rem;}
 .header__right-icons {display: flex;justify-content: flex-end;gap: 0.5rem;}
-.header__right-block {display: grid;gap: 0.75rem;}
+.header__right-block {display: grid;gap: 0.75rem; justify-items: end;}
 .icon {background-color: var(--bg-profil);border-radius: 1rem;width: 3.75rem;height: 3.75rem;display: flex;align-items: center;justify-content: center;position: relative;}
 .icon img {width: auto;height: auto;}
 .icon:first-child img {width: 1.8rem;height: 1.8rem;}
@@ -275,9 +277,10 @@ const handleCreateVideo = () => {
 .icon .badge-count{right: 0;top: 0;}
 .profile-block {display: flex;align-items: center;gap: 0.8rem;}
 .arr-profil {width: 1rem;height: 1.5rem;}
-.header__right-true .btn-light {width: 100%;text-transform: capitalize;}
+.header__right-true .btn-light {width: 100%;}
 .profile-wrapper {position: relative;}
-.profile-wrapper .profile span{width: 4.85rem;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;display: inline-block; font-size: 0.938rem; font-weight: 700;}
+.profile-wrapper .profile span{width: 4.85rem;overflow: hidden;text-transform: lowercase; -webkit-box-orient: vertical;-webkit-line-clamp: 1;overflow: hidden;  display: -webkit-box;}
+.profile-wrapper .profile span::first-letter { text-transform: uppercase;}
 /* стрелка */
 .arr-profil {transition: transform 0.3s;}
 .arr-profil.rotate {transform: rotate(180deg);}

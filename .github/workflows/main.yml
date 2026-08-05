@@ -16,6 +16,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
 
       - name: Create .env file
         run: |
@@ -30,7 +31,8 @@ jobs:
 
       - name: Create firebase-messaging-sw.js
         run: |
-          cat > public/firebase-messaging-sw.js << 'EOF'
+          mkdir -p public
+          cat > public/firebase-messaging-sw.js <<EOF
           importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
           importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
 
@@ -50,7 +52,9 @@ jobs:
             self.registration.showNotification(title || 'Уведомление', {
               body: body || '',
               icon: '/icon-192x192.png',
-              data: { url: payload.data?.url || '/notifications' }
+              badge: '/icon-96x96.png',
+              data: { url: payload.data?.url || '/notifications' },
+              requireInteraction: true
             });
           });
 
@@ -58,7 +62,7 @@ jobs:
             event.notification.close();
             const url = event.notification.data?.url || '/notifications';
             event.waitUntil(
-              clients.matchAll({ type: 'window' }).then((windowClients) => {
+              clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
                 for (const client of windowClients) {
                   if (client.url.includes(url) && 'focus' in client) return client.focus();
                 }
@@ -70,15 +74,33 @@ jobs:
 
       - name: Install dependencies and Build
         run: |
-          npm install
+          npm ci
           npm run build
- 
-      - name: Deploy to server via SCP
-        uses: appleboy/scp-action@master
+
+      - name: Verify service worker exists
+        run: |
+          test -f dist/firebase-messaging-sw.js && echo "✅ SW найден" || (echo "❌ SW не найден" && exit 1)
+
+      # Очищаем старые файлы на сервере перед копированием новых
+      - name: Clear server directory
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }} 
+          username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
-          source: "dist/"
+          script: |
+            rm -rf /var/www/html/*
+            mkdir -p /var/www/html
+
+      # Копируем содержимое dist/, а не саму папку dist/
+      - name: Deploy to server via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          source: "dist/*"
           target: "/var/www/html"
+          strip_components: 0

@@ -30,10 +30,10 @@
       >
         {{ product.title }}
       </router-link>
-      <div class="price">{{ product.price.toLocaleString() }} р</div>
+      <div class="price">{{ Number(product.price || 0).toLocaleString('ru-RU') }} ₽</div>
       <div class="product-content__bottom">
         <div class="text13">
-          {{ product.city }}
+          {{ product.city || product.address}}
         </div>
         <img
           class="card-like"

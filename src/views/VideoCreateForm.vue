@@ -189,7 +189,6 @@ const onPublish = async () => {
     notify("Пожалуйста, заполните описание");
     return;
   }
-  // Убрали проверку presignedData — uploadService сам запросит
   
   status.value = 'uploading';
   uploadProgress.value = 0;

@@ -17,23 +17,53 @@ const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY;
 
 export async function getFCMToken() {
   try {
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') {
-      console.log('[FCM] Пользователь отказал в уведомлениях');
-      return null;
+    if (!('Notification' in window)) {
+      return { token: null, status: 'unsupported' };
     }
-    
-    const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+
+    const permission = Notification.permission;
+    if (permission === 'denied') {
+      return { token: null, status: 'denied' };
+    }
+
+    if (permission === 'default') {
+      const result = await Notification.requestPermission();
+      if (result !== 'granted') {
+        return { token: null, status: result };
+      }
+    }
+
+    // Проверяем, доступен ли SW файл
+    const swUrl = '/firebase-messaging-sw.js';
+    try {
+      const swCheck = await fetch(swUrl, { method: 'HEAD' });
+      const contentType = swCheck.headers.get('content-type');
+      if (!contentType?.includes('javascript')) {
+        console.error(`[FCM] ${swUrl} не найден или отдаёт ${contentType}. Убедитесь, что файл лежит в public/`);
+        return { token: null, status: 'sw-missing' };
+      }
+    } catch (e) {
+      console.error('[FCM] Не удалось проверить SW:', e);
+    }
+
+    const swRegistration = await navigator.serviceWorker.register(swUrl, {
+      scope: '/',
+    });
+    await navigator.serviceWorker.ready;
+
+    const token = await getToken(messaging, {
+      vapidKey: VAPID_KEY,
+      serviceWorkerRegistration: swRegistration,
+    });
+
     if (!token) {
-      console.log('[FCM] Токен не получен');
-      return null;
+      return { token: null, status: 'no-token' };
     }
-    
-    console.log('[FCM] Токен:', token);
-    return token;
+
+    return { token, status: 'granted' };
   } catch (err) {
     console.error('[FCM] Ошибка:', err);
-    return null;
+    return { token: null, status: 'error' };
   }
 }
 

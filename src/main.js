@@ -13,6 +13,7 @@ const pinia = createPinia()
 app.use(pinia);
 
 const auth = useAuthStore();
+auth.init().catch(console.error);
 
 app.use(createYmaps({
   apikey: 'ab3a562f-41f9-4eb0-94ab-b982e13c7742',

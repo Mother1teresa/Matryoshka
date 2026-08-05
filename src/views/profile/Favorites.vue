@@ -24,39 +24,38 @@
           <div class="videos-grid">
             <div v-for="video in currentItems" :key="video.id" class="fav-video-card">
               <div class="fav-video-card_block">
-                <div class="fav-video-preview">
-                  <video
-                    v-if="video.cdnUrl"
-                    :src="video.cdnUrl"
-                    preload="metadata"
-                    muted
-                    playsinline
-                  ></video>
-                  <img v-else :src="video.thumbnail || '/src/assets/img/video/placeholder.svg'" alt="thumbnail" />
-                  <img :src="video.author?.avatar || '/img/users/mask-avatar.png'" class="author-avatar" />
-                  <div class="video-overlay">
-                    <span class="duration">{{ video.duration || "0:11" }}</span>
+                <!-- Превью кликабельно -->
+                <router-link :to="{ name: 'shorts', params: { id: video.id } }">
+                  <div class="fav-video-preview">
+                    <video
+                      v-if="video.cdnUrl"
+                      :src="video.cdnUrl"
+                      preload="metadata"
+                      muted
+                      playsinline
+                    ></video>
+                    <img v-else :src="video.thumbnail || '/src/assets/img/video/placeholder.svg'" alt="thumbnail" />
+                    <img :src="video.author?.avatar || '/img/users/mask-avatar.png'" class="author-avatar" />
+                    <div class="video-overlay">
+                      <span class="duration">{{ video.duration || "0:11" }}</span>
+                    </div>
                   </div>
-                </div>
+                </router-link>
+
+                <!-- Кнопка меню вынесена за пределы ссылки -->
                 <button
                   class="menu-dots-btn"
                   @click.stop="toggleMenu(video.id)">
                   <img src="/src/assets/img/settings-gear3.svg" alt="">
                 </button>
-                    <!-- Выпадающее меню -->
+
+                <!-- Выпадающее меню -->
                 <div v-if="activeMenuId === video.id" class="video-dropdown-menu">
-                  <!-- <button
-                    v-if="!video.isArchived"
-                    @click.stop="handleArchive(video.id, true)">
-                    В архив
-                  </button> 
-                    <button v-else @click.stop="handleArchive(video.id, false)">
-                    Опубликовать заново
-                  </button> -->
                   <button class="delete-btn" @click.stop="openConfirm(video.id)">
-                    Удалить
+                    Убрать из избранных
                   </button>
                 </div>
+
                 <div class="fav-video-main">
                   <router-link :to="{ name: 'shorts', params: { id: video.id } }">
                     <h3 class="video-title">{{ video.description || 'Без названия' }}</h3>
@@ -66,20 +65,6 @@
                     <div class="stat"><img src="/src/assets/img/icons/heart.svg" /> {{ video.likes || 0 }}</div>
                     <div class="stat"><img src="/src/assets/img/icons/comment.svg" /> {{ video.commentsCount || 0 }}</div>
                   </div>
-                </div>
-              </div>
-              <div class="fav-video-right">
-                <!-- <div class="fav-icon-active" @click="removeFromFavorites(video.id)">
-                  <img src="/src/assets/img/icons/heart-filled.svg" />
-                </div> -->
-                <!-- <div class="author-info">
-                  <img :src="video.author?.avatar || '/img/users/mask-avatar.png'" class="author-avatar" />
-                  <span class="author-name">{{ video.author?.username || 'Пользователь' }}</span>
-                </div> -->
-                <div class="action-btns">
-                  <router-link :to="{ name: 'shorts', params: { id: video.id } }">
-                    <button class="btn btn-green">Посмотреть видео</button>
-                  </router-link>
                 </div>
               </div>
             </div>
@@ -425,65 +410,25 @@ onMounted(() => {
 .option {padding: 1.125rem 1.5rem;cursor: pointer;font-size: 1.25rem;color: var(--bg-defort);font-weight: 700;}
 .option:hover {background: rgba(0, 0, 0, 0.08); }
 .favorites-content{margin-top: 2.5rem;}
-.fav-video-card {background: #fff;padding: 0.625rem 0.938rem 0.938rem 0.938rem;border-radius: 1.25rem; position: relative;}
+.fav-video-card { background: #fff;padding: 0.625rem 0.938rem 0.938rem 0.938rem;border-radius: 1.25rem; position: relative;}
 .fav-video-card_block{width: 100%;}
-.fav-video-preview {width: 12.5rem;height: 15.625rem;flex-shrink: 0; position: relative; overflow: hidden;}
+.fav-video-preview {width: 12.563rem;height: 16.625rem;flex-shrink: 0; position: relative; overflow: hidden;}
 .fav-video-preview img,.fav-video-preview video{width: 100%; height: 100%;border-radius: 1.25rem;object-fit: cover;}
 .fav-video-main { width: 100%; display: grid; margin-top: 1.125rem;}
-.video-title {
-  font-size: 1rem;
-  font-weight: 700;
-  margin-bottom: 1.563rem;
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  height: 4.375rem;
-}
-.video-title{
-  display: inline-block;
-  text-transform: lowercase;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.video-title::first-letter {
-  text-transform: uppercase;
-}
+.video-title {font-size: 1rem;font-weight: 700;margin-bottom: 1.563rem;display: -webkit-box;-webkit-line-clamp: 4;-webkit-box-orient: vertical;overflow: hidden;/* height: 4.375rem; */}
+.video-title{display: inline-block;text-transform: lowercase;display: -webkit-box;-webkit-line-clamp: 2;-webkit-box-orient: vertical;overflow: hidden;}
+.video-title::first-letter {text-transform: uppercase;}
 .video-stats {display: flex; justify-content: space-between;gap: 0.938rem;margin-bottom: 0.625rem;}
 .stat {display: flex; align-items: center; gap: 0.4rem;font-size: 0.875rem; color: #333}
 .stat img { width: 1.688rem; }
-.linked-product-box {
-  background: #FBFBFB;
-  border: 0.063rem solid #CCCCCC;
-  border-radius: 0.938rem;
-  padding: 0.313rem;
-  display: flex;
-  gap: 0.625rem;
-  position: relative;
-  width: 80%;
-}
+.linked-product-box {background: #FBFBFB;border: 0.063rem solid #CCCCCC;border-radius: 0.938rem;padding: 0.313rem;display: flex;gap: 0.625rem;position: relative;width: 80%;}
 .prod-thumb { width: 4.375rem; height: 100%; object-fit: contain; border-radius: 0.625rem;}
 .prod-info { display: flex; flex-direction: column; gap: 0.25rem; justify-content: space-between; }
 .prod-name { font-size: 0.813rem; color: #2D2D2D; }
 .prod-price { font-weight: 700; font-size: 1rem; }
 .prod-city { position: absolute; right: 0.75rem; bottom: 0.438rem; font-size: 0.75rem; color: #7C7C7C; }
-
-.write-btn {
-  background: var(--btn-bg); color: #fff;
-  padding: 0.188rem; border-radius: 0.313rem;
-  font-size: 0.825rem; width: fit-content;
-  width: 8.188rem;
-  text-align: center;
-}
-.fav-video-right {
-  display: flex; flex-direction: column;
-  gap: 0.625rem;
-  align-items: center;
-  width: 100%;
-  margin-top: 1rem;
-}
+.write-btn {background: var(--btn-bg); color: #fff;padding: 0.188rem; border-radius: 0.313rem;font-size: 0.825rem; width: fit-content;width: 8.188rem;text-align: center;}
+.fav-video-right {display: flex; flex-direction: column;gap: 0.625rem;align-items: center;width: 100%;margin-top: 1rem;}
 .fav-icon-active img { width: 1.5rem; cursor: pointer; }
 .author-info { display: flex; align-items: center; gap: 0.625rem; }
 .author-avatar { width: 4rem !important; height: 4rem !important; border-radius: 0 3.125rem 0 1.25rem !important; position: absolute; bottom: -1rem; left: -1rem;}
@@ -491,40 +436,15 @@ onMounted(() => {
 .action-btns { width: 11.313rem; display: flex; flex-direction: column; gap: 0.188rem; align-items: center;}
 .btn-green { background: var(--btn-bg); color: white; padding: 0.938rem; text-align: center; border-radius: 1.25rem; border: none; cursor: pointer; font-size: 0.825rem;}
 .btn-outline { background-color: white; border: 1px solid var(--btn-bg) !important; color: var(--btn-bg); padding: 0.313rem 0; text-align: center; font-size: 0.825rem; border-radius: 0.313rem; border: none; cursor: pointer; }
-.fav-video-card + .fav-video-card{ margin-bottom: 1.25rem; }
-.fav-ad-horizontal {
-  display: flex;
-  gap: 1.5rem;
-  background: #fff;
-  padding: 1.25rem;
-  border-radius: 1.25rem;
-  margin-bottom: 1.25rem;
-  box-shadow: 0 0.25rem 1.25rem rgba(0, 0, 0, 0.03);
-  position: relative;
-}
+.fav-ad-horizontal {display: flex;gap: 1.5rem;background: #fff;padding: 1.25rem;border-radius: 1.25rem;margin-bottom: 1.25rem;box-shadow: 0 0.25rem 1.25rem rgba(0, 0, 0, 0.03);position: relative;}
 /* Блок изображения */
-.ad-img-container {
-  width: 11.75rem;
-  /* height: 10.625rem; */
-  flex-shrink: 0;
-  background: #F2F2F2;
-  border-radius: 1.25rem;
-  overflow: hidden;
-  /* display: flex; */
-  align-items: center;
-  justify-content: center;
-}
+.ad-img-container {width: 11.75rem;flex-shrink: 0;background: #F2F2F2;border-radius: 1.25rem;overflow: hidden;align-items: center;justify-content: center;}
 .ad-main-img { width: 100%; height: 100%; object-fit: cover; }
 /* Контент */
 .ad-content-info { width: 100%; display: grid; }
 .ad-title-row { display: flex; justify-content: space-between; align-items: flex-start; }
 .ad-title{ height: 3.5rem; margin-bottom: .4rem; overflow: hidden;}
-.ad-title{
-  font-size: 1.5rem;
-  font-weight: 700;
-  display: inline-block;
-  text-transform: lowercase;
-}
+.ad-title{font-size: 1.5rem;font-weight: 700;display: inline-block;text-transform: lowercase;}
 .ad-title::first-letter { text-transform: uppercase;}
 .fav-heart { width: 1.5rem; cursor: pointer; }
 .ad-price { font-size: 1.375rem; font-weight: 700; margin-bottom: 0.625rem; }
@@ -534,77 +454,16 @@ onMounted(() => {
 .ad-desc { font-size: 1rem; color: #858685; font-weight: 700; margin-bottom: 0.75rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .ad-category-label { font-size: 0.813rem; color: #AAA; }
 /* Правый блок */
-.ad-seller-actions {
-  width: 16.5rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 3rem;
-  align-items: center;
-  border-left: 0.063rem solid #F0F0F0;
-  padding-left: 1.5rem;
-}
-.menu-dots-btn {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 2.75rem;
-  height: 2.938rem;
-  background: var(--btn-bg);
-  border: none;
-  border-radius: 0 1.25rem 0 1.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 2;
-  transition: all .3s;
-}
-
-.menu-dots-btn img {
-  width: 1.688rem;
-  height: 1.563rem;
-  filter: brightness(0) invert(1);
-}
-.video-dropdown-menu {
-  position: absolute;
-  top: 3.813rem;
-  right: 0.8rem;
-  background: var(--btn-bg);
-  border-radius: 0.938rem;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  z-index: 1;
-  width: 11.975rem;
-  max-width: 13.975rem;
-  color: #f5f5f5;
-  overflow: hidden;
-}
-.video-dropdown-menu button {
-  width: 100%;
-  padding: 0.813rem 1rem;
-  border: none;
-  background: none;
-  text-align: left;
-  font-size: 0.955rem;
-  cursor: pointer;
-  border-radius: 0;
-  transition: 0.3s;
-}
-.video-dropdown-menu button:first-child {
-  padding-top: 0.8rem;
-}
-.video-dropdown-menu button:last-child {
-  padding-top: 0.8rem;
-  padding-bottom: 0.8rem;
-}
-.video-dropdown-menu button:hover {
-  background: #388253;
-  color: white;
-}
+.ad-seller-actions {width: 16.5rem;display: flex;flex-direction: column;justify-content: center;gap: 3rem;align-items: center;border-left: 0.063rem solid #F0F0F0;padding-left: 1.5rem;}
+.menu-dots-btn {position: absolute;top: 0;right: 0;width: 2.75rem;height: 2.938rem;background: var(--btn-bg);border: none;border-radius: 0 1.25rem 0 1.25rem;display: flex;align-items: center;justify-content: center;cursor: pointer;z-index: 2;transition: all .3s;}
+.menu-dots-btn img {width: 1.688rem;height: 1.563rem;filter: brightness(0) invert(1);}
+.video-dropdown-menu {position: absolute;top: 3.813rem;right: 0.8rem;background: var(--btn-bg);border-radius: 0.938rem;box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);z-index: 1;width: 11.975rem;max-width: 13.975rem;color: #f5f5f5;overflow: hidden;}
+.video-dropdown-menu button {width: 100%;padding: 0.813rem 1rem;border: none;background: none;text-align: left;font-size: 0.955rem;cursor: pointer;border-radius: 0;transition: 0.3s;}
+.video-dropdown-menu button:first-child {padding-top: 0.8rem;}
+.video-dropdown-menu button:last-child {padding-top: 0.8rem;padding-bottom: 0.8rem;}
+.video-dropdown-menu button:hover {background: #388253;color: white;}
 .video-dropdown-menu .delete-btn {
-  /* border-top: 1px solid #eee !important; */
-  border-radius: 0;
-}
+  /* border-top: 1px solid #eee !important; */border-radius: 0;}
 .seller-brief { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
 .seller-avatar { width: 3.75rem; height: 3.75rem; border-radius: 0.625rem; object-fit: cover; }
 .seller-name { font-size: 1rem; font-weight: 700; text-align: center; }

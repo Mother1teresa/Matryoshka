@@ -48,6 +48,7 @@
                 <button class="action-btn" @click.stop="onLikeClick(video)">
                   <img :src="video.isLikedByMe ? heartFilled : heart" class="like-icon"/>
                 </button>
+                <span>{{ (video.likes ?? video.likesCount ?? 0) }}</span>
               </div>
               <div v-if="!isOwnVideo(video)" class="v-action">
                 <button class="action-btn" @click="onWriteClick(video)">
@@ -59,7 +60,6 @@
                   <img src="/src/assets/img/icons/lin.svg" alt="share" />
                 </button>
               </div>
-              <div class="v-divider"></div>
               <div class="v-action scroll-arrows">
                 <button class="action-btn arrow-btn" @click="scrollPrev">
                   <img src="/src/assets/img/icons/up.svg" alt="up" />
@@ -79,45 +79,47 @@
                 <div class="video-header-info">
                   <h2 class="video-title">{{ video.description || '\u00A0' }}</h2>
                   <div class="video-stats-row">
-                    <span>{{ (video.likes ?? video.likesCount ?? 0) }} лайков</span>
+                    <!-- <span>{{ (video.likes ?? video.likesCount ?? 0) }} лайков</span>
                     <span class="dot"></span>
                     <span>{{ (video.views ?? video.viewsCount ?? 0) }} просмотров</span>
-                    <span class="dot"></span>
-                    <span v-if="video.publishedAt">{{ formatDate(video.publishedAt) }}</span>
+                    <span class="dot"></span> -->
+                    <span v-if="video.publishedAt">{{'Мини-видео выложено '+ formatDate(video.publishedAt) }}</span>
                   </div>
                 </div>
                 <div class="shorts-block_avt">
+                  <!-- Прикреплённый товар -->
+                  <div v-if="video.linkedProduct" class="linked-product-wrapper">
+                    <ProductCard :product="normalizeProduct(video.linkedProduct)" />
+                  </div>
                   <div class="author-card">
                     <router-link :to="video.author?.id ? { name: 'SellerPage', params: { id: video.author.id } } : ''" class="author-link" :event="video.author?.id ? 'click' : ''">
                       <div class="author-main">
                         <img  :src="video.author?.avatar || '/img/users/mask-avatar.png'"  class="author-ava" />
-                        <div class="author-details">
-                          <p class="name">{{ video.author?.name || '\u00A0' }}</p>
+                          <div class="author-main_block">
+                            <div class="author-details">
+                              <p class="name">{{ video.author?.name || '\u00A0' }}</p>
+                            </div>
+                            <div class="rating-badge">
+                              <span class="rating-num">{{ video.author?.rating || 0 }}</span>
+                              <span class="stars">
+                                <img
+                                  v-for="n in 5"
+                                  :key="n"
+                                  :src="n <= Math.round(video.author?.rating || 0) ? '/src/assets/img/form/star.png' : '/src/assets/img/form/star_1.png'"
+                                  class="star-icon"
+                                  alt="★"
+                                />
+                              </span>
+                            </div>
                         </div>
                       </div>
                     </router-link>
-                    <div class="rating-badge">
-                      <span class="rating-num">{{ video.author?.rating || 0 }}</span>
-                      <span class="stars">
-                        <img
-                          v-for="n in 5"
-                          :key="n"
-                          :src="n <= Math.round(video.author?.rating || 0) ? '/src/assets/img/form/star.png' : '/src/assets/img/form/star_1.png'"
-                          class="star-icon"
-                          alt="★"
-                        />
-                      </span>
-                      <!-- <span v-if="isOwnVideo(video)" class="own-badge">Это ваш ролик</span> -->
+                     <!-- <span v-if="isOwnVideo(video)" class="own-badge">Это ваш ролик</span> -->
                       <!-- <button v-else-if="video.author?.id" class="btn-primary" 
                         :class="{'is-active': subStore.isSubscribed(video.author?.id)}" 
                         @click="onSubscribeClick(video.author?.id)">
                         {{ subStore.isSubscribed(video.author?.id) ? "Отписаться" : "Подписаться" }}
                       </button> -->
-                    </div>
-                  </div>
-                  <!-- Прикреплённый товар -->
-                  <div v-if="video.linkedProduct" class="linked-product-wrapper">
-                    <ProductCard :product="normalizeProduct(video.linkedProduct)" />
                   </div>
                 </div>
               </div>
@@ -211,7 +213,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick, computed } from "vue";
+import { ref, onMounted, onUnmounted, nextTick, computed, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "/src/stores/authStore.js";
 import { useFavoritesStore } from "/src/stores/favoritesStore.js";
@@ -247,6 +249,7 @@ const isMuted = ref(true);
 const isScrolling = ref(false);
 const activeVideoId = ref(null);
 let scrollTimeout = null;
+let observer = null;
 
 const buildCommentTree = (comments) => {
   if (!comments?.length) return [];
@@ -466,13 +469,18 @@ const preloadVideos = () => {
   });
 };
 const initObserver = () => {
-  const observer = new IntersectionObserver(
+  if (observer) {
+    observer.disconnect();
+    observer = null;
+  }
+
+  observer = new IntersectionObserver(
     (entries) => {
       if (isReplyMode.value) return;
       entries.forEach((entry) => {
         const videoId = entry.target.dataset.id;
-        const video = videos.value.find(v => v.id === videoId);
-        
+        const video = videos.value.find((v) => v.id === videoId);
+
         if (entry.isIntersecting) {
           clearTimeout(scrollTimeout);
           activeVideoId.value = videoId;
@@ -480,24 +488,22 @@ const initObserver = () => {
           scrollTimeout = setTimeout(() => {
             isScrolling.value = false;
           }, 300);
-          
+
           if (!video?.hasError) {
-            entry.target.play().catch(err => {
-              if (err.name === 'NotAllowedError' && !isMuted.value) {
+            entry.target.play().catch((err) => {
+              if (err.name === "NotAllowedError" && !isMuted.value) {
                 isMuted.value = true;
                 entry.target.muted = true;
                 entry.target.play();
               }
             });
           }
-          
-          videos.value.forEach(v => {
+
+          videos.value.forEach((v) => {
             if (v.id !== videoId) v.isPlaying = false;
           });
-          
-          // ← Обновляем счётчики при КАЖДОМ показе
+
           authStore.enrichVideo(videoId, true);
-          
           addView(video);
           router.replace({ name: "shorts", params: { id: videoId } });
         } else {
@@ -507,9 +513,11 @@ const initObserver = () => {
         }
       });
     },
-    { threshold: 0.6 },
+    { threshold: 0.6 }
   );
-  videoRefs.value.forEach((v) => observer.observe(v));
+  videoRefs.value.forEach((v) => {
+    if (v) observer.observe(v);
+  });
 };
 
 const isOwnComment = (comment) => {
@@ -560,7 +568,6 @@ const handleScroll = () => {
     isScrolling.value = false;
   }, 150);
 };
-
 onMounted(async () => {
   if (videos.value.length === 0) {
     await authStore.fetchWelcomeFeed({ page: 0, size: 20, seed: 0.5 });
@@ -583,6 +590,7 @@ onMounted(async () => {
     scrollToVideo(selectedVideoId.value);
   });
 });
+
 const preloadAdjacentVideos = () => {
   const currentIdx = videos.value.findIndex(v => v.id === selectedVideoId.value);
   const indicesToLoad = [currentIdx - 1, currentIdx, currentIdx + 1].filter(i => i >= 0 && i < videos.value.length);
@@ -597,35 +605,40 @@ const preloadAdjacentVideos = () => {
     document.head.appendChild(preloadLink);
   });
 };
+watch(
+  () => videos.value.length,
+  async (len) => {
+    if (len === 0) return;
+
+    await nextTick();
+    videoRefs.value = [];
+    await nextTick(); 
+    initObserver();
+    const targetId = route.params.id;
+    if (targetId) {
+      activeVideoId.value = targetId;
+      setTimeout(() => scrollToVideo(targetId), 100);
+    } else if (videos.value[0]) {
+      activeVideoId.value = videos.value[0].id;
+    }
+    loadLinkedProducts();
+    preloadAdjacentVideos();
+  },
+  { immediate: true }
+);
 onUnmounted(() => {
   window.removeEventListener("keydown", handleKeyDown);
-  scrollContainer.value?.removeEventListener('scroll', handleScroll);
+  scrollContainer.value?.removeEventListener("scroll", handleScroll);
+  if (observer) {
+    observer.disconnect();
+    observer = null;
+  }
   clearTimeout(copyTimeout);
   clearTimeout(scrollTimeout);
 });
 </script>
 
 <style scoped>
-.linked-product-wrapper {
-  margin-top: 1rem;
-}
-.linked-product-wrapper :deep(.product-card) {
-  width: 100%;
-  min-height: auto;
-  padding: 0.5rem;
-  border-radius: 0.75rem;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-}
-.linked-product-wrapper :deep(.product-img) {
-  width: 100%;
-  height: 4rem;
-  border-radius: 0.5rem;
-  flex-shrink: 0;
-}
 .mute-btn {
   position: absolute;
   bottom: 1.5rem;
@@ -817,6 +830,7 @@ onUnmounted(() => {
   padding: 2.438rem 3.75rem 1rem 1.563rem;
   border-radius: 0.625rem;
   width: 32rem;
+  height: 47rem;
 }
 .video-side video {
   width: 99%;
@@ -828,7 +842,7 @@ onUnmounted(() => {
 .video-actions {
   position: absolute;
   right: 0.5rem;
-  top: 30%;
+  top: 36%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -841,6 +855,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.25rem;
 }
+.v-action span{font-size: 0.563rem; color: #959595; font-weight: 700;}
 .action-btn {
   width: 3rem;
   height: 3rem;
@@ -885,7 +900,7 @@ onUnmounted(() => {
 }
 .info-side {flex: 1;display: flex;flex-direction: column;min-width: 0;}
 .info-scroll-area {
-  margin-top: 2.063rem;
+  margin-top: 1.063rem;
   display: grid;
   align-content: space-between;
   height: 100%;
@@ -893,26 +908,31 @@ onUnmounted(() => {
 .info-scroll-area::-webkit-scrollbar { width: 0.25rem;}
 .info-scroll-area::-webkit-scrollbar-thumb {background: #ddd;border-radius: 0.25rem;}
 .video-header-info {
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.938rem;
   background: white;
   border-radius: 0.625rem;
   padding: 0.563rem 0.688rem;
 }
+.linked-product-wrapper :deep(.title){font-size: 0.813rem; font-weight: 700;-webkit-box-orient: vertical; -webkit-line-clamp: 1;overflow: hidden; height: fit-content;}
+.linked-product-wrapper :deep(.price){font-size: 0.875rem; font-weight: 700; padding: 0.188rem 0.438rem; color: #ffffff; background: var(--btn-bg); width: fit-content; border-radius: 0.625rem; margin-top: 0.313rem;}
+.linked-product-wrapper :deep(.product-content__bottom){font-size: 0.813rem; font-weight: 700;-webkit-box-orient: vertical; -webkit-line-clamp: 1;overflow: hidden; margin-top: 0.313rem;}
+.linked-product-wrapper :deep(.product-card){min-height: fit-content;}
 .video-title {
   font-size: 1.25rem;
   font-weight: 400;
   color: #000000;
   line-height: 1;
   margin: 0;
-  height: 3.6rem;
+  height: 2.875rem;
 }
 .video-stats-row {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 0.375rem;
   color: #999;
-  font-size: 0.8125rem;
-  margin-top: 0.5rem;
+  font-size: 0.813rem;
+  margin-top: 1.25rem;
 }
 .dot {width: 0.1875rem;height: 0.1875rem;background: #ccc;border-radius: 50%;}
 .author-card {
@@ -921,6 +941,10 @@ onUnmounted(() => {
   padding: 0.688rem 1rem;
   height: fit-content;
   width: 100%;
+  order: 1;
+}
+.linked-product-wrapper{
+  order: 2;
 }
 .author-main {
   display: flex;
@@ -928,29 +952,39 @@ onUnmounted(() => {
   gap: 0.75rem;
   margin-bottom: 0.75rem;
 }
+.author-main_block{
+  display: grid;
+  align-items: center;
+  gap: 0.35rem;
+}
 .author-ava {
-  width: 3rem;
-  height: 3rem;
+  width: 3.125rem;
+  height: 3.125rem;
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
 }
 .author-details {display: grid;flex: 1;min-width: 0;}
 .name {
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: #1a1a1a;
-  margin: 0 0 0.25rem 0;
-}
-.rating-badge {display: flex;align-items: center;gap: 0.5rem;}
-.rating-num {
-  font-size: 1.125rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: #1a1a1a;
+  display: inline-block;
+  text-transform: lowercase;
+  margin-top: .8rem;
+}
+.name::first-letter {
+  text-transform: uppercase;
+}
+.rating-badge {display: flex;align-items: center;gap: 0.5rem; margin-top: 0;}
+.rating-num {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--btn-bg);
   width: auto;
 }
 .stars { display: flex; gap: 0.125rem; }
-.star-icon { width: 1.1rem; height: 1.1rem; }
+.star-icon { width: 0.938rem; height: 0.938rem; }
 .btn-primary {
   width: 6.875rem;
   background: #6aaa7d;
