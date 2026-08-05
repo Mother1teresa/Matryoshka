@@ -220,7 +220,6 @@ import heart from "/src/assets/img/icons/heart.svg";
 import heartFilled from "/src/assets/img/icons/heart-filled.svg";
 import { useFavoritesStore } from "/src/stores/favoritesStore.js";
 const favStore = useFavoritesStore();
-const similarProducts = ref([]);
 
 const route = useRoute();
 const router = useRouter();
