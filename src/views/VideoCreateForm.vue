@@ -312,5 +312,9 @@ const onPublish = async () => {
   height: 0.875rem;
   opacity: 0.6;
 }
+@media (max-width: 77rem){
+  .upload-grid{ grid-template-columns: 1fr 1fr;}
+  /* .upload_info-video{order: 2;} */
+}
 </style>
 

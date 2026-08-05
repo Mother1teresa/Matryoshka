@@ -38,7 +38,7 @@
               <img
                 v-for="star in 5"
                 :key="star"
-                :src="star <= form.rating ? '/src/assets/img/form/star_1.png' : '/src/assets/img/form/star.png'"
+                :src="star <= form.rating ? '/img/users/star.png' : '/img/users/star_1.png'"
                 :class="['star', { active: star <= form.rating }]"
                 @click="form.rating = star"
                 alt="★"

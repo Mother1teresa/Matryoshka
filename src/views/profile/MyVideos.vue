@@ -3,7 +3,7 @@
     <transition name="fade-fast" mode="out-in">
       <div v-if="!isCreating" key="list">
         <div class="header-row">
-          <h2 class="page-title">Мои ролики
+          <h2 class="page-title">Мини-видео
             <button class="btn create-btn" @click="isCreating = true">Создать ролик</button>
           </h2>
         </div>
@@ -49,30 +49,31 @@
                       class="thumbnail" 
                       alt="Превью" 
                     />
+                    <div v-if="activeTab === 'archive'" class="archive-overlay">
+                      Архив
+                    </div>
                     <button
                       class="menu-dots-btn"
                       @click.stop="toggleMenu(video.id)">
-                      <span></span><span></span><span></span>
+                      <img src="/src/assets/img/settings-gear3.svg" alt="">
                     </button>
                     <!-- Выпадающее меню -->
                     <div
                       v-if="activeMenuId === video.id"
                       class="video-dropdown-menu">
-                      <button
+                      <!-- <button
                         v-if="!video.isArchived"
                         @click.stop="handleArchive(video.id, true)">
                         В архив
-                      </button>
-                      <button v-else @click.stop="handleArchive(video.id, false)">
+                      </button> 
+                       <button v-else @click.stop="handleArchive(video.id, false)">
                         Опубликовать заново
-                      </button>
+                      </button> -->
                       <button class="delete-btn" @click.stop="handleDelete(video.s3Key)">
                         Удалить
                       </button>
                     </div>
-                    <div v-if="activeTab === 'archive'" class="archive-overlay">
-                      Архив
-                    </div>
+                    
                     <div class="video-overlay">
                       <span class="duration">{{ video.duration || "0:11" }}</span>
                     </div>
@@ -106,6 +107,20 @@
                         >
                           Опубликовать снова
                         </button>
+                        <div class="stats-line">
+                          <div class="stat">
+                            <img src="/src/assets/img/icons/eye.svg" />
+                            {{ video.viewsCount || video.views || "" }}
+                          </div>
+                          <div class="stat">
+                            <img src="/src/assets/img/icons/heart.svg" />
+                            {{ video.likes || video.likesCount || "" }}
+                          </div>
+                          <div class="stat">
+                            <img src="/src/assets/img/icons/comment.svg" />
+                            {{ video.commentsCount || "" }}
+                          </div>
+                        </div>
                       </div>
                     </template>
                   </div>
@@ -115,9 +130,7 @@
               <div v-else class="empty-messages"> <!-- Пустое состояние -->
                 <div class="empty-icon">🎬</div>
                 <h3>
-                  {{
-                    activeTab === "active" ? "У вас пока нет активных роликов" : "Архив пуст"
-                  }}
+                  {{ activeTab === "active" ? "У вас пока нет активных роликов" : "Архив пуст" }}
                 </h3>
                 <p>{{ activeTab === "active"  ? "Создайте свой первый ролик, чтобы привлечь больше покупателей к вашим объявлениям." : "Когда вы перенесете действующий ролик в архив, он появится здесь." }}</p>
                 <router-link to="/" class="btn go-to-ads-btn">Найти объявления</router-link>
@@ -134,12 +147,11 @@
     <div v-if="isConfirmOpen" class="modal-overlay" @click.self="closeConfirm">
       <div class="confirm-modal" @click.stop>
         <div class="confirm-modal__content">
-          <h2>Удалить ролик?</h2>
-          <p>Вы действительно хотите удалить этот ролик? Это действие невозможно отменить.</p>
+          <h2>Вы действительно хотите удалить мини-видео? </h2>
         </div>
         <div class="confirm-modal__actions">
-          <button type="button" class="btn go-to-ads-btn" @click="confirmDelete">Удалить</button>
-          <button class="btn" @click="closeConfirm">Отмена</button>
+          <button type="button" class="btn go-to-ads-btn" @click="confirmDelete">Да, удалить</button>
+          <button class="btn btn-close" @click="closeConfirm">Нет, я ошибся</button>
         </div>
       </div>
     </div>
@@ -266,16 +278,19 @@ const handleVideoCreated = (createdMedia) => {
   gap: 1.25rem;
 }
 .video-item {
-  background: white;
-  padding: 0.438rem 0.625rem 1.063rem 0.625rem;
+  background: transparent;
+  padding: 0.625rem;
   border-radius: 1.25rem;
+  transition: all .3s;
 }
+.video-item:hover{background: white;}
 .video-card {
   position: relative;
   aspect-ratio: 9/12;
-  overflow: hidden;
-  height: 20.938rem;
+  /* overflow: hidden; */
+  height: 20.538rem;
   width: 100%;
+  border-radius: 1.25rem;
 }
 
 .archived-item .video-card {
@@ -305,8 +320,9 @@ const handleVideoCreated = (createdMedia) => {
   gap: 5px;
 }
 .status-label {
-  color: #888;
-  font-size: 0.86rem;
+  color: #858685;
+  font-size: 1rem;
+  font-weight: 700;
 }
 .restore-link {
   color: #27ae60;
@@ -368,44 +384,42 @@ const handleVideoCreated = (createdMedia) => {
 /* Кнопка три точки */
 .menu-dots-btn {
   position: absolute;
-  top: 0.6rem;
-  right: 0.8rem;
-  z-index: 1;
-  background: rgba(0, 0, 0, 0.5);
+  top: -.1rem;
+  right: -.1rem;
+  width: 4.25rem;
+  height: 2.938rem;
+  background: var(--bg-defort);
   border: none;
-  width: 1.375rem;
-  height: 1.5rem;
-  border-radius: 0.438rem;
+  border-radius: 0 1.25rem 0 1.25rem;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.25rem;
   cursor: pointer;
+  z-index: 2;
+  transition: all .3s;
 }
 
-.menu-dots-btn span {
-  width: 0.17rem;
-  height: 0.17rem;
-  background: white;
-  border-radius: 50%;
+.menu-dots-btn img {
+  width: 2rem;
+  height: 2rem;
 }
 /* Выпадашка */
 .video-dropdown-menu {
   position: absolute;
-  top: 2.4rem;
+  top: 3.813rem;
   right: 0.8rem;
   background: var(--btn-bg);
-  border-radius: 0.438rem;
+  border-radius: 0.938rem;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   z-index: 1;
+  width: 11.975rem;
   max-width: 13.975rem;
   color: #f5f5f5;
   overflow: hidden;
 }
 .video-dropdown-menu button {
   width: 100%;
-  padding: 0.6rem 1rem;
+  padding: 0.813rem 1rem;
   border: none;
   background: none;
   text-align: left;
@@ -426,21 +440,20 @@ const handleVideoCreated = (createdMedia) => {
   color: white;
 }
 .video-dropdown-menu .delete-btn {
-  /* color: #89140e; */
-  border-top: 1px solid #eee !important;
+  /* border-top: 1px solid #eee !important; */
   border-radius: 0;
 }
-.video-overlay {
+/* .video-overlay {
   position: relative;
-}
+} */
 .video-overlay .duration {
-  right: 0.8rem;
-  bottom: 0.5rem;
+  right: 0rem;
+  bottom: 0rem;
 }
 .stats-line {
   display: flex;
   justify-content: space-between;
-  margin-top: .2rem;
+  margin-top: 1.25rem;
 }
 .stat {
   display: flex;
@@ -453,11 +466,14 @@ const handleVideoCreated = (createdMedia) => {
 }
 .video-description {
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
   margin-top: 0.938rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #242424;
 }
 .tabs-nav button span {
   font-size: 1.2rem;
@@ -500,7 +516,7 @@ const handleVideoCreated = (createdMedia) => {
   }
 }
 .confirm-modal{
-  padding: 2.5rem 2.813rem;
+  padding: 1.875rem;
   background: white;
   border-radius: 2.188rem;
 }
@@ -508,13 +524,16 @@ const handleVideoCreated = (createdMedia) => {
   display: grid;
   gap: 1rem;
   justify-items: center;
+  font-weight: 700;
 }
 .confirm-modal__actions{
   display: flex;
   justify-content: center;
-  gap: 1rem;
-  margin-top: 1.5rem;
+  gap: 1.25rem;
+  margin-top: 2.938rem;font-size: 1.25rem;
 }
+.go-to-ads-btn{ width: fit-content;padding: 0.938rem 1.875rem;border-radius: 1rem;font-size: 1.25rem;}
+.btn-close{background: #D8D8D8; border-radius: 1rem; padding: 0.938rem 1.125rem;}
 .modal-overlay {pointer-events: auto;}
 .confirm-modal {pointer-events: all;position: relative;z-index: 2;}
 .tabs-nav button.active .tab-count{color: #00000094;}

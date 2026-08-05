@@ -79,13 +79,14 @@
                   @click.stop="removeFromFavorites(item.id)"
                 />
               </div>
-              <div class="ad-price">{{ item.price }} ₽</div>
-              <div class="ad-details-tags">
-                <span>{{ item.category }}</span>
-              </div>
+              <div class="ad-price">{{ item.price.toLocaleString() }} ₽</div>
+              <div class="ad-desc">{{ item.description }}</div>
               <div class="ad-location">
                 <img src="/src/assets/img/icons/location-pin.svg" class="pin" />
                 {{ item.address }}
+              </div>
+              <div class="ad-details-tags">
+                <span>{{ getCategoryName(item.category) }}</span>
               </div>
             </div>
             <div class="ad-seller-actions">
@@ -93,7 +94,7 @@
                 <img :src="item.seller?.avatar || '/img/users/mask-avatar.png'" class="seller-avatar" />
                 <span class="seller-name">{{ item.seller?.name || 'Продавец' }}</span>
               </div>
-              <div class="action-buttons">
+              <div class="action-buttons" v-if="item.sellerId !== authStore.user?.id">
                 <button class="btn btn-green" @click="onWriteClick(item)">Написать</button>
                 <button class="btn btn-white" @click="onShowPhone(item)">Показать номер</button>
               </div>
@@ -135,11 +136,13 @@ import { useAuthStore } from "/src/stores/authStore.js";
 import { useFavoritesStore } from "/src/stores/favoritesStore.js";
 import { useModalStore } from "/src/stores/modal.js";
 import { notify } from "/src/utils/notify.js";
+import { categories } from "/src/data/categories.js";
 
 const router = useRouter();
 const authStore = useAuthStore();
 const favStore = useFavoritesStore();
 const modal = useModalStore();
+const enrichedItems = ref([]);
 
 const isDropdownOpen = ref(false);
 const selectedType = ref('videos');
@@ -151,9 +154,10 @@ const callModalName = ref('');
 const closeDropdown = () => { isDropdownOpen.value = false; };
 
 const currentItems = computed(() => {
-  return selectedType.value === 'videos'
-    ? authStore.favoriteVideos
-    : favStore.advertFavorites;
+  if (selectedType.value === 'videos') {
+    return authStore.favoriteVideos;
+  }
+  return enrichedItems.value;
 });
 
 /** Ссылка на карточку товара (как в ProductPage.vue) */
@@ -193,11 +197,55 @@ const loadData = async () => {
   }
 
   isLoading.value = true;
+  enrichedItems.value = [];
   try {
     if (selectedType.value === 'videos') {
       await authStore.fetchFavorites(authStore.user?.id);
     } else {
       await favStore.fetchAdvertFavorites();
+      const items = favStore.advertFavorites || [];
+      enrichedItems.value = await Promise.all(
+        items.map(async (fav) => {
+          const id = fav.id || fav.advertId;
+          if (!id) return fav;
+          let fullAd = null;
+          let seller = null;
+          try {
+            fullAd = await authStore.getAdvertById(id);
+          } catch (e) {
+            console.error('Ошибка загрузки товара:', e);
+          }
+
+          const sellerId = fullAd?.userId || fullAd?.sellerId || fav.sellerId || fav.userId;
+          if (sellerId) {
+            try {
+              seller = await authStore.fetchProfileById(sellerId);
+            } catch (e) {
+              console.error('Ошибка загрузки профиля:', e);
+            }
+          }
+
+          const pics = Array.isArray(fullAd?.pictureUrls)
+            ? fullAd.pictureUrls
+            : fullAd?.pictureUrls ? [fullAd.pictureUrls] : [];
+
+          return {
+            ...fav,
+            id: fullAd?.id || fav.id,
+            title: fullAd?.title || fav.title,
+            price: Number(fullAd?.price) || Number(fav.price) || 0,
+            image: pics[0] || fullAd?.thumbnailUrl || fav.image || '/src/assets/img/placeholder.png',
+            category: fullAd?.category || fav.category,
+            section: fullAd?.section || fullAd?.subCategory || fav.section || 'default',
+            subcategory: fullAd?.subCategory || fav.subcategory || '',
+            address: fullAd?.address || fullAd?.city || fav.address || '',
+            city: fullAd?.city || fav.city || '',
+            sellerId: sellerId,
+            description: fullAd?.description || fav.description || '',
+            seller: seller || fav.seller || null
+          };
+        })
+      );
     }
   } catch (e) {
     notify('Не удалось загрузить избранное', 'error');
@@ -205,7 +253,11 @@ const loadData = async () => {
     isLoading.value = false;
   }
 };
-
+const getCategoryName = (slug) => {
+  if (!slug) return '';
+  const cat = categories.find(c => c.slug === slug);
+  return cat?.name || slug;
+};
 const removeFromFavorites = async (id) => {
   if (!authStore.isAuthenticated) return;
 
@@ -379,13 +431,13 @@ onMounted(() => {
 }
 /* Блок изображения */
 .ad-img-container {
-  width: 13.75rem;
-  height: 10.625rem;
+  width: 11.75rem;
+  /* height: 10.625rem; */
   flex-shrink: 0;
   background: #F2F2F2;
-  border-radius: 0.75rem;
+  border-radius: 1.25rem;
   overflow: hidden;
-  display: flex;
+  /* display: flex; */
   align-items: center;
   justify-content: center;
 }
@@ -393,28 +445,36 @@ onMounted(() => {
 /* Контент */
 .ad-content-info { width: 100%; display: grid; }
 .ad-title-row { display: flex; justify-content: space-between; align-items: flex-start; }
-.ad-title { font-size: 1.25rem; font-weight: 600; color: #000; margin-bottom: 0.5rem; }
+.ad-title{ height: 3.5rem; margin-bottom: .4rem; overflow: hidden;}
+.ad-title{
+  font-size: 1.5rem;
+  font-weight: 700;
+  display: inline-block;
+  text-transform: lowercase;
+}
+.ad-title::first-letter { text-transform: uppercase;}
 .fav-heart { width: 1.5rem; cursor: pointer; }
 .ad-price { font-size: 1.375rem; font-weight: 700; margin-bottom: 0.625rem; }
-.ad-details-tags { display: flex; gap: 0.75rem; margin-bottom: 0.5rem; color: #333; font-size: 0.875rem; }
-.ad-location { display: flex; align-items: center; gap: 0.313rem; font-size: 0.875rem; color: #333; margin-bottom: 0.625rem; }
-.pin { width: 0.875rem; }
-.ad-desc { font-size: 0.875rem; color: #888; line-height: 1.3; margin-bottom: 0.75rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ad-details-tags { display: flex; gap: 0.75rem; margin-bottom: 0.5rem; color: #858685; font-size: 0.875rem; justify-content: flex-end;}
+.ad-location { display: flex; align-items: center; font-size: 0.875rem; color: #333; margin-top: auto; gap: 0.438rem;font-weight: 700; font-size: 1rem;}
+.pin { width: 1.563rem;height: 1.563rem; }
+.ad-desc { font-size: 1rem; color: #858685; font-weight: 700; margin-bottom: 0.75rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .ad-category-label { font-size: 0.813rem; color: #AAA; }
 /* Правый блок */
 .ad-seller-actions {
-  width: 12.5rem;
+  width: 16.5rem;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: center;
+  gap: 3rem;
   align-items: center;
   border-left: 0.063rem solid #F0F0F0;
   padding-left: 1.5rem;
 }
 .seller-brief { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
 .seller-avatar { width: 3.75rem; height: 3.75rem; border-radius: 0.625rem; object-fit: cover; }
-.seller-name { font-size: 0.875rem; font-weight: 500; text-align: center; }
-.action-buttons { width: 100%; display: flex; flex-direction: column; gap: 0.5rem; }
+.seller-name { font-size: 1rem; font-weight: 700; text-align: center; }
+.action-buttons { width: 100%; display: flex; flex-direction: column; gap: 0.5rem; text-align: center;}
 .ad-date { font-size: 0.75rem; color: #7C7C7C; margin-top: 0.5rem; text-align: right; width: 100%;}
 .empty-messages {text-align: center;padding: 4rem 1rem;background: #fff;border-radius: 1.25rem;margin-top: 2.5rem;}
 .empty-messages h3 {font-size: 1.0625rem;color: #888;font-weight: 500;}

@@ -30,7 +30,7 @@
       >
         {{ product.title }}
       </router-link>
-      <div class="price">{{ product.price }} р</div>
+      <div class="price">{{ product.price.toLocaleString() }} р</div>
       <div class="product-content__bottom">
         <div class="text13">
           {{ product.city }}
@@ -122,6 +122,11 @@ const onLikeClick = async (item) => {
   transition: all 0.3s;
   border-radius: 0;
   margin-top: 0.5rem;
+  display: inline-block;
+  text-transform: lowercase;
+}
+.title::first-letter {
+  text-transform: uppercase;
 }
 .title:hover {
   color: var(--btn-bg);

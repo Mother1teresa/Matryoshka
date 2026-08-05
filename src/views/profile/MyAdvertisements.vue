@@ -33,17 +33,17 @@
                   {{ ad.title }}
                 </router-link>
               </h3>
-              <button class="menu-gear-btn" @click.stop="toggleMenu(ad.id)">
-                <img src="/src/assets/img/icons/settings-gear.svg" alt="menu" />
+              <button class="menu-gear-btn" :class="{ active: activeMenuId === ad.id }" @click.stop="toggleMenu(ad.id)">
+                <img src="/src/assets/img/settings-gear3.svg" alt="menu" />
               </button>
               <div v-if="activeMenuId === ad.id" class="video-dropdown-menu">
                 <button @click="editAd(ad.id)">Редактировать</button>
-                <button v-if="activeTab !== 'archive'" @click="handleStatusChange(ad.id, 'archive')">
+                <!-- <button v-if="activeTab !== 'archive'" @click="handleStatusChange(ad.id, 'archive')">
                   В архив
-                </button>
+                </button> 
                 <button v-else @click="handleStatusChange(ad.id, 'active')">
                   Опубликовать заново
-                </button>
+                </button>-->
                 <button class="delete-btn" @click="handleDelete(ad)">Удалить</button>
               </div>
             </div>
@@ -72,6 +72,7 @@
                 </div>
               </div>
             </div> -->
+            <div class="creat-akk">{{ "Опубликовано " + formatDate(ad.createdAt) }}</div>
             <!-- <button v-if="activeTab === 'active'" class="btn boost-btn">Увеличить продажи</button> -->
           </div>
         </div>
@@ -95,6 +96,7 @@ import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter,useRoute } from "vue-router";
 import { useAuthStore } from "/src/stores/authStore.js";
 import { notify } from "/src/utils/notify";
+import { formatDate } from "/src/utils/formatters.js"
 
 const router = useRouter();
 const route = useRoute();
@@ -124,7 +126,6 @@ const loadAdverts = async () => {
     console.log('Первое объявление:', ads[0]);
     myAds.value = ads.map(ad => {
       let status = ad.status || 'active';
-      
       const statusMap = {
         'ACTIVE': 'active',
         'ACTIVE_PUBLISHED': 'active',
@@ -132,11 +133,9 @@ const loadAdverts = async () => {
         'ARCHIVED': 'archive',
         'DELETED': 'archive'
       };
-      
       if (statusMap[status]) {
         status = statusMap[status];
       }
-      
       return {
         id: String(ad.id),
         title: ad.title,
@@ -155,7 +154,8 @@ const loadAdverts = async () => {
         images: ad.pictureUrls || [],
         image: ad.pictureUrls?.[0] || ad.thumbnailUrl || '/src/assets/img/placeholder.png',
         s3Key: ad.pictures?.[0]?.s3Key || ad.s3Key,
-        videoId: ad.videoId
+        videoId: ad.videoId,
+        createdAt: ad.createdAt
       };
     });
   } catch (e) {
@@ -264,19 +264,17 @@ onUnmounted(() => {
 .ad-card-horizontal {
   background: white;
   border-radius: 1.25rem;
-  padding:  0.625rem 1.25rem ;
+  padding: 0.625rem;
   display: flex;
   gap: 1.5rem;
   margin-bottom: 1rem;
   position: relative;
+  overflow: hidden;
 }
 .ad-image-block {
-  width: 13rem; 
-  height: 9.7rem;
-  flex-shrink: 0;
-  margin: 1rem;
+  width: 11.75rem; 
+  /* height: 12.375rem; */
 }
-
 .preview-img-mini{
   width: 7rem;
   height: 9.688rem;
@@ -290,8 +288,7 @@ onUnmounted(() => {
   border-radius: 1.25rem;
 }
 .ad-main-info {
-  width: 100%;
-  position: relative;
+  width: 31.625rem;
   display: grid;
 }
 .mini-preview-stats {
@@ -302,18 +299,32 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  width: 90%;
+  width: 100%;
 }
-.ad-title {
+.ad-title{ height: 3.5rem; margin-bottom: .4rem; padding-right: 4.5rem; overflow: hidden;}
+.ad-title a{
   font-size: 1.5rem;
-  margin-bottom: 2rem;
+  font-weight: 700;
+  display: inline-block;
+  text-transform: lowercase;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-weight: 700;
+  border-radius: 0;
+}
+.ad-title a::first-letter {
+  text-transform: uppercase;
 }
 .ad-price {
   font-size: 1.5rem;
-  margin-bottom: 0.313rem;
   padding: 0.438rem 1rem;
   background: var(--btn-bg);
   font-weight: 700;
+  width: fit-content;
+  color: var(--bg-defort);
+  border-radius: 0.625rem;
 }
 .ad-stock, .ad-auto-pub,.archive-reason {
   font-size: 1rem;
@@ -323,26 +334,35 @@ onUnmounted(() => {
   color: #aaa;
 }
 .ad-description {
-  margin: 1.25rem 0 1.25rem 0;
+  margin: 1rem 0 1rem 0;
   font-size: 1rem;
   color: #858685;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  width: 31.625rem;
+  font-weight: 700;
 }
 .ad-location {
   margin-top: auto;
   display: flex;
-  gap: 1.563rem;
+  align-items: center;
+  gap: 0.438rem;
+  font-weight: 700;
+  font-size: 1rem;
+}
+.ad-location img{
+  width: 1.563rem;
+  height: 1.563rem;
 }
 .ad-stats-block {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: flex-start;
   gap: 0.375rem;
+  margin-left: 1.25rem;
+  width: 36%;
 }
 .mini-preview {
   display: flex;
@@ -407,10 +427,10 @@ onUnmounted(() => {
 /* Выпадашка */
 .video-dropdown-menu {
   position: absolute;
-  top: calc(100% + 0.25rem);
-  right: 0;
+  top: 3.688rem;
+  right: 0.75rem;
   background: var(--btn-bg);
-  border-radius: 1.25rem;
+  border-radius: 0.938rem;
   overflow: hidden;
   z-index: 10;
   display: flex;
@@ -421,14 +441,15 @@ onUnmounted(() => {
 .video-dropdown-menu button {
   background: none;
   border: none;
-  color: var(--bg-defort);
-  padding: 1rem 1.25rem;
+  color: #F5F5F5;
+  padding: 0.813rem 1rem;
   font-size: 1rem;
   font-weight: 600;
   text-align: left;
   cursor: pointer;
   transition: background 0.2s;
   white-space: nowrap;
+  border-radius: 0;
 }
 .video-dropdown-menu button:first-child {
   padding-top: 0.8rem;
@@ -442,11 +463,9 @@ onUnmounted(() => {
 }
 
 .video-dropdown-menu button + button {
-  border-top: 1px solid rgba(255,255,255,0.2);
+  border-top: 1px solid #D9D9D9;
 }
-.video-dropdown-menu .delete-btn {
-  color: #ffdddd;
-}
+
 .page-title .go-to-ads-btn{
   font-weight: 700;
   font-size: 1.25rem;
@@ -458,23 +477,34 @@ onUnmounted(() => {
 }
 .menu-gear-btn {
   position: absolute;
-  top: 0;
-  right: 0;
-  width: 3.5rem;
-  height: 3.5rem;
+  top: 0rem;
+  right: 0rem;
+  width: 4.25rem;
+  height: 2.938rem;
   background: var(--btn-bg);
   border: none;
-  border-radius: 0 0 0 1.25rem;
+  border-radius: 0 1.25rem 0 1.25rem;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   z-index: 2;
+  transition: all .3s;
 }
 .menu-gear-btn img {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 2rem;
+  height: 2rem;
   filter: brightness(0) invert(1);
+}
+.menu-gear-btn.active,
+.menu-gear-btn:active {
+  background: var(--bg-defort);
+  box-shadow: 0px 4px 4px 0px #00000040;
+}
+
+.menu-gear-btn.active img,
+.menu-gear-btn:active img {
+  filter: none;
 }
 .empty-messages {
   display: flex;
@@ -499,5 +529,11 @@ onUnmounted(() => {
   font-size: 0.875rem;
   line-height: 1.4;
   margin-bottom: 1.563rem;
+}
+.creat-akk{font-size: 1rem;color: #858685;text-align: right; width: 100%;}
+@media (max-width: 77rem){
+  .ad-main-info,.ad-title-row,.ad-description{
+    width: 20rem;
+  }
 }
 </style>

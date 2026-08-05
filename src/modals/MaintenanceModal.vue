@@ -3,19 +3,14 @@
     <div v-if="isOpen" class="maintenance-overlay" @click.self="close">
       <div class="maintenance-card">
         <button class="close-x" @click="close">✕</button>
-
         <div class="maintenance-content">
-          <div class="gears-wrapper">
-            <!-- Можно вставить SVG или IMG -->
-            <img
-              src="/src/assets/img/maintenance-gears.svg"
-              alt="Техработы"
-              class="gears-img"
-            />
-          </div>
-
+          
+          <img src="/src/assets/img/maintenance-gears.png" alt="Техработы" class="gears-img" />
+          <img src="/src/assets/img/maintenance-gears2.png" alt="Техработы" class="gears-img2">
+         
           <h2 class="maintenance-title">
-            Этот раздел пока недоступен, ведутся технические работы
+            Этот раздел пока недоступен...<br>
+            Ведутся технические работы
           </h2>
           <p class="maintenance-footer">С уважением, команда "Матрёшка"</p>
         </div>
@@ -52,50 +47,65 @@ defineExpose({ open, close });
 }
 .maintenance-card {
   background: #ffffff;
-  width: 100%;
-  max-width: 33.571rem;
+  width: 38.813rem;
+  height: 21.375rem;
   border-radius: 1.25rem;
   padding: 1.25rem;
   position: relative;
   text-align: center;
   box-shadow: 0 0.625rem 1.875rem rgba(0, 0, 0, 0.1);
+  display: grid;
+  align-items: center;
 }
 
 .close-x {
   position: absolute;
-  top: 0.938rem;
-  right: 1.25rem;
+  top: -1.5rem;
+  right: -1rem;
   background: none;
   border: none;
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   cursor: pointer;
-  color: #333;
 }
-
 .gears-wrapper {
   margin-bottom: 1.875rem;
 }
-
 .gears-img {
-  width: 11.618rem;
-  height: 13.375rem;
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 87%;
+  height: 8.8rem;
 }
-
+.gears-img2{
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 11.618rem;
+  height: 9.4rem;
+}
 .maintenance-title {
-  font-size: 1.111rem;
-  line-height: 1;
+  font-size: 1.25rem;
+  line-height: 1.875rem;
   color: #262626;
-  font-weight: 400;
+  font-weight: 700;
   margin-bottom: 1.438rem;
   text-align: left;
+  z-index: 1;
 }
 
 .maintenance-footer {
-  color: #262626;
-  font-weight: 400;
-  line-height: 1;
-  font-size: 1.111rem;
+  font-weight: 700;
+  font-size: 1.25rem;
   text-align: right;
   width: 100%;
+  background-color: #8E8C8C;
+  width: fit-content;
+  padding: 1.125rem 1.25rem;
+  color: white;
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  border-radius: 1.25rem 0 1.25rem 0;
 }
 </style>

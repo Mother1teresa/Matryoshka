@@ -299,6 +299,11 @@ const emptyStateText = computed(() => {
   -webkit-box-orient: vertical;
   overflow: hidden;
   height: 3rem;
+  display: inline-block;
+  text-transform: lowercase;
+}
+.card-title::first-letter {
+  text-transform: uppercase;
 }
 .card-description {
   color: #7c7c7c;
@@ -355,7 +360,7 @@ const emptyStateText = computed(() => {
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
   display: -webkit-box;
-  -webkit-line-clamp: 4;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -392,7 +397,7 @@ const emptyStateText = computed(() => {
     width: 46.875rem;
   }
   .card-content{
-    width: 28.125rem;
+    width: 21.125rem;
   }
 }
 </style>

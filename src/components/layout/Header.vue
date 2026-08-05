@@ -88,7 +88,7 @@
                         <img
                           v-for="n in 5"
                           :key="n"
-                          :src="n <= Math.round(userRating) ? '/src/assets/img/form/star.png' : '/src/assets/img/form/star_1.png'"
+                          :src="n <= Math.round(userRating) ? '/img/users/star.png' : '/img/users/star_1.png'"
                           class="star-icon"
                           alt="★"
                         />
@@ -288,7 +288,7 @@ const handleCreateVideo = () => {
 .profile-menu_link .badge-count{top: 0;}
 .profile-menu .profile-menu_link:hover {background: #e7e7e7;border-radius: 0;}
 .logout {color: red;}
-.rating {font-weight: bold;margin-bottom: 0.625rem;font-size: 1.5rem;padding-left: 1rem;}
+.rating {font-weight: bold;margin-bottom: 0.625rem;font-size: 1.5rem;padding-left: 1rem; color: var(--btn-bg);}
 .logout-modal {position: fixed;inset: 0;background: rgba(0, 0, 0, 0.3);display: flex;justify-content: center;align-items: center;z-index: 10;}
 .logout-box {background: white;padding: 1.563rem;border-radius: 1rem;}
 .logout-actions {display: flex;gap: 0.625rem;margin-top: 0.938rem;}

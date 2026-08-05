@@ -53,6 +53,7 @@
             <span>{{ choice.name }}</span>
           </div>
         </div>
+        
       </section>
 
       <!-- ═══════════════════════════════════════════════════════ -->
@@ -113,7 +114,11 @@
               class="f-textarea" 
               :class="{ 'error-border': v$.description.$error }" 
               placeholder="Напишите что-нибудь о своём объявлении"
+              maxlength="2000"
             ></textarea>
+            <span class="char-count" :class="{ 'over-limit': (form.description?.length || 0) > 2000 }">
+              {{ form.description?.length || 0 }} / 2000
+            </span>
           </div>
           <span class="char-count">Не более 2 000 символов</span>
         </section>
@@ -209,7 +214,7 @@
 <script setup>
 import { ref, reactive, computed, watch, onMounted, nextTick, onBeforeUnmount } from 'vue';
 import { useVuelidate } from '@vuelidate/core';
-import { required, minLength } from '@vuelidate/validators';
+import { required, minLength, maxLength } from '@vuelidate/validators';
 import { categories } from "/src/data/categories.js";
 import { getAdConfig, getSections } from "/src/data/adCreateConfig.js";
 import { api } from "/src/api/api.js";
@@ -584,7 +589,7 @@ const locationLabel = computed(() => {
 const rules = computed(() => {
   const base = {
     title: { required, minLength: minLength(3) },
-    description: descriptionInConfig.value ? {} : { required },
+    description: descriptionInConfig.value ? {} : { required, maxLength: maxLength(2000) },
     address: { required },
     phone: { required, minLength: minLength(18) }
   };
@@ -1523,6 +1528,7 @@ margin-top: 2.438rem; border-radius: 1.875rem;}
 }
 
 .phone-input-wrapper { position: relative; width: 100%; }
+.f-input{text-transform: capitalize;}
 .f-input.phone-field { padding-right: 45px; }
 .clear-phone-btn { 
   position: absolute; 
@@ -1595,6 +1601,7 @@ margin-top: 2.438rem; border-radius: 1.875rem;}
   color: var(--btn-bg);
   background: #f3f3f3;
 }
+.edit-mode-banner{margin: .5rem 0; font-size: 1.25rem;}
 .section-disabled { opacity: 0.6; pointer-events: none; user-select: none;}
 .section-disabled .edit-hint { color: #999; font-size: 12px; font-weight: normal; margin-left: 8px;}
 .card-disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(100%);}
@@ -1604,4 +1611,5 @@ margin-top: 2.438rem; border-radius: 1.875rem;}
 .suggestions-list li {padding: 0.75rem 1rem;cursor: pointer;transition: 0.15s;}
 .suggestions-list li:hover {background: #f5f5f5;}
 .char-count{display:block;margin-top:.5rem;font-size:.75rem;color:#999;}
+.char-count.over-limit { color: #ff4d4f; }
 </style>

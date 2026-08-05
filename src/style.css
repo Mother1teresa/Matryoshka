@@ -503,7 +503,7 @@ h4 {
   text-decoration: none;
   font-weight: 500;
 }
-.duration { position: absolute; bottom: 0.313rem; right: 0.313rem; background: #00000099; border-radius: 0.313rem; color: white; padding: 0 0.25rem; }
+.duration { position: absolute; bottom: 0.313rem; right: 0.313rem; background: #00000099; border-radius: 0.313rem 0 1.25rem 0; color: white; padding: 0.625rem 0.438rem; font-size: 1rem;}
 .fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 .checkbox-container{

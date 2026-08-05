@@ -127,10 +127,10 @@
               </div>
             </div>
             <div class="seller-card__btns">
-              <button class="btn primary" @click="onShowNumberClick">
+              <button class="btn primary" @click="onShowNumberClick(product)">
                 Показать номер
               </button>
-              <button class="btn secondary" @click="onWriteClick" v-if="!isOwnVideo(video)">
+              <button class="btn secondary" @click="onWriteClick(product)" v-if="!isOwnProduct">
                 <img src="/src/assets/img/mes.svg" />
               </button>
             </div>
@@ -220,6 +220,7 @@ import heart from "/src/assets/img/icons/heart.svg";
 import heartFilled from "/src/assets/img/icons/heart-filled.svg";
 import { useFavoritesStore } from "/src/stores/favoritesStore.js";
 const favStore = useFavoritesStore();
+const similarProducts = ref([]);
 
 const route = useRoute();
 const router = useRouter();
@@ -244,10 +245,10 @@ let productMap = null;
 let productPlacemark = null;
 let ymapsReady = false;
 
-const isOwnVideo = (video) => {
-  if (!video?.author?.id || !authStore.user?.id) return false;
-  return String(video.author.id) === String(authStore.user.id);
-};
+const isOwnProduct = computed(() => {
+  if (!product.value?.sellerId || !authStore.user?.id) return false;
+  return String(product.value.sellerId) === String(authStore.user.id);
+});
 function waitForYmaps(timeout = 10000) {
   return new Promise((resolve, reject) => {
     const start = Date.now();
@@ -536,37 +537,65 @@ const loadSimilarProducts = async () => {
       section: product.value.section,
       subCategory: product.value.subcategory || product.value.section,
       city: product.value.city,
-      take: 6
+      take: 10
     }, true);
     
     const currentId = String(product.value.id);
-    const currentPrice = Number(product.value.price) || 0;
-    
-    similarProducts.value = productStore.products
-      .filter(p => {
-        const sameId = String(p.id) === currentId;
-        const sameSection = (p.section || p.subcategory) === (product.value.section || product.value.subcategory);
-        const sameCity = !product.value.city || p.city === product.value.city;
+    const currentSection = product.value.section;
+    const currentSubcategory = product.value.subcategory;
+    const currentCity = product.value.city;
 
-        const pPrice = Number(p.price) || 0;
-        const priceMatch = currentPrice === 0 || (pPrice >= currentPrice * 0.5 && pPrice <= currentPrice * 1.5);
-        
-        return !sameId && sameSection && sameCity && priceMatch;
+    // Фильтруем похожие: тот же section/subcategory + тот же город (если указан)
+    const filtered = productStore.products.filter(p => {
+      if (String(p.id) === currentId) return false;
+
+      const pSection = p.section || p.subcategory || '';
+      const pSubcategory = p.subcategory || '';
+      
+      // Совпадение по секции ИЛИ подкатегории
+      const sectionMatch = pSection === currentSection || pSubcategory === currentSubcategory;
+      
+      // Город (если у текущего товара указан)
+      const cityMatch = !currentCity || (p.city || '').toLowerCase() === currentCity.toLowerCase();
+
+      return sectionMatch && cityMatch;
+    }).slice(0, 5);
+
+    // Параллельно подгружаем профили продавцов
+    similarProducts.value = await Promise.all(
+      filtered.map(async (ad) => {
+        const sellerId = ad.userId || ad.sellerId;
+        let seller = null;
+
+        if (sellerId) {
+          try {
+            seller = await auth.fetchProfileById(sellerId);
+          } catch (e) {
+            console.warn(`Профиль продавца ${sellerId} не загрузился:`, e);
+          }
+        }
+
+        return {
+          id: ad.id,
+          title: ad.title || 'Без названия',
+          price: ad.price,
+          city: ad.city || '',
+          category: ad.category,
+          section: ad.section,
+          subcategory: ad.subcategory,
+          images: ad.images || ad.pictureUrls,
+          image: ad.image || ad.pictureUrls?.[0] || ad.thumbnailUrl || '/src/assets/img/placeholder.png',
+          description: ad.description || '',
+          sellerId: sellerId,
+          seller: seller || {
+            name: 'Продавец',
+            avatar: '/img/users/mask-avatar.png',
+            phone: ''
+          }
+        };
       })
-      .slice(0, 5)
-      .map(ad => ({
-        id: ad.id,
-        title: ad.title,
-        price: ad.price,
-        city: ad.city,
-        category: ad.category,
-        section: ad.section,
-        subcategory: ad.subcategory,
-        images: ad.images || ad.pictureUrls,
-        image: ad.image || ad.pictureUrls?.[0],
-        description: ad.description,
-        sellerId: ad.sellerId || ad.userId,
-      }));
+    );
+
   } catch (e) {
     console.error('Ошибка загрузки похожих:', e);
     similarProducts.value = [];
@@ -662,21 +691,26 @@ const onSubscribeClick = () => {
 };
 
 const onShowNumberClick = (item) => {
-  if (!item?.seller?.phone) {
-    showCallModal.value = true;
+  const target = item || product.value;
+  const phone = target?.seller?.phone || seller.value?.phone;
+  if (!phone) {
+    notify('Номер телефона не указан', 'error');
     return;
   }
   checkAuthAndRun(() => { 
-    isNumberShown.value = true; 
     showCallModal.value = true; 
   }, "Войдите, чтобы увидеть номер телефона");
 };
 
 const onWriteClick = async (item) => {
-  if (!item?.sellerId) return;
+  const targetId = item?.sellerId || item?.seller?.id || product.value?.sellerId;
+  if (!targetId) {
+    notify('Продавец не найден', 'error');
+    return;
+  }
   checkAuthAndRun(async () => {
     try {
-      const roomId = await auth.createPrivateRoom(item.sellerId);
+      const roomId = await auth.createPrivateRoom(targetId);
       router.push({ name: 'ChatDetail', params: { id: roomId } });
     } catch (err) {
       notify("Не удалось открыть чат", "error");
