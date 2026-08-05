@@ -43,14 +43,42 @@
         <div class="field-group">
           <label>Привязать к объявлению</label>
           <div v-if="isLoadingProducts" class="stub">Загрузка товаров...</div>
-          <select v-else-if="myProducts.length > 0" v-model="form.productId" class="custom-select">
-            <option :value="null">Не выбрано</option>
-            <option v-for="item in myProducts" :key="item.id" :value="item.id">
-              {{ item.name }}
-            </option>
-          </select>
+
+          <template v-else-if="myProducts.length > 0">
+            <div class="products-carousel">
+              <div
+                v-for="item in myProducts"
+                :key="item.id"
+                class="product-select-card"
+                :class="{ 'is-selected': form.productId === item.id }"
+                @click="form.productId = item.id"
+              >
+                <img
+                  :src="item.pictureUrls?.[0] || '/src/assets/img/placeholder.png'"
+                  class="psc-img"
+                  alt=""
+                />
+                <div class="psc-info">
+                  <p class="psc-title">{{ item.title || 'Без названия' }}</p>
+                  <p class="psc-price">{{ Number(item.price || 0).toLocaleString('ru-RU') }} ₽</p>
+                  <p class="psc-city">{{ item.address || item.city || 'Город не указан' }}</p>
+                </div>
+              </div>
+            </div>
+
+            <button
+              v-if="form.productId"
+              type="button"
+              class="btn-clear-select"
+              @click="form.productId = null"
+            >
+              Отменить выбор
+            </button>
+          </template>
+
           <div v-else class="empty-stub">
-            У вас пока нет объявлений. <router-link to="/profile/create-ad" @click="emit('back')">Создать?</router-link>
+            У вас пока нет объявлений.
+            <router-link to="/profile/create-ad" @click="emit('back')">Создать?</router-link>
           </div>
         </div>
         <div class="footer_block-author">
@@ -127,9 +155,18 @@ onBeforeUnmount(() => {
   if (videoPreview.value) URL.revokeObjectURL(videoPreview.value);
   if (autoFinishTimeout.value) clearTimeout(autoFinishTimeout.value);
 });
-
 onMounted(async () => {
-  myProducts.value = []; 
+  isLoadingProducts.value = true;
+  try {
+    const res = await auth.fetchMyAdverts?.() 
+              || await api.get('/adverts/my') 
+              || [];
+    myProducts.value = Array.isArray(res) ? res : res.data || [];
+  } catch (e) {
+    console.error('Ошибка загрузки товаров:', e);
+  } finally {
+    isLoadingProducts.value = false;
+  }
 });
 
 const triggerFileInput = () => fileInput.value.click();
@@ -172,7 +209,6 @@ const onPublish = async () => {
         uploadProgress.value = progress; 
       }
     );
-    
     status.value = 'success';
     autoFinishTimeout.value = setTimeout(() => {
       if (isFinishing.value) return;
@@ -195,87 +231,26 @@ const onPublish = async () => {
 .video-upload-container { padding: 1.25rem; margin: 0 auto; }
 .back-nav { cursor: pointer; display: flex; align-items: center; gap: 0.625rem; margin-bottom: 1.875rem; font-size: 1.125rem; color: #333; }
 .upload-grid { display: grid; grid-template-columns: 1fr .9fr 1fr; gap: 1.5rem; }
-.upload-zone {
-  border: 2px dashed #ccc;
-  border-radius: 1.25rem;
-  aspect-ratio: 9/16;
-  max-height: 56.688rem;
-  /* width: 70%; */
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  background: #f9f9f9;
-  cursor: pointer;
-  overflow: hidden;
-  position: relative;
-  height: 95%;
-}
-.upload_info-video{
-  font-size: 0.813rem;
-  color: #858685;
-}
-.upload_info-video li{
-  list-style: disc;
-  margin-bottom: .25rem;
-}
-.upload_info-video ul{
-  padding-left: 1.25rem;
-}
-.upload-fields{
-  /* width: 80%; */
-}
-.checkbox-container input{
-  border: 2px solid #858685;
-  border-radius: 0.313rem !important;
-  border-color: #858685 !important;
-  width: 1.438rem !important;
-  height: 1.125rem !important;
-}
-.auth-forgot__check input:checked {
-  background: var(--btn-bg);
-  border-color: transparent !important;
-}
+.upload-zone {border: 2px dashed #ccc;border-radius: 1.25rem;aspect-ratio: 9/16;max-height: 42.688rem;width: 100%;display: flex;flex-direction: column;justify-content: center;align-items: center;background: #f9f9f9;cursor: pointer;overflow: hidden;position: relative;height: 95%;}
+.upload_info-video{font-size: 0.813rem;color: #858685;}
+.upload_info-video li{list-style: disc;margin-bottom: .25rem;}
+.upload_info-video ul{padding-left: 1.25rem;}
+.checkbox-container input{border: 2px solid #858685;border-radius: 0.313rem !important;border-color: #858685 !important;width: 1.438rem !important;height: 1.125rem !important;}
+.auth-forgot__check input:checked {background: var(--btn-bg);border-color: transparent !important;}
 .video-preview-player { width: 100%; height: 100%; object-fit: cover; }
-.field-group { margin-bottom: 1.25rem; background: #F9F9F9; border-radius: 1.25rem; padding: 0.938rem;}
+.field-group { margin-bottom: 1.25rem; background: #ffffff; border-radius: 1.25rem; padding: 0.938rem; }
 .field-group label { display: flex; align-items: center; gap: 10px; font-weight: 400; margin-bottom: 12px; font-size: 1.5rem; }
 .field-group span { font-weight: 600; }
-.textarea-title, .textarea-description, .custom-select {
-  width: 100%;
-  background: #E8E8E8;
-  border: 1px solid transparent;
-  border-radius: 1.25rem;
-  padding: 0.813rem 1rem;
-  font-size: 1rem;
-  resize: none;
-  height: 10.938rem;
-}
-.textarea-description{
-  font-size: 0.875;
-  height: 20.688rem;
-}
+.textarea-title, .textarea-description, .custom-select {width: 100%;background: #E8E8E8;border: 1px solid transparent;border-radius: 1.25rem;padding: 0.813rem 1rem;font-size: 1rem;resize: none;height: 10.938rem;}
+.textarea-description{font-size: 0.875;height: 20.688rem;}
 .empty-stub { background: #fdf2f2; padding: 0.75rem; border-radius: 0.625rem; color: #b91c1c; font-size: 1rem; border: 1px solid #fee2e2; }
 .publish-btn { background: var(--btn-bg); color: white; width: 100%; height: 3.5rem; padding: 0.875rem 0; border-radius: 1.25rem; font-size: 1.5rem; border: none; cursor: pointer; text-align: center;}
 .publish-btn:disabled { background: #ccc; cursor: not-allowed; }
 .status-screen { height: 60vh; display: flex; justify-content: center; align-items: center; }
 .status-card {  background: white; padding: 3.75rem; border-radius: 1.875rem; text-align: center;  box-shadow: 0 10px 30px rgba(0,0,0,0.05); width: 100%; max-width: 500px;}
-.progress-bar { 
-  width: 220px; 
-  height: 20px;
-  background: #6CC08B; 
-  border-radius: 20px; 
-  margin: 0 auto 30px; 
-  overflow: hidden; 
-  position: relative;
-}
+.progress-bar { width: 220px; height: 20px;background: #6CC08B; border-radius: 20px; margin: 0 auto 30px; overflow: hidden; position: relative;}
 /* Заполняющая часть */
-.progress-fill { 
-  height: 100%; 
-  background: #335A41;
-  background-size: 220px 100%; 
-  border-radius: 20px;
-  transition: width 0.4s ease; 
-}
+.progress-fill { height: 100%; background: #335A41;background-size: 220px 100%; border-radius: 20px;transition: width 0.4s ease; }
 .status-text { font-size: 24px; font-weight: 500; color: #333; }
 .ok-btn { margin-top: 30px; background: #6db193; color: white; padding: 12px 40px; border-radius: 10px; }
 .fade-slow-leave-active { transition: opacity 1.5s ease;}
@@ -285,35 +260,29 @@ const onPublish = async () => {
 .upload-placeholder { display: grid; align-items: center; justify-items: center; gap:1.25rem;}
 .upload-placeholder p{ font-weight: 600; font-size: 1.25rem; }
 .select-btn{ width: 12.313rem; height: 3.5rem; background: #76a87e; color: white; border: none; border-radius: 1.25rem; cursor: pointer; text-align: center; font-size: 1.25rem;}
-.upload-icon{ width: 5.25rem; height: 5.25rem;}
-.footer_block-author {background-color: #F9F9F9; padding: 1.125rem 0.75rem 1.5rem 0.75rem; border-radius: 1.25rem; display: grid; align-items: center; justify-items: center;}
-.author-preview-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1.525rem;
-  /* cursor: pointer; */
-}
-.author-info {
-  display: flex;
-  align-items: center;
-  width: 20rem;
-  gap: 0.813rem;
-}
-.author-avatar {
-  width: 3.4rem;
-  height: 3.4rem;
-  border-radius: 50%;
-  object-fit: cover;
-}
+.upload-icon{ width: 4.25rem; height: 4.25rem;}
+.footer_block-author {background-color: #ffffff; padding: 1.125rem 0.75rem 1.5rem 0.75rem; border-radius: 1.25rem; display: grid; align-items: center; justify-items: center;}
+.author-preview-card {display: flex;align-items: center;justify-content: space-between;margin-bottom: 1.525rem;/* cursor: pointer; */}
+.author-info {display: flex;align-items: center;width: 20rem;gap: 0.813rem;}
+.author-avatar {width: 3.4rem;height: 3.4rem;border-radius: 50%;object-fit: cover;}
 .author-name {font-size: 1.5rem;}
-.dropdown-icon {
-  width: 0.875rem;
-  height: 0.875rem;
-  opacity: 0.6;
-}
-@media (max-width: 77rem){
-  .upload-grid{ grid-template-columns: 1fr 1fr;}
+.dropdown-icon {width: 0.875rem;height: 0.875rem;opacity: 0.6;}
+.products-carousel {display: flex;gap: 0.75rem;overflow-x: auto;padding: 0.5rem;scrollbar-width: thin;scrollbar-color: #ccc transparent;}
+.products-carousel::-webkit-scrollbar {height: 0.375rem;}
+.products-carousel::-webkit-scrollbar-thumb {background: #ccc;border-radius: 0.25rem;}
+.product-select-card {flex: 0 0 10rem;background: #fff;border: 2px solid transparent;border-radius: 1rem;overflow: hidden;cursor: pointer;transition: all 0.2s ease;box-shadow: 0 2px 8px rgba(0,0,0,0.04);border: 1px solid var(--btn-bg);}
+.product-select-card:hover {.psc-img{transform:scale(1.02)}}
+.product-select-card.is-selected {border-color: var(--btn-bg);box-shadow: 0 0 0 3px rgba(81, 142, 104, 0.15);}
+.psc-img { width: 100%; height: 7rem; object-fit: cover; transition: all .3s;}
+.psc-info {padding: 0.625rem;}
+.psc-title {font-size: 0.8125rem;font-weight: 600;color: #2d2d2d;margin: 0 0 0.25rem;display: -webkit-box;-webkit-line-clamp: 2;-webkit-box-orient: vertical;overflow: hidden;line-height: 1.2;}
+.psc-title{display: inline-block;text-transform: lowercase;}
+.psc-title::first-letter { text-transform: uppercase;}
+.psc-price {font-size: 0.875rem;font-weight: 700;color: var(--btn-bg);margin: 0 0 0.125rem;}
+.psc-city {font-size: 0.75rem;color: #858685;margin: 0;}
+.btn-clear-select {margin-top: 0.75rem;background: transparent;color: #858685;border: 1px solid #ddd;padding: 0.5rem 1rem;margin-left: 0.5rem;border-radius: 0.75rem;font-size: 0.875rem;cursor: pointer;transition: all 0.2s;}
+.btn-clear-select:hover {border-color: #999;color: #555;}
+@media (max-width: 77rem){.upload-grid{ grid-template-columns: 1fr 1fr;}
   /* .upload_info-video{order: 2;} */
 }
 </style>

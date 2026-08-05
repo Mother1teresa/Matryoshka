@@ -593,4 +593,5 @@ const updateNumeric = (val) => {
   color: var(--btn-bg);
   background: #f3f3f3;
 }
+:deep(.multiselect__option){display: grid;align-items: center;padding: 0.75rem;line-height: 1rem;min-height: auto;text-decoration: none;text-transform: none;vertical-align: middle;position: relative;cursor: pointer;white-space: normal;font-size: 1rem;}
 </style>

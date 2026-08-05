@@ -644,6 +644,7 @@ export const useAuthStore = defineStore("auth", {
           isVideoReady: false,
           isLikedByMe: v.isLikedByMe || v.likedByMe || false,
           isFavorite: false,
+          productId: v.productId || '',
         }));
         return this.welcomeFeed;
       } catch (e) {
@@ -679,6 +680,7 @@ export const useAuthStore = defineStore("auth", {
           commentsCount: video.comments?.length ?? video.commentsCount ?? video.commentCount ?? "",
           createdAt: video.createdAt || '',
           publishedAt: video.publishedAt || '',
+          productId: video.productId || '',
           comments: (video.comments || []).map(c => ({
             id: c.id,
             text: c.text,
@@ -733,6 +735,7 @@ export const useAuthStore = defineStore("auth", {
         isDetailsLoaded: true,
         isLikedByMe: details.isLikedByMe,
         isFavorite: details.isFavorite,
+        productId: details.productId || video.productId,
       });
       return video;
     },

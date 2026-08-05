@@ -71,7 +71,8 @@ export const uploadToMediaService = async (file, type = "VIDEOS", metadata = {},
       type: type,
       title: resolvedTitle, 
       description: metadata.description || '',
-      extension: extension
+      extension: extension,
+      productId: metadata.productId || '',
     }];
 
     console.log("Отправляем Payload в /media/create:", payload);
@@ -89,7 +90,8 @@ export const uploadToMediaService = async (file, type = "VIDEOS", metadata = {},
       thumbnailUrl: uploadedMedia?.thumbnailUrl || null,
       type: uploadedMedia?.type || type,
       mimeType: uploadedMedia?.mimeType || mimeType,
-      userId: uploadedMedia?.userId || null
+      userId: uploadedMedia?.userId || null,
+      productId: uploadedMedia?.productId || metadata.productId || null
     };
   } catch (error) {
     console.error("Media Upload Error:", {

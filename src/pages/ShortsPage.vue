@@ -1,8 +1,6 @@
 <template>
   <div class="shorts-page-overlay">
     <div v-if="isLoading && videos.length === 0" class="loader">Загрузка роликов...</div>
-    
-    <!-- Плейсхолдер для текущего видео пока author не загружен -->
      <div v-else-if="videos.length" class="shorts-main-container" ref="scrollContainer">
       <div v-for="video in videos" :key="video.id" class="short-snap-item" :class="{ 'is-scrolling': isScrolling }">
         <div class="short-content-wrapper">
@@ -267,10 +265,31 @@ const buildCommentTree = (comments) => {
   });
   return roots;
 };
+// ===== ПОДГРУЗКА ПРИКРЕПЛЁННЫХ ТОВАРОВ =====
+const loadLinkedProducts = async () => {
+  if (!videos.value?.length) return;
+  await Promise.all(
+    videos.value.map(async (video) => {
+      if (video.productId && !video.linkedProduct) {
+        try {
+          const product = await authStore.getAdvertById(video.productId);
+          if (product) {
+            video.linkedProduct = product;
+          }
+        } catch (e) {
+          console.warn(`Не удалось загрузить товар для видео ${video.id}:`, e);
+        }
+      }
+    })
+  );
+};
 // Нормализация продукта под формат ProductCard
 const normalizeProduct = (product) => ({
   ...product,
-  images: product.images || product.pictures?.map(p => p.pictureUrl || p.url) || [],
+  images: product.images 
+       || product.pictures?.map(p => p.pictureUrl || p.url) 
+       || product.pictureUrls 
+       || [],
   category: product.category || product.type || 'tovary',
   section: product.section || 'default',
 });
@@ -546,6 +565,7 @@ onMounted(async () => {
   if (videos.value.length === 0) {
     await authStore.fetchWelcomeFeed({ page: 0, size: 20, seed: 0.5 });
   }
+  await loadLinkedProducts();
   preloadAdjacentVideos();
   const preloadDetails = videos.value.slice(0, 3).map(v => 
     authStore.enrichVideo(v.id).catch(() => {})

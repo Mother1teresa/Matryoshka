@@ -525,23 +525,9 @@ const handleVideoCreated = (createdMedia) => {
     grid-template-columns: repeat(2, 1fr);
   }
 }
-.confirm-modal{
-  padding: 1.875rem;
-  background: white;
-  border-radius: 2.188rem;
-}
-.confirm-modal__content{
-  display: grid;
-  gap: 1rem;
-  justify-items: center;
-  font-weight: 700;
-}
-.confirm-modal__actions{
-  display: flex;
-  justify-content: center;
-  gap: 1.25rem;
-  margin-top: 2.938rem;font-size: 1.25rem;
-}
+.confirm-modal{padding: 1.875rem;background: white;border-radius: 2.188rem;}
+.confirm-modal__content{display: grid;gap: 1rem;justify-items: center;font-weight: 700;}
+.confirm-modal__actions{display: flex;justify-content: center;gap: 1.25rem;margin-top: 2.938rem;font-size: 1.25rem;}
 .go-to-ads-btn{ width: fit-content;padding: 0.938rem 1.875rem;border-radius: 1rem;font-size: 1.25rem;}
 .btn-close{background: #D8D8D8; border-radius: 1rem; padding: 0.938rem 1.125rem;}
 .modal-overlay {pointer-events: auto;}

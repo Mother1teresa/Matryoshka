@@ -728,4 +728,5 @@ watch(() => route.params.id, (newId, oldId) => {
 .msg-media { margin-bottom: 0.25rem; }
 .chat-media-img { max-width: 260px; max-height: 200px; border-radius: 0.5rem; cursor: pointer; object-fit: cover; display: block;}
 .chat-media-video { max-width: 260px; max-height: 200px; border-radius: 0.5rem; display: block;}
+:deep(.multiselect__option){display: grid;align-items: center;padding: 0.75rem;line-height: 1rem;min-height: auto;text-decoration: none;text-transform: none;vertical-align: middle;position: relative;cursor: pointer;white-space: normal;font-size: 1rem;}
 </style>

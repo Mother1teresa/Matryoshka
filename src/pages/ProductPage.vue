@@ -110,19 +110,19 @@
                 <router-link :to="{ name: 'SellerPage', params: { id: product?.sellerId } }" class="name">
                   {{ sellerName }}
                 </router-link>
+                <div class="type">{{ sellerType }}</div>
                 <div class="rating">
                   {{ sellerRating }}
                   <span class="stars">
                     <img
                       v-for="n in 5"
                       :key="n"
-                      :src="n <= Math.round(sellerRating) ? '/src/assets/img/form/star.png' : '/src/assets/img/form/star_1.png'"
+                      :src="n <= Math.round(sellerRating) ? '/img/users/star.png' : '/img/users/star_1.png'"
                       class="star-icon"
                       alt="★"
                     />
                   </span>
                 </div>
-                <div class="type">{{ sellerType }}</div>
                 <!-- <button class="btn subscribe" @click="onSubscribeClick" :class="{ 'is-active': subStore.isSubscribed(product?.sellerId) }">{{ subStore.isSubscribed(product?.sellerId) ? 'Отписаться' : 'Подписаться' }} </button> -->
               </div>
             </div>
@@ -133,6 +133,43 @@
               <button class="btn secondary" @click="onWriteClick(product)" v-if="!isOwnProduct">
                 <img src="/src/assets/img/mes.svg" />
               </button>
+            </div>
+          </div>
+          <!-- Видео с этим товаром -->
+          <div v-if="linkedVideos.length" class="linked-videos-section">
+            <!-- <h3 class="similar-title">Видео с этим товаром</h3> -->
+            <div class="videos-grid">
+              <div v-for="video in linkedVideos" :key="video.id" class="fav-video-card" @click="router.push({ name: 'shorts', params: { id: video.id } })">
+              <button class="video-fav-btn" @click.stop="onVideoFavoriteClick(video, $event)" title="Добавить в избранное">
+                <img :src="video.isFavorite ? bookmarkFilledIcon : bookmarkIcon" class="video-fav-icon" alt="bookmark"/>
+              </button>
+                <div class="fav-video-card_block">
+                  <div class="fav-video-preview">
+                    <video v-if="video.cdnUrl" :src="video.cdnUrl" preload="metadata" muted playsinline></video>
+                    <img v-else :src="video.thumbnail || '/src/assets/img/video/placeholder.svg'" alt="thumbnail"/>
+                    <div class="video-overlay">
+                      <span class="duration">{{ video.duration || "0:11" }}</span>
+                    </div>
+                  </div>
+                  <div class="fav-video-main">
+                    <h3 class="video-title">{{ video.description || 'Без названия' }}</h3>
+                    <div class="video-stats">
+                      <div class="stat">
+                        <img src="/src/assets/img/icons/eye.svg" />
+                        {{ video.viewsCount || 0 }}
+                      </div>
+                      <div class="stat">
+                        <img src="/src/assets/img/icons/heart.svg" />
+                        {{ video.likes || 0 }}
+                      </div>
+                      <div class="stat">
+                        <img src="/src/assets/img/icons/comment.svg" />
+                        {{ video.commentsCount || 0 }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -214,6 +251,9 @@ import heart from "/src/assets/img/icons/heart.svg";
 import heartFilled from "/src/assets/img/icons/heart-filled.svg";
 import { useFavoritesStore } from "/src/stores/favoritesStore.js";
 import { formatDate } from "/src/utils/formatters.js"
+
+import bookmarkIcon from "/src/assets/img/icons/bookmark.svg";
+import bookmarkFilledIcon from "/src/assets/img/icons/bookmark-fill.svg";
 const favStore = useFavoritesStore();
 
 const route = useRoute();
@@ -240,7 +280,38 @@ let productPlacemark = null;
 let ymapsReady = false;
 const callModalPhone = ref('');
 const callModalName = ref('');
+const linkedVideos = ref([]);
 
+const loadLinkedVideos = async () => {
+  if (!product.value?.sellerId || !product.value?.id) return;
+  try {
+    const allVideos = await auth.fetchVideosByUser(product.value.sellerId);
+    linkedVideos.value = allVideos.filter(v => v.productId === product.value.id);
+  } catch (e) {
+    console.error('Ошибка загрузки видео для товара:', e);
+    linkedVideos.value = [];
+  }
+};
+const onVideoFavoriteClick = async (video, event) => {
+  event.stopPropagation(); // не даём перейти в shorts
+  if (!authStore.isAuthenticated) {
+    modal.openLogin();
+    notify("Авторизуйтесь, чтобы добавить в избранное");
+    return;
+  }
+  try {
+    const currentlyFav = video.isFavorite ?? false;
+    if (currentlyFav) {
+      await authStore.unmarkAsFavorite(video.id);
+    } else {
+      await authStore.markAsFavorite(video.id);
+    }
+    video.isFavorite = !currentlyFav;
+    notify(currentlyFav ? "Удалено из избранного" : "Добавлено в избранное");
+  } catch (e) {
+    notify("Ошибка избранного", "error");
+  }
+};
 const isOwnProduct = computed(() => {
   if (!product.value?.sellerId || !authStore.user?.id) return false;
   return String(product.value.sellerId) === String(authStore.user.id);
@@ -511,11 +582,10 @@ const loadProduct = async (id) => {
         reviewStore.fetchReviewsBySeller(product.value.sellerId),
       ]);
     }
-
     await resolveCoordinates();
     activeImage.value = product.value.images?.[0] || product.value.image || '';
     await loadSimilarProducts();
-
+    await loadLinkedVideos();
   } catch (err) {
     console.error("Ошибка загрузки товара:", err);
     notify("Ошибка загрузки объявления", "error");
@@ -541,7 +611,7 @@ const loadSimilarProducts = async () => {
     const currentSubcategory = product.value.subcategory;
     const currentCity = product.value.city;
 
-    // Фильтруем похожие: тот же section/subcategory + тот же город (если указан)
+    // Фильтруем похожие: тот же section/subcategory + тот же город
     const filtered = productStore.products.filter(p => {
       if (String(p.id) === currentId) return false;
 
@@ -551,13 +621,12 @@ const loadSimilarProducts = async () => {
       // Совпадение по секции ИЛИ подкатегории
       const sectionMatch = pSection === currentSection || pSubcategory === currentSubcategory;
       
-      // Город (если у текущего товара указан)
+      // Город
       const cityMatch = !currentCity || (p.city || '').toLowerCase() === currentCity.toLowerCase();
 
       return sectionMatch && cityMatch;
     }).slice(0, 5);
 
-    // Параллельно подгружаем профили продавцов
     similarProducts.value = await Promise.all(
       filtered.map(async (ad) => {
         const sellerId = ad.userId || ad.sellerId;
@@ -597,14 +666,12 @@ const loadSimilarProducts = async () => {
     similarProducts.value = [];
   }
 };
-
 const getSimilarImageUrl = (item) => {
   if (item.images?.length) return item.images[0];
   if (item.pictureUrls?.length) return item.pictureUrls[0];
   if (item.image) return item.image;
   return '/src/assets/img/placeholder.png';
 };
-
 const getSubcategoryName = (item) => {
   const targetSlug = item.subcategory || item.section;
   if (!targetSlug) return "";
@@ -621,12 +688,10 @@ const getSubcategoryName = (item) => {
   }
   return "";
 };
-
 const currentCategory = computed(() => {
   if (!product.value) return null;
   return categories.find((c) => c.slug === product.value.category);
 });
-
 const activeTabItem = computed(() => {
   if (!currentCategory.value || !product.value) return null;
   return (
@@ -636,7 +701,6 @@ const activeTabItem = computed(() => {
 });
 
 const breadcrumbSectionName = computed(() => activeTabItem.value?.title || activeTabItem.value?.name);
-
 const breadcrumbSubName = computed(() => {
   const subSlug = product.value?.subcategory;
   if (!currentCategory.value || !subSlug) return null;
@@ -661,7 +725,6 @@ const openFullGallery = (index = 0) => {
   const allImages = product.value.images.map(src => ({ src, type: "image" }));
   Fancybox.show(allImages, { startIndex: index });
 };
-
 const checkAuthAndRun = (action, message = "Авторизуйтесь, чтобы продолжить") => {
   if (!auth.isAuthenticated) {
     modal.openLogin();
@@ -670,14 +733,12 @@ const checkAuthAndRun = (action, message = "Авторизуйтесь, чтоб
   }
   action();
 };
-
 const onLikeClick = (item) => {
   checkAuthAndRun(async () => {
     await favStore.toggleAdvertFavorite(item.id);
     notify(favStore.isFavorite(item.id) ? "Добавлено в избранное" : "Удалено из избранного");
   }, "Войдите, чтобы добавить в избранное");
 };
-
 const onSubscribeClick = () => {
   const sellerId = product.value?.sellerId;
   if (!sellerId) return;
@@ -686,7 +747,6 @@ const onSubscribeClick = () => {
     notify(isNowSubscribed ? "Вы подписались на продавца" : "Вы отписались от продавца");
   });
 };
-
 const onShowNumberClick = (item) => {
   const target = item || product.value;
   const phone = target?.seller?.phone || seller.value?.phone;
@@ -701,7 +761,6 @@ const onShowNumberClick = (item) => {
     showCallModal.value = true; 
   }, "Войдите, чтобы увидеть номер телефона");
 };
-
 const onWriteClick = async (item) => {
   const targetId = item?.sellerId || item?.seller?.id || product.value?.sellerId;
   if (!targetId) {
@@ -717,7 +776,6 @@ const onWriteClick = async (item) => {
     }
   }, "Войдите, чтобы написать сообщение");
 };
-
 const handleCall = (phone) => {
   window.location.href = `tel:${phone}`;
   showCallModal.value = false;
@@ -748,7 +806,12 @@ onBeforeUnmount(() => {
 .product-left { flex: 1; background-color: white; border-radius: 1.25rem; padding: 1.375rem 1.875rem; width: 54.75rem;}
 .product-right { min-width: 20.813rem; height: fit-content;}
 /* Заголовок */
-.product-title { margin-bottom: 1.563rem; font-weight: 600; display: flex; align-items: start; justify-content: space-between; position: relative;}
+.product-title { margin-bottom: 1.563rem; font-weight: 700; display: flex; align-items: start; justify-content: space-between; position: relative;}
+.product-title{
+  display: inline-block;
+  text-transform: lowercase;
+}
+.product-title::first-letter { text-transform: uppercase;}
 .product-title .card-like{ width: 2.188rem; height: 1.938rem; z-index: 1;}
 /* Галерея */
 .gallery { gap: 2rem; display: grid; grid-template-columns: repeat(1, 36.875rem 14.375rem);}
@@ -768,19 +831,20 @@ onBeforeUnmount(() => {
 .product-description p{ font-size: 1.35rem;}
 .price-card { background-color: white;  border-radius: 1.25rem; padding: 1.375rem 1.875rem;}
 .price-extra { color: #b7b7b7; font-size: 1rem; font-size: 1rem; font-weight: 400;}
-.seller-card__btns{ display: flex; margin-top: 4.313rem; gap: 1rem;}
-.price { font-size: 2rem; font-weight: 600;}
-.location { margin: .5rem 0 0; color: #666;}
-.btn.secondary { background: #F5F5F5; width: 4.388rem; height: 3.438rem; display: flex; align-items: center; justify-content: center; border-radius: 1.25rem;}
+.seller-card__btns{ display: flex; margin-top: 1.313rem; gap: 1rem;}
+.price { font-size: 1.5rem; padding: 0.438rem 1rem; background: var(--btn-bg); font-weight: 700; width: fit-content; color: var(--bg-defort); border-radius: 0.625rem;}
+.location { margin: 1.3755rem 0 0; color: #242424; font-size: 1.25rem; font-weight: 700;}
+.btn.secondary { background: #F5F5F5; width: 4.188rem; height: 3.438rem; display: flex; align-items: center; justify-content: center; border-radius: 1.25rem;}
 .seller-card { margin-top: 0.625rem; background-color: white;  border-radius: 1.25rem; padding: 1rem 1rem 1.313rem 1rem;}
 .seller { display: flex; gap: 1.75rem;}
-.avatar { width: 4.525rem; height: 4.525rem; border-radius: 50%; margin-left: 0.938rem; object-fit: cover;}
-.name,.rating{ margin-bottom: .5rem; transition: opacity .3s;}
+.avatar { width: 5.125rem; height: 5.125rem; border-radius: 50%; margin-left: 0.938rem; object-fit: cover;}
+.name{font-size: 2rem; font-weight: 700; color: #242424; margin-bottom: 0.438rem;}
+.rating{ margin-bottom: .5rem; transition: opacity .3s;}
 .rating .stars {display: inline-flex;gap: 0.125rem;margin-left: 0.25rem;vertical-align: middle;}
 .star-icon {width: 1.1rem;height: 1.1rem;}
 .name:hover{ opacity: 0.6;}
 .seller-card__block{ font-size: 1.25rem;}
-.type{ margin-bottom: 0.875rem;}
+.type{ margin-bottom: 0.875rem; font-size: 1.25rem; font-weight: 700;}
 .subscribe{ color: var(--btn-bg);transition:opacity 0.3s}
 .subscribe:hover{ opacity: 70%;}
 .primary{ background-color: var(--btn-bg); font-size: 1.25rem; color: white; width: 14.375rem; height: 3.438rem; text-align: center; border-radius: 1.25rem;}
@@ -833,4 +897,23 @@ onBeforeUnmount(() => {
 .card-btn { background: var(--btn-bg); color: white; padding: 0.5rem 0; text-align: center; border-radius: 0.313rem; border: none; cursor: pointer;}
 .card-btn:last-child { background-color: white; border: 1px solid var(--btn-bg); color: var(--btn-bg);}
 .product-map { width: 100%; height: 18.75rem; border-radius: 0.625rem; overflow: hidden; background: #f5f5f5;}
+.linked-videos-section {margin-top: 3rem;}
+.videos-grid {display: grid;grid-template-columns: repeat(4, 1fr);gap: 1.25rem;margin-top: 1.25rem;}
+.fav-video-card {background: #fff;padding: 0.625rem 0.938rem 0.938rem 0.938rem;border-radius: 1.25rem;position: relative;cursor: pointer;transition: transform 0.2s ease, box-shadow 0.2s ease;}
+.fav-video-card:hover {transform: translateY(-4px);box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.06);}
+.fav-video-card_block {width: 100%;}
+.fav-video-preview {width: 100%;aspect-ratio: 9/16;flex-shrink: 0;position: relative;overflow: hidden;}
+.fav-video-preview img,.fav-video-preview video {width: 100%;height: 100%;border-radius: 1.25rem;object-fit: cover;}
+.author-avatar {width: 3.5rem !important;height: 3.5rem !important;border-radius: 0 3.125rem 0 1.25rem !important;position: absolute;bottom: -0.5rem;left: -0.5rem;object-fit: cover;border: 2px solid #fff;z-index: 2;}
+.video-overlay {position: absolute;bottom: 0.75rem;right: 0.75rem;background: rgba(0, 0, 0, 0.6);color: #fff;padding: 0.125rem 0.5rem;border-radius: 0.375rem;font-size: 0.75rem;font-weight: 500;z-index: 1;}
+.fav-video-main {width: 100%;display: grid;margin-top: 1.25rem;}
+.video-title {font-size: 1rem;font-weight: 700;margin-bottom: 1.25rem;display: -webkit-box;-webkit-line-clamp: 3;-webkit-box-orient: vertical;overflow: hidden;min-height: 2.4rem;text-transform: lowercase;line-height: 1.2;}
+.video-title::first-letter {text-transform: uppercase;}
+.video-stats {display: flex;justify-content: space-between;gap: 1.25rem;}
+.stat {display: flex;align-items: center;gap: 0.5rem;font-size: 1rem;}.stat img {width: 1.563rem;height: 1.375rem;}
+.video-fav-btn {position: absolute;top: 0.75rem;right: 0.75rem;width: 2.25rem;height: 2.25rem;background: rgba(255, 255, 255, 0.95);border: none;border-radius: 50%;display: flex;align-items: center;justify-content: center;cursor: pointer;z-index: 3;padding: 0;box-shadow: 0 2px 8px rgba(0,0,0,0.08);transition: transform 0.2s ease, background 0.2s ease;}
+.video-fav-btn:hover {transform: scale(1.1);background: #fff;}
+.video-fav-icon {width: 1.125rem;height: 1.125rem;}
+@media (max-width: 77rem) {.videos-grid {grid-template-columns: repeat(3, 1fr);}}
+@media (max-width: 48rem) {.videos-grid {grid-template-columns: repeat(2, 1fr);}}
 </style>

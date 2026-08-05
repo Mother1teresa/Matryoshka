@@ -250,7 +250,7 @@ const handleSave = async () => {
 
     let finalAvatarUrl = auth.user?.avatarUrl || '';
     if (form.avatarFile) {
-      const uploaded = await uploadToMediaService(form.avatarFile, "avatar", {});
+      const uploaded = await uploadToMediaService(form.avatarFile, "PHOTOS", {});
       if (uploaded) {
         finalAvatarUrl = uploaded.cdnUrl || uploaded.url || uploaded;
       }
