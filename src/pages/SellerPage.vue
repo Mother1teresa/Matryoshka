@@ -472,7 +472,7 @@ const playVideo = (video) => {
 .ad-main-info {width: 31.625rem;display: grid;}
 .ad-title-row {display: flex;justify-content: space-between;align-items: flex-start;width: 100%;}
 .ad-title {height: 3.5rem;margin-bottom: .4rem;overflow: hidden;}
-.ad-title-link {font-size: 1.5rem;font-weight: 700;display: inline-block;text-transform: lowercase;display: -webkit-box;-webkit-line-clamp: 2;-webkit-box-orient: vertical;overflow: hidden;color: inherit;text-decoration: none;transition: opacity 0.2s;}
+.ad-title-link {font-size: 1.5rem;font-weight: 700;display: inline-block;text-transform: lowercase;display: -webkit-box;-webkit-line-clamp: 2;-webkit-box-orient: vertical;overflow: hidden;color: inherit;text-decoration: none;transition: opacity 0.2s; border-radius: 0;}
 .ad-title-link:hover {opacity: 0.7;}
 .ad-title-link::first-letter {text-transform: uppercase;}
 .ad-price {font-size: 1.5rem;padding: 0.438rem 1rem;background: var(--btn-bg);font-weight: 700;width: fit-content;color: var(--bg-defort);border-radius: 0.625rem;}

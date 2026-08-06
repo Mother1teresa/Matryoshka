@@ -513,12 +513,12 @@ onUnmounted(() => {
 .empty-messages h3 {color: #333;margin-bottom: 0.625rem;}
 .empty-messages p {max-width: 18.75rem;font-size: 0.875rem;line-height: 1.4;margin-bottom: 1.563rem;}
 .creat-akk{font-size: 1rem;color: #858685;text-align: right; width: 100%;}
-.confirm-modal {background: white;padding: 1.875rem;border-radius: 2.188rem;max-width: 30rem;width: 90%;pointer-events: all;position: relative;z-index: 2;}
-.confirm-modal__content {display: grid;gap: 1rem;justify-items: center;font-weight: 700;text-align: center;}
-.confirm-modal__actions {display: flex;justify-content: center;gap: 1.25rem;margin-top: 2.5rem;}
-.confirm-modal__actions .btn {font-size: 1.25rem;padding: 0.938rem 1.5rem;border-radius: 1rem;border: none;cursor: pointer;font-weight: 600;}
-.confirm-modal__actions .go-to-ads-btn {background: var(--btn-bg);color: #F5F5F5;}
-.confirm-modal__actions .btn-close {background: #D8D8D8;color: #000;}
+.confirm-modal{padding: 1.875rem;background: white;border-radius: 2.188rem;}
+.confirm-modal__content{display: grid;gap: 1rem;justify-items: center;font-weight: 700;}
+.confirm-modal__actions{display: flex;justify-content: center;gap: 1.25rem;margin-top: 2.938rem;font-size: 1.25rem;}
+.go-to-ads-btn{ width: fit-content;padding: 0.938rem 1.875rem;border-radius: 1rem;font-size: 1.25rem;}
+.btn-close{background: #D8D8D8; border-radius: 1rem; padding: 0.938rem 1.125rem;}
+.modal-overlay {pointer-events: auto;}
 @media (max-width: 77rem){
   .ad-main-info,.ad-title-row,.ad-description{
     width: 20rem;

@@ -107,6 +107,7 @@
               <div class="seller-card__block">
                 <router-link :to="{ name: 'SellerPage', params: { id: product?.sellerId } }" class="name">
                   {{ sellerName }}
+                  <p>Кликните чтобы посмотреть профиль</p>
                 </router-link>
                 <div class="type">{{ sellerType }}</div>
                 <div class="rating">
@@ -951,6 +952,7 @@ onBeforeUnmount(() => {
 .seller { display: flex; gap: 1rem;}
 .avatar { width: 5.125rem; height: 5.125rem; border-radius: 50%; object-fit: cover;}
 .name{font-size: 2rem; font-weight: 700; color: #242424; }
+.name p{font-size: 1rem; color: #858685; margin-top: 0.875rem;}
 .rating{ font-size: 1.25rem; font-weight: 700; margin-bottom: .5rem; transition: opacity .3s; display: flex;align-items: flex-start; gap: 0.25rem; color: #262626;}
 .rating .stars {display: inline-flex;gap: 0.125rem;margin-left: 0.25rem;vertical-align: middle;}
 .star-icon {width: 1.25rem;height: 1.25rem;}

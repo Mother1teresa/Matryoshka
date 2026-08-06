@@ -107,7 +107,7 @@
       <template v-if="showCommonSections">
         <!-- Описание -->
         <section v-if="!descriptionInConfig" class="section fade-in">
-          <h3 class="section-title">Описание <span class="required">*</span></h3>
+          <h3 class="section-title">Описание <span class="required">*</span> <span class="char-count">Не более 2 000 символов</span></h3>
           <div class="form-group">
             <textarea 
               v-model="form.description" 
@@ -118,9 +118,8 @@
             ></textarea>
             <span class="char-count" :class="{ 'over-limit': (form.description?.length || 0) > 2000 }">
               {{ form.description?.length || 0 }} / 2000
-            </span>
+            </span> 
           </div>
-          <span class="char-count">Не более 2 000 символов</span>
         </section>
 
         <!-- Фотографии -->
@@ -260,14 +259,13 @@ function selectSuggestion(suggestion) {
   addressSuggestions.value = [];
   form.address = displayName;
 
-  // Геокодируем ТОЛЬКО после выбора — для координат и карты
   if (window.ymaps && window.ymaps.geocode) {
     window.ymaps.geocode(displayName, { results: 1 }).then(res => {
       const obj = res.geoObjects.get(0);
       if (obj) {
         const coords = obj.geometry.getCoordinates();
         form.coordinates = coords;
-        if (map && placemark) {
+        if (map) {
           map.setCenter(coords, 14);
           placemark.geometry.setCoordinates(coords);
         } else {
@@ -881,6 +879,7 @@ const removePhoto = (index) => {
 const isClient = typeof window !== 'undefined';
 let map = null;
 let placemark = null;
+const pendingMapCoords = ref(null);
 let searchTimeout = null;
 
 function destroyMap() {
@@ -901,12 +900,13 @@ function initMap(coords = [55.7558, 37.6173]) {
     console.warn('Yandex Maps API не загружен или SSR');
     return;
   }
-  destroyMap();
+  
   const container = document.getElementById('map-container-ad');
   if (!container) {
-    console.warn('Контейнер карты не найден в DOM');
+    pendingMapCoords.value = coords;
     return;
   }
+  destroyMap();
   container.innerHTML = '';
   
   window.ymaps.ready(() => {
@@ -929,6 +929,7 @@ function initMap(coords = [55.7558, 37.6173]) {
       });
       
       map.geoObjects.add(placemark);
+      pendingMapCoords.value = null;
     } catch (e) {
       console.error('Ошибка создания карты:', e);
     }
@@ -983,6 +984,7 @@ watch(searchQuery, (query) => {
     return;
   }
   clearTimeout(suggestTimeout);
+  clearTimeout(searchTimeout);
   if (!query || query.length < 3) {
     addressSuggestions.value = [];
     return;
@@ -990,8 +992,43 @@ watch(searchQuery, (query) => {
   suggestTimeout = setTimeout(() => {
     fetchSuggestions(query);
   }, 300);
+  if (query.length >= 5) {
+    searchTimeout = setTimeout(() => {
+      if (window.ymaps && window.ymaps.geocode) {
+        window.ymaps.geocode(query, { results: 1 }).then(res => {
+          const obj = res.geoObjects.get(0);
+          if (obj) {
+            const coords = obj.geometry.getCoordinates();
+            form.coordinates = coords;
+            if (map) {
+              map.setCenter(coords, 14);
+              placemark.geometry.setCoordinates(coords);
+            } else {
+              initMap(coords);
+            }
+          }
+        }).catch(() => {});
+      }
+    }, 800);
+  }
 }, { immediate: true });
-
+watch(showCommonSections, (visible) => {
+  if (visible && isClient && window.ymaps) {
+    nextTick(() => {
+      setTimeout(() => {
+        if (pendingMapCoords.value) {
+          initMap(pendingMapCoords.value);
+        } else if (form.coordinates?.length === 2) {
+          initMap(form.coordinates);
+        } else if (searchQuery.value) {
+          initMapWithUserCity();
+        } else {
+          initMap();
+        }
+      }, 200);
+    });
+  }
+});
 // ═══════════════════════════════════════════════════════════
 // МАППИНГИ: UI → API enum
 // ═══════════════════════════════════════════════════════════
@@ -1499,34 +1536,15 @@ margin-top: 2.438rem; border-radius: 1.875rem;}
   cursor: pointer; 
   transition: 0.2s;
 }
-.btn-submit:hover {
-  background: #5e9079;
-}
-.btn-disabled { 
-  background: #d0d5d2 !important; 
-  cursor: not-allowed; 
-}
-.validation-msg { 
-  color: #ff4d4f; 
-  font-size: 0.75rem; 
-  margin-top: 0.5rem; 
-  text-align: center; 
-}
-.hint { 
-  font-size: 0.853rem; 
-  color: #bbb; 
-  font-weight: normal; 
-  margin-left: 0.5rem; 
-}
-
-.fade-in { 
-  animation: fadeIn 0.3s ease-out; 
-}
+.btn-submit:hover {background: #5e9079;}
+.btn-disabled { background: #d0d5d2 !important; cursor: not-allowed; }
+.validation-msg { color: #ff4d4f; font-size: 0.75rem; margin-top: 0.5rem; text-align: center; }
+.hint { font-size: 0.853rem; color: #bbb; font-weight: normal; margin-left: 0.5rem; }
+.fade-in { animation: fadeIn 0.3s ease-out; }
 @keyframes fadeIn { 
   from { opacity: 0; transform: translateY(8px); } 
   to { opacity: 1; transform: translateY(0); } 
 }
-
 .phone-input-wrapper { position: relative; width: 100%; }
 .f-input{text-transform: capitalize;}
 .f-input.phone-field { padding-right: 45px; }
@@ -1561,46 +1579,15 @@ margin-top: 2.438rem; border-radius: 1.875rem;}
   outline: none;
   height: 3.188rem !important;
 }
-.f-input:focus, .f-textarea:focus {
-  border-color: #76a58f;
-}
+.f-input:focus, .f-textarea:focus {border-color: #76a58f;}
 .f-textarea { min-height: 120px; resize: vertical; }
-.chips-row { 
-  display: flex; 
-  flex-wrap: wrap; 
-  gap: 10px; 
-  margin-top: 8px;
-}
-.chip-btn { 
-  padding: 12px 24px; 
-  border: 1px solid #e0e0e0; 
-  border-radius: 14px; 
-  background: #f5f5f5; 
-  cursor: pointer; 
-  transition: 0.2s;
-  font-size: 14px;
-}
-.chip-btn:hover {
-  background: #eef0ef;
-}
-.chip-btn.active { 
-  background: #76a58f; 
-  color: white; 
-  border-color: #76a58f; 
-}
-:deep(.multiselect--active:not(.multiselect--above) .multiselect__current), :deep(.multiselect--active:not(.multiselect--above) .multiselect__input), :deep(.multiselect--active:not(.multiselect--above) .multiselect__tags) {
-  border-bottom-left-radius: 0 !important;
-  border-bottom-right-radius: 0 !important;
-}
-:deep(.multiselect__input), :deep(.multiselect__single){
-  line-height: normal !important;
-  min-height:auto !important;
-  vertical-align:auto !important;
-}
-:deep(.multiselect__option--selected) {
-  color: var(--btn-bg);
-  background: #f3f3f3;
-}
+.chips-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px;}
+.chip-btn { padding: 12px 24px; border: 1px solid #e0e0e0; border-radius: 14px; background: #f5f5f5; cursor: pointer; transition: 0.2s;font-size: 14px;}
+.chip-btn:hover {background: #eef0ef;}
+.chip-btn.active { background: #76a58f; color: white; border-color: #76a58f; }
+:deep(.multiselect--active:not(.multiselect--above) .multiselect__current), :deep(.multiselect--active:not(.multiselect--above) .multiselect__input), :deep(.multiselect--active:not(.multiselect--above) .multiselect__tags) {border-bottom-left-radius: 0 !important;border-bottom-right-radius: 0 !important;}
+:deep(.multiselect__input), :deep(.multiselect__single){line-height: normal !important;min-height:auto !important;vertical-align:auto !important;}
+:deep(.multiselect__option--selected) {color: var(--btn-bg);background: #f3f3f3;}
 .edit-mode-banner{margin: .5rem 0; font-size: 1.25rem;}
 .section-disabled { opacity: 0.6; pointer-events: none; user-select: none;}
 .section-disabled .edit-hint { color: #999; font-size: 12px; font-weight: normal; margin-left: 8px;}
@@ -1612,4 +1599,6 @@ margin-top: 2.438rem; border-radius: 1.875rem;}
 .suggestions-list li:hover {background: #f5f5f5;}
 .char-count{display:block;margin-top:.5rem;font-size:.75rem;color:#999;}
 .char-count.over-limit { color: #ff4d4f; }
+:deep(.multiselect__content-wrapper) {position: absolute;display: block;background: #fff;width: 100%;max-height: 15rem !important;overflow: auto;border: 1px solid #e8e8e8;border-top: none;border-bottom-left-radius: 0.938rem;border-bottom-right-radius: 0;z-index: 50;-webkit-overflow-scrolling: touch;transition: all .35s;
+}
 </style>
