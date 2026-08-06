@@ -243,14 +243,14 @@ export const fieldGroups = {
       fields: [
         { key: "brand", type: "text" },
         { key: "model", type: "text" },
-        { key: "year", type: "text" },
+        { key: "yearOfManufacture", type: "text", label: "Год выпуска" },
         { key: "mileage", type: "text", suffix: "км" },
         { key: "bodyType", type: "text", label: "Кузов" },
         { key: "transmission", type: "text", label: "КПП" },
         { key: "engineType", type: "text", label: "Двигатель" },
         { key: "drive", type: "text", label: "Привод" },
-        { key: "power", type: "text", suffix: "л.с." },
-        { key: "engineCapacity", type: "text", suffix: "л" },
+        { key: "horsePower", type: "text", suffix: "л.с.", label: "Мощность" },
+        { key: "engineCapacity", type: "text", suffix: "л", label: "Объём двигателя" },
         { key: "color", type: "text" },
       ]
     }
@@ -262,11 +262,11 @@ export const fieldGroups = {
       fields: [
         { key: "brand", type: "text", label: "Марка" },
         { key: "model", type: "text", label: "Модель" },
-        { key: "year", type: "text", label: "Год выпуска" },
+        { key: "yearOfManufacture", type: "text", label: "Год выпуска" },
         { key: "mileage", type: "text", suffix: "км", label: "Пробег" },
         { key: "engineType", type: "text", label: "Двигатель" },
         { key: "engineCapacity", type: "text", suffix: "см³", label: "Объём" },
-        { key: "power", type: "text", suffix: "л.с.", label: "Мощность" },
+        { key: "horsePower", type: "text", suffix: "л.с.", label: "Мощность" },
         { key: "color", type: "text", label: "Цвет" },
         { key: "condition", type: "text", label: "Состояние" },
       ]

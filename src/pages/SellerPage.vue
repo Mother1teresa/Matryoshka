@@ -66,8 +66,33 @@
       <div class="seller-content">
         <!-- Объявления -->
         <div v-if="currentTab === 'announcements'" class="products-grid-wrapper">
-          <div v-if="sellerProducts.length" class="products">
-            <ProductCard v-for="product in sellerProducts" :key="product.id" :product="product"/>
+          <div v-if="sellerProducts.length" class="ads-list">
+            <div v-for="ad in sellerProducts" :key="ad.id" class="ad-card-horizontal">
+              <div class="ad-image-block">
+                <router-link :to="productLink(ad)">
+                  <img 
+                    :src="ad.image" 
+                    alt="product" 
+                    @error="ad.image = '/src/assets/img/placeholder.png'"
+                  />
+                </router-link>
+              </div>
+              <div class="ad-main-info">
+                <div class="ad-title-row">
+                  <h3 class="ad-title">
+                    <router-link :to="productLink(ad)" class="ad-title-link">
+                      {{ ad.title }}
+                    </router-link>
+                  </h3>
+                </div>
+                <div class="ad-location"><img src="/src/assets/img/location_on.svg" />{{ ad.city }}</div>
+                <p class="ad-description">{{ ad.description }}</p>
+                <div class="ad-price">{{ ad.price.toLocaleString() }} ₽</div>
+              </div>
+              <div class="ad-stats-block">
+                <div class="creat-akk">{{ "Опубликовано " + formatDate(ad.createdAt) }}</div>
+              </div>
+            </div>
           </div>
           <div v-else class="no-reviews">
             <p>У продавца пока нет объявлений</p>
@@ -189,7 +214,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onUnmounted } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "/src/stores/authStore.js";
 import { useModalStore } from "/src/stores/modal.js";
@@ -214,6 +239,16 @@ const isReviewsLoading = ref(false);
 const seller = ref(null);
 const sellerProducts = ref([]);
 const sellerVideos = ref([]);
+
+const productLink = (ad) => ({
+  name: 'Product',
+  params: {
+    type: ad.category || 'tovary',
+    section: ad.section || 'default',
+    id: ad.id
+  }
+});
+
 
 const sellerName = computed(() => {
   return seller.value?.name || seller.value?.username || seller.value?.companyName || 'Продавец';
@@ -430,6 +465,22 @@ const playVideo = (video) => {
 .stars {display: flex;gap: 0.125rem;align-items: center;}
 .star-icon {width: 1.5rem;height: 1.5rem;}
 .stars-row {display: flex;gap: 0.125rem;}
-
+.ads-list {display: flex;flex-direction: column;gap: 1rem;}
+.ad-card-horizontal {background: white;border-radius: 1.25rem;padding: 0.625rem;display: flex;gap: 1.5rem;position: relative;overflow: hidden;}
+.ad-image-block {width: 11.75rem;flex-shrink: 0;}
+.ad-image-block img {width: 100%;height: 100%;object-fit: cover;border-radius: 1.25rem;}
+.ad-main-info {width: 31.625rem;display: grid;}
+.ad-title-row {display: flex;justify-content: space-between;align-items: flex-start;width: 100%;}
+.ad-title {height: 3.5rem;margin-bottom: .4rem;overflow: hidden;}
+.ad-title-link {font-size: 1.5rem;font-weight: 700;display: inline-block;text-transform: lowercase;display: -webkit-box;-webkit-line-clamp: 2;-webkit-box-orient: vertical;overflow: hidden;color: inherit;text-decoration: none;transition: opacity 0.2s;}
+.ad-title-link:hover {opacity: 0.7;}
+.ad-title-link::first-letter {text-transform: uppercase;}
+.ad-price {font-size: 1.5rem;padding: 0.438rem 1rem;background: var(--btn-bg);font-weight: 700;width: fit-content;color: var(--bg-defort);border-radius: 0.625rem;}
+.ad-description {margin: 1rem 0;font-size: 1rem;color: #858685;display: -webkit-box;-webkit-line-clamp: 2;-webkit-box-orient: vertical;overflow: hidden;font-weight: 700;}
+.ad-location {margin-top: auto;display: flex;align-items: center;gap: 0.438rem;font-weight: 700;font-size: 1rem;}
+.ad-location img {width: 1.563rem;height: 1.563rem;}
+.ad-stats-block {display: flex;flex-direction: column;justify-content: flex-end;align-items: flex-start;gap: 0.375rem;margin-left: 1.25rem;width: 43%;}
+.creat-akk {font-size: 1rem;color: #858685;text-align: right;width: 100%;}
+@media (max-width: 77rem) {.ad-main-info,.ad-title-row,.ad-description {width: 25rem;}}
 @media (max-width: 77rem) { .products,.video-grid_block { display: grid; grid-template-columns: repeat(5, 12.2rem); gap: 1rem; background: #ececec;}}
 </style>

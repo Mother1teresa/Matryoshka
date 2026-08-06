@@ -137,10 +137,10 @@
             </div>
           </div>
           <!-- Видео с этим товаром -->
-          <div v-if="linkedVideos.length" class="linked-videos-section">
-            <!-- <h3 class="similar-title">Видео с этим товаром</h3> -->
+          <div v-if="allProductVideos.length" class="linked-videos-section">
+            <h3 class="similar-title">Видео</h3>
             <div class="videos-grid">
-              <div v-for="video in linkedVideos" :key="video.id" class="fav-video-card" @click="router.push({ name: 'shorts', params: { id: video.id } })">
+              <div v-for="video in allProductVideos" :key="video.id" class="fav-video-card" @click="router.push({ name: 'shorts', params: { id: video.id } })">
               <button class="video-fav-btn" @click.stop="onVideoFavoriteClick(video, $event)" title="Добавить в избранное">
                 <img :src="video.isFavorite ? bookmarkFilledIcon : bookmarkIcon" class="video-fav-icon" alt="bookmark"/>
               </button>
@@ -283,6 +283,58 @@ const callModalPhone = ref('');
 const callModalName = ref('');
 const linkedVideos = ref([]);
 const mapContainer = ref(null);
+const productVideoDetails = ref(null);
+
+const loadProductVideoDetails = async () => {
+  if (!product.value?.video?.id) {
+    productVideoDetails.value = null;
+    return;
+  }
+  try {
+    const details = await auth.fetchVideo(product.value.video.id);
+    productVideoDetails.value = details || null;
+  } catch (e) {
+    console.error('Ошибка загрузки деталей видео товара:', e);
+    productVideoDetails.value = null;
+  }
+};
+// === ВИДЕО ТОВАРА (из API /adverts/{id}) ===
+const productVideo = computed(() => {
+  const v = product.value?.video;
+  if (!v || !v.cdnUrl) return null;
+  return v;
+});
+const allProductVideos = computed(() => {
+  const list = [];
+  const productVideoId = productVideo.value?.id;
+
+  // Основное видео товара (с подгруженными лайками/просмотрами)
+  if (productVideo.value) {
+    const details = productVideoDetails.value;
+    list.push({
+      id: productVideo.value.id,
+      cdnUrl: productVideo.value.cdnUrl,
+      thumbnail: productVideo.value.cdnUrl,
+      description: details?.description || 'Видео товара',
+      duration: '',
+      viewsCount: details?.views || 0,
+      likes: details?.likes || 0,
+      commentsCount: details?.commentsCount || 0,
+      isFavorite: details?.isFavorite || false,
+      isProductVideo: true,
+    });
+  }
+
+  // Остальные видео продавца, исключая дубль основного
+  linkedVideos.value.forEach(v => {
+    if (v.id !== productVideoId) {
+      list.push(v);
+    }
+  });
+
+  return list;
+});
+
 
 const loadLinkedVideos = async () => {
   if (!product.value?.sellerId || !product.value?.id) return;
@@ -352,21 +404,33 @@ function initProductMap(coords) {
     return;
   }
 
-  destroyProductMap();
+  const center = Array.isArray(coords) && coords.length === 2
+    ? [Number(coords[0]), Number(coords[1])]
+    : coords;
+
+  if (!center || Math.abs(center[0]) > 90 || Math.abs(center[1]) > 180) {
+    console.error('Невалидные координаты:', center);
+    return;
+  }
 
   window.ymaps.ready(() => {
     try {
-      const center = Array.isArray(coords) && coords.length === 2
-        ? [Number(coords[0]), Number(coords[1])]
-        : coords;
-
-      // Валидация
-      if (!center || Math.abs(center[0]) > 90 || Math.abs(center[1]) > 180) {
-        console.error('Невалидные координаты:', center);
-        mapCoordinates.value = null;
+      if (productMap && productMap.getContainer() !== mapContainer.value) {
+        destroyProductMap();
+      }
+      if (productMap) {
+        productMap.setCenter(center, 15);
+        if (productPlacemark) {
+          productPlacemark.geometry.setCoordinates(center);
+        } else {
+          productPlacemark = new window.ymaps.Placemark(center, {}, {
+            preset: 'islands#redIcon'
+          });
+          productMap.geoObjects.add(productPlacemark);
+        }
+        productMap.container.fitToViewport();
         return;
       }
-
       productMap = new window.ymaps.Map(mapContainer.value, {
         center: center,
         zoom: 15,
@@ -381,8 +445,12 @@ function initProductMap(coords) {
       productPlacemark = new window.ymaps.Placemark(center, {}, {
         preset: 'islands#redIcon'
       });
-
       productMap.geoObjects.add(productPlacemark);
+
+      // ⬇️ КЛЮЧЕВОЕ: пересчитать размер контейнера после появления в DOM
+      setTimeout(() => {
+        productMap?.container?.fitToViewport();
+      }, 100);
     } catch (e) {
       console.error('Ошибка создания карты:', e);
     }
@@ -427,14 +495,14 @@ const resolveCoordinates = async () => {
     const norm = normalizeCoords(product.value.coordinates);
     if (norm) {
       mapCoordinates.value = norm;
-      nextTick(() => setTimeout(() => initProductMap(mapCoordinates.value), 200));
+      nextTick(() => setTimeout(() => initProductMap(mapCoordinates.value), 300));
     } else {
       mapCoordinates.value = null;
     }
     return;
   }
 
-  let address = product.value?.address || product.value?.city;
+  const address = product.value?.address || product.value?.city;
   if (!address) {
     mapCoordinates.value = null;
     return;
@@ -442,21 +510,34 @@ const resolveCoordinates = async () => {
 
   isGeocoding.value = true;
   try {
-    const result = await geocodeByQuery(address);
-    if (result?.coordinates) {
-      let coords;
-      if (Array.isArray(result.coordinates)) {
-        coords = result.coordinates.map(Number);
+    if (window.ymaps) {
+      const res = await window.ymaps.geocode(address, { results: 1, kind: 'house' });
+      const first = res.geoObjects.get(0);
+      if (first) {
+        const coords = first.geometry.getCoordinates();
+        console.log('[Geocode] Адрес:', address, '→', coords);
+        mapCoordinates.value = coords;
+        nextTick(() => setTimeout(() => initProductMap(coords), 300));
       } else {
-        coords = [Number(result.coordinates.lat), Number(result.coordinates.lng)];
+        const cityRes = await window.ymaps.geocode(product.value?.city || address, { results: 1 });
+        const cityFirst = cityRes.geoObjects.get(0);
+        if (cityFirst) {
+          const coords = cityFirst.geometry.getCoordinates();
+          mapCoordinates.value = coords;
+          nextTick(() => setTimeout(() => initProductMap(coords), 300));
+        } else {
+          mapCoordinates.value = null;
+        }
       }
-      if (Math.abs(coords[0]) > 90 || Math.abs(coords[1]) > 180) {
-        coords = [coords[1], coords[0]];
-      }
-      mapCoordinates.value = coords;
-      nextTick(() => initProductMap(coords));
     } else {
-      mapCoordinates.value = null;
+      const result = await geocodeByQuery(address);
+      const coords = normalizeCoords(result?.coordinates);
+      if (coords) {
+        mapCoordinates.value = coords;
+        nextTick(() => setTimeout(() => initProductMap(coords), 300));
+      } else {
+        mapCoordinates.value = null;
+      }
     }
   } catch (e) {
     console.error('Ошибка геокодирования:', e);
@@ -543,7 +624,7 @@ const loadProduct = async (id) => {
   similarProducts.value = [];
   seller.value = null;
   mapCoordinates.value = null;
-  destroyProductMap();
+  productVideoDetails.value = null;
 
   try {
     // const cached = productStore.products.find(p => String(p.id) === String(id));
@@ -601,8 +682,11 @@ const loadProduct = async (id) => {
     }
     await resolveCoordinates();
     activeImage.value = product.value.images?.[0] || product.value.image || '';
+    await Promise.all([
+      loadProductVideoDetails(),
+      loadLinkedVideos(),
+    ]); 
     await loadSimilarProducts();
-    await loadLinkedVideos();
   } catch (err) {
     console.error("Ошибка загрузки товара:", err);
     notify("Ошибка загрузки объявления", "error");
@@ -801,7 +885,11 @@ const handleCall = (phone) => {
 watch(() => route.params.id, (newId) => {
   if (newId) loadProduct(newId);
 }, { immediate: true });
-
+watch(mapContainer, (el) => {
+  if (el && mapCoordinates.value && window.ymaps) {
+    initProductMap(mapCoordinates.value);
+  }
+});
 onMounted(async () => {
   if (isClient && window.ymaps) {
     try { await waitForYmaps(); } catch (e) { console.warn('Карта недоступна:', e); }
@@ -851,17 +939,17 @@ onBeforeUnmount(() => {
 .seller-card__btns{ display: flex; margin-top: 1.313rem; gap: 1rem;}
 .price { font-size: 1.5rem; padding: 0.438rem 1rem; background: var(--btn-bg); font-weight: 700; width: fit-content; color: var(--bg-defort); border-radius: 0.625rem;}
 .location { margin: 1.3755rem 0 0; color: #242424; font-size: 1.25rem; font-weight: 700;}
-.data{font-size: .8rem; color: #888;}
+.data{font-size: .8rem; color: #888; text-align: right; margin-top: .5rem;}
 .btn.secondary { background: #F5F5F5; width: 4.188rem; height: 3.438rem; display: flex; align-items: center; justify-content: center; border-radius: 1.25rem;}
 .seller-card { margin-top: 0.625rem; background-color: white;  border-radius: 1.25rem; padding: 1rem 1rem 1.313rem 1rem;}
 .seller { display: flex; gap: 1rem;}
 .avatar { width: 5.125rem; height: 5.125rem; border-radius: 50%; margin-left: 0.938rem; object-fit: cover;}
 .name{font-size: 2rem; font-weight: 700; color: #242424; }
-.rating{ margin-bottom: .5rem; transition: opacity .3s; display: flex;align-items: baseline; gap: 0.125rem; color: #262626;}
+.rating{ font-size: 1.25rem; font-weight: 700; margin-bottom: .5rem; transition: opacity .3s; display: flex;align-items: flex-start; gap: 0.25rem; color: #262626;}
 .rating .stars {display: inline-flex;gap: 0.125rem;margin-left: 0.25rem;vertical-align: middle;}
 .star-icon {width: 1.25rem;height: 1.25rem;}
 .name:hover{ opacity: 0.6;}
-.seller-card__block{ font-size: 1.25rem;}
+.seller-card__block{ font-size: 1.25rem;     width: 12rem;}
 .type{ margin-bottom: 0.875rem; margin-top: 0.438rem;font-size: 1.25rem; font-weight: 700;}
 .subscribe{ color: var(--btn-bg);transition:opacity 0.3s}
 .subscribe:hover{ opacity: 70%;}
@@ -869,7 +957,7 @@ onBeforeUnmount(() => {
 .secondary img{ width: 2.575rem; height: 2.525rem;}
 .is-active{ color: red;}
 .confirm-call-card { background: white; padding: 2rem 1.75rem 1.475rem 1.75rem; border-radius: 2.188rem; max-width: 39.063rem; width: 100%; text-align: left;}
-.confirm-message { font-size: 1.25rem; color: #000; margin-bottom: 1.25rem;}
+.confirm-message { font-size: 1.75rem; color: #000; margin-bottom: 1.25rem;}
 .confirm-actions { display: flex; justify-content: center; gap: 1.25rem;}
 .btn-black { text-align: center; width: 10.375rem; height: 3.563rem; background: #000; color: #fff; border: none; border-radius: 1rem; font-weight:500; cursor: pointer; font-size: 1.25rem;}
 .btn-gray { width: 10.375rem; height: 3.563rem; text-align: center; background: #D8D8D8;  color: #000; border: none; border-radius: 1rem; font-weight: 500; cursor: pointer; font-size: 1.25rem;}
@@ -911,7 +999,7 @@ onBeforeUnmount(() => {
 .card-content__rigth { display: none; transition: all 0.3s;}
 .horizontal-card:hover .card-content__rigth { display: block;}
 .card-content__rigth-btns { display: grid; align-content: center; align-items: center; height: 100%; width: 12.813rem; gap: 0.688rem;}
-.card-like { position: absolute; top: 0; right: 0; width: 1.563rem; height: 1.5rem;}
+.card-like { position: absolute; top: 1.375rem; right: 1.875rem; width: 1.563rem; height: 1.5rem;}
 .card-content { display: flex; flex-direction: column; width: 23.125rem; min-height: 100%; position: relative;}
 .card-btn { background: var(--btn-bg); color: white; padding: 0.5rem 0; text-align: center; border-radius: 0.313rem; border: none; cursor: pointer;}
 .card-btn:last-child { background-color: white; border: 1px solid var(--btn-bg); color: var(--btn-bg);}
@@ -935,5 +1023,5 @@ onBeforeUnmount(() => {
 .video-fav-icon {width: 1.125rem;height: 1.125rem;}
 @media (max-width: 77rem) {.videos-grid {grid-template-columns: repeat(3, 1fr);}
 .similar-products .horizontal-card{width: 47.75rem;}  
-.similar-products.card-content{width: 21.125rem;}}
+.similar-products .card-content{width: 21.125rem;}}
 </style>

@@ -279,7 +279,7 @@ const handleCreateVideo = () => {
 .arr-profil {width: 1rem;height: 1.5rem;}
 .header__right-true .btn-light {width: 100%;}
 .profile-wrapper {position: relative;}
-.profile-wrapper .profile span{width: 4.85rem;overflow: hidden;text-transform: lowercase; -webkit-box-orient: vertical;-webkit-line-clamp: 1;overflow: hidden;  display: -webkit-box;}
+.profile-wrapper .profile span{width: 4.85rem; font-size: 1rem; font-weight: 700; overflow: hidden;text-transform: lowercase; -webkit-box-orient: vertical;-webkit-line-clamp: 1;overflow: hidden;  display: -webkit-box;}
 .profile-wrapper .profile span::first-letter { text-transform: uppercase;}
 /* стрелка */
 .arr-profil {transition: transform 0.3s;}

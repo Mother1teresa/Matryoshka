@@ -418,7 +418,7 @@ onMounted(() => {
 .video-title {font-size: 1rem;font-weight: 700;margin-bottom: 1.563rem;display: -webkit-box;-webkit-line-clamp: 4;-webkit-box-orient: vertical;overflow: hidden;/* height: 4.375rem; */}
 .video-title{display: inline-block;text-transform: lowercase;display: -webkit-box;-webkit-line-clamp: 2;-webkit-box-orient: vertical;overflow: hidden;}
 .video-title::first-letter {text-transform: uppercase;}
-.video-stats {display: flex; justify-content: space-between;gap: 0.938rem;margin-bottom: 0.625rem;}
+.video-stats {display: flex; justify-content: space-between;gap: 0.938rem;}
 .stat {display: flex; align-items: center; gap: 0.4rem;font-size: 0.875rem; color: #333}
 .stat img { width: 1.688rem; }
 .linked-product-box {background: #FBFBFB;border: 0.063rem solid #CCCCCC;border-radius: 0.938rem;padding: 0.313rem;display: flex;gap: 0.625rem;position: relative;width: 80%;}

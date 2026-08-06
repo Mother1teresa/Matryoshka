@@ -88,16 +88,45 @@
             </div>
           </div>
           <div v-else class="videos-grid">
-            <div v-for="video in videos" :key="'vid-' + video.id" class="video-card" @click="goToVideo(video.id)">
-              <div class="video-thumb">
-                <video :src="video.cdnUrl" preload="metadata" muted playsinline></video>
-                <div class="play-overlay">
-                  <svg width="2.5rem" height="2.5rem" viewBox="0 0 24 24" fill="white">
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
+            <div v-for="video in videos" :key="'vid-' + video.id" class="video-item">
+              <div class="video-card" @click="goToVideo(video.id)">
+                <video 
+                  v-if="video.cdnUrl"
+                  :src="video.cdnUrl" 
+                  class="thumbnail" 
+                  preload="metadata"
+                  muted
+                  playsinline
+                ></video>
+                <img 
+                  v-else-if="video.thumbnail"
+                  :src="video.thumbnail" 
+                  class="thumbnail" 
+                  alt="Превью" 
+                />
+                <div class="video-overlay">
+                  <span class="duration">{{ video.duration || "0:11" }}</span>
                 </div>
               </div>
-              <p class="video-title">{{ video.description || 'Без названия' }}</p>
+              <div class="video-info">
+                <div class="stats-line">
+                  <div class="stat">
+                    <img src="/src/assets/img/icons/eye.svg" />
+                    {{ video.views || video.viewsCount || "" }}
+                  </div>
+                  <div class="stat">
+                    <img src="/src/assets/img/icons/heart.svg" />
+                    {{ video.likes || video.likesCount || "" }}
+                  </div>
+                  <div class="stat">
+                    <img src="/src/assets/img/icons/comment.svg" />
+                    {{ video.commentsCount || "" }}
+                  </div>
+                </div>
+                <p class="video-description">
+                  {{ video.description || "Без названия" }}
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -199,7 +228,12 @@ const searchVideos = async (q) => {
       .map((v) => ({
         id: v.id,
         cdnUrl: v.cdnUrl || v.url || v.thumbnail,
+        thumbnail: v.thumbnailUrl || v.thumbnail,
         description: v.description || v.fileName || "Без названия",
+        duration: v.duration || "0:11",
+        views: v.views ?? v.viewsCount ?? "",
+        likes: v.likes ?? v.likesCount ?? "",
+        commentsCount: v.commentsCount ?? "",
       }));
   } catch (e) {
     console.error("Ошибка поиска видео:", e);
@@ -251,237 +285,53 @@ watch(
 </script>
 
 <style scoped>
-.search-page {
-  min-height: 100vh;
-  background: #f5f5f5;
-  padding-bottom: 3rem;
-}
-
-.container {
-  max-width: 75rem;
-  margin: 0 auto;
-  padding: 0 1rem;
-}
-
-.search-page_content {
-  padding: 1.563rem 1.375rem;
-  background: #ffffff;
-  border-radius: 0.625rem;
-}
-
+.search-page {min-height: 100vh;background: #f5f5f5;padding-bottom: 3rem;}
+.container {max-width: 75rem;margin: 0 auto;padding: 0 1rem;}
 /* Заголовок */
-.results-title {
-  display: flex;
-  align-items: baseline;
-  gap: 0.75rem;
-  padding: 1.5rem 0;
-}
-
-.results-title h1 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin: 0;
-}
-
-.results-title span {
-  font-size: 0.9375rem;
-  color: #888;
-}
-
+.results-title {display: flex;align-items: baseline;gap: 0.75rem;padding: 1.5rem 0 1.813rem 0;}
+.results-title h1 {font-size: 1.5rem;font-weight: 700;margin: 0;}
+.results-title span {font-size: 0.9375rem;color: #888;}
 /* Секции результатов */
-.results-section {
-  margin-bottom: 2rem;
-}
-
-.section-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
-  color: #333;
-}
-
+.results-section {margin-bottom: 2rem;}
+.section-title {font-size: 1.25rem;font-weight: 600;margin-bottom: 1rem;color: #333;}
 /* Загрузка */
-.loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 5rem 0;
-  gap: 1rem;
-}
-
-.spinner {
-  width: 2.5rem;
-  height: 2.5rem;
-  border: 0.1875rem solid #e0e0e0;
-  border-top-color: #00a86b;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
+.loading {display: flex;flex-direction: column;align-items: center;padding: 5rem 0;gap: 1rem;}
+.spinner {width: 2.5rem;height: 2.5rem;border: 0.1875rem solid #e0e0e0;border-top-color: #00a86b;border-radius: 50%;animation: spin 0.8s linear infinite;}
+@keyframes spin {to {transform: rotate(360deg);}}
 /* Пусто */
-.empty {
-  text-align: center;
-  padding: 4rem 1rem;
-}
-
-.empty-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
-
-.empty-text {
-  color: #888;
-  font-size: 0.9375rem;
-}
-
+.empty {text-align: center;padding: 4rem 1rem;}
+.empty-title {font-size: 1.25rem;font-weight: 600;margin-bottom: 0.5rem;}
+.empty-text {color: #888;font-size: 0.9375rem;}
 /* === СЕТКА ТОВАРОВ === */
-.products-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(12.938rem, 1fr));
-  gap: 0.938rem;
-}
-
-.product-card {
-  border: 1px solid transparent;
-  width: 100%;
-  min-height: 16.375rem;
-  background-color: white;
-  padding: 0.875rem 0.75rem 0.813rem 0.813rem;
-  border-radius: 1.25rem;
-  transition: all 0.3s;
-}
-
-.product-card:hover {
-  border-color: var(--btn-bg);
-}
-
-.product-card .product-img {
-  width: 100%;
-  height: 9.125rem;
-  object-fit: cover;
-  border-radius: 0.625rem;
-}
-
-.product-card__content {
-  margin-top: 0.5rem;
-}
-
-.title {
-  height: 2rem;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
-  transition: all 0.3s;
-  border-radius: 0;
-  font-size: 0.8125rem;
-  color: #333;
-  text-decoration: none;
-  line-height: 1.3;
-}
-
-.title:hover {
-  color: var(--btn-bg);
-}
-
-.price {
-  font-size: 0.875rem;
-  font-weight: 800;
-  margin-top: 0.475rem;
-  color: #000;
-}
-
-.product-content__bottom {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 0.313rem;
-}
-
-.city {
-  font-size: 0.8125rem;
-  color: #888;
-}
-
-.card-like {
-  width: 1.25rem;
-  height: 1.25rem;
-  cursor: pointer;
-  transition: transform 0.2s;
-}
-
-.card-like:hover {
-  transform: scale(1.1);
-}
-
+.products-grid {display: grid;grid-template-columns: repeat(auto-fill, minmax(12.938rem, 1fr));gap: 0.938rem;}
+.product-card {border: 1px solid transparent;width: 100%;min-height: 16.375rem;background-color: white;padding: 0.875rem 0.75rem 0.813rem 0.813rem;border-radius: 1.25rem;transition: all 0.3s;}
+.product-card:hover {border-color: var(--btn-bg);}
+.product-card .product-img {width: 100%;height: 9.125rem;object-fit: cover;border-radius: 0.625rem;}
+.product-card__content {margin-top: 0.5rem;}
+.title {height: 2rem;display: -webkit-box;-webkit-box-orient: vertical;-webkit-line-clamp: 2;overflow: hidden;transition: all 0.3s;border-radius: 0;font-size: 0.8125rem;color: #333;text-decoration: none;line-height: 1.3;}
+.title:hover {color: var(--btn-bg);}
+.price {font-size: 0.875rem;font-weight: 800;margin-top: 0.475rem;color: #000;}
+.product-content__bottom {display: flex;align-items: center;justify-content: space-between;margin-top: 0.313rem;}
+.city {font-size: 0.8125rem;color: #888;}
+.card-like {width: 1.25rem;height: 1.25rem;cursor: pointer;transition: transform 0.2s;}
+.card-like:hover {transform: scale(1.1);}
 /* === СЕТКА ВИДЕО === */
-.videos-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr));
-  gap: 0.8rem;
-}
-
-.video-card {
-  background: #fff;
-  border-radius: 1rem;
-  overflow: hidden;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-  box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.06);
-}
-
-.video-card:hover {
-  transform: translateY(-0.25rem);
-  box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.12);
-}
-
-.video-thumb {
-  position: relative;
-  aspect-ratio: 9 / 12;
-  background: #000;
-  overflow: hidden;
-  height: 22.813rem;
-}
-
-.video-thumb video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.play-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.3);
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.video-card:hover .play-overlay {
-  opacity: 1;
-}
-
-.video-title {
-  padding: 0.625rem 1rem;
-  font-size: 0.9375rem;
-  font-weight: 500;
-  margin: 0;
-  line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  color: #333;
-  height: 3.6rem;
+.videos-grid {display: grid;grid-template-columns: repeat(4, 1fr);gap: 1.25rem;}
+.video-item {background: transparent;padding: 0.625rem;border-radius: 1.25rem;transition: all 0.3s;}
+.video-item:hover {background: white;}
+.video-card {position: relative;aspect-ratio: 9/12;height: 20.538rem;width: 100%;border-radius: 1.25m;cursor: pointer;overflow: hidden;}
+.thumbnail {width: 100%;height: 20.5rem;object-fit: cover;border-radius: 1.25rem;transition: opacity 0.3s ease;}
+.thumbnail:not([src]) {opacity: 0;}
+.video-overlay {position: absolute;bottom: 0.75rem;right: 0.75rem;background: rgba(0, 0, 0, 0.6);color: #fff;padding: 0.125rem 0.5rem;border-radius: 0.375rem;font-size: 0.75rem;font-weight: 500;z-index: 1;}
+.video-info {margin-top: 0.5rem;}
+.stats-line {display: flex;justify-content: space-between;margin-top: 1.25rem;}
+.stat {display: flex;align-items: center;gap: 0.313rem;font-size: 0.875rem;color: #333;}
+.stat img {width: 1.563rem;height: 1.25rem;}
+.video-description {display: -webkit-box;-webkit-line-clamp: 2;-webkit-box-orient: vertical;overflow: hidden;text-overflow: ellipsis;margin-top: 0.938rem;font-size: 1rem;font-weight: 700;color: #242424;text-transform: lowercase;line-height: 1.2;}
+.video-description::first-letter {text-transform: uppercase;}
+@media (max-width: 76rem) {
+  .videos-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 </style>
