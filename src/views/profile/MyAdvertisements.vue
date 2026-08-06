@@ -44,7 +44,7 @@
                 <button v-else @click="handleStatusChange(ad.id, 'active')">
                   Опубликовать заново
                 </button>-->
-                <button class="delete-btn" @click="handleDelete(ad)">Удалить</button>
+                <button class="delete-btn" @click="openConfirmDelete(ad)">Удалить</button>
               </div>
             </div>
             <div class="ad-location"><img src="/src/assets/img/location_on.svg" />{{ ad.city }}</div>
@@ -89,6 +89,19 @@
       </div>
     </div>
   </div>
+  <transition name="fade">
+      <div v-if="isConfirmOpen" class="modal-overlay" @click.self="closeConfirm">
+        <div class="confirm-modal" @click.stop>
+          <div class="confirm-modal__content">
+            <h2>Вы действительно хотите удалить объявление?</h2>
+          </div>
+          <div class="confirm-modal__actions">
+            <button type="button" class="btn go-to-ads-btn" @click="confirmDelete">Да, удалить</button>
+            <button class="btn btn-close" @click="closeConfirm">Нет, я ошибся</button>
+          </div>
+        </div>
+      </div>
+    </transition>
 </template>
 
 <script setup>
@@ -105,7 +118,32 @@ const activeMenuId = ref(null);
 const activeTab = ref("active");
 const isLoading = ref(false);
 const myAds = ref([]);
+const isConfirmOpen = ref(false);
+const selectedAdId = ref(null);
+const selectedAdS3Key = ref(null);
 
+
+const openConfirmDelete = (ad) => {
+  selectedAdId.value = ad.id;
+  selectedAdS3Key.value = ad.s3Key || null;
+  isConfirmOpen.value = true;
+  activeMenuId.value = null;
+};
+
+const closeConfirm = () => {
+  isConfirmOpen.value = false;
+  selectedAdId.value = null;
+  selectedAdS3Key.value = null;
+};
+
+const confirmDelete = async () => {
+  if (!selectedAdId.value) return;
+  const success = await auth.deleteAdvert(selectedAdId.value, selectedAdS3Key.value);
+  if (success) {
+    myAds.value = myAds.value.filter(a => a.id !== selectedAdId.value);
+  }
+  closeConfirm();
+};
 // Ссылка на страницу товара
 const productLink = (ad) => ({
   name: 'Product',
@@ -461,76 +499,26 @@ onUnmounted(() => {
 .video-dropdown-menu button:hover {
   background: rgba(0,0,0,0.08);
 }
-
 .video-dropdown-menu button + button {
   border-top: 1px solid #D9D9D9;
 }
-
-.page-title .go-to-ads-btn{
-  font-weight: 700;
-  font-size: 1.25rem;
-  padding: 1.125rem 1rem;
-  background: var(--btn-bg);
-  color: #F5F5F5;
-  transition: opacity .3s;
-  border-radius: 1.25rem;
-}
-.menu-gear-btn {
-  position: absolute;
-  top: 0rem;
-  right: 0rem;
-  width: 4.25rem;
-  height: 2.938rem;
-  background: var(--btn-bg);
-  border: none;
-  border-radius: 0 1.25rem 0 1.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 2;
-  transition: all .3s;
-}
-.menu-gear-btn img {
-  width: 2rem;
-  height: 2rem;
-  filter: brightness(0) invert(1);
-}
+.page-title .go-to-ads-btn{font-weight: 700;font-size: 1.25rem;padding: 1.125rem 1rem;background: var(--btn-bg);color: #F5F5F5;transition: opacity .3s;border-radius: 1.25rem;}
+.menu-gear-btn {position: absolute;top: 0rem;right: 0rem;width: 4.25rem;height: 2.938rem;background: var(--btn-bg);border: none;border-radius: 0 1.25rem 0 1.25rem;display: flex;align-items: center;justify-content: center;cursor: pointer;z-index: 2;transition: all .3s;}
+.menu-gear-btn img {width: 2rem;height: 2rem;filter: brightness(0) invert(1);}
 .menu-gear-btn.active,
-.menu-gear-btn:active {
-  background: var(--bg-defort);
-  box-shadow: 0px 4px 4px 0px #00000040;
-}
-
-.menu-gear-btn.active img,
-.menu-gear-btn:active img {
-  filter: none;
-}
-.empty-messages {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 6.25rem 1.25rem;
-  color: #888;
-}
-.empty-icon {
-  font-size: 7rem; 
-  margin-bottom: 0.25rem;
-  opacity: .6;
-}
-.empty-messages h3 {
-  color: #333;
-  margin-bottom: 0.625rem;
-}
-.empty-messages p {
-  max-width: 18.75rem;
-  font-size: 0.875rem;
-  line-height: 1.4;
-  margin-bottom: 1.563rem;
-}
+.menu-gear-btn:active {background: var(--bg-defort);box-shadow: 0px 4px 4px 0px #00000040;}
+.menu-gear-btn.active img,.menu-gear-btn:active img {filter: none;}
+.empty-messages {display: flex;flex-direction: column;align-items: center;justify-content: center;text-align: center;padding: 6.25rem 1.25rem;color: #888;}
+.empty-icon {font-size: 7rem; margin-bottom: 0.25rem;opacity: .6;}
+.empty-messages h3 {color: #333;margin-bottom: 0.625rem;}
+.empty-messages p {max-width: 18.75rem;font-size: 0.875rem;line-height: 1.4;margin-bottom: 1.563rem;}
 .creat-akk{font-size: 1rem;color: #858685;text-align: right; width: 100%;}
+.confirm-modal {background: white;padding: 1.875rem;border-radius: 2.188rem;max-width: 30rem;width: 90%;pointer-events: all;position: relative;z-index: 2;}
+.confirm-modal__content {display: grid;gap: 1rem;justify-items: center;font-weight: 700;text-align: center;}
+.confirm-modal__actions {display: flex;justify-content: center;gap: 1.25rem;margin-top: 2.5rem;}
+.confirm-modal__actions .btn {font-size: 1.25rem;padding: 0.938rem 1.5rem;border-radius: 1rem;border: none;cursor: pointer;font-weight: 600;}
+.confirm-modal__actions .go-to-ads-btn {background: var(--btn-bg);color: #F5F5F5;}
+.confirm-modal__actions .btn-close {background: #D8D8D8;color: #000;}
 @media (max-width: 77rem){
   .ad-main-info,.ad-title-row,.ad-description{
     width: 20rem;

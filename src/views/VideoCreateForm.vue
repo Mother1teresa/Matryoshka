@@ -241,7 +241,8 @@ const onPublish = async () => {
 .field-group label { display: flex; align-items: center; gap: 10px; font-weight: 400; margin-bottom: 12px; font-size: 1.5rem; }
 .field-group span { font-weight: 600; }
 .textarea-title, .textarea-description, .custom-select {width: 100%;background: #E8E8E8;border: 1px solid transparent;border-radius: 1.25rem;padding: 0.813rem 1rem;font-size: 1rem;resize: none;height: 10.938rem;}
-.textarea-description{font-size: 0.875;height: 20.688rem;}
+.textarea-description{font-size: 1rem;height: 20.688rem; display: inline-block;text-transform: lowercase;}
+.textarea-description::first-letter { text-transform: uppercase;}
 .empty-stub { background: #fdf2f2; padding: 0.75rem; border-radius: 0.625rem; color: #b91c1c; font-size: 1rem; border: 1px solid #fee2e2; }
 .publish-btn { background: var(--btn-bg); color: white; width: 100%; height: 3.5rem; padding: 0.875rem 0; border-radius: 1.25rem; font-size: 1.5rem; border: none; cursor: pointer; text-align: center;}
 .publish-btn:disabled { background: #ccc; cursor: not-allowed; }

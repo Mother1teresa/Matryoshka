@@ -479,7 +479,7 @@ const initObserver = () => {
       if (isReplyMode.value) return;
       entries.forEach((entry) => {
         const videoId = entry.target.dataset.id;
-        const video = videos.value.find((v) => v.id === videoId);
+        const video = videos.value.find(v => v.id === videoId);
 
         if (entry.isIntersecting) {
           clearTimeout(scrollTimeout);
@@ -490,7 +490,7 @@ const initObserver = () => {
           }, 300);
 
           if (!video?.hasError) {
-            entry.target.play().catch((err) => {
+            entry.target.play().catch(err => {
               if (err.name === "NotAllowedError" && !isMuted.value) {
                 isMuted.value = true;
                 entry.target.muted = true;
@@ -499,7 +499,7 @@ const initObserver = () => {
             });
           }
 
-          videos.value.forEach((v) => {
+          videos.value.forEach(v => {
             if (v.id !== videoId) v.isPlaying = false;
           });
 
@@ -605,27 +605,7 @@ const preloadAdjacentVideos = () => {
     document.head.appendChild(preloadLink);
   });
 };
-watch(
-  () => videos.value.length,
-  async (len) => {
-    if (len === 0) return;
 
-    await nextTick();
-    videoRefs.value = [];
-    await nextTick(); 
-    initObserver();
-    const targetId = route.params.id;
-    if (targetId) {
-      activeVideoId.value = targetId;
-      setTimeout(() => scrollToVideo(targetId), 100);
-    } else if (videos.value[0]) {
-      activeVideoId.value = videos.value[0].id;
-    }
-    loadLinkedProducts();
-    preloadAdjacentVideos();
-  },
-  { immediate: true }
-);
 onUnmounted(() => {
   window.removeEventListener("keydown", handleKeyDown);
   scrollContainer.value?.removeEventListener("scroll", handleScroll);
