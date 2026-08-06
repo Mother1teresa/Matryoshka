@@ -167,11 +167,6 @@ onUnmounted(() => {
           @click="openChat(chat.id)"
         >
           <div class="chat-left">
-            <img
-              :src="chat.user?.avatar || '/img/users/mask-avatar.png'"
-              class="user-avatar"
-              alt="avatar"
-            />
             <img src="/src/assets/img/product/foto-chat-prod.png" alt="foto" class="user-foto">
           </div>
 
@@ -240,12 +235,12 @@ onUnmounted(() => {
 .matreshka-name {font-weight: 700;font-size: 1.5rem;color: #000000;}
 .matreshka-desc {width: 34.5rem; font-size: 1rem;color: #8E8C8C;line-height: 1.2;display: -webkit-box;-webkit-line-clamp: 2;-webkit-box-orient: vertical;overflow: hidden;}
 .chats-lists{height: 100%; margin-top: 2.5rem;}
-.chats-list {display: flex;flex-direction: column;gap: 0.313rem;}
-.chat-card {display: flex;align-items: flex-start;gap: 1.875rem;background: #fff;border-radius: 1.25rem;padding: 1.25rem 0.938rem 0.625rem 0.938rem;cursor: pointer;/* box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06); */transition: box-shadow 0.2s, transform 0.15s;height: 8.938rem;}
+.chats-list {display: flex;flex-direction: column;gap: 1.25rem;}
+.chat-card {display: flex;align-items: flex-start;gap: 1.25rem;background: #fff;border-radius: 1.25rem;padding: 0.875rem 1.875rem 1.188rem 0.938rem;cursor: pointer;/* box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06); */transition: box-shadow 0.2s, transform 0.15s;height: 8.938rem;}
 .chat-card:hover {box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);transform: translateY(-1px);}
 .chat-left {flex-shrink: 0;position: relative;}
 .user-avatar {width: 2.813rem;height: 2.813rem;border-radius: 3.438rem;object-fit: cover;position: absolute;left: 30%;top: -1rem;}
-.user-foto{width: 7.063rem;height: 7.063rem;border-radius: 1.563rem;}
+.user-foto{width: 6.563rem;height: 6.875rem;border-radius: 1.563rem;}
 .chat-center {flex: 1;min-width: 0;display: flex;flex-direction: column;gap: 3px;}
 .user-name {font-weight: 700;font-size: 1.5rem;margin-left: -.6rem;}
 .product-title {font-size: 0.875rem;}

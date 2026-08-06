@@ -234,6 +234,7 @@ onUnmounted(() => {
   gap: 0.938rem;
   scrollbar-width: none;
   padding-right: 25rem;
+  height: 15.5rem;
 }
 
 .mini-video-section::-webkit-scrollbar {

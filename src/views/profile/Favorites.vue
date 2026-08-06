@@ -61,9 +61,9 @@
                     <h3 class="video-title">{{ video.description || 'Без названия' }}</h3>
                   </router-link>
                   <div class="video-stats">
-                    <div class="stat"><img src="/src/assets/img/icons/eye.svg" /> {{ video.views || 0 }}</div>
-                    <div class="stat"><img src="/src/assets/img/icons/heart.svg" /> {{ video.likes || 0 }}</div>
-                    <div class="stat"><img src="/src/assets/img/icons/comment.svg" /> {{ video.commentsCount || 0 }}</div>
+                    <div class="stat"><img src="/src/assets/img/icons/eye.svg" /> {{ video.views || "" }}</div>
+                    <div class="stat"><img src="/src/assets/img/icons/heart.svg" /> {{ video.likes || "" }}</div>
+                    <div class="stat"><img src="/src/assets/img/icons/comment.svg" /> {{ video.commentsCount || "" }}</div>
                   </div>
                 </div>
               </div>

@@ -40,15 +40,15 @@
             </button>
             <div class="video-actions">
               <div class="v-action">
-                <button class="action-btn" @click.stop="onFavoriteClick(video)">
-                  <img :src="video.isFavorite ? bookmarkFilledIcon : bookmarkIcon" class="favorite-icon"/>
-                </button>
-              </div>
-              <div class="v-action">
                 <button class="action-btn" @click.stop="onLikeClick(video)">
                   <img :src="video.isLikedByMe ? heartFilled : heart" class="like-icon"/>
                 </button>
                 <span>{{ (video.likes ?? video.likesCount ?? 0) }}</span>
+              </div>
+              <div class="v-action">
+                <button class="action-btn" @click.stop="onFavoriteClick(video)">
+                  <img :src="video.isFavorite ? bookmarkFilledIcon : bookmarkIcon" class="favorite-icon"/>
+                </button>
               </div>
               <div v-if="!isOwnVideo(video)" class="v-action">
                 <button class="action-btn" @click="onWriteClick(video)">
@@ -921,10 +921,10 @@ onUnmounted(() => {
   padding: 0.688rem 1rem;
   height: fit-content;
   width: 100%;
-  order: 1;
+  order: 2;
 }
 .linked-product-wrapper{
-  order: 2;
+  order: 1;
 }
 .author-main {
   display: flex;
