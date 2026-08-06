@@ -92,7 +92,6 @@ jobs:
             rm -rf /var/www/html/*
             mkdir -p /var/www/html
 
-      # Копируем содержимое dist/, а не саму папку dist/
       - name: Deploy to server via SCP
         uses: appleboy/scp-action@v0.1.7
         with:
