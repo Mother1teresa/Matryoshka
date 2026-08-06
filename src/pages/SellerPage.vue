@@ -168,7 +168,18 @@
             <div v-for="review in sellerReviews" :key="review.id" class="review-card">
               <div class="review-header">
                 <div class="user-info">
-                  <img :src="review.userAvatar || '/img/users/mask-avatar.png'" class="user-avatar" />
+                  <div class="user-info_block">
+                    <img :src="review.userAvatar || '/img/users/mask-avatar.png'" class="user-avatar" />
+                    <div class="stars-row">
+                      <img
+                        v-for="n in 5"
+                        :key="n"
+                        :src="n <= Math.round(review.rating) ? '/img/users/star.png' : '/img/users/star_1.png'"
+                        class="star-icon"
+                        alt="★"
+                      />
+                    </div>
+                  </div>
                   <div class="user-details">
                     <div class="user-name">{{ review.author }}</div>
                     <div class="review-product">{{ review.productTitle }}</div>
@@ -178,16 +189,6 @@
                   </div>
                 </div>
                 <div class="review-meta">
-                  <div class="deal-status">Сделка состоялась</div>
-                  <div class="stars-row">
-                    <img
-                      v-for="n in 5"
-                      :key="n"
-                      :src="n <= Math.round(review.rating) ? '/img/users/star.png' : '/img/users/star_1.png'"
-                      class="star-icon"
-                      alt="★"
-                    />
-                  </div>
                   <div class="review-date">{{ formatDate(review.date) }}</div>
                 </div>
               </div>
@@ -420,22 +421,22 @@ const playVideo = (video) => {
 <style scoped>
 .seller-page-section { margin-bottom: 3.188rem;}
 .reviews-container { display: flex; flex-direction: column; gap: 1rem;}
-.review-card { background: white; border-radius: 1.25rem; padding: 1.5rem 1.5rem .8rem 1.5rem;}
-.review-header { display: flex; justify-content: space-between; align-items: flex-start;}
+.review-card { background: white; border-radius: 1.25rem; padding: 1.188rem 2rem 1rem 1.5rem;}
+.review-header { display: flex; justify-content: space-between; align-items: flex-end;}
 /* Стили ответа продавца */
 .reply-content { margin-top: .3rem;}
 .reply-text { font-size: 1rem;}
 .seller-tabs { display: flex; gap: 0rem; border-radius: 0.625rem; margin-bottom: 3.25rem; background: var(--bg-defort); width: fit-content; padding: 0.125rem 0.25rem; }
 .desc-container { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 4px; }
 .desc-text { display: block; max-width: 100%; font-size: 1.25rem; color: #858685; }
-.seller-desc { width: 42.313rem; margin-top: 1.375rem;}
+.seller-desc { width: 56.563rem; margin-top: 1.375rem;}
 .desc-text.is-collapsed { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 25rem; }
 .btn-more { color: var(--btn-bg); background: none; border: none; cursor: pointer; font-weight: 400; padding: 0; font-size: 1.25rem; }
 .products { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.938rem; padding-left: -1rem; padding-right: -1rem; }
 .seller-tabs button { padding: 1rem 3.188rem; background: none; border: none; font-size: 1.25rem; font-weight: 700; color: #858685; cursor: pointer; position: relative; background: var(--bg-defort); border-radius: 0.625rem; }
 .seller-tabs button.active { color: var(--bg-defort); background: var(--btn-bg); }
 .seller-logo { width: 7.625rem; height: 7.625rem; border-radius: 50%; object-fit: cover; }
-.seller-header-flex { display: flex; justify-content: space-between; }
+.seller-header-flex { display: grid; justify-content: space-between; }
 .seller-info-left { display: flex; gap: 1.625rem; }
 .btn-subscribe-text { color: var(--btn-bg); background: none; border: none; cursor: pointer; font-size: 1.5rem; }
 .btn-subscribe-text.is-active { color: #808080; }
@@ -448,14 +449,14 @@ const playVideo = (video) => {
 .video-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #888; font-size: 0.9rem;}
 .video-play-icon { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: white; opacity: 0.85; pointer-events: none; text-shadow: 0 2px 8px rgba(0,0,0,0.4);}
 .video-preview .video-thumb{ width: 100%; height: 100%; object-fit: cover; border-radius: 0.938rem;}
-.video-card { width: 100%; height: 28rem; background: white; border-radius: 1.25rem; padding: 0.625rem 0.625rem 0.938rem 0.625rem;}
-.video-title { font-size: 1rem; font-weight: 700; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; transition: all 0.3s; border-radius: 0; height: 3.6rem; text-align: justify; display: inline-block;text-transform: lowercase;}
+.video-card { width: 100%; max-height: 28rem; background: white; border-radius: 1.25rem; padding: 0.625rem 0.625rem 0.938rem 0.625rem;}
+.video-title { font-size: 1rem; font-weight: 700; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; transition: all 0.3s; border-radius: 0;text-align: justify; display: inline-block;text-transform: lowercase; margin-bottom: 0.75rem;}
 .video-title::first-letter {text-transform: uppercase;}
 .duration{bottom: 0; right: 0;}
 .video-info{margin-top: 0.938rem;}
 .video-date { color: #7c7c7c; font-size: 0.875rem;}
 .seller-card-main { background-color: white; margin-bottom: 1.25rem; padding: 1.438rem; border-radius: 1.25rem; position: relative;}
-.seller-info-right { text-align: end; }
+.seller-info-right { text-align: end; width: 100%; margin-top: 1.563rem;}
 .experience { font-size: 1rem; position: absolute; bottom: 1.25rem; right: 1.25rem; color: #858685;}
 .seller-name-row h1 { margin-bottom: 1.5rem; font-size: 1.5rem; font-weight: 700;display: inline-block;text-transform: lowercase;}
 .seller-name-row h1::first-letter {text-transform: uppercase;}
@@ -463,7 +464,7 @@ const playVideo = (video) => {
 .rating-block { margin-bottom: 0.563rem; }
 .rating { font-size: 1.25rem; font-weight: 700; display: flex; gap: 0.563rem;color: #262626;line-height: 1;height: 1rem;align-items: stretch;}
 .stars {display: flex;gap: 0.125rem;align-items: center;}
-.star-icon {width: 1.5rem;height: 1.5rem;}
+.star-icon {width: 0.938rem;height: 0.938rem;}
 .stars-row {display: flex;gap: 0.125rem;}
 .ads-list {display: flex;flex-direction: column;gap: 1rem;}
 .ad-card-horizontal {background: white;border-radius: 1.25rem;padding: 0.625rem;display: flex;gap: 1.5rem;position: relative;overflow: hidden;}
@@ -481,6 +482,13 @@ const playVideo = (video) => {
 .ad-location img {width: 1.563rem;height: 1.563rem;}
 .ad-stats-block {display: flex;flex-direction: column;justify-content: flex-end;align-items: flex-start;gap: 0.375rem;margin-left: 1.25rem;width: 43%;}
 .creat-akk {font-size: 1rem;color: #858685;text-align: right;width: 100%;}
+.user-info_block{display: grid; justify-items: center; gap: 1.125rem;}
+.user-info{gap: 3.063rem; align-items: center;}
+.user-avatar{width: 3.938rem; height: 3.938rem;}
+.user-name{font-size: 1.25rem; font-weight: 700;text-transform: lowercase; }
+.user-name::first-letter { text-transform: uppercase;}
+.review-body{margin-bottom: 0; margin-top: 0.625rem; font-size: 1rem; color: #262626;}
+.review-meta{display: grid; height: 100%; align-content: space-between;}
 @media (max-width: 77rem) {.ad-main-info,.ad-title-row,.ad-description {width: 25rem;}}
 @media (max-width: 77rem) { .products,.video-grid_block { display: grid; grid-template-columns: repeat(5, 12.2rem); gap: 1rem; background: #ececec;}}
 </style>

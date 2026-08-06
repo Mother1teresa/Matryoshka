@@ -904,6 +904,10 @@ onUnmounted(() => {
   line-height: 1;
   margin: 0;
   height: 2.875rem;
+  text-transform: lowercase;
+}
+.video-title::first-letter {
+  text-transform: uppercase;
 }
 .video-stats-row {
   display: flex;

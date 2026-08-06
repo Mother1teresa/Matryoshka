@@ -47,7 +47,7 @@
                   <img
                     v-for="n in 5"
                     :key="n"
-                    :src="n <= Math.round(review.rating) ? '/src/assets/img/form/star_1.png' : '/src/assets/img/form/star.png'"
+                    :src="n <= Math.round(review.rating) ? '/img/users/star.png' : '/img/users/star_1.png'"
                     class="star-icon"
                     alt="★"
                   />
