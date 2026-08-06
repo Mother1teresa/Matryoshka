@@ -941,7 +941,7 @@ onBeforeUnmount(() => {
 .location { margin: 1.3755rem 0 0; color: #242424; font-size: 1.25rem; font-weight: 700;}
 .data{font-size: .8rem; color: #888; text-align: right; margin-top: .5rem;}
 .btn.secondary { background: #F5F5F5; width: 4.188rem; height: 3.438rem; display: flex; align-items: center; justify-content: center; border-radius: 1.25rem;}
-.seller-card {margin-top: 0.625rem; background-color: white; border-radius: 1.25rem; padding: 1.875rem 1.25rem;}
+.seller-card {margin-top: 0.625rem; background-color: white; border-radius: 1.25rem; padding:1.25rem 1.25rem 1.25rem 1.875rem;}
 .seller { display: flex; gap: 1rem;}
 .avatar { width: 5.125rem; height: 5.125rem; border-radius: 50%; object-fit: cover;}
 .name{font-size: 2rem; font-weight: 700; color: #242424; }
