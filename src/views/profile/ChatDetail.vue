@@ -97,9 +97,13 @@
             <button class="btn bot-btn" @click="handleBotAnswer('deciding')">Ещё решаем</button>
           </div>
         </div>
-        <div v-if="showReviewLink" class="review-invitation">
-          <p>Сделка состоялась? Вы можете оставить отзыв продавцу.</p>
-          <button class="review-link-btn" @click="openReviewModal">Оставить отзыв</button>
+        <div v-if="showReviewLink" class="bot-actions-row">
+          <p>Оставьте отзыв о продавце</p>
+          <div class="btns">
+            <button type="button" class="review-link-btn bot-btn" @click="openReviewModal">Перейти к форме</button>
+            <button type="button" class="btn bot-btn" @click="handleBotAnswer('deciding')">Позже</button>
+            <button type="button" class="btn bot-btn" @click="handleBotAnswer('no')">Отказаться</button>
+          </div>
         </div>
       </div>
       <footer class="chat-input-bar">
@@ -576,7 +580,17 @@ const checkBotStatus = (msgs) => {
 
 const handleBotAnswer = (answer) => {
   showBotActions.value = false;
-  if (answer === "yes") showReviewLink.value = true;
+  
+  if (answer === "yes") {
+    showReviewLink.value = true;
+  } else if (answer === "deciding") {
+    showReviewLink.value = false;
+    setTimeout(() => {
+      showBotActions.value = true;
+    }, 10000);
+  } else {
+    showReviewLink.value = false;
+  }
 };
 
 const openReviewModal = () => {
@@ -702,15 +716,14 @@ watch(() => route.params.id, (newId, oldId) => {
 .msg-status-text.error{color:#ff6b6b;}
 .msg-status{display:flex;align-items:center;}
 .tick-icon{width:.675rem;height:auto;display:block;}
-.bot-actions-row{width:100%;align-self:center;background:#fff;border:1px solid #eee;border-radius:1.25rem;padding:1rem;text-align:center;max-width:24rem;margin:.75rem 0;box-shadow:0 2px 8px rgba(0,0,0,.06);}
-.bot-actions-row p{font-size:.875rem;margin-bottom:.75rem;color:#1a1a1a;}
+.bot-actions-row{ margin-top: 0.75rem;}
+.bot-actions-row p{font-size:1rem;font-weight: 700; margin-bottom:0.938rem;color:#1a1a1a; width:100%;align-self:center;background:#fff;border-radius:1.25rem;text-align:center; padding: 0.563rem 0;box-shadow:0 2px 8px rgba(0,0,0,.06);}
 .btns{display:flex;flex-wrap:wrap;justify-content:center;gap:.5rem;}
-.bot-btn{background:#fff;border:1px solid #dcdcdc;padding:.5rem 1.25rem;border-radius:.625rem;font-size:.875rem;cursor:pointer;transition:all .2s;}
+.bot-btn{text-align: center; background:#fff;width: 14.375rem; padding: 0.625rem 1.25rem;border-radius:1.25rem;font-size:1rem;font-weight: 700; cursor:pointer;transition:all .2s;}
 .bot-btn:hover{background:#f5f5f5;border-color:#c0c0c0;}
-.review-invitation{align-self:center;background:#fff;border-radius:1.25rem;padding:1.25rem;text-align:center;max-width:24rem;margin:.75rem 0;box-shadow:0 2px 8px rgba(0,0,0,.06);}
-.review-invitation p{font-size:.875rem;color:#1a1a1a;margin-bottom:.625rem;}
-.review-link-btn{background:#64a07a;color:#fff;border:none;padding:.625rem 1.25rem;border-radius:.625rem;cursor:pointer;font-weight:600;font-size:.875rem;transition:background .2s;}
-.review-link-btn:hover{background:#5a906e;}
+/* .review-invitation{align-self:center;background:#fff;border-radius:1.25rem;padding:1.25rem;text-align:center;max-width:24rem;margin:.75rem 0;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.review-invitation p{font-size:.875rem;color:#1a1a1a;margin-bottom:.625rem;} */
+.review-link-btn:hover{background:#5a906e; color: white;}
 .chat-input-bar{display:grid;align-items:center;padding:1.25rem .75rem;gap:1rem;border-top:1px solid #e5e5e5;flex-shrink:0;margin:0 2rem;}
 .messages-page-wrapper{border-radius:0 0 .938rem .938rem;overflow:hidden;}
 .connection-status{width:100%;text-align:center;font-size:.875rem;padding:.2rem;border-radius:.5rem;}

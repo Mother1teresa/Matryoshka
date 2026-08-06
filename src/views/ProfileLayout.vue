@@ -101,7 +101,7 @@ const unavailableRoutes = [
 .profile-nav a:hover{background: var(--bg-defort);border-radius: 0.938rem;}
 .profile-nav a.router-link-active {background: var(--bg-defort);box-shadow: 0px 4px 4px 0px #00000040;}
 .profile-nav_a{display: grid;gap: 0.438rem;}
-.user-foto {display: flex;gap: .9rem;align-items: center;margin-bottom: 0.375rem;padding: 1rem 0.813rem 0.813rem 0.813rem;margin-top: 3.5rem;background: var(--bg-defort);display: grid;gap: 0.563rem;}
+.user-foto {display: flex;gap: .9rem;align-items: center;margin-bottom: 0.375rem;padding: 1rem 0.813rem 0.813rem 0.813rem;margin-top: 3rem;background: var(--bg-defort);display: grid;gap: 0.563rem;}
 .user-foto_block{display: flex;align-items: center;gap: 0.938rem;}
 .rating {font-size: 1.25rem;display: flex;gap: 0.563rem; color: var(--btn-bg); font-weight: 700;}
 .rating p {width: auto;text-align: center;}
@@ -111,7 +111,7 @@ const unavailableRoutes = [
 .collapse-btn img {width: 1.375rem; height: 20px;transition: transform 0.3s ease; }
 .collapse-btn img.is-rotated {transform: rotate(180deg); }
 .user-name {font-size: 1.5rem;font-weight: 700;white-space: normal;width: 7rem;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;display: inline-block; text-transform: capitalize;}
-.logo {position: relative;margin-left: 2.813rem;top: 0.5rem;right: -2.625rem;}
+.logo {position: relative;margin-left: 2.813rem;top: 0rem;right: -2.625rem;}
 .logo span{width: fit-content;font-weight: 700;}
 .logo::after{top: -0.6rem;left: -5.813rem;}
 .stars-row {display: flex;align-items: center;gap: 0.15rem;}

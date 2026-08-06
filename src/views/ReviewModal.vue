@@ -2,9 +2,9 @@
   <Transition name="fade">
     <div v-if="isOpen" class="modal-overlay" @click.self="$emit('close')">
       <div class="review-modal">
+        <button class="close-btn" @click="$emit('close')">×</button>
         <header class="modal-header">
           <h3>Отзыв</h3>
-          <button class="close-btn" @click="$emit('close')">×</button>
         </header>
         <div class="modal-body">
           <div class="form-group">
@@ -38,14 +38,18 @@
                 :src="star <= form.rating ? '/img/users/star.png' : '/img/users/star_1.png'"
                 :class="['star', { active: star <= form.rating }]"
                 @click="form.rating = star"
+                :title="ratingLabels[star]"
                 alt="★"
               />
             </div>
+            <p class="rating-label">{{ currentRatingLabel }}</p>
           </div>
           <div class="form-group center">
-            <label>Напишите отзыв</label>
-            <textarea v-model="form.text" placeholder="Напишите отзыв, не используйте нецензурную лексику и персональные данные" maxlength="2000"></textarea>
-            <span class="char-count">Не более 2 000 символов</span>
+            <label>Напишите отзыв <span class="char-count">Не более 2 000 символов</span></label>
+            <textarea v-model="form.text" placeholder="Введите текст..." maxlength="2000"></textarea>
+            <span class="char-count" :class="{ 'over-limit': form.text.length > 2000 }">
+              {{ form.text.length }} / 2000
+            </span>
           </div>
           <div class="form-group center">
             <label>Добавьте фотографии, если есть</label>
@@ -95,6 +99,9 @@ const form = reactive({
   rating: 0,
   text: '',
 });
+
+const ratingLabels = ['', 'Ужасно', 'Плохо', 'Нормально', 'Хорошо', 'Всё отлично'];
+const currentRatingLabel = computed(() => ratingLabels[form.rating] || '');
 
 const reasons = [
   { text: 'Сделка состоялась', value: 'deal_ok' },
@@ -162,15 +169,16 @@ const submitReview = async () => {
 </script>
 
 <style scoped>
-.review-modal{background:#fff;width:100%;max-width:37.5rem;border-radius:1.875rem;padding:2rem;position:relative;box-shadow:0 1.25rem 3.75rem rgba(0,0,0,.12);}
+.review-modal{background:#fff;width:100%;max-width:31.875rem;border-radius:1.25rem;padding:1.25rem 2.625rem 2rem 3.625rem;position:relative;box-shadow:0 1.25rem 3.75rem rgba(0,0,0,.12);}
 .modal-header{display:flex;justify-content:center;align-items:center;margin-bottom:1.5rem;position:relative;}
 .modal-header h3{font-size:1.25rem;font-weight:600;margin:0;color:#111;}
-.close-btn{position:absolute;right:0;top:0;font-size:1.75rem;line-height:1;background:none;border:none;cursor:pointer;color:#333;padding:0;}
-.modal-body{display:flex;flex-direction:column;overflow:auto;height:38rem;padding-right:1rem;}
-.form-group{margin-bottom:1.5rem;}
-.form-group label{display:flex;margin-bottom:.75rem;font-weight:500;font-size:.938rem;color:#222;}
-.form-group.center label{text-align:center;}
-.radio-group{display:flex;gap:1.5rem;}
+.close-btn{position:absolute;right: 1rem;top: 0.888rem;font-size:1.75rem;line-height:1;background:none;border:none;cursor:pointer;padding:0; width: 1.562rem; height: 1.562rem;background: #F9F9F9; border-radius: 50%; display: flex; align-items: center; justify-content: center;}
+.modal-body{display:flex;flex-direction:column;overflow:auto;height:fit-content; height: 37rem; padding-right: 1rem;}
+.form-group{margin-bottom:1.25rem;}
+.form-group label{display:flex; font-weight:400;font-size:1rem; margin-bottom: 1.25rem;}
+.form-group.center label{ display: flex; align-items: center;justify-content: center;font-size: 1rem; font-weight: 700; margin-bottom: 0.938rem;}
+.radio-group{display:grid;gap:1.25rem;}
+.radio-group label{margin-bottom: 0;}
 .vertical-radio-list{display:flex;flex-direction:column;}
 .radio-item{display:flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.938rem;color:#333;position:relative;}
 .radio-item input[type="radio"]{position:absolute;opacity:0;width:0;height:0;}
@@ -182,21 +190,23 @@ input[type="radio"]:checked+.radio-custom::after{content:"";position:absolute;in
 .star{width:2.5rem;height:2.5rem;transition:transform .15s;}
 .star:hover{transform:scale(1.15);}
 .star.active{opacity:1;}
-textarea{width:100%;height:7.5rem;background:#f5f5f5;border:.063rem solid #eee;border-radius:.75rem;padding:1rem;resize:none;font-family:inherit;font-size:.875rem;color:#333;}
+textarea{width:100%;height:9.875rem;background:#F0F0F0;border-radius:1.25rem;padding: 1.125rem 1rem;resize:none;font-family:inherit;font-size:0.813rem;color:#333;}
 textarea::placeholder{color:#aaa;font-size:.875rem;}
-.char-count{display:block;margin-top:.5rem;font-size:.75rem;color:#999;}
+.char-count{display:block;margin-top:0.313rem;font-size:0.813rem;color:#B5B5B5; margin-left: 1.25rem;}
 .photo-upload-grid{display:flex;flex-wrap:wrap;gap:.3rem;}
-.upload-slot{width:6.25rem;height:6.25rem;border:.063rem solid #ddd;border-radius:.75rem;display:flex;align-items:center;justify-content:center;cursor:pointer;background:#fafafa;transition:border-color .2s;}
+.upload-slot{width:9.625rem;height:6.625rem;border:.063rem solid #8E8C8C;border-radius:0.625rem;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:border-color .2s;}
 .upload-slot:hover{border-color:#64A07A;}
 .camera-icon{width:3.5rem;height:3.5rem;opacity:.8;}
-.photo-preview{width:6.25rem;height:6.25rem;border-radius:.75rem;overflow:hidden;border:.063rem solid #eee;position:relative;}
+.photo-preview{width:7.2rem;height:6.625rem;border-radius:0.625rem;overflow:hidden;border:.063rem solid #8E8C8C;position:relative;}
 .photo-preview img{width:100%;height:100%;object-fit:cover;}
 .remove-photo-btn{position:absolute;top:.25rem;right:.25rem;width:1.375rem;height:1.375rem;border:none;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;font-size:1rem;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s;padding:0;}
 .remove-photo-btn:hover{background:rgba(0,0,0,.75);}
-.submit-review-btn{width:auto;align-self:flex-end;background:#64A07A;color:#fff;padding:.875rem 2rem;border-radius:1.875rem;border:none;font-weight:600;cursor:pointer;font-size:.938rem;transition:opacity .2s;}
+.submit-review-btn{width:auto;align-self:flex-end;background:var(--btn-bg);color:#fff;padding: 0.625rem 1.25rem;border-radius:0.938rem;border:none;font-weight:700;cursor:pointer;font-size:1rem;transition:opacity .2s;}
 .submit-review-btn:hover:not(:disabled){opacity:.92;}
 .submit-review-btn:disabled{background:#ccc;cursor:not-allowed;}
 .fade-enter-active,.fade-leave-active{transition:opacity .25s ease;}
 .fade-enter-from,.fade-leave-to{opacity:0;}
 .form-group textarea::-webkit-scrollbar{width:0!important;}
+.rating-label{text-align:center;font-size:.875rem;color:#888;margin-top:0.938rem;min-height:1.25rem;transition:opacity .2s;}
+.char-count.over-limit { color: #ff4d4f; }
 </style>
