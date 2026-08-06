@@ -81,7 +81,6 @@ jobs:
         run: |
           test -f dist/firebase-messaging-sw.js && echo "✅ SW найден" || (echo "❌ SW не найден" && exit 1)
 
-      # Очищаем старые файлы на сервере перед копированием новых
       - name: Clear server directory
         uses: appleboy/ssh-action@v1.0.3
         with:
