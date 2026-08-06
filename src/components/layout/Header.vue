@@ -69,15 +69,18 @@
               <div class="profile-wrapper" ref="profileWrapper">
                 <div class="profile" @click.prevent.stop="toggleProfileMenu">
                   <div class="profile-block">
-                    <img :src="auth.userAvatar" class="avatar" />
+                    <div class="profile-block_lisy">
+                      <img :src="auth.userAvatar" class="avatar" />
+                        <span>
+                        {{ auth.user?.name || 'Загрузка...' }}
+                      </span>
+                    </div>
                     <img
-                      src="/src/assets/img/arrow-profil.svg"
+                      src="/src/assets/img/arr-profile.svg"
                       class="arr-profil"
                       :class="{ rotate: showProfileMenu }"/>
                   </div>
-                  <span>
-                    {{ auth.user?.name || 'Загрузка...' }}
-                  </span>
+                  
                 </div>
                 <!-- dropdown -->
                 <transition name="fade">
@@ -257,18 +260,18 @@ const handleCreateVideo = () => {
 .search-img {display: flex;align-items: center;gap: 0.825rem;width: 75%;}
 .search-input__box {flex: 0.55;display: flex;justify-content: space-between;padding: 0.25rem 0.26rem 0.27rem 0.75rem;border-radius: 1.625rem;border: 1px solid #ddd;height: 3.17rem;}
 .search-input__box img {width: 1.5rem;height: 1.5rem;object-fit: fill;}
-.btn-light {background: var(--bg-profil);border: none;cursor: pointer;display: flex;gap: 0.25rem;align-items: center;justify-content: center;width: 95%;border-radius: 0.938rem;height: 2.125rem;padding: 0.625rem 1.5rem; font-size: 0.938rem; font-weight: 700; }
+.btn-light {background: var(--bg-profil);border: none;cursor: pointer;display: flex;gap: 0.25rem;align-items: center; justify-content: flex-start;width: 95%;border-radius: 0.938rem;height: 2.125rem;padding: 0.625rem 1.5rem 0.625rem 0.6rem; font-size: 0.938rem; font-weight: 700; }
 .btn-light span{ max-width: 6rem;text-transform: lowercase; -webkit-box-orient: vertical;-webkit-line-clamp: 1;overflow: hidden;  display: -webkit-box;}
 .btn-light span::first-letter { text-transform: uppercase;}
 .btn-login {padding: 0.625rem 1.188rem;height: auto;}
-.btn-light img {width: 1.45rem;height: 1.45rem;}
+.btn-light img {width: 1.438rem;height: 1.5rem;}
 .btn-search {background: var(--btn-bg);color: white;border: none;padding: 0.688rem 1.969rem;border-radius: 1.25rem;cursor: pointer;}
 .btn-category {background: white;color: var(--btn-bg);cursor: pointer;display: flex;align-items: center;gap: 0.25rem;font-weight: 700;transition: opacity 0.3s;}
 .btn-category img {width: 2.063rem;height: auto;}
 .profile {display: grid;align-items: center;gap: 0.313rem;cursor: pointer;background-color: var(--bg-profil);border-radius: 1rem;padding: 0.563rem 0.675rem 0.375rem 1.25rem;height: -webkit-fill-available;height: stretch;}
 .avatar {width: 3.75rem;height: 3.75rem;border-radius: 50%;object-fit: cover;}
-.header__right-true {display: flex;gap: 0.8rem;}
-.header__right-icons {display: flex;justify-content: flex-end;gap: 0.5rem;}
+.header__right-true {display: flex;gap: 1.188rem;}
+.header__right-icons {display: flex;justify-content: flex-end;gap: 0.5rem; justify-content: space-between;width: 100%;}
 .header__right-block {display: grid;gap: 0.75rem; justify-items: end;}
 .icon {background-color: var(--bg-profil);border-radius: 1rem;width: 3.75rem;height: 3.75rem;display: flex;align-items: center;justify-content: center;position: relative;}
 .icon img {width: auto;height: auto;}
@@ -276,15 +279,16 @@ const handleCreateVideo = () => {
 .icon:last-child img {width: 1.8rem;height: 1.9rem;}
 .icon .badge-count{right: 0;top: 0;}
 .profile-block {display: flex;align-items: center;gap: 0.8rem;}
+.profile-block_lisy{}
 .arr-profil {width: 1rem;height: 1.5rem;}
-.header__right-true .btn-light {width: 100%;}
+.header__right-true .btn-light {width: 8.688rem;}
 .profile-wrapper {position: relative;}
-.profile-wrapper .profile span{width: 4.85rem; font-size: 1rem; font-weight: 700; overflow: hidden;text-transform: lowercase; -webkit-box-orient: vertical;-webkit-line-clamp: 1;overflow: hidden;  display: -webkit-box;}
+.profile-wrapper .profile span{width: 3.85rem; font-size: 0.938rem; margin-top: 0.313rem; font-weight: 700; overflow: hidden;text-transform: lowercase; -webkit-box-orient: vertical;-webkit-line-clamp: 1;overflow: hidden;  display: -webkit-box; text-align: center;}
 .profile-wrapper .profile span::first-letter { text-transform: uppercase;}
 /* стрелка */
-.arr-profil {transition: transform 0.3s;}
+.arr-profil {transition: transform 0.3s; margin-top: 1.5rem;}
 .arr-profil.rotate {transform: rotate(180deg);}
-.profile-menu {position: absolute;top: 100%;right: 0;margin-top: 0.625rem;width: 16.25rem;background: var(--bg-profil);border-radius: 0.938rem;box-shadow: 0 4px 4px rgba(0, 0, 0, 0.15);padding: 0.938rem 0;z-index: 10;}
+.profile-menu {position: absolute;top: 100%;right: 0;margin-top: 0.625rem;width: 17.45rem;background: var(--bg-profil);border-radius: 0.938rem;box-shadow: 0 4px 4px rgba(0, 0, 0, 0.15);padding: 0.938rem 0;z-index: 10;}
 .profile-menu_links{display: grid;gap: 0;}
 .profile-menu .profile-menu_link {padding: 0.625rem 0.938rem;cursor: pointer;border-radius: 0.5rem;position: relative;}
 .profile-menu_link a{position: relative;}

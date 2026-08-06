@@ -44,13 +44,17 @@ watch(() => region.selectedRegion, load)
 
 <style scoped>
 .products {
-  background-color: #ececec;
-  padding: 0.938rem;
-  border-radius: 1.25rem;
+  /* background-color: #ececec;
+  padding: 0.938rem; */
+  /* border-radius: 1.25rem; */
   display: grid;
   gap: 0.938rem;
-  width: 56.438rem;
+  /* width: 56.438rem; */
   margin: 0 auto;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
 }
+@media (max-width: 77rem){
+.products {grid-template-columns: repeat(4, 1fr);}
+}
+
 </style>

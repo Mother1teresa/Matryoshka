@@ -3,8 +3,8 @@ import { ref, computed } from 'vue'
 import { api } from '/src/api/api.js'
 
 export const useReviewStore = defineStore('reviews', () => {
-  const allReviews = ref([])    // Все загруженные отзывы (аккумулируем)
-  const currentReviews = ref([]) // Отзывы текущего просматриваемого продавца
+  const allReviews = ref([])
+  const currentReviews = ref([])
   const isLoading = ref(false)
 
   // === GETTERS ===
@@ -39,7 +39,6 @@ export const useReviewStore = defineStore('reviews', () => {
   }
 
   // === ACTIONS ===
-  // Загрузка отзывов через профиль продавца
   const fetchReviewsBySeller = async (sellerId) => {
     if (!sellerId) {
       currentReviews.value = []
@@ -50,8 +49,7 @@ export const useReviewStore = defineStore('reviews', () => {
       const res = await api.get(`/profile/${sellerId}`)
       const profileData = res.data || {}
       const backendReviews = profileData.reviews || []
-      
-      // Маппим в наш формат
+
       const mapped = backendReviews.map((r, index) => ({
         id: r.id || `${r.authorId}-${r.createdAt}-${index}`,
         targetUserId: r.targetUserId,
@@ -64,14 +62,13 @@ export const useReviewStore = defineStore('reviews', () => {
         reply: r.ownerReply || null,
         isReplied: r.isReplied || false
       }))
-      
-      // Добавляем в allReviews, НЕ удаляя старые (фильтруем дубликаты по id)
+
       const existingIds = new Set(allReviews.value.map(r => r.id))
       const newReviews = mapped.filter(r => !existingIds.has(r.id))
       allReviews.value = [...allReviews.value, ...newReviews]
-      
+
       currentReviews.value = mapped
-      
+
     } catch (error) {
       console.error('Ошибка загрузки отзывов:', error)
       currentReviews.value = []
@@ -80,41 +77,44 @@ export const useReviewStore = defineStore('reviews', () => {
     }
   }
 
-  // Создание отзыва
   const createReview = async (payload) => {
-    const { targetUserId, authorId, rating, comment, images = [] } = payload
-    
+    const {
+      targetUserId,
+      authorId,
+      rating,
+      comment,
+      dealStatus,
+      finishReason,
+      images = []
+    } = payload
+
     const apiPayload = {
       targetUserId,
       authorId,
       ratingValue: rating,
-      comment: comment || ''
+      comment: comment || '',
+      dealStatus: dealStatus || null,
+      finishReason: finishReason || null
     }
-    
+
     try {
-      await api.post('/reviews', apiPayload)
-      
-      // Перезагружаем отзывы продавца, чтобы получить актуальные данные с бэка
+      await api.post('/profile/reviews', apiPayload)
       await fetchReviewsBySeller(targetUserId)
-      
     } catch (error) {
       console.error('Ошибка создания отзыва:', error)
       throw error
     }
   }
 
-  // Ответ на отзыв
   const addReply = async (reviewId, replyText, currentUserId) => {
     try {
-      await api.patch(`/reviews/${reviewId}/reply?currentUserId=${currentUserId}`, replyText)
-      
-      // Обновляем локально в allReviews
+      await api.patch(`/profile/reviews/${reviewId}/reply?currentUserId=${currentUserId}`, replyText)
+
       const review = allReviews.value.find(r => r.id === reviewId)
       if (review) {
         review.reply = replyText
         review.isReplied = true
       }
-      // И в currentReviews
       const current = currentReviews.value.find(r => r.id === reviewId)
       if (current) {
         current.reply = replyText
@@ -125,7 +125,7 @@ export const useReviewStore = defineStore('reviews', () => {
       throw error
     }
   }
-  // Инициализация
+
   const initUserReviews = async (userId) => {
     if (userId) await fetchReviewsBySeller(userId)
   }

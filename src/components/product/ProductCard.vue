@@ -35,11 +35,11 @@
         <div class="text13">
           {{ product.city || product.address}}
         </div>
-        <img
+        <!-- <img
           class="card-like"
           :src="favStore.isFavorite(product.id) ? heartFilled : heart"
           @click.stop="onLikeClick(product)"
-        />
+        /> -->
       </div>
     </div>
   </div>
@@ -87,9 +87,9 @@ const onLikeClick = async (item) => {
 .product-card {
   border: 1px solid transparent;
   /* width: 12.938rem; */
-  min-height: 16.375rem;
+  height: 22.25rem;
   background-color: white;
-  padding: 0.875rem 0.75rem 0.813rem 0.813rem;
+  padding: 0.813rem;
   border-radius: 1.25rem;
   transition: all 0.3s;
 }
@@ -98,23 +98,26 @@ const onLikeClick = async (item) => {
 }
 .product-card .product-img {
   width: 100%;
-  height: 9.125rem;
+  height: 14.688rem;
   object-fit: cover;
   border-radius: 0.625rem;
 }
-.price {
-  font-size: 0.875rem;
-  font-weight: 800;
-  margin-top: 0.475rem;
-}
+.price {font-size: 1rem;font-weight: 700;margin-top: 0.5rem;}
+.text13{font-size: 1rem;}
 .product-content__bottom {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 0.313rem;
+  margin-top: 0.5rem;
+}
+.product-content__bottom .text13{
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
 }
 .title {
-  height: 2rem;
+  /* height: 2rem; */
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -122,8 +125,8 @@ const onLikeClick = async (item) => {
   transition: all 0.3s;
   border-radius: 0;
   margin-top: 0.5rem;
-  display: inline-block;
   text-transform: lowercase;
+  font-size: 1rem;
 }
 .title::first-letter {
   text-transform: uppercase;

@@ -227,8 +227,8 @@ async function sendReply(reviewId) {
   gap: 0.75rem;
 }
 .user-avatar {
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 3.938rem;
+  height: 3.938rem;
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
