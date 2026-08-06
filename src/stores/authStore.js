@@ -1272,7 +1272,6 @@ export const useAuthStore = defineStore("auth", {
     },
     async fetchUserNotifications() {
       if (!this.user?.id) return;
-      await this.initFCM();
       
       this.isNotificationsLoading = true;
       try {

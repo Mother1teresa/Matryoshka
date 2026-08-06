@@ -120,6 +120,7 @@ watch(
     try {
       await auth.fetchProfile();
       if (!auth.user?.id) return;
+      await auth.init();
       await favStore.fetchAdvertFavorites().catch(() => {});
       startGlobalPolling();
       await reviewStore.initUserReviews(auth.user.id);
@@ -152,6 +153,7 @@ onMounted(async () => {
       try {
         await auth.fetchProfile();
         if (auth.user?.id) {
+          await auth.init();
           await favStore.fetchAdvertFavorites().catch(() => {});
           startGlobalPolling();
           await reviewStore.initUserReviews(auth.user.id);
