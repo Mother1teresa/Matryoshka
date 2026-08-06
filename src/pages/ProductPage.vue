@@ -372,13 +372,14 @@ const isOwnProduct = computed(() => {
 });
 function waitForYmaps(timeout = 10000) {
   return new Promise((resolve, reject) => {
+    if (window.ymaps) {
+      window.ymaps.ready(resolve);
+      return;
+    }
     const start = Date.now();
     const check = () => {
       if (window.ymaps) {
-        window.ymaps.ready(() => {
-          ymapsReady = true;
-          resolve();
-        });
+        window.ymaps.ready(resolve);
       } else if (Date.now() - start > timeout) {
         reject(new Error('Yandex Maps API не загрузился'));
       } else {
@@ -447,9 +448,10 @@ function initProductMap(coords) {
       });
       productMap.geoObjects.add(productPlacemark);
 
-      // ⬇️ КЛЮЧЕВОЕ: пересчитать размер контейнера после появления в DOM
       setTimeout(() => {
-        productMap?.container?.fitToViewport();
+        if (productMap && productMap.container) {
+          productMap.container.fitToViewport();
+        }
       }, 100);
     } catch (e) {
       console.error('Ошибка создания карты:', e);
@@ -510,26 +512,31 @@ const resolveCoordinates = async () => {
 
   isGeocoding.value = true;
   try {
-    if (window.ymaps) {
-      const res = await window.ymaps.geocode(address, { results: 1, kind: 'house' });
-      const first = res.geoObjects.get(0);
-      if (first) {
-        const coords = first.geometry.getCoordinates();
-        console.log('[Geocode] Адрес:', address, '→', coords);
-        mapCoordinates.value = coords;
-        nextTick(() => setTimeout(() => initProductMap(coords), 300));
-      } else {
-        const cityRes = await window.ymaps.geocode(product.value?.city || address, { results: 1 });
-        const cityFirst = cityRes.geoObjects.get(0);
-        if (cityFirst) {
-          const coords = cityFirst.geometry.getCoordinates();
-          mapCoordinates.value = coords;
-          nextTick(() => setTimeout(() => initProductMap(coords), 300));
-        } else {
-          mapCoordinates.value = null;
-        }
-      }
+    await waitForYmaps();
+    let res = await window.ymaps.geocode(address, { results: 1 });
+    let first = res.geoObjects.get(0);
+    if (!first && address.includes(',')) {
+      const cityOnly = address.split(',')[0].trim();
+      res = await window.ymaps.geocode(cityOnly, { results: 1 });
+      first = res.geoObjects.get(0);
+    }
+    if (!first && product.value?.city && product.value.city !== address) {
+      res = await window.ymaps.geocode(product.value.city, { results: 1 });
+      first = res.geoObjects.get(0);
+    }
+
+    if (first) {
+      const coords = first.geometry.getCoordinates();
+      console.log('[Geocode] Адрес:', address, '→', coords);
+      mapCoordinates.value = coords;
+      nextTick(() => setTimeout(() => initProductMap(coords), 300));
     } else {
+      console.warn('[Geocode] Не найдено:', address);
+      mapCoordinates.value = null;
+    }
+  } catch (e) {
+    console.error('Ошибка геокодирования:', e);
+    try {
       const result = await geocodeByQuery(address);
       const coords = normalizeCoords(result?.coordinates);
       if (coords) {
@@ -538,10 +545,9 @@ const resolveCoordinates = async () => {
       } else {
         mapCoordinates.value = null;
       }
+    } catch (e2) {
+      mapCoordinates.value = null;
     }
-  } catch (e) {
-    console.error('Ошибка геокодирования:', e);
-    mapCoordinates.value = null;
   } finally {
     isGeocoding.value = false;
   }
