@@ -871,7 +871,7 @@ const onShowNumberClick = (item) => {
 };
 const onWriteClick = async (item) => {
   const targetId = item?.sellerId || item?.seller?.id || product.value?.sellerId;
-  const productId = item?.id || product.value?.id || null;
+  const productId = item?.id || product.value?.id || null; 
   if (!targetId) {
     notify('Продавец не найден', 'error');
     return;

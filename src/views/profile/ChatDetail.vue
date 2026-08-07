@@ -146,6 +146,7 @@ const opponentProfile = ref(null);
 const isProfileLoading = ref(false);
 const currentRoomId = ref(null);
 const fileInput = ref(null);
+const chatProduct = ref(null);
 
 const searchQuery = ref("");
 const searchResultsIds = ref([]);
@@ -153,6 +154,27 @@ const currentSearchIndex = ref(0);
 const isSearching = ref(false);
 const searchAbortController = ref(null);
 let searchDebounce = null;
+
+const loadChatProduct = async () => {
+  const pid = currentChat.value?.productId || chatData.value?.productId || "8981c111-1f84-48b7-89b1-5a06b016cc6a";
+  if (!pid) return;
+
+  try {
+    const product = await auth.getAdvertById(pid);
+    if (!product) return;
+
+    chatProduct.value = product;
+
+    // Обновляем chatData, чтобы шапка сразу подхватила
+    if (chatData.value) {
+      chatData.value.productName = product.title || chatData.value.productName;
+      chatData.value.productImage = product.image || product.images?.[0] || chatData.value.productImage;
+      chatData.value.price = product.price || chatData.value.price;
+    }
+  } catch (e) {
+    console.warn('[ChatDetail] Не удалось загрузить товар для чата:', e);
+  }
+};
 
 const handleFileSelect = async (e) => {
   const file = e.target.files?.[0];
@@ -377,7 +399,7 @@ const isLoading = ref(false);
 const abortController = ref(null);
 
 const isOrderPlaced = ref(false);
-const showBotActions = ref(false);
+const showBotActions = ref(true);
 const showReviewLink = ref(false);
 const isReviewModalOpen = ref(false);
 const isTyping = ref(false);
@@ -625,7 +647,11 @@ const shouldShowDate = (msg, index) => {
 
 onMounted(() => {
   currentRoomId.value = route.params.id;
-  loadOpponentProfile().then(() => fetchMessages()).then(() => connectChat()).catch((e) => console.error("[onMounted] Error:", e));
+  loadOpponentProfile()
+    .then(() => loadChatProduct())
+    .then(() => fetchMessages())
+    .then(() => connectChat())
+    .catch((e) => console.error("[onMounted] Error:", e));
 });
 
 onUnmounted(() => {
@@ -656,7 +682,10 @@ watch(() => route.params.id, (newId, oldId) => {
     if (roomSubscription) { roomSubscription.unsubscribe(); roomSubscription = null; }
     if (typingSubscription) { typingSubscription.unsubscribe(); typingSubscription = null; }
     currentRoomId.value = newId;
-    loadOpponentProfile().then(() => fetchMessages()).then(() => connectChat());
+    loadOpponentProfile()
+    .then(() => loadChatProduct())
+    .then(() => fetchMessages())
+    .then(() => connectChat());
   }
 });
 </script>

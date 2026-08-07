@@ -1,219 +1,288 @@
 <template>
-  <div class="shorts-page-overlay">
-    <div v-if="isLoading && videos.length === 0" class="loader">Загрузка роликов...</div>
-     <div v-else-if="videos.length" class="shorts-main-container" ref="scrollContainer">
-      <div v-for="video in videos" :key="video.id" class="short-snap-item" :class="{ 'is-scrolling': isScrolling }">
-        <div class="short-content-wrapper">
-          
-          <!-- ВИДЕО -->
-          <div class="video-side">
-            <button class="close-btn" @click="closeShorts">
-              <img src="/src/assets/img/icons/close-white.svg" alt="close" />
-            </button>
-            
-            <!-- Постер/спиннер -->
-            <div v-if="!video.isVideoReady || !video.isPlaying" class="video-poster">
-              <div class="poster-spinner"></div>
+  <div class="shorts-page-layout">
+    <!-- ЛЕВЫЙ САЙДБАР (как в ProfileLayout.vue) -->
+    <aside class="profile-sidebar">
+      <div class="profile-sidebar_block">
+        <div class="sidebar-header">
+          <router-link to="/" class="logo">
+            <span>Матрёшка</span>
+          </router-link>
+          <router-link to="/profile/info" class="user-foto">
+            <div class="user-foto_block">
+              <img :src="auth.userAvatar" class="user-avatar" />
+              <span class="user-name">{{ auth.user?.name }}</span>
             </div>
-
-            <!-- Ошибка загрузки -->
-            <div v-if="video.hasError" class="video-error">
-              <p>Формат не поддерживается</p>
+            <div class="user-brief">
+              <div class="rating">
+                <p>{{ userRating }}</p>
+                <div class="stars-row">
+                  <img v-for="n in 5" :key="n" :src="n <= Math.round(userRating) ? '/img/users/star.png' : '/img/users/star_1.png'" class="star-icon" alt="★" />
+                </div>
+              </div>
             </div>
+          </router-link>
+        </div>
+        <nav class="profile-nav">
+          <div class="profile-nav_a">
+            <router-link to="/profile/advertisements">Мои объявления</router-link>
+            <router-link to="/profile/videos">Мои ролики</router-link>
+            <router-link to="/profile/favorites">Избранное</router-link>
+            <router-link to="/profile/messages">Сообщения</router-link>
+            <router-link to="/profile/notifications">Уведомления</router-link>
+            <router-link to="/profile/reviews">Отзывы</router-link>
+            <router-link to="/profile/info">Мои данные</router-link>
+          </div>
+          <div class="nav-footer">
+            <button class="edu-btn" @click="handleEduClick">Обучение</button>
+          </div>
+        </nav>
+      </div>
+    </aside>
 
-            <video 
-              :src="video.cdnUrl" 
-              :ref="setVideoRef" 
-              :data-id="video.id" 
-              loop 
-              playsinline
-              :muted="isMuted"
-              preload="auto"
-              @canplaythrough="onVideoReady(video)"
-              @loadeddata="onVideoReady(video)"
-              @playing="onVideoPlaying(video)"
-              @error="onVideoError(video)"
-            ></video>
-            <!-- Кнопка звука -->
-            <button class="mute-btn" @click="toggleMute">
-              <img :src="isMuted ? muteIcon : unmuteIcon" alt="sound" />
-            </button>
-            <div class="video-actions">
-              <div class="v-action">
-                <button class="action-btn" @click.stop="onLikeClick(video)">
-                  <img :src="video.isLikedByMe ? heartFilled : heart" class="like-icon"/>
-                </button>
-                <span>{{ (video.likes ?? video.likesCount ?? 0) }}</span>
+    <!-- ПРАВАЯ ЧАСТЬ -->
+    <main class="profile-main">
+      <!-- ПОИСК -->
+      <div class="shorts-search-bar">
+        <div class="search-wrapper">
+          <img src="/src/assets/img/icons/Icon-search.svg" class="search-icon" alt="search" />
+          <input type="text" v-model="searchQuery" placeholder="Поиск" @keyup.enter="performSearch" />
+          <button v-if="searchQuery" class="search-clear" @click="clearSearch">✕</button>
+        </div>
+      </div>
+
+      <!-- РЕЗУЛЬТАТЫ ПОИСКА (карточки из MyVideos.vue) -->
+      <div v-if="isSearchActive" class="search-results-page">
+        <h2 class="search-results-title">Результаты поиска</h2>
+        <div v-if="filteredVideos.length === 0" class="search-empty">
+          <p>По запросу «{{ searchQuery }}» ничего не найдено</p>
+        </div>
+        <div v-else class="videos-grid">
+          <div v-for="video in filteredVideos" :key="video.id" class="video-item" @click="openVideo(video.id)">
+            <div class="video-card">
+              <img :src="video.thumbnail || video.cdnUrl || '/img/users/mask-avatar.png'" class="thumbnail" alt="thumb" />
+              <div class="video-overlay">
+                <span class="duration">{{ video.duration || "0:11" }}</span>
               </div>
-              <div class="v-action">
-                <button class="action-btn" @click.stop="onFavoriteClick(video)">
-                  <img :src="video.isFavorite ? bookmarkFilledIcon : bookmarkIcon" class="favorite-icon"/>
-                </button>
+            </div>
+            <div class="video-info">
+              <div class="stats-line">
+                <div class="stat">
+                  <img src="/src/assets/img/icons/eye.svg" />
+                  {{ video.views ?? video.viewsCount ?? "" }}
+                </div>
+                <div class="stat">
+                  <img src="/src/assets/img/icons/heart.svg" />
+                  {{ video.likes ?? video.likesCount ?? "" }}
+                </div>
+                <div class="stat">
+                  <img src="/src/assets/img/icons/comment.svg" />
+                  {{ video.commentsCount ?? "" }}
+                </div>
               </div>
-              <div v-if="!isOwnVideo(video)" class="v-action">
-                <button class="action-btn" @click="onWriteClick(video)">
-                  <img src="/src/assets/img/mes.svg" />
-                </button>
-              </div>
-              <div class="v-action">
-                <button class="action-btn" @click="openShareModal(video)">
-                  <img src="/src/assets/img/icons/lin.svg" alt="share" />
-                </button>
-              </div>
-              <div class="v-action scroll-arrows">
-                <button class="action-btn arrow-btn" @click="scrollPrev">
-                  <img src="/src/assets/img/icons/up.svg" alt="up" />
-                </button>
-                <button class="action-btn arrow-btn" @click="scrollNext">
-                  <img src="/src/assets/img/icons/down.svg" alt="down" />
-                </button>
-              </div>
+              <p class="video-description">{{ video.description || "Описание отсутствует" }}</p>
             </div>
           </div>
+        </div>
+      </div>
 
-          <!-- ИНФОРМАЦИЯ (Правая часть) -->
-          <aside class="info-side">
-            <div class="info-scroll-area">
-              <div class="info-content-wrapper" :class="{ 'is-visible': activeVideoId === video.id && !isScrolling }">
-              <div class="info-scroll-area_block">
-                <div class="video-header-info">
-                  <h2 class="video-title">{{ video.description || '\u00A0' }}</h2>
-                  <div class="video-stats-row">
-                    <!-- <span>{{ (video.likes ?? video.likesCount ?? 0) }} лайков</span>
-                    <span class="dot"></span>
-                    <span>{{ (video.views ?? video.viewsCount ?? 0) }} просмотров</span>
-                    <span class="dot"></span> -->
-                    <span v-if="video.publishedAt">{{'Мини-видео выложено '+ formatDate(video.publishedAt) }}</span>
+      <!-- ЛЕНТА ШОРТСОВ (оригинал, не трогал video-actions / info-side / share-modal) -->
+      <div v-else class="shorts-page-overlay">
+        <div v-if="isLoading && videos.length === 0" class="loader">Загрузка роликов...</div>
+        <div v-else-if="videos.length" class="shorts-main-container" ref="scrollContainer">
+          <div v-for="video in videos" :key="video.id" class="short-snap-item" :class="{ 'is-scrolling': isScrolling }">
+            <div class="short-content-wrapper">
+              
+              <!-- ВИДЕО -->
+              <div class="video-side">
+                <button class="close-btn" @click="closeShorts">
+                  <img src="/src/assets/img/icons/close-white.svg" alt="close" />
+                </button>
+                
+                <div v-if="!video.isVideoReady || !video.isPlaying" class="video-poster">
+                  <div class="poster-spinner"></div>
+                </div>
+
+                <div v-if="video.hasError" class="video-error">
+                  <p>Формат не поддерживается</p>
+                </div>
+
+                <video 
+                  :src="video.cdnUrl" 
+                  :ref="setVideoRef" 
+                  :data-id="video.id" 
+                  loop 
+                  playsinline
+                  :muted="isMuted"
+                  preload="auto"
+                  @canplaythrough="onVideoReady(video)"
+                  @loadeddata="onVideoReady(video)"
+                  @playing="onVideoPlaying(video)"
+                  @error="onVideoError(video)"
+                ></video>
+                <button class="mute-btn" @click="toggleMute">
+                  <img :src="isMuted ? muteIcon : unmuteIcon" alt="sound" />
+                </button>
+                <div class="video-actions">
+                  <div class="v-action">
+                    <button class="action-btn" @click.stop="onLikeClick(video)">
+                      <img :src="video.isLikedByMe ? heartFilled : heart" class="like-icon"/>
+                    </button>
+                    <span>{{ (video.likes ?? video.likesCount ?? 0) }}</span>
+                  </div>
+                  <div class="v-action">
+                    <button class="action-btn" @click.stop="onFavoriteClick(video)">
+                      <img :src="video.isFavorite ? bookmarkFilledIcon : bookmarkIcon" class="favorite-icon"/>
+                    </button>
+                  </div>
+                  <div v-if="!isOwnVideo(video)" class="v-action">
+                    <button class="action-btn" @click="onWriteClick(video)">
+                      <img src="/src/assets/img/mes.svg" />
+                    </button>
+                  </div>
+                  <div class="v-action">
+                    <button class="action-btn" @click="openShareModal(video)">
+                      <img src="/src/assets/img/icons/lin.svg" alt="share" />
+                    </button>
+                  </div>
+                  <div class="v-action scroll-arrows">
+                    <button class="action-btn arrow-btn" @click="scrollPrev">
+                      <img src="/src/assets/img/icons/up.svg" alt="up" />
+                    </button>
+                    <button class="action-btn arrow-btn" @click="scrollNext">
+                      <img src="/src/assets/img/icons/down.svg" alt="down" />
+                    </button>
                   </div>
                 </div>
-                <div class="shorts-block_avt">
-                  <!-- Прикреплённый товар -->
-                  <div v-if="video.linkedProduct" class="linked-product-wrapper">
-                    <ProductCard :product="normalizeProduct(video.linkedProduct)" />
-                  </div>
-                  <div class="author-card">
-                    <router-link :to="video.author?.id ? { name: 'SellerPage', params: { id: video.author.id } } : ''" class="author-link" :event="video.author?.id ? 'click' : ''">
-                      <div class="author-main">
-                        <img  :src="video.author?.avatar || '/img/users/mask-avatar.png'"  class="author-ava" />
-                          <div class="author-main_block">
-                            <div class="author-details">
-                              <p class="name">{{ video.author?.name || '\u00A0' }}</p>
+              </div>
+
+              <!-- ИНФОРМАЦИЯ (Правая часть) -->
+              <aside class="info-side">
+                <div class="info-scroll-area">
+                  <div class="info-content-wrapper" :class="{ 'is-visible': activeVideoId === video.id && !isScrolling }">
+                  <div class="info-scroll-area_block">
+                    <div class="video-header-info">
+                      <h2 class="video-title">{{ video.description || '\u00A0' }}</h2>
+                      <div class="video-stats-row">
+                        <span v-if="video.publishedAt">{{'Мини-видео выложено '+ formatDate(video.publishedAt) }}</span>
+                      </div>
+                    </div>
+                    <div class="shorts-block_avt">
+                      <div v-if="video.linkedProduct" class="linked-product-wrapper">
+                        <ProductCard :product="normalizeProduct(video.linkedProduct)" />
+                      </div>
+                      <div class="author-card">
+                        <router-link :to="video.author?.id ? { name: 'SellerPage', params: { id: video.author.id } } : ''" class="author-link" :event="video.author?.id ? 'click' : ''">
+                          <div class="author-main">
+                            <img  :src="video.author?.avatar || '/img/users/mask-avatar.png'"  class="author-ava" />
+                              <div class="author-main_block">
+                                <div class="author-details">
+                                  <p class="name">{{ video.author?.name || '\u00A0' }}</p>
+                                </div>
+                                <div class="rating-badge">
+                                  <span class="rating-num">{{ video.author?.rating || 0 }}</span>
+                                  <span class="stars">
+                                    <img v-for="n in 5" :key="n" :src="n <= Math.round(video.author?.rating || 0) ? '/img/users/star.png' : '/img/users/star_1.png'" class="star-icon" alt="★" />
+                                  </span>
+                                </div>
                             </div>
-                            <div class="rating-badge">
-                              <span class="rating-num">{{ video.author?.rating || 0 }}</span>
-                              <span class="stars">
-                                <img
-                                  v-for="n in 5"
-                                  :key="n"
-                                  :src="n <= Math.round(video.author?.rating || 0) ? '/img/users/star.png' : '/img/users/star_1.png'"
-                                  class="star-icon"
-                                  alt="★"
-                                />
+                          </div>
+                        </router-link>
+                      </div>
+                    </div>
+                  </div>
+                  </div>
+                  <div class="comments-block">
+                    <p class="section-title">
+                      <img src="/src/assets/img/icons/comment.svg" alt="" />
+                      Комментарии
+                    </p>
+                    <div v-if="!video.comments?.length" class="comments-empty">
+                      <p>Комментариев нет</p>
+                    </div>
+                    <div v-if="video.commentsDisabled" class="comments-locked">
+                      <p>Комментарии не доступны</p>
+                    </div>
+                    <div v-else class="comments-list">
+                      <div v-for="comment in buildCommentTree(video.comments)" :key="comment.id" class="comment-thread">
+                        <div class="comment-item">
+                          <img :src="comment.author?.avatar || '/img/users/mask-avatar.png'"/>
+                          <div class="c-body">
+                            <div class="c-header">
+                              <span class="c-user">{{ comment.author?.name || "Пользователь" }}</span>
+                              <p class="c-text">{{ comment.text }}</p>
+                            </div>
+                            <div class="c-header_footer">
+                              <span class="c-date">{{ formatDate(comment.createdAt) }}</span>
+                              <span v-if="!isOwnComment(comment)" class="c-reply" @click.stop.prevent="startReply(comment)">
+                                Ответить
                               </span>
                             </div>
-                        </div>
-                      </div>
-                    </router-link>
-                     <!-- <span v-if="isOwnVideo(video)" class="own-badge">Это ваш ролик</span> -->
-                      <!-- <button v-else-if="video.author?.id" class="btn-primary" 
-                        :class="{'is-active': subStore.isSubscribed(video.author?.id)}" 
-                        @click="onSubscribeClick(video.author?.id)">
-                        {{ subStore.isSubscribed(video.author?.id) ? "Отписаться" : "Подписаться" }}
-                      </button> -->
-                  </div>
-                </div>
-              </div>
-              </div>
-              <div class="comments-block">
-                <p class="section-title">
-                  <img src="/src/assets/img/icons/comment.svg" alt="" />
-                  Комментарии
-                </p>
-                <div v-if="!video.comments?.length" class="comments-empty">
-                  <p>Комментариев нет</p>
-                </div>
-                <div v-if="video.commentsDisabled" class="comments-locked">
-                  <p>Комментарии не доступны</p>
-                </div>
-                <div v-else class="comments-list">
-                  <div v-for="comment in buildCommentTree(video.comments)" :key="comment.id" class="comment-thread">
-                    <!-- Родительский комментарий -->
-                    <div class="comment-item">
-                      <img :src="comment.author?.avatar || '/img/users/mask-avatar.png'"/>
-                      <div class="c-body">
-                        <div class="c-header">
-                          <span class="c-user">{{ comment.author?.name || "Пользователь" }}</span>
-                          <p class="c-text">{{ comment.text }}</p>
-                        </div>
-                        <div class="c-header_footer">
-                          <span class="c-date">{{ formatDate(comment.createdAt) }}</span>
-                          <span v-if="!isOwnComment(comment)" class="c-reply" @click.stop.prevent="startReply(comment)">
-                            Ответить
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Ответы -->
-                    <div v-if="comment.replies?.length" class="comment-replies">
-                      <div v-for="reply in comment.replies" :key="reply.id" class="comment-item reply-item">
-                        <img :src="reply.author?.avatar || '/img/users/mask-avatar.png'" class="reply-avatar"/>
-                        <div class="c-body">
-                          <div class="c-header">
-                            <span class="c-reply-badge">Ответ</span>
-                            <span class="c-user">{{ reply.author?.name || "Пользователь" }}</span>
-                            <p class="c-text">{{ reply.text }}</p>
                           </div>
-                          <div class="c-header_footer">
-                            <span class="c-date">{{ formatDate(reply.createdAt) }}</span>
+                        </div>
+
+                        <div v-if="comment.replies?.length" class="comment-replies">
+                          <div v-for="reply in comment.replies" :key="reply.id" class="comment-item reply-item">
+                            <img :src="reply.author?.avatar || '/img/users/mask-avatar.png'" class="reply-avatar"/>
+                            <div class="c-body">
+                              <div class="c-header">
+                                <span class="c-reply-badge">Ответ</span>
+                                <span class="c-user">{{ reply.author?.name || "Пользователь" }}</span>
+                                <p class="c-text">{{ reply.text }}</p>
+                              </div>
+                              <div class="c-header_footer">
+                                <span class="c-date">{{ formatDate(reply.createdAt) }}</span>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
+                <div class="footer-input">
+                  <div v-if="replyTo" class="reply-banner">
+                    <span>Ответ {{ replyTo.userName }}</span>
+                    <button @click="cancelReply">✕</button>
+                  </div>
+                  <div class="input-row">
+                    <input type="text" v-model="newComment" :placeholder="replyTo ? `Ответ ${replyTo.userName}...` : 'Сообщение'" @keyup.enter="postComment(video, replyTo?.commentId)"/>
+                    <button class="send-btn" @click="postComment(video, replyTo?.commentId)">
+                      <img src="/src/assets/img/icons/send-plane.svg" />
+                    </button>
+                  </div>
+                </div>
+              </aside>
             </div>
-            <div class="footer-input">
-              <div v-if="replyTo" class="reply-banner">
-                <span>Ответ {{ replyTo.userName }}</span>
-                <button @click="cancelReply">✕</button>
-              </div>
-              <div class="input-row">
-                <input type="text" v-model="newComment" :placeholder="replyTo ? `Ответ ${replyTo.userName}...` : 'Сообщение'" @keyup.enter="postComment(video, replyTo?.commentId)"/>
-                <button class="send-btn" @click="postComment(video, replyTo?.commentId)">
-                  <img src="/src/assets/img/icons/send-plane.svg" />
-                </button>
-              </div>
-            </div>
-          </aside>
-        </div>
-      </div>
-    </div>
-
-    <div v-else class="empty">Видео не найдены</div>
-    <div v-if="isShareModalOpen" class="modal-overlay" @click.self="isShareModalOpen = false">
-      <div class="share-modal">
-        <header class="modal-header">
-          <h3>Поделиться</h3>
-          <button class="close-modal" @click="isShareModalOpen = false">✕</button>
-        </header>
-        <div class="link-section">
-          <label>Ссылка на мини-видео</label>
-          <div class="input-wrapper">
-            <input type="text" :value="shareLink" readonly />
           </div>
-          <button class="copy-btn" :class="{ 'copied': isCopied }" @click="copyToClipboard">
-            {{ isCopied ? 'Скопировано!' : 'Копировать ссылку' }}
-          </button>
+        </div>
+
+        <div v-else class="empty">Видео не найдены</div>
+        <div v-if="isShareModalOpen" class="modal-overlay" @click.self="isShareModalOpen = false">
+          <div class="share-modal">
+            <header class="modal-header">
+              <h3>Поделиться</h3>
+              <button class="close-modal" @click="isShareModalOpen = false">
+                ✕
+            </button>
+            </header>
+            <div class="link-section">
+              <label>Ссылка на мини-видео</label>
+              <div class="input-wrapper">
+                <input type="text" :value="shareLink" readonly />
+              </div>
+              <button class="copy-btn" :class="{ 'copied': isCopied }" @click="copyToClipboard">
+                {{ isCopied ? 'Скопировано!' : 'Копировать ссылку' }}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </main>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick, computed, watch } from "vue";
+import { ref, onMounted, onUnmounted, nextTick, computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "/src/stores/authStore.js";
 import { useFavoritesStore } from "/src/stores/favoritesStore.js";
@@ -225,15 +294,14 @@ import { formatDate } from "/src/utils/formatters.js";
 import heart from "/src/assets/img/icons/heart.svg";
 import heartFilled from "/src/assets/img/icons/heart-filled.svg";
 import muteIcon from "/src/assets/img/icons/mute.svg";
-import unmuteIcon from "/src/assets/img/icons/unmute.svg"; 
+import unmuteIcon from "/src/assets/img/icons/unmute.svg";
 import ProductCard from "/src/components/product/ProductCard.vue";
-
 import bookmarkIcon from "/src/assets/img/icons/bookmark.svg";
 import bookmarkFilledIcon from "/src/assets/img/icons/bookmark-fill.svg";
 
 const router = useRouter();
 const route = useRoute();
-const authStore = useAuthStore();
+const auth = useAuthStore();
 const favStore = useFavoritesStore();
 const subStore = useSubscriptionStore();
 const modal = useModalStore();
@@ -245,379 +313,237 @@ const replyTo = ref(null);
 let copyTimeout = null;
 const isCopied = ref(false);
 const isMuted = ref(true);
-
 const isScrolling = ref(false);
 const activeVideoId = ref(null);
 let scrollTimeout = null;
 let observer = null;
+const searchQuery = ref("");
+const isSearchActive = ref(false);
+const isReplyMode = ref(false);
+
+const userRating = computed(() => auth.user?.rating || 0);
+const videos = computed(() => auth.welcomeFeed || []);
+const isLoading = computed(() => auth.isVideosLoading);
+const selectedVideoId = computed(() => route.params.id);
+
+const performSearch = () => {
+  if (!searchQuery.value.trim()) { isSearchActive.value = false; return; }
+  isSearchActive.value = true;
+};
+
+const clearSearch = () => { searchQuery.value = ""; isSearchActive.value = false; };
+
+const filteredVideos = computed(() => {
+  if (!searchQuery.value.trim()) return [];
+  const q = searchQuery.value.toLowerCase();
+  return videos.value.filter(v => {
+    const desc = (v.description || "").toLowerCase();
+    const authorName = (v.author?.name || "").toLowerCase();
+    return desc.includes(q) || authorName.includes(q);
+  });
+});
+
+const openVideo = (videoId) => {
+  isSearchActive.value = false;
+  searchQuery.value = "";
+  router.push({ name: "shorts", params: { id: videoId } });
+  nextTick(() => { scrollToVideo(videoId); });
+};
+
+const formatNumber = (num) => {
+  if (!num) return "0";
+  if (num >= 1000000) return (num / 1000000).toFixed(1) + " млн";
+  if (num >= 1000) return (num / 1000).toFixed(1) + " тыс";
+  return String(num);
+};
+
+const handleEduClick = () => { notify("Раздел в разработке", "info"); };
 
 const buildCommentTree = (comments) => {
   if (!comments?.length) return [];
   const map = {};
   const roots = [];
-  comments.forEach(c => {
-    map[c.id] = { ...c, replies: [] };
-  });
+  comments.forEach(c => { map[c.id] = { ...c, replies: [] }; });
   comments.forEach(c => {
     const node = map[c.id];
-    if (c.parentId && map[c.parentId]) {
-      map[c.parentId].replies.push(node);
-    } else {
-      roots.push(node);
-    }
+    if (c.parentId && map[c.parentId]) map[c.parentId].replies.push(node);
+    else roots.push(node);
   });
   return roots;
 };
-// ===== ПОДГРУЗКА ПРИКРЕПЛЁННЫХ ТОВАРОВ =====
+
 const loadLinkedProducts = async () => {
   if (!videos.value?.length) return;
-  await Promise.all(
-    videos.value.map(async (video) => {
-      if (video.productId && !video.linkedProduct) {
-        try {
-          const product = await authStore.getAdvertById(video.productId);
-          if (product) {
-            video.linkedProduct = product;
-          }
-        } catch (e) {
-          console.warn(`Не удалось загрузить товар для видео ${video.id}:`, e);
-        }
-      }
-    })
-  );
+  await Promise.all(videos.value.map(async (video) => {
+    if (video.productId && !video.linkedProduct) {
+      try {
+        const product = await auth.getAdvertById(video.productId);
+        if (product) video.linkedProduct = product;
+      } catch (e) { console.warn(`Не удалось загрузить товар для видео ${video.id}:`, e); }
+    }
+  }));
 };
-// Нормализация продукта под формат ProductCard
+
 const normalizeProduct = (product) => ({
   ...product,
-  images: product.images 
-       || product.pictures?.map(p => p.pictureUrl || p.url) 
-       || product.pictureUrls 
-       || [],
+  images: product.images || product.pictures?.map(p => p.pictureUrl || p.url) || product.pictureUrls || [],
   category: product.category || product.type || 'tovary',
   section: product.section || 'default',
 });
-const videos = computed(() => authStore.welcomeFeed || []);
-const isLoading = computed(() => authStore.isVideosLoading);
-const selectedVideoId = computed(() => route.params.id);
-const onVideoReady = (video) => {
-  video.isVideoReady = true;
-  video.hasError = false;
-};
-const onVideoPlaying = (video) => {
-  video.isPlaying = true;
-};
-const onVideoError = (video) => {
-  console.error('Video error:', video.cdnUrl);
-  video.hasError = true;
-  video.isVideoReady = false;
-  video.isPlaying = false;
-};
+
+const onVideoReady = (video) => { video.isVideoReady = true; video.hasError = false; };
+const onVideoPlaying = (video) => { video.isPlaying = true; };
+const onVideoError = (video) => { console.error('Video error:', video.cdnUrl); video.hasError = true; video.isVideoReady = false; video.isPlaying = false; };
+
 const toggleMute = () => {
   isMuted.value = !isMuted.value;
-  videoRefs.value.forEach(el => {
-    if (el) el.muted = isMuted.value;
-  });
+  videoRefs.value.forEach(el => { if (el) el.muted = isMuted.value; });
 };
+
 const checkAuthAndRun = (action, message = "Авторизуйтесь, чтобы продолжить") => {
-  if (!authStore.isAuthenticated) {
-    modal.openLogin();
-    notify(message);
-    return;
-  }
+  if (!auth.isAuthenticated) { modal.openLogin(); notify(message); return; }
   action();
 };
+
 const addView = async (video) => {
   if (!video?.id) return;
-  try {
-    await authStore.addView(video.id);
-  } catch (e) {
-    console.error('Ошибка просмотра:', e);
-  }
+  try { await auth.addView(video.id); } catch (e) { console.error('Ошибка просмотра:', e); }
 };
+
 const onFavoriteClick = async (video) => {
   if (!video) return;
-  checkAuthAndRun(async () => {
-    try {
-      await authStore.toggleFavorite(video.id);
-    } catch (e) {
-      notify("Ошибка избранного", "error");
-    }
-  });
+  checkAuthAndRun(async () => { try { await auth.toggleFavorite(video.id); } catch (e) { notify("Ошибка избранного", "error"); } });
 };
+
 const onLikeClick = async (video) => {
   if (!video) return;
-  checkAuthAndRun(async () => {
-    try {
-      await authStore.toggleLike(video.id);
-    } catch (e) {
-      notify("Ошибка лайка", "error");
-    }
-  });
+  checkAuthAndRun(async () => { try { await auth.toggleLike(video.id); } catch (e) { notify("Ошибка лайка", "error"); } });
 };
+
 const onSubscribeClick = (authorId) => {
-  checkAuthAndRun(async () => {
-    const isNowSubscribed = await subStore.toggle(authorId);
-    notify(isNowSubscribed ? "Вы подписались на автора" : "Вы отписались от автора");
-  });
+  checkAuthAndRun(async () => { const isNowSubscribed = await subStore.toggle(authorId); notify(isNowSubscribed ? "Вы подписались на автора" : "Вы отписались от автора"); });
 };
+
 const onWriteClick = (video) => {
   if (!video?.author?.id) return;
+  const productId = "8981c111-1f84-48b7-89b1-5a06b016cc6a"; 
   checkAuthAndRun(async () => {
-    try {
-      const roomId = await authStore.createPrivateRoom(video.author.id);
-      router.push({ name: "ChatDetail", params: { id: roomId } });
-    } catch (err) {
-      notify("Не удалось открыть чат", "error");
-    }
+    try {  const roomId = await auth.createPrivateRoom(video.author.id, productId); router.push({ name: "ChatDetail", params: { id: roomId } }); }
+    catch (err) { notify("Не удалось открыть чат", "error"); }
   }, "Войдите, чтобы написать сообщение");
 };
+
 const postComment = async (video, parentId = null) => {
   if (!newComment.value.trim() || !video) return;
   checkAuthAndRun(async () => {
     try {
-      await authStore.addComment({
-        userId: authStore.user?.id,
-        videoId: video.id,
-        text: newComment.value.trim(),
-        parentId: parentId || null
-      });
-      const newItem = {
-        id: `temp-${Date.now()}`,
-        author: {
-          name: authStore.user?.username || authStore.user?.name || "Пользователь",
-          avatar: authStore.userAvatar || "/public/img/users/mask-avatar.png",
-        },
-        text: newComment.value.trim(),
-        createdAt: new Date().toISOString(),
-        parentId: parentId || null,
-      };
+      await auth.addComment({ userId: auth.user?.id, videoId: video.id, text: newComment.value.trim(), parentId: parentId || null });
+      const newItem = { id: `temp-${Date.now()}`, author: { name: auth.user?.username || auth.user?.name || "Пользователь", avatar: auth.userAvatar || "/public/img/users/mask-avatar.png" }, text: newComment.value.trim(), createdAt: new Date().toISOString(), parentId: parentId || null };
       if (!video.comments) video.comments = [];
       video.comments.push(newItem);
-
       if (parentId) replyTo.value = null;
       newComment.value = "";
       notify(parentId ? "Ответ добавлен" : "Комментарий добавлен");
-    } catch (e) {
-      notify("Ошибка отправки комментария", "error");
-    }
+    } catch (e) { notify("Ошибка отправки комментария", "error"); }
   });
 };
-const isReplyMode = ref(false);
+
 const startReply = (comment) => {
-  if (!authStore.user?.id || !comment.author?.id) return;
-  if (String(comment.author.id) === String(authStore.user.id)) {
-    notify("Нельзя ответить на своё сообщение");
-    return;
-  }
+  if (!auth.user?.id || !comment.author?.id) return;
+  if (String(comment.author.id) === String(auth.user.id)) { notify("Нельзя ответить на своё сообщение"); return; }
   isReplyMode.value = true;
-  replyTo.value = {
-    commentId: comment.id,
-    userName: comment.author?.name || "Пользователь",
-  };
-  if (scrollContainer.value) {
-    scrollContainer.value.style.scrollSnapType = 'none';
-  }
-  nextTick(() => {
-    const input = document.querySelector(".footer-input input");
-    if (input) input.focus({ preventScroll: true });
-  });
+  replyTo.value = { commentId: comment.id, userName: comment.author?.name || "Пользователь" };
+  if (scrollContainer.value) scrollContainer.value.style.scrollSnapType = 'none';
+  nextTick(() => { const input = document.querySelector(".footer-input input"); if (input) input.focus({ preventScroll: true }); });
 };
-const cancelReply = () => {
-  replyTo.value = null;
-  newComment.value = "";
-  isReplyMode.value = false;
-  if (scrollContainer.value) {
-    scrollContainer.value.style.scrollSnapType = 'y mandatory';
-  }
-};
-const setVideoRef = (el) => {
-  if (el && !videoRefs.value.includes(el)) videoRefs.value.push(el);
-};
+
+const cancelReply = () => { replyTo.value = null; newComment.value = ""; isReplyMode.value = false; if (scrollContainer.value) scrollContainer.value.style.scrollSnapType = 'y mandatory'; };
+
+const setVideoRef = (el) => { if (el && !videoRefs.value.includes(el)) videoRefs.value.push(el); };
+
 const handleKeyDown = (e) => {
   if (isReplyMode.value) return;
-  if (e.key === "ArrowDown") {
-    e.preventDefault();
-    scrollNext();
-  } else if (e.key === "ArrowUp") {
-    e.preventDefault();
-    scrollPrev();
-  }
+  if (e.key === "ArrowDown") { e.preventDefault(); scrollNext(); }
+  else if (e.key === "ArrowUp") { e.preventDefault(); scrollPrev(); }
 };
-const scrollNext = () => {
-  if (scrollContainer.value) {
-    scrollContainer.value.scrollBy({ top: window.innerHeight, behavior: "smooth" });
-  }
-};
-const scrollPrev = () => {
-  if (scrollContainer.value) {
-    scrollContainer.value.scrollBy({ top: -window.innerHeight, behavior: "smooth" });
-  }
-};
-const scrollToVideo = (id) => {
-  const el = videoRefs.value.find((v) => v.dataset.id === id);
-  if (el) el.scrollIntoView({ behavior: 'auto' });
-};
-// ===== ПРЕДЗАГРУЗКА ВИДЕО =====
+
+const scrollNext = () => { if (scrollContainer.value) scrollContainer.value.scrollBy({ top: window.innerHeight, behavior: "smooth" }); };
+const scrollPrev = () => { if (scrollContainer.value) scrollContainer.value.scrollBy({ top: -window.innerHeight, behavior: "smooth" }); };
+
+const scrollToVideo = (id) => { const el = videoRefs.value.find((v) => v.dataset.id === id); if (el) el.scrollIntoView({ behavior: 'auto' }); };
+
 const preloadVideos = () => {
-  videos.value.forEach(video => {
-    if (!video.cdnUrl) return;
-    const preloadLink = document.createElement('link');
-    preloadLink.rel = 'preload';
-    preloadLink.href = video.cdnUrl;
-    preloadLink.as = 'video';
-    document.head.appendChild(preloadLink);
-  });
+  videos.value.forEach(video => { if (!video.cdnUrl) return; const link = document.createElement('link'); link.rel = 'preload'; link.href = video.cdnUrl; link.as = 'video'; document.head.appendChild(link); });
 };
+
 const initObserver = () => {
-  if (observer) {
-    observer.disconnect();
-    observer = null;
-  }
-
-  observer = new IntersectionObserver(
-    (entries) => {
-      if (isReplyMode.value) return;
-      entries.forEach((entry) => {
-        const videoId = entry.target.dataset.id;
-        const video = videos.value.find(v => v.id === videoId);
-
-        if (entry.isIntersecting) {
-          clearTimeout(scrollTimeout);
-          activeVideoId.value = videoId;
-          isScrolling.value = true;
-          scrollTimeout = setTimeout(() => {
-            isScrolling.value = false;
-          }, 300);
-
-          if (!video?.hasError) {
-            entry.target.play().catch(err => {
-              if (err.name === "NotAllowedError" && !isMuted.value) {
-                isMuted.value = true;
-                entry.target.muted = true;
-                entry.target.play();
-              }
-            });
-          }
-
-          videos.value.forEach(v => {
-            if (v.id !== videoId) v.isPlaying = false;
-          });
-
-          authStore.enrichVideo(videoId, true);
-          addView(video);
-          router.replace({ name: "shorts", params: { id: videoId } });
-        } else {
-          entry.target.pause();
-          entry.target.currentTime = 0;
-          if (video) video.isPlaying = false;
+  if (observer) { observer.disconnect(); observer = null; }
+  observer = new IntersectionObserver((entries) => {
+    if (isReplyMode.value) return;
+    entries.forEach((entry) => {
+      const videoId = entry.target.dataset.id;
+      const video = videos.value.find(v => v.id === videoId);
+      if (entry.isIntersecting) {
+        clearTimeout(scrollTimeout); activeVideoId.value = videoId; isScrolling.value = true;
+        scrollTimeout = setTimeout(() => { isScrolling.value = false; }, 300);
+        if (!video?.hasError) {
+          entry.target.play().catch(err => { if (err.name === "NotAllowedError" && !isMuted.value) { isMuted.value = true; entry.target.muted = true; entry.target.play(); } });
         }
-      });
-    },
-    { threshold: 0.6 }
-  );
-  videoRefs.value.forEach((v) => {
-    if (v) observer.observe(v);
-  });
+        videos.value.forEach(v => { if (v.id !== videoId) v.isPlaying = false; });
+        auth.enrichVideo(videoId, true); addView(video); router.replace({ name: "shorts", params: { id: videoId } });
+      } else { entry.target.pause(); entry.target.currentTime = 0; if (video) video.isPlaying = false; }
+    });
+  }, { threshold: 0.6 });
+  videoRefs.value.forEach((v) => { if (v) observer.observe(v); });
 };
 
-const isOwnComment = (comment) => {
-  if (!comment.author?.id || !authStore.user?.id) return false;
-  return String(comment.author.id) === String(authStore.user.id);
-};
+const isOwnComment = (comment) => { if (!comment.author?.id || !auth.user?.id) return false; return String(comment.author.id) === String(auth.user.id); };
 
-const closeShorts = () => {
-  if (window.history.length > 1) {
-    router.back();
-  } else {
-    router.push("/");
-  }
-};
+const closeShorts = () => { if (window.history.length > 1) router.back(); else router.push("/"); };
 
 const isShareModalOpen = ref(false);
 const shareLink = ref("");
 
-const openShareModal = (video) => {
-  if (!video) return;
-  const baseUrl = window.location.origin;
-  shareLink.value = `${baseUrl}/shorts/${video.id}`;
-  isShareModalOpen.value = true;
-};
+const openShareModal = (video) => { if (!video) return; shareLink.value = `${window.location.origin}/shorts/${video.id}`; isShareModalOpen.value = true; };
 
 const copyToClipboard = async () => {
-  try {
-    await navigator.clipboard?.writeText(shareLink.value);
-    // activeVideoId.value = videoId;
-    // isScrolling.value = true;
-    isCopied.value = true;
-    clearTimeout(copyTimeout);
-    copyTimeout = setTimeout(() => isCopied.value = false, 2000);
-  } catch {
-    notify("Ошибка копирования", "error");
-  }
+  try { await navigator.clipboard?.writeText(shareLink.value); isCopied.value = true; clearTimeout(copyTimeout); copyTimeout = setTimeout(() => isCopied.value = false, 2000); }
+  catch { notify("Ошибка копирования", "error"); }
 };
 
-const isOwnVideo = (video) => {
-  if (!video?.author?.id || !authStore.user?.id) return false;
-  return String(video.author.id) === String(authStore.user.id);
-};
-const handleScroll = () => {
-  if (isReplyMode.value) return;
-  isScrolling.value = true;
-  clearTimeout(scrollTimeout);
-  scrollTimeout = setTimeout(() => {
-    isScrolling.value = false;
-  }, 150);
-};
-onMounted(async () => {
-  if (videos.value.length === 0) {
-    await authStore.fetchWelcomeFeed({ page: 0, size: 20, seed: 0.5 });
-  }
-  await loadLinkedProducts();
-  preloadAdjacentVideos();
-  const preloadDetails = videos.value.slice(0, 3).map(v => 
-    authStore.enrichVideo(v.id).catch(() => {})
-  );
-  await Promise.all(preloadDetails);
-  if (selectedVideoId.value) {
-    activeVideoId.value = selectedVideoId.value;
-  } else if (videos.value.length > 0) {
-    activeVideoId.value = videos.value[0].id;
-  }
-  window.addEventListener("keydown", handleKeyDown);
-  scrollContainer.value?.addEventListener('scroll', handleScroll);
-  nextTick(() => {
-    initObserver();
-    scrollToVideo(selectedVideoId.value);
-  });
-});
+const isOwnVideo = (video) => { if (!video?.author?.id || !auth.user?.id) return false; return String(video.author.id) === String(auth.user.id); };
+
+const handleScroll = () => { if (isReplyMode.value) return; isScrolling.value = true; clearTimeout(scrollTimeout); scrollTimeout = setTimeout(() => { isScrolling.value = false; }, 150); };
 
 const preloadAdjacentVideos = () => {
   const currentIdx = videos.value.findIndex(v => v.id === selectedVideoId.value);
   const indicesToLoad = [currentIdx - 1, currentIdx, currentIdx + 1].filter(i => i >= 0 && i < videos.value.length);
-  
   indicesToLoad.forEach(idx => {
-    const video = videos.value[idx];
-    if (!video?.cdnUrl) return;
-    const preloadLink = document.createElement('link');
-    preloadLink.rel = 'preload';
-    preloadLink.href = video.cdnUrl;
-    preloadLink.as = 'video';
-    document.head.appendChild(preloadLink);
+    const video = videos.value[idx]; if (!video?.cdnUrl) return;
+    const link = document.createElement('link'); link.rel = 'preload'; link.href = video.cdnUrl; link.as = 'video'; document.head.appendChild(link);
   });
 };
+
+onMounted(async () => {
+  if (videos.value.length === 0) await auth.fetchWelcomeFeed({ page: 0, size: 20, seed: 0.5 });
+  await loadLinkedProducts();
+  preloadAdjacentVideos();
+  const preloadDetails = videos.value.slice(0, 3).map(v => auth.enrichVideo(v.id).catch(() => {}));
+  await Promise.all(preloadDetails);
+  if (selectedVideoId.value) activeVideoId.value = selectedVideoId.value;
+  else if (videos.value.length > 0) activeVideoId.value = videos.value[0].id;
+  window.addEventListener("keydown", handleKeyDown);
+  scrollContainer.value?.addEventListener('scroll', handleScroll);
+  nextTick(() => { initObserver(); scrollToVideo(selectedVideoId.value); });
+});
 
 onUnmounted(() => {
   window.removeEventListener("keydown", handleKeyDown);
   scrollContainer.value?.removeEventListener("scroll", handleScroll);
-  if (observer) {
-    observer.disconnect();
-    observer = null;
-  }
-  clearTimeout(copyTimeout);
-  clearTimeout(scrollTimeout);
+  if (observer) { observer.disconnect(); observer = null; }
+  clearTimeout(copyTimeout); clearTimeout(scrollTimeout);
 });
 </script>
-
 <style scoped>
 .mute-btn {
   position: absolute;

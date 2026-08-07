@@ -85,18 +85,18 @@ const processedVideos = ref(new Set());
 // ===== СТАТИЧНЫЕ ФОТОГРАФИИ ДЛЯ ГОСТЕЙ =====
 // Замените пути на свои изображения
 const staticImages = ref([
-  "/src/assets/img/video/preview-1.jpg",
-  "/src/assets/img/video/preview-2.jpg",
-  "/src/assets/img/video/preview-3.jpg",
-  "/src/assets/img/video/preview-4.jpg",
-  "/src/assets/img/video/preview-1.jpg",
-  "/src/assets/img/video/preview-2.jpg",
-  "/src/assets/img/video/preview-3.jpg",
-  "/src/assets/img/video/preview-4.jpg",
-  "/src/assets/img/video/preview-1.jpg",
-  "/src/assets/img/video/preview-2.jpg",
-  "/src/assets/img/video/preview-3.jpg",
-  "/src/assets/img/video/preview-4.jpg",
+  "/img/video/preview-1.jpg",
+  "/img/video/preview-2.jpg",
+  "/img/video/preview-3.jpg",
+  "/img/video/preview-4.jpg",
+  "/img/video/preview-1.jpgg",
+  "/img/video/preview-2.jpg",
+  "/img/video/preview-3.jpg",
+  "/img/video/preview-4.jpg",
+  "/img/video/preview-1.jpg",
+  "/img/video/preview-2.jpg",
+  "/img/video/preview-3.jpg",
+  "/img/video/preview-4.jpg",
 ]);
 
 const openLogin = () => modalStore.openLogin();

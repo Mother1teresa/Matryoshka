@@ -472,6 +472,22 @@ export const useAuthStore = defineStore("auth", {
         );
 
         this.allChats = enrichedChats;
+        await Promise.all(
+          this.allChats.map(async (chat) => {
+            if (chat.productId && !chat.productImage) {
+              try {
+                const product = await this.getAdvertById(chat.productId);
+                if (product) {
+                  chat.productName = product.title || chat.productName;
+                  chat.productImage = product.image || product.images?.[0] || '';
+                  chat.price = product.price || chat.price;
+                }
+              } catch (e) {
+                console.warn('Не удалось подгрузить товар для чата', chat.id);
+              }
+            }
+          })
+        );
       } catch (e) {
         console.error("Ошибка при получении чатов:", e.response?.data || e);
         throw e;
@@ -505,7 +521,7 @@ export const useAuthStore = defineStore("auth", {
         throw e;
       }
     },
-    async createPrivateRoom(userBId) {
+    async createPrivateRoom(userBId, productId = "8981c111-1f84-48b7-89b1-5a06b016cc6a") {
       if (!this.user?.id) throw new Error("Пользователь не авторизован");
       if (String(userBId) === String(this.user.id)) {
         throw new Error("Нельзя создать чат с самим собой");
@@ -514,7 +530,7 @@ export const useAuthStore = defineStore("auth", {
         const res = await api.post("/chat/get-or-create-room", {
           userA: String(this.user.id),
           userB: String(userBId),
-          productId: productId || null,  
+          productId: productId || "8981c111-1f84-48b7-89b1-5a06b016cc6a",  
         });
         const roomId = res.data;
         const existingIndex = this.allChats.findIndex(c => String(c.id) === String(roomId));
@@ -532,7 +548,7 @@ export const useAuthStore = defineStore("auth", {
             productName: "",
             productImage: "",
             price: "",
-            productId: productId || "", 
+            productId: productId || "",
             lastMessage: {
               text: "Сообщений нет",
               isMine: false,

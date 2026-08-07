@@ -299,7 +299,7 @@ const handleCreateVideo = () => {
 .logout-modal {position: fixed;inset: 0;background: rgba(0, 0, 0, 0.3);display: flex;justify-content: center;align-items: center;z-index: 10;}
 .logout-box {background: white;padding: 1.563rem;border-radius: 1rem;}
 .logout-actions {display: flex;gap: 0.625rem;margin-top: 0.938rem;}
-.logout-actions .btn-light {height: auto;border-radius: 1.25rem;}
+.logout-actions .btn-light {height: auto;border-radius: 1.25rem; justify-content: center; padding: 0.688rem 1.969rem;}
 .header__right-false_poder{background: var(--bg-profil);width: 5.438rem;height: 5.438rem;border-radius: 1rem;display: flex;align-items: center;justify-content: center;}
 .stars-row {display: inline-flex;align-items: center;gap: 0.15rem;margin-left: 0.25rem;}
 .star-icon {width: 1rem;height: 1rem;}
