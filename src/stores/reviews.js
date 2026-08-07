@@ -7,7 +7,6 @@ export const useReviewStore = defineStore('reviews', () => {
   const currentReviews = ref([])
   const isLoading = ref(false)
 
-  // === GETTERS ===
   const averageRating = computed(() => {
     if (!currentReviews.value.length) return 0
     const sum = currentReviews.value.reduce((acc, r) => acc + r.rating, 0)
@@ -38,7 +37,6 @@ export const useReviewStore = defineStore('reviews', () => {
     return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
   }
 
-  // === ACTIONS ===
   const fetchReviewsBySeller = async (sellerId) => {
     if (!sellerId) {
       currentReviews.value = []
@@ -108,7 +106,11 @@ export const useReviewStore = defineStore('reviews', () => {
 
   const addReply = async (reviewId, replyText) => {
     try {
-      await api.patch(`/profile/reviews/${reviewId}/reply`, replyText)
+      await api.patch(
+        `/profile/reviews/${reviewId}/reply`,
+        { replyText },
+        { headers: { 'Content-Type': 'application/json' } }
+      )
 
       const review = allReviews.value.find(r => r.id === reviewId)
       if (review) {
