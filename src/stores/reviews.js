@@ -108,11 +108,7 @@ export const useReviewStore = defineStore('reviews', () => {
 
   const addReply = async (reviewId, replyText) => {
     try {
-      await api.patch(
-        `/profile/reviews/${reviewId}/reply`,
-        JSON.stringify(replyText),
-        { headers: { 'Content-Type': 'application/json' } }
-      )
+      await api.patch(`/profile/reviews/${reviewId}/reply`, replyText)
 
       const review = allReviews.value.find(r => r.id === reviewId)
       if (review) {

@@ -132,7 +132,7 @@ async function sendReply(reviewId) {
   const text = replyTexts.value[reviewId];
   if (!text || text.trim() === '') return;
   try {
-    await reviewStore.addReply(reviewId, text);
+    await reviewStore.addReply(reviewId, text.trim())
     activeReplyFields.value[reviewId] = false;
     delete replyTexts.value[reviewId];
   } catch (e) {
