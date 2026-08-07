@@ -904,10 +904,6 @@ onUnmounted(() => {
   line-height: 1;
   margin: 0;
   height: 2.875rem;
-  text-transform: lowercase;
-}
-.video-title::first-letter {
-  text-transform: uppercase;
 }
 .video-stats-row {
   display: flex;
@@ -928,7 +924,7 @@ onUnmounted(() => {
   order: 2;
 }
 .linked-product-wrapper{
-  order: 1;
+  order: 3;
 }
 .author-main {
   display: flex;
@@ -1155,4 +1151,6 @@ onUnmounted(() => {
 .c-reply-badge {font-size: 0.75rem;color: #8E8C8C;line-height: 1;}
 .reply-item .c-text {width: 100%;}
 .reply-item .reply-avatar{width: 2rem; height: 2rem;}
+:deep(.product-card .product-img){height: 9rem;}
+:deep(.product-card){height: 15.25rem;}
 </style>

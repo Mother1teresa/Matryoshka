@@ -360,6 +360,7 @@ const loadOpponentProfile = async () => {
       productName: room?.productName || "",
       productImage: room?.productImage || "",
       price: room?.price || "",
+      productId: room?.productId || "",
       lastMessage: room?.lastMessage || null,
       unreadCount: room?.unreadCount || 0,
     };

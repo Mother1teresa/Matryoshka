@@ -34,11 +34,11 @@
               </div>
               <div class="seller-desc">
                 <div class="desc-container">
-                  <span :class="{ 'is-collapsed': !isDescExpanded }" class="desc-text">
+                  <span ref="descRef" :class="{ 'is-collapsed': !isDescExpanded }" class="desc-text">
                     <a v-if="seller.website" :href="seller.website" target="_blank">{{ seller.website }}</a>
                     {{ sellerDescription }}
                   </span>
-                  <button class="btn-more" @click="isDescExpanded = !isDescExpanded">
+                  <button v-if="needsExpand" class="btn-more" @click="isDescExpanded = !isDescExpanded">
                     {{ isDescExpanded ? "Скрыть" : "Ещё" }}
                   </button>
                 </div>
@@ -215,7 +215,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "/src/stores/authStore.js";
 import { useModalStore } from "/src/stores/modal.js";
@@ -240,6 +240,8 @@ const isReviewsLoading = ref(false);
 const seller = ref(null);
 const sellerProducts = ref([]);
 const sellerVideos = ref([]);
+const descRef = ref(null);
+const needsExpand = ref(false);
 
 const productLink = (ad) => ({
   name: 'Product',
@@ -249,7 +251,15 @@ const productLink = (ad) => ({
     id: ad.id
   }
 });
-
+const checkOverflow = () => {
+  nextTick(() => {
+    const el = descRef.value;
+    if (!el) return;
+    const lineHeight = parseFloat(getComputedStyle(el).lineHeight) || 0;
+    const maxHeight = lineHeight * 3;
+    needsExpand.value = el.scrollHeight > maxHeight + 1;
+  });
+};
 
 const sellerName = computed(() => {
   return seller.value?.name || seller.value?.username || seller.value?.companyName || 'Продавец';
@@ -302,7 +312,6 @@ const loadSellerData = async (sellerId) => {
   reviewStore.reviews = [];
 
   try {
-    // 1. Загружаем профиль продавца
     const profile = await auth.fetchProfileById(sellerId);
     
     if (!profile) {
@@ -312,7 +321,6 @@ const loadSellerData = async (sellerId) => {
     
     seller.value = profile;
 
-    // 2. Загружаем товары и видео параллельно
     await Promise.all([
       loadSellerProducts(sellerId),
       loadSellerVideos(sellerId),
@@ -385,7 +393,7 @@ const loadReviews = async (sellerId) => {
     isReviewsLoading.value = false;
   }
 };
-
+watch(() => sellerDescription.value, checkOverflow, { immediate: true });
 // === WATCH ===
 watch(() => route.params.id, (newId) => {
   if (newId) {
@@ -427,11 +435,11 @@ const playVideo = (video) => {
 .reply-content { margin-top: .3rem;}
 .reply-text { font-size: 1rem;}
 .seller-tabs { display: flex; gap: 0rem; border-radius: 0.625rem; margin-bottom: 3.25rem; background: var(--bg-defort); width: fit-content; padding: 0.125rem 0.25rem; }
-.desc-container { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 4px; }
-.desc-text { display: block; max-width: 100%; font-size: 1.25rem; color: #858685; }
+.desc-container { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 0.25rem; }
+.desc-text { display: block; width: 56.563rem; max-width: 100%;  font-size: 1.25rem; color: #858685; }
 .seller-desc { width: 56.563rem; margin-top: 1.375rem;}
-.desc-text.is-collapsed { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 25rem; }
-.btn-more { color: var(--btn-bg); background: none; border: none; cursor: pointer; font-weight: 400; padding: 0; font-size: 1.25rem; }
+.desc-text.is-collapsed { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+.btn-more {flex-shrink: 0; color: var(--btn-bg); background: none; border: none; cursor: pointer; font-weight: 400; padding: 0; font-size: 1.25rem; }
 .products { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.938rem; padding-left: -1rem; padding-right: -1rem; }
 .seller-tabs button { padding: 1rem 3.188rem; background: none; border: none; font-size: 1.25rem; font-weight: 700; color: #858685; cursor: pointer; position: relative; background: var(--bg-defort); border-radius: 0.625rem; }
 .seller-tabs button.active { color: var(--bg-defort); background: var(--btn-bg); }

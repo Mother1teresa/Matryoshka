@@ -54,7 +54,5 @@ watch(() => region.selectedRegion, load)
   grid-template-columns: repeat(5, 1fr);
 }
 @media (max-width: 77rem){
-.products {grid-template-columns: repeat(4, 1fr);}
-}
-
+.products {grid-template-columns: repeat(4, 1fr);}}
 </style>

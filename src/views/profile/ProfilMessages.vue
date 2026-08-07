@@ -160,14 +160,9 @@ onUnmounted(() => {
         </div>
       </a>
       <div class="chats-list">
-        <div
-          v-for="chat in chats"
-          :key="chat.id"
-          class="chat-card"
-          @click="openChat(chat.id)"
-        >
+        <div v-for="chat in chats" :key="chat.id" class="chat-card" @click="openChat(chat.id)">
           <div class="chat-left">
-            <img src="/src/assets/img/product/foto-chat-prod.png" alt="foto" class="user-foto">
+            <img :src="chat.productImage || '/src/assets/img/product/foto-chat-prod.png'" alt="foto" class="user-foto">
           </div>
 
           <div class="chat-center">

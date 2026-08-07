@@ -459,6 +459,7 @@ export const useAuthStore = defineStore("auth", {
               productName: existing?.productName || raw.productName || '',
               productImage: existing?.productImage || raw.productImage || '',
               price: existing?.price || raw.price || '',
+              productId: existing?.productId || raw.productId || '',
               lastMessage: lastMessage || {
                 text: 'Сообщений нет',
                 isMine: false,
@@ -513,6 +514,7 @@ export const useAuthStore = defineStore("auth", {
         const res = await api.post("/chat/get-or-create-room", {
           userA: String(this.user.id),
           userB: String(userBId),
+          productId: productId || null,  
         });
         const roomId = res.data;
         const existingIndex = this.allChats.findIndex(c => String(c.id) === String(roomId));
@@ -530,6 +532,7 @@ export const useAuthStore = defineStore("auth", {
             productName: "",
             productImage: "",
             price: "",
+            productId: productId || "", 
             lastMessage: {
               text: "Сообщений нет",
               isMine: false,

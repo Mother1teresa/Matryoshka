@@ -72,42 +72,45 @@
         </template>
         <!-- Тип: Объявления -->
         <template v-else>
-          <div v-for="item in currentItems" :key="item.id" class="fav-ad-horizontal">
-            <div class="ad-img-container">
+          <div v-for="item in currentItems" :key="item.id" class="ad-card-horizontal">
+            <div class="ad-image-block">
               <router-link :to="productLink(item)">
-                <img :src="item.image || '/src/assets/img/placeholder.png'" class="ad-main-img" />
+                <img 
+                  :src="item.image" 
+                  alt="product" 
+                  @error="item.image = '/src/assets/img/placeholder.png'"
+                />
               </router-link>
             </div>
-            <div class="ad-content-info">
+            <div class="ad-main-info">
               <div class="ad-title-row">
-                <router-link :to="productLink(item)">
-                  <h3 class="ad-title">{{ item.title }}</h3>
-                </router-link>
-                <img
-                  src="/src/assets/img/icons/heart-filled.svg"
-                  class="fav-heart"
-                  @click.stop="removeFromFavorites(item.id)"
-                />
+                <h3 class="ad-title">
+                  <router-link :to="productLink(item)" class="ad-title-link">
+                    {{ item.title }}
+                  </router-link>
+                </h3>
+                <button 
+                  class="menu-gear-btn" 
+                  :class="{ active: activeMenuId === item.id }" 
+                  @click.stop="toggleMenu(item.id)"
+                >
+                  <img src="/src/assets/img/settings-gear3.svg" alt="menu" />
+                </button>
+                <div v-if="activeMenuId === item.id" class="video-dropdown-menu">
+                  <button class="delete-btn" @click.stop="openConfirm(item.id)">
+                    Убрать из избранных
+                  </button>
+                </div>
               </div>
-              <div class="ad-price">{{ item.price.toLocaleString() }} ₽</div>
-              <div class="ad-desc">{{ item.description }}</div>
               <div class="ad-location">
-                <img src="/src/assets/img/icons/location-pin.svg" class="pin" />
-                {{ item.address }}
+                <img src="/src/assets/img/location_on.svg" />
+                {{ item.city || item.address }}
               </div>
-              <div class="ad-details-tags">
-                <span>{{ getCategoryName(item.category) }}</span>
-              </div>
+              <p class="ad-description">{{ item.description }}</p>
+              <div class="ad-price">{{ item.price.toLocaleString() }} ₽</div>
             </div>
-            <div class="ad-seller-actions">
-              <div class="seller-brief">
-                <img :src="item.seller?.avatar || '/img/users/mask-avatar.png'" class="seller-avatar" />
-                <span class="seller-name">{{ item.seller?.name || 'Продавец' }}</span>
-              </div>
-              <div class="action-buttons" v-if="item.sellerId !== authStore.user?.id">
-                <button class="btn btn-green" @click="onWriteClick(item)">Написать</button>
-                <button class="btn btn-white" @click="onShowPhone(item)">Показать номер</button>
-              </div>
+            <div class="ad-stats-block">
+              <div class="creat-akk">{{ "Опубликовано " + formatDate(item.createdAt) }}</div>
             </div>
           </div>
         </template>
@@ -119,23 +122,6 @@
       </div>
     </div>
 
-    <!-- Модалка звонка -->
-    <Transition name="fade">
-      <div v-if="showCallModal" class="modal-overlay" @click.self="showCallModal = false">
-        <div class="confirm-call-card">
-          <p class="confirm-message">
-            Позвонить <strong>{{ callModalName }}</strong>?
-          </p>
-          <div class="phone-display">
-            {{ formatPhone(callModalPhone) }}
-          </div>
-          <div class="confirm-actions">
-            <button class="btn-black" @click="handleCall">Позвонить</button>
-            <button class="btn-gray" @click="showCallModal = false">Отмена</button>
-          </div>
-        </div>
-      </div>
-    </Transition>
     <transition name="fade">
       <div v-if="isConfirmOpen" class="modal-overlay" @click.self="closeConfirm">
         <div class="confirm-modal" @click.stop>
@@ -160,6 +146,7 @@ import { useFavoritesStore } from "/src/stores/favoritesStore.js";
 import { useModalStore } from "/src/stores/modal.js";
 import { notify } from "/src/utils/notify.js";
 import { categories } from "/src/data/categories.js";
+import { formatDate } from "/src/utils/formatters.js"
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -287,7 +274,8 @@ const loadData = async () => {
             city: fullAd?.city || fav.city || '',
             sellerId: sellerId,
             description: fullAd?.description || fav.description || '',
-            seller: seller || fav.seller || null
+            seller: seller || fav.seller || null,
+            createdAt: fullAd?.createdAt || fav.createdAt || '',
           };
         })
       );
@@ -478,6 +466,137 @@ onMounted(() => {
 .confirm-modal__actions{display: flex;justify-content: center;gap: 1.25rem;margin-top: 2.938rem;font-size: 1.25rem;}
 .go-to-ads-btn{ width: fit-content;padding: 0.938rem 1.875rem;border-radius: 1rem;font-size: 1.25rem;}
 .btn-close{background: #D8D8D8; border-radius: 1rem; padding: 0.938rem 1.125rem;}
-.modal-overlay {pointer-events: auto;}
 .confirm-modal {pointer-events: all;position: relative;z-index: 2;}
+/* ─── Карточка объявления (как в AdsPage) ─── */
+.ad-card-horizontal {
+  background: white;
+  border-radius: 1.25rem;
+  padding: 0.625rem;
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+.ad-image-block {
+  width: 11.75rem;
+  flex-shrink: 0;
+}
+.ad-image-block img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 1.25rem;
+}
+.ad-main-info {
+  width: 31.625rem;
+  display: grid;
+}
+.ad-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+}
+.ad-title {
+  height: 3.5rem;
+  margin-bottom: .4rem;
+  padding-right: 4.5rem;
+  overflow: hidden;
+}
+.ad-title a {
+  font-size: 1.5rem;
+  font-weight: 700;
+  display: inline-block;
+  text-transform: lowercase;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  border-radius: 0;
+}
+.ad-title a::first-letter {
+  text-transform: uppercase;
+}
+.ad-title-link {
+  color: inherit;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+.ad-title-link:hover {
+  opacity: 0.7;
+}
+.ad-price {
+  font-size: 1.5rem;
+  padding: 0.438rem 1rem;
+  background: var(--btn-bg);
+  font-weight: 700;
+  width: fit-content;
+  color: var(--bg-defort);
+  border-radius: 0.625rem;
+}
+.ad-description {
+  margin: 1rem 0;
+  font-size: 1rem;
+  color: #858685;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-weight: 700;
+}
+.ad-location {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.438rem;
+  font-weight: 700;
+  font-size: 1rem;
+}
+.ad-location img {
+  width: 1.563rem;
+  height: 1.563rem;
+}
+.ad-stats-block {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-end;
+  gap: 0.375rem;
+  margin-left: 1.25rem;
+  width: 36%;
+}
+
+/* ─── Кнопка меню (шестерёнка) ─── */
+.menu-gear-btn {
+  position: absolute;
+  top: 0rem;
+  right: 0rem;
+  width: 4.25rem;
+  height: 2.938rem;
+  background: var(--btn-bg);
+  border: none;
+  border-radius: 0 1.25rem 0 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  transition: all .3s;
+}
+.menu-gear-btn img {
+  width: 2rem;
+  height: 2rem;
+  filter: brightness(0) invert(1);
+}
+.menu-gear-btn.active,
+.menu-gear-btn:active {
+  background: var(--bg-defort);
+  box-shadow: 0px 4px 4px 0px #00000040;
+}
+.menu-gear-btn.active img,
+.menu-gear-btn:active img {
+  filter: none;
+}
+.creat-akk{color: #858685; font-size: 1rem;}
 </style>

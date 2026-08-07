@@ -106,13 +106,14 @@ const onShowNumberClick = async (item) => {
 
 const onWriteClick = async (item) => {
   const sellerId = item.sellerId || item.userId;
+  const productId = item.id || null; 
   if (!sellerId) {
     notify('Продавец не найден', 'error');
     return;
   }
   checkAuthAndRun(async () => {
     try {
-      const roomId = await auth.createPrivateRoom(sellerId);
+      const roomId = await auth.createPrivateRoom(sellerId, productId);
       router.push({ name: 'ChatDetail', params: { id: roomId } });
     } catch (err) {
       notify("Не удалось открыть чат", "error");

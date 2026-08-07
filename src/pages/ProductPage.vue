@@ -871,13 +871,14 @@ const onShowNumberClick = (item) => {
 };
 const onWriteClick = async (item) => {
   const targetId = item?.sellerId || item?.seller?.id || product.value?.sellerId;
+  const productId = item?.id || product.value?.id || null;
   if (!targetId) {
     notify('Продавец не найден', 'error');
     return;
   }
   checkAuthAndRun(async () => {
     try {
-      const roomId = await auth.createPrivateRoom(targetId);
+      const roomId = await auth.createPrivateRoom(targetId, productId);
       router.push({ name: 'ChatDetail', params: { id: roomId } });
     } catch (err) {
       notify("Не удалось открыть чат", "error");
