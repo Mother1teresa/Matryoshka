@@ -69,7 +69,7 @@
                        <button v-else @click.stop="handleArchive(video.id, false)">
                         Опубликовать заново
                       </button> -->
-                      <button class="delete-btn" @click.stop="handleDelete(video.s3Key)">
+                      <button class="delete-btn" @click.stop="handleDelete(video)">
                         Удалить
                       </button>
                     </div>
@@ -197,9 +197,9 @@ const handleArchive = (id, status) => {
 const isConfirmOpen = ref(false);
 const videoToDelete = ref(null);
 
-const handleDelete = (s3Key) => {
-  console.log("Маркер удаления (s3Key):", s3Key);
-  videoToDelete.value = s3Key;
+const handleDelete = (video) => {
+  console.log("Удаление:", video.id, video.s3Key);
+  videoToDelete.value = video;
   isConfirmOpen.value = true;
   activeMenuId.value = null; 
 };
@@ -213,9 +213,10 @@ const confirmDelete = async () => {
   if (!videoToDelete.value || isDeleting.value) return;
   try {
     isDeleting.value = true;
-    const success = await auth.deleteVideo(videoToDelete.value);
+    const { id, s3Key } = videoToDelete.value;
+    const success = await auth.deleteVideo(id, s3Key);
     if (success) {
-      notify("Ролик успешно удален");
+      notify("Ролик успешно удалён");
       closeConfirm();
     }
   } catch (e) {

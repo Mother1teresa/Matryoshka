@@ -1263,13 +1263,13 @@ export const useAuthStore = defineStore("auth", {
         return [];
       }
     },
-    async deleteVideo(s3Key) {
+    async deleteVideo(id, s3Key) {
       if (!this.user?.id) return false;
       try {
         await api.delete('/media', {
-          params: { s3Key }
+          params: { id, s3Key }
         });
-        this.allVideos = this.allVideos.filter(v => v.s3Key !== s3Key);
+        this.allVideos = this.allVideos.filter(v => v.id !== id);
         return true;
       } catch (e) {
         console.error("Ошибка удаления:", e.response?.data || e.message);
