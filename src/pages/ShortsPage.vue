@@ -124,21 +124,21 @@
                 </button>
                 <div class="video-actions">
                   <div class="v-action">
+                    <button class="action-btn" @click.stop="onFavoriteClick(video)">
+                      <img :src="video.isFavorite ? bookmarkFilledIcon : bookmarkIcon" class="favorite-icon"/>
+                    </button>
+                  </div>
+                  <div class="v-action">
                     <button class="action-btn" @click.stop="onLikeClick(video)">
                       <img :src="video.isLikedByMe ? heartFilled : heart" class="like-icon"/>
                     </button>
                     <span>{{ (video.likes ?? video.likesCount ?? 0) }}</span>
                   </div>
-                  <div class="v-action">
-                    <button class="action-btn" @click.stop="onFavoriteClick(video)">
-                      <img :src="video.isFavorite ? bookmarkFilledIcon : bookmarkIcon" class="favorite-icon"/>
-                    </button>
-                  </div>
-                  <div v-if="!isOwnVideo(video)" class="v-action">
+                  <!-- <div v-if="!isOwnVideo(video)" class="v-action">
                     <button class="action-btn" @click="onWriteClick(video)">
                       <img src="/src/assets/img/mes.svg" />
                     </button>
-                  </div>
+                  </div> -->
                   <div class="v-action">
                     <button class="action-btn" @click="openShareModal(video)">
                       <img src="/src/assets/img/icons/lin.svg" alt="share" />
@@ -424,14 +424,14 @@ const onSubscribeClick = (authorId) => {
   checkAuthAndRun(async () => { const isNowSubscribed = await subStore.toggle(authorId); notify(isNowSubscribed ? "Вы подписались на автора" : "Вы отписались от автора"); });
 };
 
-const onWriteClick = (video) => {
-  if (!video?.author?.id) return;
-  const productId = "8981c111-1f84-48b7-89b1-5a06b016cc6a"; 
-  checkAuthAndRun(async () => {
-    try {  const roomId = await auth.createPrivateRoom(video.author.id, productId); router.push({ name: "ChatDetail", params: { id: roomId } }); }
-    catch (err) { notify("Не удалось открыть чат", "error"); }
-  }, "Войдите, чтобы написать сообщение");
-};
+// const onWriteClick = (video) => {
+//   if (!video?.author?.id) return;
+//   const productId = video.productId || ""; 
+//   checkAuthAndRun(async () => {
+//     try {  const roomId = await auth.createPrivateRoom(video.author.id, productId); router.push({ name: "ChatDetail", params: { id: roomId } }); }
+//     catch (err) { notify("Не удалось открыть чат", "error"); }
+//   }, "Войдите, чтобы написать сообщение");
+// };
 
 const postComment = async (video, parentId = null) => {
   if (!newComment.value.trim() || !video) return;

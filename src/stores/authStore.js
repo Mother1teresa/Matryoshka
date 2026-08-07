@@ -521,7 +521,7 @@ export const useAuthStore = defineStore("auth", {
         throw e;
       }
     },
-    async createPrivateRoom(userBId, productId = "8981c111-1f84-48b7-89b1-5a06b016cc6a") {
+    async createPrivateRoom(userBId, productId = "") {
       if (!this.user?.id) throw new Error("Пользователь не авторизован");
       if (String(userBId) === String(this.user.id)) {
         throw new Error("Нельзя создать чат с самим собой");
@@ -530,7 +530,7 @@ export const useAuthStore = defineStore("auth", {
         const res = await api.post("/chat/get-or-create-room", {
           userA: String(this.user.id),
           userB: String(userBId),
-          productId: productId || "8981c111-1f84-48b7-89b1-5a06b016cc6a",  
+          productId: productId || "",  
         });
         const roomId = res.data;
         const existingIndex = this.allChats.findIndex(c => String(c.id) === String(roomId));
