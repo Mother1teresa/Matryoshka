@@ -725,7 +725,7 @@ watch(() => route.params.id, (newId, oldId) => {
 .typing-dots span{width:4px;height:4px;background:#4caf50;border-radius:50%;animation:bounce 1.4s infinite ease-in-out both;}
 .typing-dots span:nth-child(1){animation-delay:-.32s;}
 .typing-dots span:nth-child(2){animation-delay:-.16s;}
-.header-user-info_block{background: var(--bg-defort); padding: 1.25rem 1.875rem; box-shadow: 0px 2px 2px 0px #00000040; width: 24.063rem; border-radius: 0 0 2.5rem 0;}
+.header-user-info_block{background: var(--bg-defort); padding: 1.25rem 1.875rem; box-shadow: 0px 2px 2px 0px #00000040; width: 24.063rem; border-radius: 0 0 2.5rem 0; position: relative;}
 @keyframes bounce{0%,80%,100%{transform:scale(0)}40%{transform:scale(1)}}
 .messages-viewport{flex:1;overflow-y:auto;padding:1rem 20% 2.438rem 20%;display:flex;flex-direction:column;position:relative;background-attachment:fixed;gap:.625rem;}
 .msg-bubble,.system-msg,.bot-actions-row,.review-invitation,.sticky-date{position:relative;z-index:1;}

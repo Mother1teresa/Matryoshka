@@ -1,96 +1,110 @@
 <template>
   <div class="shorts-page-layout">
-    <!-- ЛЕВЫЙ САЙДБАР (как в ProfileLayout.vue) -->
-    <aside class="profile-sidebar">
-      <div class="profile-sidebar_block">
-        <div class="sidebar-header">
-          <router-link to="/" class="logo">
-            <span>Матрёшка</span>
-          </router-link>
-          <router-link to="/profile/info" class="user-foto">
-            <div class="user-foto_block">
-              <img :src="auth.userAvatar" class="user-avatar" />
-              <span class="user-name">{{ auth.user?.name }}</span>
-            </div>
-            <div class="user-brief">
-              <div class="rating">
-                <p>{{ userRating }}</p>
-                <div class="stars-row">
-                  <img v-for="n in 5" :key="n" :src="n <= Math.round(userRating) ? '/img/users/star.png' : '/img/users/star_1.png'" class="star-icon" alt="★" />
-                </div>
-              </div>
-            </div>
-          </router-link>
-        </div>
-        <nav class="profile-nav">
-          <div class="profile-nav_a">
-            <router-link to="/profile/advertisements">Мои объявления</router-link>
-            <router-link to="/profile/videos">Мои ролики</router-link>
-            <router-link to="/profile/favorites">Избранное</router-link>
-            <router-link to="/profile/messages">Сообщения</router-link>
-            <router-link to="/profile/notifications">Уведомления</router-link>
-            <router-link to="/profile/reviews">Отзывы</router-link>
-            <router-link to="/profile/info">Мои данные</router-link>
-          </div>
-          <div class="nav-footer">
-            <button class="edu-btn" @click="handleEduClick">Обучение</button>
-          </div>
-        </nav>
-      </div>
-    </aside>
-
     <!-- ПРАВАЯ ЧАСТЬ -->
     <main class="profile-main">
-      <!-- ПОИСК -->
-      <div class="shorts-search-bar">
-        <div class="search-wrapper">
-          <img src="/src/assets/img/icons/Icon-search.svg" class="search-icon" alt="search" />
-          <input type="text" v-model="searchQuery" placeholder="Поиск" @keyup.enter="performSearch" />
-          <button v-if="searchQuery" class="search-clear" @click="clearSearch">✕</button>
-        </div>
-      </div>
-
-      <!-- РЕЗУЛЬТАТЫ ПОИСКА (карточки из MyVideos.vue) -->
-      <div v-if="isSearchActive" class="search-results-page">
-        <h2 class="search-results-title">Результаты поиска</h2>
-        <div v-if="filteredVideos.length === 0" class="search-empty">
-          <p>По запросу «{{ searchQuery }}» ничего не найдено</p>
-        </div>
-        <div v-else class="videos-grid">
-          <div v-for="video in filteredVideos" :key="video.id" class="video-item" @click="openVideo(video.id)">
-            <div class="video-card">
-              <img :src="video.thumbnail || video.cdnUrl || '/img/users/mask-avatar.png'" class="thumbnail" alt="thumb" />
-              <div class="video-overlay">
-                <span class="duration">{{ video.duration || "0:11" }}</span>
-              </div>
-            </div>
-            <div class="video-info">
-              <div class="stats-line">
-                <div class="stat">
-                  <img src="/src/assets/img/icons/eye.svg" />
-                  {{ video.views ?? video.viewsCount ?? "" }}
-                </div>
-                <div class="stat">
-                  <img src="/src/assets/img/icons/heart.svg" />
-                  {{ video.likes ?? video.likesCount ?? "" }}
-                </div>
-                <div class="stat">
-                  <img src="/src/assets/img/icons/comment.svg" />
-                  {{ video.commentsCount ?? "" }}
-                </div>
-              </div>
-              <p class="video-description">{{ video.description || "Описание отсутствует" }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
+    
       <!-- ЛЕНТА ШОРТСОВ (оригинал, не трогал video-actions / info-side / share-modal) -->
-      <div v-else class="shorts-page-overlay">
+      <div class="shorts-page-overlay">
         <div v-if="isLoading && videos.length === 0" class="loader">Загрузка роликов...</div>
         <div v-else-if="videos.length" class="shorts-main-container" ref="scrollContainer">
+          <!-- ЛЕВЫЙ САЙДБАР (как в ProfileLayout.vue) -->
           <div v-for="video in videos" :key="video.id" class="short-snap-item" :class="{ 'is-scrolling': isScrolling }">
-            <div class="short-content-wrapper">
+            <aside class="profile-sidebar">
+            <div class="profile-sidebar_block">
+              <div class="sidebar-header">
+                <router-link to="/" class="logo">
+                  <span>Матрёшка <div class="grup"></div></span>
+                  
+                </router-link>
+                <router-link to="/profile/info" class="user-foto">
+                  <div class="user-foto_block">
+                    <img :src="auth.userAvatar" class="user-avatar" />
+                    <span class="user-name">{{ auth.user?.name }}</span>
+                  </div>
+                  <div class="user-brief">
+                    <div class="rating">
+                      <p>{{ userRating }}</p>
+                      <div class="stars-row">
+                        <img v-for="n in 5" :key="n" :src="n <= Math.round(userRating) ? '/img/users/star.png' : '/img/users/star_1.png'" class="star-icon" alt="★" />
+                      </div>
+                    </div>
+                  </div>
+                </router-link>
+              </div>
+              <nav class="profile-nav">
+                <div class="profile-nav_a">
+                  <router-link to="/profile/advertisements">Мои объявления</router-link>
+                  <router-link to="/profile/videos">Мои ролики</router-link>
+                  <router-link to="/profile/favorites">Избранное</router-link>
+                  <router-link to="/profile/messages">Сообщения</router-link>
+                  <router-link to="/profile/notifications">Уведомления</router-link>
+                  <router-link to="/profile/reviews">Отзывы</router-link>
+                  <router-link to="/profile/info">Мои данные</router-link>
+                </div>
+                <div class="nav-footer">
+                  <button class="edu-btn" @click="handleEduClick">Обучение</button>
+                </div>
+              </nav>
+            </div>
+            </aside>
+            <!-- РЕЗУЛЬТАТЫ ПОИСКА (карточки из MyVideos.vue) -->
+            <div v-if="isSearchActive" class="search-results-page">
+              <div class="shorts-search-bar">
+                <div class="search-wrapper">
+                  <img src="/src/assets/img/icons/Icon-search.svg" class="search-icon" alt="search" />
+                  <input type="text" v-model="searchQuery" placeholder="Поиск" @keyup.enter="performSearch" />
+                  <button v-if="searchQuery" class="search-clear" @click="clearSearch">✕</button>
+                </div>
+              </div>
+              <div class="search-results-page_block">
+                <h2 class="search-results-title">Результаты поиска</h2>
+                <div v-if="filteredVideos.length === 0" class="search-empty">
+                  <p>По запросу «{{ searchQuery }}» ничего не найдено</p>
+                </div>
+                <div v-else class="videos-grid">
+                  <div v-for="video in filteredVideos" :key="video.id" class="video-item" @click="openVideo(video.id)">
+                  <div class="video-card" @click="goToVideo(video.id)">
+                        <video 
+                          v-if="video.cdnUrl"
+                          :src="video.cdnUrl" 
+                          class="thumbnail" 
+                          preload="metadata"
+                          muted
+                          playsinline
+                        ></video>
+                        <img 
+                          v-else-if="video.thumbnail"
+                          :src="video.thumbnail" 
+                          class="thumbnail" 
+                          alt="Превью" 
+                        />
+                        <img :src="video.author?.avatar || '/img/users/mask-avatar.png'" class="author-avatar" />
+                        <div class="video-overlay">
+                          <span class="duration">{{ video.duration || "0:11" }}</span>
+                        </div>
+                      </div>
+                    <div class="video-info">
+                      <p class="video-description">{{ video.description || "Описание отсутствует" }}</p>
+                      <div class="stats-line">
+                        <div class="stat">
+                          <img src="/src/assets/img/icons/eye.svg" />
+                          {{ video.views ?? video.viewsCount ?? "" }}
+                        </div>
+                        <div class="stat">
+                          <img src="/src/assets/img/icons/heart.svg" />
+                          {{ video.likes ?? video.likesCount ?? "" }}
+                        </div>
+                        <div class="stat">
+                          <img src="/src/assets/img/icons/comment.svg" />
+                          {{ video.commentsCount ?? "" }}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-else class="short-content-wrapper">
               
               <!-- ВИДЕО -->
               <div class="video-side">
@@ -146,17 +160,25 @@
                   </div>
                   <div class="v-action scroll-arrows">
                     <button class="action-btn arrow-btn" @click="scrollPrev">
-                      <img src="/src/assets/img/icons/up.svg" alt="up" />
+                      <img src="/src/assets/img/icons/down.svg" alt="up" />
                     </button>
                     <button class="action-btn arrow-btn" @click="scrollNext">
-                      <img src="/src/assets/img/icons/down.svg" alt="down" />
+                      <img src="/src/assets/img/icons/up.svg" alt="down" />
                     </button>
                   </div>
                 </div>
               </div>
-
+              
               <!-- ИНФОРМАЦИЯ (Правая часть) -->
               <aside class="info-side">
+                <!-- ПОИСК -->
+                <div class="shorts-search-bar">
+                  <div class="search-wrapper">
+                    <img src="/src/assets/img/icons/Icon-search.svg" class="search-icon" alt="search" />
+                    <input type="text" v-model="searchQuery" placeholder="Поиск" @keyup.enter="performSearch" />
+                    <button v-if="searchQuery" class="search-clear" @click="clearSearch">✕</button>
+                  </div>
+                </div>
                 <div class="info-scroll-area">
                   <div class="info-content-wrapper" :class="{ 'is-visible': activeVideoId === video.id && !isScrolling }">
                   <div class="info-scroll-area_block">
@@ -191,66 +213,68 @@
                     </div>
                   </div>
                   </div>
-                  <div class="comments-block">
-                    <p class="section-title">
-                      <img src="/src/assets/img/icons/comment.svg" alt="" />
-                      Комментарии
-                    </p>
-                    <div v-if="!video.comments?.length" class="comments-empty">
-                      <p>Комментариев нет</p>
-                    </div>
-                    <div v-if="video.commentsDisabled" class="comments-locked">
-                      <p>Комментарии не доступны</p>
-                    </div>
-                    <div v-else class="comments-list">
-                      <div v-for="comment in buildCommentTree(video.comments)" :key="comment.id" class="comment-thread">
-                        <div class="comment-item">
-                          <img :src="comment.author?.avatar || '/img/users/mask-avatar.png'"/>
-                          <div class="c-body">
-                            <div class="c-header">
-                              <span class="c-user">{{ comment.author?.name || "Пользователь" }}</span>
-                              <p class="c-text">{{ comment.text }}</p>
-                            </div>
-                            <div class="c-header_footer">
-                              <span class="c-date">{{ formatDate(comment.createdAt) }}</span>
-                              <span v-if="!isOwnComment(comment)" class="c-reply" @click.stop.prevent="startReply(comment)">
-                                Ответить
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div v-if="comment.replies?.length" class="comment-replies">
-                          <div v-for="reply in comment.replies" :key="reply.id" class="comment-item reply-item">
-                            <img :src="reply.author?.avatar || '/img/users/mask-avatar.png'" class="reply-avatar"/>
+                  <div class="comments-block_list" :class="{ 'is-visible': activeVideoId === video.id && !isScrolling }">
+                    <div class="comments-block">
+                      <p class="section-title">
+                        Комментарии
+                      </p>
+                      <div v-if="!video.comments?.length" class="comments-empty">
+                        <p>Комментариев нет</p>
+                      </div>
+                      <div v-if="video.commentsDisabled" class="comments-locked">
+                        <p>Комментарии не доступны</p>
+                      </div>
+                      <div v-else class="comments-list">
+                        <div v-for="comment in buildCommentTree(video.comments)" :key="comment.id" class="comment-thread">
+                          <div class="comment-item">
+                            <img :src="comment.author?.avatar || '/img/users/mask-avatar.png'"/>
                             <div class="c-body">
                               <div class="c-header">
-                                <span class="c-reply-badge">Ответ</span>
-                                <span class="c-user">{{ reply.author?.name || "Пользователь" }}</span>
-                                <p class="c-text">{{ reply.text }}</p>
+                                <span class="c-user">{{ comment.author?.name || "Пользователь" }}</span>
+                                <p class="c-text">{{ comment.text }}</p>
                               </div>
                               <div class="c-header_footer">
-                                <span class="c-date">{{ formatDate(reply.createdAt) }}</span>
+                                <span class="c-date">{{ formatDate(comment.createdAt) }}</span>
+                                <span v-if="!isOwnComment(comment)" class="c-reply" @click.stop.prevent="startReply(comment)">
+                                  Ответить
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div v-if="comment.replies?.length" class="comment-replies">
+                            <div v-for="reply in comment.replies" :key="reply.id" class="comment-item reply-item">
+                              <img :src="reply.author?.avatar || '/img/users/mask-avatar.png'" class="reply-avatar"/>
+                              <div class="c-body">
+                                <div class="c-header">
+                                  <span class="c-reply-badge">Ответ</span>
+                                  <span class="c-user">{{ reply.author?.name || "Пользователь" }}</span>
+                                  <p class="c-text">{{ reply.text }}</p>
+                                </div>
+                                <div class="c-header_footer">
+                                  <span class="c-date">{{ formatDate(reply.createdAt) }}</span>
+                                </div>
                               </div>
                             </div>
                           </div>
                         </div>
                       </div>
                     </div>
+                      <div class="footer-input">
+                      <div v-if="replyTo" class="reply-banner">
+                        <span>Ответ {{ replyTo.userName }}</span>
+                        <button @click="cancelReply">✕</button>
+                      </div>
+                      <div class="input-row">
+                        <input type="text" v-model="newComment" :placeholder="replyTo ? `Ответ ${replyTo.userName}...` : 'Сообщение'" @keyup.enter="postComment(video, replyTo?.commentId)"/>
+                        <button class="send-btn" @click="postComment(video, replyTo?.commentId)">
+                          <img src="/src/assets/img/icons/send-plane.svg" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div class="footer-input">
-                  <div v-if="replyTo" class="reply-banner">
-                    <span>Ответ {{ replyTo.userName }}</span>
-                    <button @click="cancelReply">✕</button>
-                  </div>
-                  <div class="input-row">
-                    <input type="text" v-model="newComment" :placeholder="replyTo ? `Ответ ${replyTo.userName}...` : 'Сообщение'" @keyup.enter="postComment(video, replyTo?.commentId)"/>
-                    <button class="send-btn" @click="postComment(video, replyTo?.commentId)">
-                      <img src="/src/assets/img/icons/send-plane.svg" />
-                    </button>
-                  </div>
-                </div>
+                
               </aside>
             </div>
           </div>
@@ -326,6 +350,9 @@ const videos = computed(() => auth.welcomeFeed || []);
 const isLoading = computed(() => auth.isVideosLoading);
 const selectedVideoId = computed(() => route.params.id);
 
+const goToVideo = (id) => {
+  router.push({ name: "shorts", params: { id } });
+};
 const performSearch = () => {
   if (!searchQuery.value.trim()) { isSearchActive.value = false; return; }
   isSearchActive.value = true;
@@ -547,8 +574,8 @@ onUnmounted(() => {
 <style scoped>
 .mute-btn {
   position: absolute;
-  bottom: 1.5rem;
-  left: 2rem;
+  bottom: 2.5rem;
+  left: 2.5rem;
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 50%;
@@ -569,7 +596,7 @@ onUnmounted(() => {
 }
 .video-error {
   position: absolute;
-  inset: 2.438rem 3.75rem 1rem 1.563rem;
+  inset: 2.438rem 5.063rem 1.875rem 1.875rem;
   background: #1a1a1a;
   border-radius: 0.625rem;
   display: flex;
@@ -581,7 +608,7 @@ onUnmounted(() => {
 }
 .video-poster {
   position: absolute;
-  inset: 2.438rem 3.75rem 1rem 1.563rem;
+  inset: 2.438rem 5.063rem 1.875rem 1.875rem;
   border-radius: 0.625rem;
   display: flex;
   align-items: center;
@@ -644,10 +671,6 @@ onUnmounted(() => {
   to { transform: rotate(360deg); }
 }
 
-.short-snap-item {
-  will-change: transform;
-  contain: layout style paint;
-}
 
 .video-side video {
   will-change: opacity;
@@ -662,16 +685,17 @@ onUnmounted(() => {
   align-items: center;
 }
 /* Альтернатива: blur эффект */
-.info-content-wrapper {
+.info-content-wrapper ,.comments-block_list{
   opacity: 0;
   filter: blur(4px);
   transition: opacity 0.25s ease, filter 0.25s ease;
 }
 
-.info-content-wrapper.is-visible {
+.info-content-wrapper.is-visible,.comments-block_list.is-visible {
   opacity: 1;
   filter: blur(0);
 }
+
 .close-btn {
   position: absolute;
   top: 1rem;
@@ -713,9 +737,11 @@ onUnmounted(() => {
   width: 100%;
   scroll-snap-align: start;
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
   align-items: center;
   padding: 1.25rem;
+  gap: 2.438rem;
+  /* margin-top: 2.225rem; */
 }
 
 .short-content-wrapper {
@@ -726,6 +752,8 @@ onUnmounted(() => {
   gap: 0.75rem;
   /* overflow: hidden; */
   grid-template-columns: 1fr 1fr;
+  margin-right: 15rem;
+  margin-top: 4.5rem;
 }
 
 .video-side {
@@ -733,7 +761,7 @@ onUnmounted(() => {
   position: relative;
   background: white;
   min-width: 0;
-  padding: 2.438rem 3.75rem 1rem 1.563rem;
+  padding: 2.438rem 5.063rem 1.875rem 1.875rem;
   border-radius: 0.625rem;
   width: 32rem;
   height: 47rem;
@@ -742,18 +770,19 @@ onUnmounted(() => {
   width: 99%;
   height: 100%;
   object-fit: cover;
-  border-radius: 0.625rem;
+  border-radius: 1.25rem;
 }
 
 .video-actions {
   position: absolute;
-  right: 0.5rem;
-  top: 36%;
+  right: 0.625rem;
+  top: 45%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.063rem;
+  gap: 0.625rem;
   z-index: 10;
+  width: 2.5rem;
 }
 .v-action {
   display: flex;
@@ -763,8 +792,8 @@ onUnmounted(() => {
 }
 .v-action span{font-size: 0.563rem; color: #959595; font-weight: 700;}
 .action-btn {
-  width: 3rem;
-  height: 3rem;
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: 50%;
   background: #f9f9f9;
   backdrop-filter: blur(0.625rem);
@@ -787,6 +816,7 @@ onUnmounted(() => {
   width: 1.125rem;
   height: 1.125rem;
 }
+.arrow-btn{ width: 2.063rem; height: 3.75rem; border-radius: 0.313rem;}
 .action-count {
   font-size: 0.75rem;
   color: #fff;
@@ -802,14 +832,15 @@ onUnmounted(() => {
 .scroll-arrows {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 1.063rem;
+  margin-top: 1.25rem;
 }
 .info-side {flex: 1;display: flex;flex-direction: column;min-width: 0;}
 .info-scroll-area {
   margin-top: 1.063rem;
   display: grid;
   align-content: space-between;
-  height: 100%;
+  height: 100%; position: relative;
 }
 .info-scroll-area::-webkit-scrollbar { width: 0.25rem;}
 .info-scroll-area::-webkit-scrollbar-thumb {background: #ddd;border-radius: 0.25rem;}
@@ -917,12 +948,13 @@ onUnmounted(() => {
 .comments-block::-webkit-scrollbar-thumb {background: #ddd;border-radius: 0.25rem;}
 .section-title {
   display: flex;
+  justify-content: center;
   align-items: center;
   gap: 10.2rem;
-  font-size: 1.125rem;
-  font-weight: 600;
+  font-size: 1.25rem;
+  font-weight: 700;
   color: #1a1a1a;
-  margin: 0 0 1rem 0;
+  margin: 0 0 0.875rem 0;
   position: sticky;
   top: 0;
   background: #fff;
@@ -954,7 +986,7 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 .c-body { flex: 1; min-width: 0;}
-.c-user {font-size: 1rem;font-weight: 600;color: #1a1a1a;}
+.c-user {font-size: 1rem;}
 .c-date {font-size: 0.75rem;color: #959595;}
 .c-text {font-size: 0.9375rem;color: #444;margin: 0 0 0.438rem 0;}
 .c-header {display: grid; gap: 0.15rem;}
@@ -1079,4 +1111,82 @@ onUnmounted(() => {
 .reply-item .reply-avatar{width: 2rem; height: 2rem;}
 :deep(.product-card .product-img){height: 9rem;}
 :deep(.product-card){height: 15.25rem;}
+.profile-sidebar {z-index: 6; width: 15.625rem;padding:1.75rem 1rem 5.25rem 0;position: relative;transition: width 0.3s ease;white-space: nowrap; margin-top: -5.6rem;}
+.profile-sidebar.is-collapsed {width: 2.5rem;}
+.hidden-content {opacity: 0;pointer-events: none;transition: opacity 0.05s ease;}
+.profile-sidebar:not(.is-collapsed) .hidden-content {opacity: 1;transform: translateY(0);pointer-events: auto;transition: opacity 0.4s ease-out 4s; }
+.profile-main {display: flex; margin-bottom: 5rem; width: 99vw; justify-content: space-around; height: 100vh; gap: 34rem; position: fixed;}
+.profile-nav a {display: block;text-decoration: none;padding: 0.875rem 0.625rem;font-size: 1.25rem;font-weight: 700;position: relative;transition: background .3s;border-radius: 0.938rem;}
+.profile-nav a:hover{background: var(--bg-defort);border-radius: 0.938rem;}
+.profile-nav a.router-link-active {background: var(--bg-defort);box-shadow: 0px 4px 4px 0px #00000040;}
+.profile-nav_a{display: grid;gap: 0.438rem;}
+.user-foto {display: flex;gap: .9rem;align-items: center;margin-bottom: 0.375rem;padding: 1rem 0.813rem 0.813rem 0.813rem;margin-top: 1.188rem;background: var(--bg-defort);display: grid;gap: 0.563rem;}
+.user-foto_block{display: flex;align-items: center;gap: 0.938rem;}
+.rating {font-size: 1.25rem;display: flex;gap: 0.563rem; color: var(--btn-bg); font-weight: 700;}
+.rating p {width: auto;text-align: center;}
+.nav-footer {margin-top: 1.313rem;font-size: 1.25rem;background: var(--btn-bg);width: fit-content;color: var(--bg-defort);padding: 1.125rem 1.688rem;border-radius: 1.875rem;position: relative;cursor: pointer;user-select: none;display: flex;}
+.user-avatar {width: 3.688rem;height: 3.938rem;border-radius: 3.438rem;}
+.collapse-btn {position: absolute;font-size: 2.35rem;top: .3rem;right: 5px;}
+.collapse-btn img {width: 1.375rem; height: 20px;transition: transform 0.3s ease; }
+.collapse-btn img.is-rotated {transform: rotate(180deg); }
+.user-name {font-size: 1.5rem;font-weight: 700;white-space: normal;width: 7rem;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;display: inline-block; text-transform: capitalize;}
+.logo {position: relative;margin-left: 0;top: 0rem; }
+.grup{background: #518E68; width: 0.813rem; height: 0.813rem; border-radius: 50%; position: absolute; top: 0.75rem; right: 1.8rem;}
+.logo span{width: 100%;font-weight: 700; padding: 0.938rem 2.063rem 0.75rem 1.438rem; height: 4rem;align-items: center; border-radius: 0 1.25rem 0 1.25rem ;}
+.logo::after{display: none;}
+.stars-row {display: flex;align-items: center;gap: 0.15rem;}
+.user-brief{display: flex; justify-content: flex-start;margin-right: 1.8rem;}
+/* ===== SEARCH ===== */
+.shorts-search-bar{ margin-top: -5rem; height: fit-content; z-index: 7; max-width: 33rem; width: 100%; margin-bottom: 1rem;}
+.search-wrapper{display:flex;align-items:center;gap:0.625rem;background:#fff;border-radius:0.625rem;padding:1.188rem;}
+.search-icon{width:1.25rem;height:1.25rem;flex-shrink:0}
+.search-wrapper input{flex:1;border:none;background:transparent;font-size:1rem;outline:none;color:#1a1a1a; height: 1.313rem;}
+.search-wrapper input::placeholder{color:#999; font-size:1rem;}
+.search-clear{background:none;border:none;font-size:1rem;color:#999;cursor:pointer;padding:0;width:1.25rem;height:1.25rem;display:flex;align-items:center;justify-content:center}
+
+/* ===== SEARCH RESULTS (карточки из MyVideos.vue) ===== */
+.search-results-page{flex:1;overflow-y:auto; max-width: 65.95rem; height: 100%; margin-right: 14.8rem; height: 52.5rem; display: flex;flex-direction: column;align-items: stretch;}
+.search-results-page .shorts-search-bar{margin-top: 0; margin-left: 50.45%; max-width: 32.5rem;}
+.search-results-page_block{
+  padding-top: 0.25rem; padding-right: 4.438rem;
+}
+.search-results-title{font-size:1.5rem;font-weight:700;color:#242424;margin:0 0 1.813rem}
+.search-empty{text-align:center;padding:4rem 0;color:#999;font-size:1rem}
+.videos-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 15.813rem);
+  gap: .8rem;
+}
+.video-item {
+  background: transparent;
+  padding: 0.625rem;
+  border-radius: 1.25rem;
+  transition: all .3s;
+}
+.video-item:hover{background: white;}
+.video-card {
+  position: relative;
+  aspect-ratio: 9/12;
+  overflow: hidden;
+  height: 20.538rem;
+  width: 100%;
+  border-radius: 1.25rem;
+  cursor: pointer;
+}
+.thumbnail {width: 100%;height: 20.5rem;object-fit: cover;border-radius: 1.25rem;transition: opacity 0.3s ease;}
+.thumbnail:not([src]) {opacity: 0;}
+.video-info {margin-top: 0.5rem;}
+.stats-line {display: flex;justify-content: space-between;margin-top: 1.25rem;}
+.stat {display: flex;align-items: center;gap: 0.313rem;font-size: 0.875rem;color: #333;}
+.stat img {width: 1.563rem;height: 1.25rem;}
+.video-description {display: -webkit-box;-webkit-line-clamp: 2;-webkit-box-orient: vertical;overflow: hidden;text-overflow: ellipsis;margin-top: 0.938rem;font-size: 1rem;font-weight: 700;color: #242424;text-transform: lowercase;line-height: 1.2;}
+.video-description::first-letter {text-transform: uppercase;}
+.author-avatar { width: 4rem !important; height: 4rem !important; border-radius: 0 3.125rem 0 1.25rem !important; position: absolute; bottom: -1rem; left: -1rem;}
+@media (max-width:90rem) {
+  /* .profile-main{gap: 12rem;} */
+}
+@media (max-width: 87rem) {
+  .short-content-wrapper{margin-right: 0; width: 57.75rem;}
+  .video-side{width: 30rem;}
+}
 </style>

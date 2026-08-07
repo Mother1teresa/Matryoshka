@@ -77,15 +77,15 @@
   justify-content: space-between;
 }
 .footer__bottom-right img {
-  position: relative;
+  /* position: relative; */
   width: 4rem;
   height: 4rem;
   overflow: hidden;
   z-index: 1;
 }
-.footer__bottom-right a {
+/* .footer__bottom-right a {
   position: relative;
-}
+} */
 /* .footer__bottom-right a::after {
   position: absolute;
   content: "";

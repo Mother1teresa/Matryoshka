@@ -58,7 +58,8 @@ export const useReviewStore = defineStore('reviews', () => {
         text: r.comment || '',
         date: r.createdAt,
         reply: r.ownerReply || null,
-        isReplied: r.isReplied || false
+        isReplied: r.isReplied || false,
+        productId: r.productId || null
       }))
 
       const existingIds = new Set(allReviews.value.map(r => r.id))
@@ -104,11 +105,14 @@ export const useReviewStore = defineStore('reviews', () => {
     }
   }
 
-  const addReply = async (reviewId, replyText) => {
+  const addReply = async (reviewId, replyText, productId = null) => {
     try {
+      const payload = { replyText }
+      if (productId) payload.productId = productId
+
       await api.patch(
         `/profile/reviews/${reviewId}/reply`,
-        { replyText },
+        payload,
         { headers: { 'Content-Type': 'application/json' } }
       )
 

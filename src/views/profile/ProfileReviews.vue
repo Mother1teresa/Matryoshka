@@ -131,8 +131,9 @@ function toggleReplyField(reviewId) {
 async function sendReply(reviewId) {
   const text = replyTexts.value[reviewId];
   if (!text || text.trim() === '') return;
+  const review = reviews.value.find(r => r.id === reviewId);
   try {
-    await reviewStore.addReply(reviewId, text.trim())
+    await reviewStore.addReply(reviewId, text.trim(), review?.productId)
     activeReplyFields.value[reviewId] = false;
     delete replyTexts.value[reviewId];
   } catch (e) {
