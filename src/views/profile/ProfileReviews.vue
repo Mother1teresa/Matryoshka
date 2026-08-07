@@ -14,8 +14,8 @@
                 <img v-for="n in 5" :key="n" :src="n <= Math.round(userRating) ? '/img/users/star.png' : '/img/users/star_1.png'" class="star-icon" alt="★" />
               </div>
             </div>
-            <div v-if="userRating > 0" class="empty-hint">Отвечайте на отзывы, так вы будете более лояльны к клиентам</div>
-            <div v-if="userRating === 0" class="empty-state">
+            <div v-if="reviews.length > 0" class="empty-hint">Отвечайте на отзывы, так вы будете более лояльны к клиентам</div>
+            <div v-else class="empty-state">
               <div class="empty-title">У вас пока нет отзывов</div>
               <div class="empty-subtitle">Разместите объявление или опубликуйте мини-видео</div>
             </div>

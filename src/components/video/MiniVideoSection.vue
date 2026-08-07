@@ -215,7 +215,8 @@ onUnmounted(() => {
 .mini-video {
   overflow: hidden;
   background-color: white;
-  padding: 2rem 0;
+  padding: 1rem 0;
+  height: 17.438rem;
 }
 
 .container {
@@ -234,7 +235,7 @@ onUnmounted(() => {
   gap: 0.938rem;
   scrollbar-width: none;
   padding-right: 25rem;
-  height: 15.5rem;
+  height: 15.438rem;
 }
 
 .mini-video-section::-webkit-scrollbar {
