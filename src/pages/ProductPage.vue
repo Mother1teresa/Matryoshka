@@ -72,7 +72,7 @@
             <p>{{ product.description }}</p>
           </div>
           <!-- Карта -->
-          <div v-if="product.address || mapCoordinates" class="product-address-section">
+          <div v-if="product.address || mapCoordinates" class="product-address-section" :key="product?.id">
             <h3>Адрес</h3>
             <p class="address-text">{{ product.address }}</p>
             <div v-if="mapCoordinates" class="product-map">
@@ -122,7 +122,6 @@
                     />
                   </span>
                 </div>
-                <!-- <button class="btn subscribe" @click="onSubscribeClick" :class="{ 'is-active': subStore.isSubscribed(product?.sellerId) }">{{ subStore.isSubscribed(product?.sellerId) ? 'Отписаться' : 'Подписаться' }} </button> -->
               </div>
               <router-link :to="{ name: 'SellerPage', params: { id: product?.sellerId } }">
                 <img :src="seller?.avatar || '/img/users/mask-avatar.png'" class="avatar" />
@@ -230,7 +229,7 @@
   <NotFound v-else />
 </template>
 <script setup>
-import { ref, computed, watch, onMounted, nextTick, onBeforeUnmount } from "vue";
+import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useProductStore } from "/src/stores/product.js";
 import { productLabels, getLabel, formatValue, getFieldGroups, isChipActive } from "/src/stores/productLabels.js";
@@ -241,7 +240,6 @@ import "@fancyapps/ui/dist/fancybox/fancybox.css";
 import Header from '../components/layout/Header.vue';
 import NotFound from "../components/common/NotFound.vue";
 import { notify } from "../utils/notify";
-import { capitalizeFirst } from '/src/utils/formatters.js';
 
 import { useSubscriptionStore } from "../stores/subscriptionStore.js";
 import { useAuthStore } from "/src/stores/authStore.js";
@@ -268,7 +266,6 @@ const subStore = useSubscriptionStore();
 const reviewStore = useReviewStore(); 
 
 const isReady = ref(false);
-const isNumberShown = ref(false);
 const showCallModal = ref(false);
 const activeImage = ref("");
 const product = ref(null);
@@ -279,7 +276,6 @@ const isGeocoding = ref(false);
 const isClient = typeof window !== 'undefined';
 let productMap = null;
 let productPlacemark = null;
-let ymapsReady = false;
 const callModalPhone = ref('');
 const callModalName = ref('');
 const linkedVideos = ref([]);
@@ -299,17 +295,18 @@ const loadProductVideoDetails = async () => {
     productVideoDetails.value = null;
   }
 };
+
 // === ВИДЕО ТОВАРА (из API /adverts/{id}) ===
 const productVideo = computed(() => {
   const v = product.value?.video;
   if (!v || !v.cdnUrl) return null;
   return v;
 });
+
 const allProductVideos = computed(() => {
   const list = [];
   const productVideoId = productVideo.value?.id;
 
-  // Основное видео товара (с подгруженными лайками/просмотрами)
   if (productVideo.value) {
     const details = productVideoDetails.value;
     list.push({
@@ -326,7 +323,6 @@ const allProductVideos = computed(() => {
     });
   }
 
-  // Остальные видео продавца, исключая дубль основного
   linkedVideos.value.forEach(v => {
     if (v.id !== productVideoId) {
       list.push(v);
@@ -337,7 +333,7 @@ const allProductVideos = computed(() => {
 });
 
 const onVideoFavoriteClick = async (video, event) => {
-  event.stopPropagation(); // не даём перейти в shorts
+  event.stopPropagation();
   if (!authStore.isAuthenticated) {
     modal.openLogin();
     notify("Авторизуйтесь, чтобы добавить в избранное");
@@ -356,10 +352,12 @@ const onVideoFavoriteClick = async (video, event) => {
     notify("Ошибка избранного", "error");
   }
 };
+
 const isOwnProduct = computed(() => {
   if (!product.value?.sellerId || !authStore.user?.id) return false;
   return String(product.value.sellerId) === String(authStore.user.id);
 });
+
 function waitForYmaps(timeout = 10000) {
   return new Promise((resolve, reject) => {
     if (window.ymaps) {
@@ -383,7 +381,7 @@ function waitForYmaps(timeout = 10000) {
 function destroyProductMap() {
   if (!isClient) return;
   if (productMap) {
-    try { productMap.destroy(); } catch (e) {}
+    try { productMap.destroy(); } catch (e) { console.warn('Ошибка destroy карты:', e); }
     productMap = null;
     productPlacemark = null;
   }
@@ -404,24 +402,13 @@ function initProductMap(coords) {
     return;
   }
 
+  // Гарантированно чистим старую карту перед созданием новой
+  if (productMap) {
+    destroyProductMap();
+  }
+
   window.ymaps.ready(() => {
     try {
-      if (productMap && productMap.getContainer() !== mapContainer.value) {
-        destroyProductMap();
-      }
-      if (productMap) {
-        productMap.setCenter(center, 15);
-        if (productPlacemark) {
-          productPlacemark.geometry.setCoordinates(center);
-        } else {
-          productPlacemark = new window.ymaps.Placemark(center, {}, {
-            preset: 'islands#redIcon'
-          });
-          productMap.geoObjects.add(productPlacemark);
-        }
-        productMap.container.fitToViewport();
-        return;
-      }
       productMap = new window.ymaps.Map(mapContainer.value, {
         center: center,
         zoom: 15,
@@ -439,15 +426,14 @@ function initProductMap(coords) {
       productMap.geoObjects.add(productPlacemark);
 
       setTimeout(() => {
-        if (productMap && productMap.container) {
-          productMap.container.fitToViewport();
-        }
+        productMap?.container?.fitToViewport();
       }, 100);
     } catch (e) {
       console.error('Ошибка создания карты:', e);
     }
   });
 }
+
 // === КАРТА ===
 const hasCoordinatesFromApi = computed(() => {
   return Array.isArray(product.value?.coordinates) && 
@@ -468,6 +454,7 @@ const sellerType = computed(() => {
 const sellerRating = computed(() => {
   return seller.value?.rating || 0;
 });
+
 // === УНИВЕРСАЛЬНАЯ НОРМАЛИЗАЦИЯ КООРДИНАТ ===
 const normalizeCoords = (coords) => {
   if (!coords) return null;
@@ -490,14 +477,13 @@ const normalizeCoords = (coords) => {
 
 // === ГЕОКОДИРОВАНИЕ ===
 const resolveCoordinates = async () => {
+  // Сбрасываем карту полностью перед новым поиском
+  destroyProductMap();
+  mapCoordinates.value = null;
+
   if (hasCoordinatesFromApi.value) {
     const norm = normalizeCoords(product.value.coordinates);
-    if (norm) {
-      mapCoordinates.value = norm;
-      nextTick(() => setTimeout(() => initProductMap(mapCoordinates.value), 300));
-    } else {
-      mapCoordinates.value = null;
-    }
+    mapCoordinates.value = norm || null;
     return;
   }
 
@@ -526,7 +512,6 @@ const resolveCoordinates = async () => {
       const coords = first.geometry.getCoordinates();
       console.log('[Geocode] Адрес:', address, '→', coords);
       mapCoordinates.value = coords;
-      nextTick(() => setTimeout(() => initProductMap(coords), 300));
     } else {
       console.warn('[Geocode] Не найдено:', address);
       mapCoordinates.value = null;
@@ -536,12 +521,7 @@ const resolveCoordinates = async () => {
     try {
       const result = await geocodeByQuery(address);
       const coords = normalizeCoords(result?.coordinates);
-      if (coords) {
-        mapCoordinates.value = coords;
-        nextTick(() => setTimeout(() => initProductMap(coords), 300));
-      } else {
-        mapCoordinates.value = null;
-      }
+      mapCoordinates.value = coords || null;
     } catch (e2) {
       mapCoordinates.value = null;
     }
@@ -636,7 +616,11 @@ const loadProduct = async (id) => {
   product.value = null;
   similarProducts.value = [];
   seller.value = null;
+  
+  // Полностью сбрасываем карту при смене товара
+  destroyProductMap();
   mapCoordinates.value = null;
+  
   productVideoDetails.value = null;
   linkedVideos.value = [];
 
@@ -657,7 +641,6 @@ const loadProduct = async (id) => {
         ? [raw.pictureUrls] 
         : [];
 
-    // Явно перечисляем поля — без ...raw!
     product.value = {
       id: raw.id,
       title: raw.title || 'Без названия',
@@ -720,17 +703,13 @@ const loadSimilarProducts = async () => {
     const currentSubcategory = product.value.subcategory;
     const currentCity = product.value.city;
 
-    // Фильтруем похожие: тот же section/subcategory + тот же город
     const filtered = productStore.products.filter(p => {
       if (String(p.id) === currentId) return false;
 
       const pSection = p.section || p.subcategory || '';
       const pSubcategory = p.subcategory || '';
       
-      // Совпадение по секции ИЛИ подкатегории
       const sectionMatch = pSection === currentSection || pSubcategory === currentSubcategory;
-      
-      // Город
       const cityMatch = !currentCity || (p.city || '').toLowerCase() === currentCity.toLowerCase();
 
       return sectionMatch && cityMatch;
@@ -775,12 +754,14 @@ const loadSimilarProducts = async () => {
     similarProducts.value = [];
   }
 };
+
 const getSimilarImageUrl = (item) => {
   if (item.images?.length) return item.images[0];
   if (item.pictureUrls?.length) return item.pictureUrls[0];
   if (item.image) return item.image;
   return '/src/assets/img/placeholder.png';
 };
+
 const getSubcategoryName = (item) => {
   const targetSlug = item.subcategory || item.section;
   if (!targetSlug) return "";
@@ -797,10 +778,12 @@ const getSubcategoryName = (item) => {
   }
   return "";
 };
+
 const currentCategory = computed(() => {
   if (!product.value) return null;
   return categories.find((c) => c.slug === product.value.category);
 });
+
 const activeTabItem = computed(() => {
   if (!currentCategory.value || !product.value) return null;
   return (
@@ -810,6 +793,7 @@ const activeTabItem = computed(() => {
 });
 
 const breadcrumbSectionName = computed(() => activeTabItem.value?.title || activeTabItem.value?.name);
+
 const breadcrumbSubName = computed(() => {
   const subSlug = product.value?.subcategory;
   if (!currentCategory.value || !subSlug) return null;
@@ -834,6 +818,7 @@ const openFullGallery = (index = 0) => {
   const allImages = product.value.images.map(src => ({ src, type: "image" }));
   Fancybox.show(allImages, { startIndex: index });
 };
+
 const checkAuthAndRun = (action, message = "Авторизуйтесь, чтобы продолжить") => {
   if (!auth.isAuthenticated) {
     modal.openLogin();
@@ -842,12 +827,14 @@ const checkAuthAndRun = (action, message = "Авторизуйтесь, чтоб
   }
   action();
 };
+
 const onLikeClick = (item) => {
   checkAuthAndRun(async () => {
     await favStore.toggleAdvertFavorite(item.id);
     notify(favStore.isFavorite(item.id) ? "Добавлено в избранное" : "Удалено из избранного");
   }, "Войдите, чтобы добавить в избранное");
 };
+
 const onSubscribeClick = () => {
   const sellerId = product.value?.sellerId;
   if (!sellerId) return;
@@ -856,6 +843,7 @@ const onSubscribeClick = () => {
     notify(isNowSubscribed ? "Вы подписались на продавца" : "Вы отписались от продавца");
   });
 };
+
 const onShowNumberClick = (item) => {
   const target = item || product.value;
   const phone = target?.seller?.phone || seller.value?.phone;
@@ -870,6 +858,7 @@ const onShowNumberClick = (item) => {
     showCallModal.value = true; 
   }, "Войдите, чтобы увидеть номер телефона");
 };
+
 const onWriteClick = async (item) => {
   const targetId = item?.sellerId || item?.seller?.id || product.value?.sellerId;
   const productId = item?.id || product.value?.id || null; 
@@ -886,6 +875,7 @@ const onWriteClick = async (item) => {
     }
   }, "Войдите, чтобы написать сообщение");
 };
+
 const handleCall = (phone) => {
   window.location.href = `tel:${phone}`;
   showCallModal.value = false;
@@ -894,15 +884,15 @@ const handleCall = (phone) => {
 watch(() => route.params.id, (newId) => {
   if (newId) loadProduct(newId);
 }, { immediate: true });
+
+// КЛЮЧЕВОЕ: watch с flush: 'post' ловит DOM-элемент ПОСЛЕ его отрисовки Vue
 watch(mapContainer, (el) => {
   if (el && mapCoordinates.value && window.ymaps) {
     initProductMap(mapCoordinates.value);
   }
-});
-onMounted(async () => {
-  if (isClient && window.ymaps) {
-    try { await waitForYmaps(); } catch (e) { console.warn('Карта недоступна:', e); }
-  }
+}, { flush: 'post', immediate: true });
+
+onMounted(() => {
   Fancybox.bind("[data-fancybox='gallery']", { Hash: false });
 });
 
@@ -911,6 +901,7 @@ watch(() => product.value?.title, (newTitle) => {
     document.title = `${newTitle} — купить на Матрешка`;
   }
 }, { immediate: true });
+
 onBeforeUnmount(() => {
   destroyProductMap();
 });
