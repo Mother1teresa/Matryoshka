@@ -22,7 +22,7 @@
         <!-- Авторизованный: кликабельные карточки с видео-превью -->
         <template v-else>
           <router-link
-            v-for="video in videos.slice(0, 10)"
+            v-for="video in videos.slice(0, 8)"
             :key="video.id"
             :to="{ name: 'shorts', params: { id: video.id } }"
             class="mini-video-link"
@@ -105,7 +105,7 @@ const loadVideos = async () => {
   if (videos.value.length === 0) {
     await authStore.fetchWelcomeFeed({ page: 0, size: 10, seed: Math.random() });
 
-    const enrichPromises = videos.value.slice(0, 6).map((v) =>
+    const enrichPromises = videos.value.slice(0, 8).map((v) =>
       authStore.enrichVideo(v.id).catch(() => {})
     );
     await Promise.all(enrichPromises);
@@ -198,7 +198,7 @@ watch(
   (newVideos) => {
     if (newVideos.length > 0) {
       processedVideos.value.clear();
-      generateThumbnails(newVideos.slice(0, 10));
+      generateThumbnails(newVideos.slice(0, 8));
     }
   },
   { immediate: true }
@@ -366,8 +366,8 @@ onUnmounted(() => {
   animation: pulse 1.5s infinite;
 }
 .mini-video .container {
-  width: 100%;
-  margin: 0;
+  width: 88%;
+  margin: 0 auto;
 }
 @keyframes pulse {
   0% {
