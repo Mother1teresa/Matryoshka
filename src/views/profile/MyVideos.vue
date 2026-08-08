@@ -244,9 +244,9 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener("click", closeMenu);
 });
-const handleVideoCreated = (createdMedia) => {
+const handleVideoCreated = async (createdMedia) => {
   isCreating.value = false;
-  
+
   if (createdMedia && typeof createdMedia === 'object') {
     const fallbackVideo = {
       ...createdMedia,
@@ -264,10 +264,23 @@ const handleVideoCreated = (createdMedia) => {
       }
     };
     auth.addVideoLocally(fallbackVideo);
+
+    const productId = createdMedia.productId || createdMedia.advertId;
+    if (productId && createdMedia.id) {
+      try {
+        await auth.updateAdvert({
+          id: productId,
+          videoId: createdMedia.id
+        });
+        notify("Видео прикреплено к объявлению", "success");
+      } catch (e) {
+        console.error("[VideoCreate] Ошибка привязки videoId:", e);
+        notify("Видео загружено, но не удалось обновить объявление", "error");
+      }
+    }
   }
-  
   setTimeout(() => {
-    auth.fetchVideos();  // перезагрузим с сервера для актуальности
+    auth.fetchVideos();
   }, 1000);
 };
 </script>

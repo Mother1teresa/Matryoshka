@@ -616,6 +616,8 @@ const formatPhone = (phone) => {
 
 // === ЗАГРУЗКА ТОВАРА ===
 const loadProduct = async (id) => {
+  console.log('[ProductPage] loadProduct called with id:', id, 'type:', typeof id);
+  console.log('[ProductPage] route.params:', route.params);
   if (!id) {
     product.value = null;
     isReady.value = true;
@@ -623,7 +625,7 @@ const loadProduct = async (id) => {
   }
 
   // Не грузим повторно тот же товар
-  if (product.value?.id === id) {
+  if (String(product.value?.id) === String(id)) {
     isReady.value = true;
     return;
   }
@@ -676,8 +678,8 @@ const loadProduct = async (id) => {
 
     if (product.value?.sellerId) {
       await Promise.all([
-        loadSeller(product.value.sellerId),
-        reviewStore.fetchReviewsBySeller(product.value.sellerId),
+        loadSeller(product.value.sellerId).catch(e => console.warn('Seller load failed', e)),
+        reviewStore.fetchReviewsBySeller(product.value.sellerId).catch(e => console.warn('Reviews load failed', e)),
       ]);
     }
     
@@ -692,6 +694,7 @@ const loadProduct = async (id) => {
     await loadSimilarProducts();
   } catch (err) {
     console.error("Ошибка загрузки товара:", err);
+    console.error("Error response:", err.response?.status, err.response?.data);
     notify("Ошибка загрузки объявления", "error");
     product.value = null;
   } finally {
@@ -999,7 +1002,7 @@ onBeforeUnmount(() => {
 .card-price-row { display: flex; align-items: baseline;gap: 0.6rem;margin: 0.5rem 0;}
 .card-price { font-size: 1.45rem; font-weight: 600; color: #000;}
 .card-location { color: #666; font-size: 0.9rem;}
-.card-description {color: #7c7c7c;font-size: 0.938rem;margin-top: 0.5rem;margin-bottom: 0.5rem;display: -webkit-box;-webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;}
+.card-description {color: #7c7c7c;font-size: 0.938rem;margin-top: 0.5rem;margin-bottom: 0.5rem; display: -webkit-box;-webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;}
 .card-footer-info { margin-top: auto; color: #b0b0b0; font-size: 0.875rem; text-transform: capitalize;}
 .card-content__rigth { display: none; transition: all 0.3s;}
 .horizontal-card:hover .card-content__rigth { display: block;}
