@@ -1244,7 +1244,7 @@ export const useAuthStore = defineStore("auth", {
         return [];
       }
       try {
-        const res = await api.get(`/media/${userId}/videos`);
+        const res = await api.get('/media/videos', { params: { userId } })
         const rawVideos = Array.isArray(res.data) ? res.data : [];
         return rawVideos.map(v => ({
           id: v.id,
@@ -1257,6 +1257,11 @@ export const useAuthStore = defineStore("auth", {
           type: v.type || '',
           mimeType: v.mimeType || '',
           userId: v.userId,
+          likes: v.likes ?? v.likesCount ?? 0,
+          likesCount: v.likesCount ?? v.likes ?? 0,
+          viewsCount: v.viewsCount ?? v.views ?? 0,
+          commentsCount: v.commentsCount ?? 0,
+          duration: v.duration || '',
         }));
       } catch (e) {
         console.error("Ошибка загрузки медиа-видео пользователя:", e);
