@@ -475,17 +475,17 @@ const playVideo = (video) => {
 .star-icon {width: 0.938rem;height: 0.938rem;}
 .stars-row {display: flex;gap: 0.125rem;}
 .ads-list {display: flex;flex-direction: column;gap: 1rem;}
-.ad-card-horizontal {background: white;border-radius: 1.25rem;padding: 0.625rem;display: flex;gap: 1.5rem;position: relative;overflow: hidden;}
+.ad-card-horizontal { height: 13.5rem;background: white;border-radius: 1.25rem;padding: 0.625rem;display: flex;gap: 1.5rem;position: relative;overflow: hidden;}
 .ad-image-block {width: 11.75rem;flex-shrink: 0;}
 .ad-image-block img {width: 100%;height: 100%;object-fit: cover;border-radius: 1.25rem;}
-.ad-main-info {width: 31.625rem;display: grid;}
+.ad-main-info {width: 31.625rem;display: flex;flex-direction: column;}
 .ad-title-row {display: flex;justify-content: space-between;align-items: flex-start;width: 100%;}
-.ad-title {height: 3.5rem;margin-bottom: .4rem;overflow: hidden;}
-.ad-title-link {font-size: 1.5rem;font-weight: 700;display: inline-block;text-transform: lowercase;display: -webkit-box;-webkit-line-clamp: 2;-webkit-box-orient: vertical;overflow: hidden;color: inherit;text-decoration: none;transition: opacity 0.2s; border-radius: 0;}
+.ad-title {margin-bottom: .4rem;overflow: hidden;}
+.ad-title-link {font-size: 1.5rem;font-weight: 700;display: inline-block;text-transform: lowercase; height: 3.125rem; display: -webkit-box;-webkit-line-clamp: 2;-webkit-box-orient: vertical;overflow: hidden;color: inherit;text-decoration: none;transition: opacity 0.2s; border-radius: 0;}
 .ad-title-link:hover {opacity: 0.7;}
 .ad-title-link::first-letter {text-transform: uppercase;}
 .ad-price {font-size: 1.5rem;padding: 0.438rem 1rem;background: var(--btn-bg);font-weight: 700;width: fit-content;color: var(--bg-defort);border-radius: 0.625rem;}
-.ad-description {margin: 1rem 0;font-size: 1rem;color: #858685;display: -webkit-box;-webkit-line-clamp: 2;-webkit-box-orient: vertical;overflow: hidden;font-weight: 700;}
+.ad-description {margin: 1rem 0;font-size: 1rem;color: #858685;display: -webkit-box;-webkit-line-clamp: 2;-webkit-box-orient: vertical;overflow: hidden;font-weight: 700; height: fit-content;}
 .ad-location {margin-top: auto;display: flex;align-items: center;gap: 0.438rem;font-weight: 700;font-size: 1rem;}
 .ad-location img {width: 1.563rem;height: 1.563rem;}
 .ad-stats-block {display: flex;flex-direction: column;justify-content: flex-end;align-items: flex-start;gap: 0.375rem;margin-left: 1.25rem;width: 43%;}
