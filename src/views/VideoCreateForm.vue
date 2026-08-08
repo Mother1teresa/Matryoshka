@@ -87,7 +87,6 @@
               <img :src="auth.userAvatar" class="author-avatar" alt="avatar" />
               <span class="author-name">От {{ auth.user?.name || 'Пользователя' }}</span>
             </div>
-            <img src="/src/assets/img/icons/arrow-down.svg" class="dropdown-icon" alt="arrow" />
           </div>
           <button class="btn publish-btn" :disabled="!form.file || !form.description.trim()" @click="onPublish">
             Опубликовать
@@ -243,7 +242,7 @@ const onPublish = async () => {
 .textarea-title, .textarea-description, .custom-select {width: 100%;background: #E8E8E8;border: 1px solid transparent;border-radius: 1.25rem;padding: 0.813rem 1rem;font-size: 1rem;resize: none;height: 10.938rem;}
 .textarea-description{font-size: 1rem;height: 20.688rem;}
 .empty-stub { background: #fdf2f2; padding: 0.75rem; border-radius: 0.625rem; color: #b91c1c; font-size: 1rem; border: 1px solid #fee2e2; }
-.publish-btn { background: var(--btn-bg); color: white; width: 100%; height: 3.5rem; padding: 0.875rem 0; border-radius: 1.25rem; font-size: 1.5rem; border: none; cursor: pointer; text-align: center;}
+.publish-btn { background: var(--btn-bg); color: white; width: fit-content; height: 3.5rem; padding: 1.125rem 1.625rem; border-radius: 1.25rem; font-size: 1.5rem; border: none; cursor: pointer; text-align: center;}
 .publish-btn:disabled { background: #ccc; cursor: not-allowed; }
 .status-screen { height: 60vh; display: flex; justify-content: center; align-items: center; }
 .status-card {  background: white; padding: 3.75rem; border-radius: 1.875rem; text-align: center;  box-shadow: 0 10px 30px rgba(0,0,0,0.05); width: 100%; max-width: 500px;}
@@ -260,11 +259,11 @@ const onPublish = async () => {
 .upload-placeholder p{ font-weight: 600; font-size: 1.25rem; }
 .select-btn{ width: 12.313rem; height: 3.5rem; background: #76a87e; color: white; border: none; border-radius: 1.25rem; cursor: pointer; text-align: center; font-size: 1.25rem;}
 .upload-icon{ width: 4.25rem; height: 4.25rem;}
-.footer_block-author {background-color: #ffffff; padding: 1.125rem 0.75rem 1.5rem 0.75rem; border-radius: 1.25rem; display: grid; align-items: center; justify-items: center;}
-.author-preview-card {display: flex;align-items: center;justify-content: space-between;margin-bottom: 1.525rem;/* cursor: pointer; */}
-.author-info {display: flex;align-items: center;width: 20rem;gap: 0.813rem;}
+.footer_block-author {background-color: #ffffff; padding: 1.438rem 1.875rem 0.938rem 1.875rem; border-radius: 1.25rem; display: grid; align-items: center; justify-items: center;}
+.author-preview-card {display: flex;align-items: center;justify-content: space-between;margin-bottom: 0.625rem;/* cursor: pointer; */}
+.author-info {display: flex;align-items: center;width: 20.3rem;gap: 0.688rem;}
 .author-avatar {width: 3.4rem;height: 3.4rem;border-radius: 50%;object-fit: cover;}
-.author-name {font-size: 1.5rem;}
+.author-name {font-size: 1.25rem; font-weight: 700;}
 .dropdown-icon {width: 0.875rem;height: 0.875rem;opacity: 0.6;}
 .products-carousel {display: flex;gap: 0.75rem;overflow-x: auto;padding: 0.5rem;scrollbar-width: thin;scrollbar-color: #ccc transparent;}
 .products-carousel::-webkit-scrollbar {height: 0.375rem;}
