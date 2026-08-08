@@ -72,10 +72,11 @@
             <p>{{ product.description }}</p>
           </div>
           <!-- Карта -->
-          <div v-if="product.address || mapCoordinates" class="product-address-section" :key="product?.id">
+          <div v-if="product.address || mapCoordinates" class="product-address-section">
             <h3>Адрес</h3>
             <p class="address-text">{{ product.address }}</p>
-            <div v-if="mapCoordinates" class="product-map">
+            <!-- :key здесь принудительно пересоздаёт DOM-контейнер при смене товара -->
+            <div v-if="mapCoordinates" class="product-map" :key="'map-' + product.id">
               <div ref="mapContainer" style="width: 100%; height: 100%;"></div>
             </div>
             <div v-else-if="product.address && isGeocoding" class="no-map">
@@ -282,6 +283,13 @@ const linkedVideos = ref([]);
 const mapContainer = ref(null);
 const productVideoDetails = ref(null);
 
+// КЛЮЧЕВОЕ: watch с flush: 'post' ловит DOM-элемент ПОСЛЕ его отрисовки Vue
+watch([mapCoordinates, mapContainer], ([coords, el]) => {
+  if (coords && el && window.ymaps) {
+    initProductMap(coords);
+  }
+}, { flush: 'post', immediate: true });
+
 const loadProductVideoDetails = async () => {
   if (!product.value?.video?.id) {
     productVideoDetails.value = null;
@@ -393,6 +401,11 @@ function initProductMap(coords) {
     return;
   }
 
+  // Гарантированно чистим старую карту перед созданием новой
+  if (productMap) {
+    destroyProductMap();
+  }
+
   const center = Array.isArray(coords) && coords.length === 2
     ? [Number(coords[0]), Number(coords[1])]
     : coords;
@@ -402,36 +415,32 @@ function initProductMap(coords) {
     return;
   }
 
-  // Гарантированно чистим старую карту перед созданием новой
-  if (productMap) {
-    destroyProductMap();
+  // API уже гарантированно загружен (waitForYmaps отработал раньше),
+  // поэтому ymaps.ready() здесь НЕ нужен — он только ломает тайминг
+  try {
+    productMap = new window.ymaps.Map(mapContainer.value, {
+      center: center,
+      zoom: 15,
+      controls: ['zoomControl']
+    }, {
+      copyrightLogoVisible: false,
+      copyrightProvidersVisible: false,
+      copyrightUaVisible: false,
+      suppressMapOpenBlock: true
+    });
+
+    productPlacemark = new window.ymaps.Placemark(center, {}, {
+      preset: 'islands#redIcon'
+    });
+    productMap.geoObjects.add(productPlacemark);
+
+    // Принудительный пересчёт размеров контейнера
+    setTimeout(() => {
+      productMap?.container?.fitToViewport();
+    }, 100);
+  } catch (e) {
+    console.error('Ошибка создания карты:', e);
   }
-
-  window.ymaps.ready(() => {
-    try {
-      productMap = new window.ymaps.Map(mapContainer.value, {
-        center: center,
-        zoom: 15,
-        controls: ['zoomControl']
-      }, {
-        copyrightLogoVisible: false,
-        copyrightProvidersVisible: false,
-        copyrightUaVisible: false,
-        suppressMapOpenBlock: true
-      });
-
-      productPlacemark = new window.ymaps.Placemark(center, {}, {
-        preset: 'islands#redIcon'
-      });
-      productMap.geoObjects.add(productPlacemark);
-
-      setTimeout(() => {
-        productMap?.container?.fitToViewport();
-      }, 100);
-    } catch (e) {
-      console.error('Ошибка создания карты:', e);
-    }
-  });
 }
 
 // === КАРТА ===
@@ -477,14 +486,13 @@ const normalizeCoords = (coords) => {
 
 // === ГЕОКОДИРОВАНИЕ ===
 const resolveCoordinates = async () => {
-  // Сбрасываем карту полностью перед новым поиском
   destroyProductMap();
   mapCoordinates.value = null;
 
   if (hasCoordinatesFromApi.value) {
     const norm = normalizeCoords(product.value.coordinates);
     mapCoordinates.value = norm || null;
-    return;
+    return; // <-- просто выходим, watch сам поймает изменение
   }
 
   const address = product.value?.address || product.value?.city;
@@ -509,11 +517,8 @@ const resolveCoordinates = async () => {
     }
 
     if (first) {
-      const coords = first.geometry.getCoordinates();
-      console.log('[Geocode] Адрес:', address, '→', coords);
-      mapCoordinates.value = coords;
+      mapCoordinates.value = first.geometry.getCoordinates();
     } else {
-      console.warn('[Geocode] Не найдено:', address);
       mapCoordinates.value = null;
     }
   } catch (e) {
@@ -885,12 +890,6 @@ watch(() => route.params.id, (newId) => {
   if (newId) loadProduct(newId);
 }, { immediate: true });
 
-// КЛЮЧЕВОЕ: watch с flush: 'post' ловит DOM-элемент ПОСЛЕ его отрисовки Vue
-watch(mapContainer, (el) => {
-  if (el && mapCoordinates.value && window.ymaps) {
-    initProductMap(mapCoordinates.value);
-  }
-}, { flush: 'post', immediate: true });
 
 onMounted(() => {
   Fancybox.bind("[data-fancybox='gallery']", { Hash: false });
