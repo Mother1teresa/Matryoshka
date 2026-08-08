@@ -608,7 +608,7 @@ export const useAuthStore = defineStore("auth", {
     },
     async updateAdvert(payload) {
       try {
-        const res = await api.patch('/adverts', payload);
+        const res = await api.put('/adverts', payload);
         notify("Объявление обновлено!", "success");
         return res.data;
       } catch (e) {

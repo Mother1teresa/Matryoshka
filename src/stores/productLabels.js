@@ -252,6 +252,7 @@ export const fieldGroups = {
         { key: "horsePower", type: "text", suffix: "л.с.", label: "Мощность" },
         { key: "engineCapacity", type: "text", suffix: "л", label: "Объём двигателя" },
         { key: "color", type: "text" },
+        { key: "isOnTheGo", type: "text", label: "На ходу" }
       ]
     }
   ],
@@ -268,7 +269,7 @@ export const fieldGroups = {
         { key: "engineCapacity", type: "text", suffix: "см³", label: "Объём" },
         { key: "horsePower", type: "text", suffix: "л.с.", label: "Мощность" },
         { key: "color", type: "text", label: "Цвет" },
-        { key: "condition", type: "text", label: "Состояние" },
+        { key: "isOnTheGo", type: "text", label: "На ходу" },
       ]
     }
   ],
@@ -436,4 +437,30 @@ export function isChipActive(chip, key, rawValue) {
   if (typeof chip === 'number') return chip > 0;
   
   return false;
+}
+
+export function formatValue(value, type, suffix, key) {
+  if (value === undefined || value === null || value === "") return "—";
+  
+  if (key === "isOnTheGo") {
+    const isTrue = value === true || value === "true" || value === 1 || value === "1";
+    return isTrue ? "На ходу" : "Не на ходу";
+  }
+  
+  if (type === "chips") {
+    if (Array.isArray(value) && value[0]?.name) {
+      return value.map(item => item.name || item);
+    }
+    if (Array.isArray(value)) return value;
+    if (typeof value === "string") return value.split(",").map(s => s.trim()).filter(Boolean);
+    return [String(value)];
+  }
+  
+  if (typeof value === "boolean") return value ? "Есть" : "Нет";
+  
+  if (suffix && (typeof value === "number" || !isNaN(Number(value)))) {
+    return `${value} ${suffix}`;
+  }
+  
+  return String(value);
 }

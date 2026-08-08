@@ -60,7 +60,7 @@
                   </div>
                   <!-- Обычное значение -->
                   <span v-else class="value">
-                    {{ formatValue(product.attributes?.[field.key], 'text', field.suffix) }}
+                    {{ formatValue(product.attributes?.[field.key], 'text', field.suffix, field.key) }}
                   </span>
                 </div>
               </div>
@@ -572,6 +572,7 @@ const productSection = computed(() => {
     'apartments': 'apartments', 'flat': 'apartments',
     'house': 'house', 'cottage': 'house',
     'cars': 'cars', 'auto': 'cars',
+    'moto': 'moto',
     'yachts': 'yachts', 'boats': 'yachts',
     'jobs': 'jobs', 'vacancy': 'jobs', 'resume': 'resume',
     'pets': 'pets', 'animals': 'pets',
