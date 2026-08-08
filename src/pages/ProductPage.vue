@@ -54,13 +54,13 @@
 
                   <!-- Чипсы -->
                   <div v-if="field.type === 'chips'" class="details-chips-group">
-                    <span v-for="(chip, index) in formatValue(product.attributes?.[field.key], 'chips')" :key="index" class="detail-chip-item" :class="{ 'chip-active': isChipActive(chip, field.key) }">
+                    <span v-for="(chip, index) in formatValue(product[field.key] ?? product.attributes?.[field.key], 'chips', null, field.key)" :key="index" class="detail-chip-item" :class="{ 'chip-active': isChipActive(chip, field.key) }">
                       {{ chip }}
                     </span>
                   </div>
                   <!-- Обычное значение -->
                   <span v-else class="value">
-                    {{ formatValue(product.attributes?.[field.key], 'text', field.suffix, field.key) }}
+                    {{ formatValue(product[field.key] ?? product.attributes?.[field.key], 'text', field.suffix, field.key) }}
                   </span>
                 </div>
               </div>

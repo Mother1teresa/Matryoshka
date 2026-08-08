@@ -390,29 +390,6 @@ export function getLabel(key, customLabel) {
  * @param {string} suffix — суффикс (м², км, сотки...)
  * @returns {string|Array}
  */
-export function formatValue(value, type, suffix) {
-  if (value === undefined || value === null || value === "") return "—";
-  
-  if (type === "chips") {
-    // Если массив объектов {name, value}
-    if (Array.isArray(value) && value[0]?.name) {
-      return value.map(item => item.name || item);
-    }
-    // Если просто массив строк
-    if (Array.isArray(value)) return value;
-    // Если строка с запятыми
-    if (typeof value === "string") return value.split(",").map(s => s.trim()).filter(Boolean);
-    return [String(value)];
-  }
-  
-  if (typeof value === "boolean") return value ? "Есть" : "Нет";
-  
-  if (suffix && (typeof value === "number" || !isNaN(Number(value)))) {
-    return `${value} ${suffix}`;
-  }
-  
-  return String(value);
-}
 /**
  * Проверяет, является ли значение чипса "активным" (подсвечивать зелёным)
  * @param {any} chip — значение чипса
