@@ -606,8 +606,8 @@ const scrollToBottom = () => {
 const checkBotStatus = (msgs) => {
   const lastSellerMsg = [...msgs].reverse().find((m) => !m.isMine);
   if (lastSellerMsg) {
-    const diffHours = (Date.now() - new Date(lastSellerMsg.createdAt)) / 3600000;
-    if (diffHours >= 24) showBotActions.value = true;
+    // const diffHours = (Date.now() - new Date(lastSellerMsg.createdAt)) / 3600000;
+    // if (diffHours >= 24) showBotActions.value = true;
   }
 };
 
@@ -719,7 +719,7 @@ watch(() => route.params.id, (newId, oldId) => {
 .header-product-info:hover {
   opacity: 0.85;
 }
-.header-product-info_block span{ width: 11.813rem; display: -webkit-box;-webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; font-size: 1.25rem; font-weight: 700;}
+.header-product-info_block span{ white-space: break-spaces; width: 11.813rem; display: -webkit-box;-webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; font-size: 1.25rem; font-weight: 700;}
 .product-mini-photo{width:4.563rem;height:3.125rem;border-radius:.25rem;object-fit:cover;flex-shrink:0;}
 .header-search{height: 5.438rem; display:flex;align-items:center;gap:.5rem; background: #FFFFFF99; box-shadow: 0px 2px 2px 0px #00000040; padding: 1.25rem 1.875rem; width: 24.063rem; border-radius: 0 0 0 2.5rem;}
 .search-input-wrapper{position:relative;display:flex;align-items:center;width:100%;height:100%;background:#fff;border:1px solid #e0e0e0;border-radius:1.5rem;padding:0 1.75rem 0 2.5rem;transition:border-color .2s,box-shadow .2s;}

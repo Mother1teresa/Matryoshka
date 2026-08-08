@@ -617,6 +617,14 @@ export const useAuthStore = defineStore("auth", {
         throw e;
       }
     },
+    async attachVideoToAdvert(advertId, videoId) {
+      try {
+        await api.patch('/adverts', { id: advertId, videoId });
+      } catch (e) {
+        console.error("Ошибка прикрепления видео к объявлению:", e);
+        throw e;
+      }
+    },
     async deleteAdvert(id, s3Key = null) {
       try {
         await api.delete(`/adverts/${id}`);

@@ -246,7 +246,7 @@ onUnmounted(() => {
 });
 const handleVideoCreated = async (createdMedia) => {
   isCreating.value = false;
-
+  
   if (createdMedia && typeof createdMedia === 'object') {
     const fallbackVideo = {
       ...createdMedia,
@@ -265,20 +265,16 @@ const handleVideoCreated = async (createdMedia) => {
     };
     auth.addVideoLocally(fallbackVideo);
 
-    const productId = createdMedia.productId || createdMedia.advertId;
-    if (productId && createdMedia.id) {
+    const advertId = createdMedia.productId || createdMedia.advertId;
+    if (advertId && fallbackVideo.id) {
       try {
-        await auth.updateAdvert({
-          id: productId,
-          videoId: createdMedia.id
-        });
-        notify("Видео прикреплено к объявлению", "success");
+        await auth.attachVideoToAdvert(advertId, fallbackVideo.id);
       } catch (e) {
-        console.error("[VideoCreate] Ошибка привязки videoId:", e);
-        notify("Видео загружено, но не удалось обновить объявление", "error");
+        console.error('Не удалось привязать видео к товару:', e);
       }
     }
   }
+  
   setTimeout(() => {
     auth.fetchVideos();
   }, 1000);
