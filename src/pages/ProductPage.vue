@@ -336,17 +336,6 @@ const allProductVideos = computed(() => {
   return list;
 });
 
-
-const loadLinkedVideos = async () => {
-  if (!product.value?.sellerId || !product.value?.id) return;
-  try {
-    const allVideos = await auth.fetchVideosByUser(product.value.sellerId);
-    linkedVideos.value = allVideos.filter(v => v.productId === product.value.id);
-  } catch (e) {
-    console.error('Ошибка загрузки видео для товара:', e);
-    linkedVideos.value = [];
-  }
-};
 const onVideoFavoriteClick = async (video, event) => {
   event.stopPropagation(); // не даём перейти в shorts
   if (!authStore.isAuthenticated) {
@@ -633,60 +622,57 @@ const loadProduct = async (id) => {
     return;
   }
 
+  // Не грузим повторно тот же товар
+  if (product.value?.id === id) {
+    isReady.value = true;
+    return;
+  }
+
   isReady.value = false;
   product.value = null;
   similarProducts.value = [];
   seller.value = null;
   mapCoordinates.value = null;
   productVideoDetails.value = null;
+  linkedVideos.value = [];
 
   try {
-    // const cached = productStore.products.find(p => String(p.id) === String(id));
-    
-    //   if (cached && (cached.images?.length || cached.pictureUrls?.length)) {
-    //     product.value = {
-    //       ...cached,
-    //       images: cached.images || cached.pictureUrls || [],
-    //       image: cached.image || cached.pictureUrls?.[0] || '/src/assets/img/placeholder.png',
-    //       attributes: cached.attributes || {},
-    //       coordinates: cached.coordinates || null,
-    //       address: raw.address || raw.city || raw.location || '',
-    //     };
-    //   } else {
-        const data = await auth.getAdvertById(id);
-        const raw = Array.isArray(data) ? data[0] : data;
+    const data = await auth.getAdvertById(id);
+    const raw = Array.isArray(data) ? data[0] : data;
 
-        if (!raw || !raw.id) {
-          notify("Объявление не найдено", "error");
-          product.value = null;
-          isReady.value = true;
-          return;
-        }
+    if (!raw || !raw.id) {
+      notify("Объявление не найдено", "error");
+      product.value = null;
+      isReady.value = true;
+      return;
+    }
 
-        const pics = Array.isArray(raw.pictureUrls) 
-          ? raw.pictureUrls 
-          : raw.pictureUrls 
-            ? [raw.pictureUrls] 
-            : []
+    const pics = Array.isArray(raw.pictureUrls) 
+      ? raw.pictureUrls 
+      : raw.pictureUrls 
+        ? [raw.pictureUrls] 
+        : [];
 
-        product.value = {
-          id: raw.id,
-          title: raw.title || 'Без названия',
-          price: Number(raw.price) || 0,
-          description: raw.description || '',
-          city: raw.city || raw.address || '',
-          address: raw.address || raw.city || '',
-          coordinates: raw.coordinates || null,
-          category: raw.category || 'tovary',
-          section: raw.section || raw.subCategory || 'default',
-          subcategory: raw.subCategory || raw.subcategory || '',
-          sellerId: raw.userId || raw.sellerId,
-          images: pics,
-          image: pics[0] || raw.thumbnailUrl || '',
-          attributes: raw.attributes || raw || {},
-          ...raw
-        };
-      // }
+    // Явно перечисляем поля — без ...raw!
+    product.value = {
+      id: raw.id,
+      title: raw.title || 'Без названия',
+      price: Number(raw.price) || 0,
+      description: raw.description || '',
+      city: raw.city || raw.address || '',
+      address: raw.address || raw.city || '',
+      coordinates: raw.coordinates || null,
+      category: raw.category || 'tovary',
+      section: raw.section || raw.subCategory || 'default',
+      subcategory: raw.subCategory || raw.subcategory || '',
+      sellerId: raw.userId || raw.sellerId,
+      images: pics,
+      image: pics[0] || raw.thumbnailUrl || '',
+      attributes: raw.attributes || {},
+      video: raw.video || null,
+      videoId: raw.video?.id || null,
+      createdAt: raw.createdAt,
+    };
 
     if (product.value?.sellerId) {
       await Promise.all([
@@ -694,12 +680,15 @@ const loadProduct = async (id) => {
         reviewStore.fetchReviewsBySeller(product.value.sellerId),
       ]);
     }
+    
     await resolveCoordinates();
     activeImage.value = product.value.images?.[0] || product.value.image || '';
+    
     await Promise.all([
       loadProductVideoDetails(),
       loadLinkedVideos(),
     ]); 
+    
     await loadSimilarProducts();
   } catch (err) {
     console.error("Ошибка загрузки товара:", err);

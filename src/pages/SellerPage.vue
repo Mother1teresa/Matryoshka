@@ -370,11 +370,14 @@ const loadSellerVideos = async (sellerId) => {
   try {
     const videos = await auth.fetchUserMediaVideos(sellerId);
     sellerVideos.value = videos.map(v => ({
-      ...v,
+      id: v.id,
+      cdnUrl: v.cdnUrl,
+      thumbnailUrl: v.thumbnailUrl || '',
+      description: v.description || 'Видео',
+      duration: v.duration || '0:11',
       viewsCount: v.viewsCount ?? 0,
       likesCount: v.likesCount ?? 0,
       commentsCount: v.commentsCount ?? 0,
-      duration: v.duration || '0:11',
       author: {
         id: seller.value?.id,
         name: seller.value?.name || 'Пользователь',
@@ -386,7 +389,6 @@ const loadSellerVideos = async (sellerId) => {
     sellerVideos.value = [];
   }
 };
-
 const loadReviews = async (sellerId) => {
   isReviewsLoading.value = true;
   try {

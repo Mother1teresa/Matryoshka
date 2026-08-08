@@ -12,9 +12,11 @@
               </span>
             </div>
           </div>
-          <div class="header-product-info" v-if="currentChat?.productName">
-            <img :src="currentChat?.productImage || '/src/assets/img/icons/box-icon.svg'" class="product-mini-photo" />
-            <span>{{ currentChat.productName }}</span>
+          <div class="header-product-info" v-if="currentChat?.productName" @click="goToProduct">
+            <div class="header-product-info_block">
+              <img :src="currentChat?.productImage || '/src/assets/img/icons/box-icon.svg'" class="product-mini-photo" />
+              <span>{{ currentChat.productName }}</span>
+            </div>
           </div>
         </div>
         
@@ -156,19 +158,16 @@ const searchAbortController = ref(null);
 let searchDebounce = null;
 
 const loadChatProduct = async () => {
-  const pid = currentChat.value?.productId || chatData.value?.productId || "8981c111-1f84-48b7-89b1-5a06b016cc6a";
+  const pid = currentChat.value?.productId || chatData.value?.productId;
   if (!pid) return;
 
   try {
     const product = await auth.getAdvertById(pid);
     if (!product) return;
-
     chatProduct.value = product;
-
-    // Обновляем chatData, чтобы шапка сразу подхватила
     if (chatData.value) {
       chatData.value.productName = product.title || chatData.value.productName;
-      chatData.value.productImage = product.image || product.images?.[0] || chatData.value.productImage;
+      chatData.value.productImage = product.pictureUrls?.[0] || chatData.value.productImage;
       chatData.value.price = product.price || chatData.value.price;
     }
   } catch (e) {
@@ -347,7 +346,18 @@ const goToSellerProfile = () => {
     router.push({ name: "SellerPage", params: { id: sellerId } });
   }
 };
-
+const goToProduct = () => {
+  const pid = chatProduct.value?.id || chatData.value?.productId || currentChat.value?.productId;
+  if (!pid) return;
+  router.push({
+    name: 'Product',
+    params: {
+      type: chatProduct.value?.category || 'tovary',
+      section: chatProduct.value?.section || 'default',
+      id: pid
+    }
+  });
+};
 const loadOpponentProfile = async () => {
   if (isProfileLoading.value) return;
   const roomId = route.params.id;
@@ -693,20 +703,25 @@ watch(() => route.params.id, (newId, oldId) => {
 <style scoped>
 .chat-dialog-window{display:flex;flex-direction:column;height:100vh;height:100dvh;background:#fff;overflow:hidden;background:linear-gradient(126.24deg,rgba(211,242,163,.8) 1.06%,rgba(108,192,139,.8) 52.82%,rgba(7,64,80,.8) 100%);position:relative;}
 .chat-dialog-window::before{content:"";position:absolute;inset:0;background-image:url('/src/assets/img/matreshka-pattern.png');background-repeat:repeat;background-size:5.5rem;opacity:.06;pointer-events:none;z-index:0;}
-.chat-header{position:relative;display:flex; align-items: flex-start; justify-content: space-between; gap:.625rem;flex-shrink:0;z-index:2;height:5.438rem;}
+.chat-header{position:relative;display:flex; align-items: flex-start; justify-content: space-between; gap:.625rem;flex-shrink:0;z-index:2;}
 .back-btn{font-size:1.5rem;font-weight: 700; border-radius: 0 0 1.875rem 1.875rem ;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:1rem 1.25rem;flex-shrink:0;border:none;background:#858685;transition:transform .15s; box-shadow: 0px 2px 2px 0px #00000040; color: var(--bg-defort);}
 .back-btn:active{transform:scale(.95);}
 .back-btn img{width:1rem;height:1rem;filter:brightness(0) invert(1);}
-.header-user-info{display:flex;align-items:center;gap:0.625rem;cursor:pointer;}
+.header-user-info{position: relative;z-index: 1; display:flex;align-items:center;gap:0.625rem;cursor:pointer; background: var(--bg-defort); padding: 1.25rem 1.875rem; box-shadow: 0px 2px 2px 0px #00000040; border-radius: 0 0 2.5rem 0;}
 .mini-avatar{width:3.148rem;height:3.148rem;border-radius:50%;object-fit:cover;flex-shrink:0;}
 .user-meta{display:flex;flex-direction:column;min-width:0;}
 .user-meta .name{font-size:1.5rem; font-weight:700; color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .15s;}
 .header-user-info:hover .user-meta .name{color:#64a07a;}
 .online-status{font-size: 0.938rem;color:#b9b9b9;}
 .online-status.is_online{color:#4caf50;}
-.header-product-info{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:.5rem;background:#fff;padding:.375rem .875rem;border-radius:.625rem;font-size:.813rem;color:#333;max-width:13rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #eee;}
-.product-mini-photo{width:1.75rem;height:1.75rem;border-radius:.25rem;object-fit:cover;flex-shrink:0;}
-.header-search{display:flex;align-items:center;gap:.5rem; background: #FFFFFF99; box-shadow: 0px 2px 2px 0px #00000040; padding: 1.25rem 1.875rem; width: 24.063rem; height: 100%; border-radius: 0 0 0 2.5rem;}
+.header-product-info{ cursor: pointer; transition: opacity 0.2s ;margin-top: -2.5rem;display:flex; align-items: flex-end;background: #FFFFFF99;padding: 1.25rem 1.875rem ;border-radius:0 0 2.5rem 0;font-size:1.25rem;color:#333;width: 100%;height: 8rem; white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #eee;}
+.header-product-info_block{display:flex; align-items: center;gap:1.875rem;}
+.header-product-info:hover {
+  opacity: 0.85;
+}
+.header-product-info_block span{ width: 11.813rem; display: -webkit-box;-webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; font-size: 1.25rem; font-weight: 700;}
+.product-mini-photo{width:4.563rem;height:3.125rem;border-radius:.25rem;object-fit:cover;flex-shrink:0;}
+.header-search{height: 5.438rem; display:flex;align-items:center;gap:.5rem; background: #FFFFFF99; box-shadow: 0px 2px 2px 0px #00000040; padding: 1.25rem 1.875rem; width: 24.063rem; border-radius: 0 0 0 2.5rem;}
 .search-input-wrapper{position:relative;display:flex;align-items:center;width:100%;height:100%;background:#fff;border:1px solid #e0e0e0;border-radius:1.5rem;padding:0 1.75rem 0 2.5rem;transition:border-color .2s,box-shadow .2s;}
 .search-input-wrapper.active,.search-input-wrapper:focus-within{border-color:#bdbdbd;box-shadow:0 1px 4px rgba(0,0,0,.06);}
 .search-icon{position:absolute;left:0.75rem;width:1rem;height:1rem;color:#888;pointer-events:none;}
@@ -725,7 +740,7 @@ watch(() => route.params.id, (newId, oldId) => {
 .typing-dots span{width:4px;height:4px;background:#4caf50;border-radius:50%;animation:bounce 1.4s infinite ease-in-out both;}
 .typing-dots span:nth-child(1){animation-delay:-.32s;}
 .typing-dots span:nth-child(2){animation-delay:-.16s;}
-.header-user-info_block{background: var(--bg-defort); padding: 1.25rem 1.875rem; box-shadow: 0px 2px 2px 0px #00000040; width: 24.063rem; border-radius: 0 0 2.5rem 0; position: relative;}
+.header-user-info_block{ position: relative; width: 24.063rem;}
 @keyframes bounce{0%,80%,100%{transform:scale(0)}40%{transform:scale(1)}}
 .messages-viewport{flex:1;overflow-y:auto;padding:1rem 20% 2.438rem 20%;display:flex;flex-direction:column;position:relative;background-attachment:fixed;gap:.625rem;}
 .msg-bubble,.system-msg,.bot-actions-row,.review-invitation,.sticky-date{position:relative;z-index:1;}

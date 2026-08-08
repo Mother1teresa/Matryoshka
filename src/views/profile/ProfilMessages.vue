@@ -179,12 +179,6 @@ onUnmounted(() => {
 
           <div class="chat-right">
             <div class="price-block" v-if="chat.price">
-              <img
-                v-if="chat.productImage"
-                :src="chat.productImage"
-                class="mini-product-thumb"
-                alt="product"
-              />
             </div>
             <div class="meta-block">
               <svg
@@ -235,19 +229,19 @@ onUnmounted(() => {
 .chat-card:hover {box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);transform: translateY(-1px);}
 .chat-left {flex-shrink: 0;position: relative;}
 .user-avatar {width: 2.813rem;height: 2.813rem;border-radius: 3.438rem;object-fit: cover;position: absolute;left: 30%;top: -1rem;}
-.user-foto{width: 6.563rem;height: 6.875rem;border-radius: 1.563rem;}
+.user-foto{width: 6.563rem;height: 6.875rem;border-radius: 1.563rem; object-fit: cover;}
 .chat-center {flex: 1;min-width: 0;display: flex;flex-direction: column;gap: 3px;}
-.user-name {font-weight: 700;font-size: 1.5rem;}
-.product-title {font-size: 0.875rem;}
+.user-name {font-weight: 700;font-size: 1.5rem; display: -webkit-box;-webkit-line-clamp: 1;-webkit-box-orient: vertical;overflow: hidden; }
+.product-title {font-size: 1.25rem; margin: 0.625rem 0; display: flex; gap: 1.75rem; align-items: center; color: #242424;}
 .last-message {font-size: 1rem;color: #8E8C8C;white-space: nowrap;text-overflow: ellipsis;width: 34.5rem; line-height: 1.2;display: -webkit-box;-webkit-line-clamp: 2;-webkit-box-orient: vertical;overflow: hidden;}
 .last-message.unread {font-weight: 600;color: #111;}
 .you-label {color: #2ecc71;font-weight: 500;}
 .chat-right {flex-shrink: 0;display: flex;flex-direction: column;align-items: flex-end;gap: 0.5rem;min-width: 5rem;height: 100%;justify-content: flex-end;}
 .price-block {display: flex;align-items: center;gap: 8px;}
-.price {font-weight: 700;font-size: 0.9375rem;color: white; padding: 0.313rem 0.875rem; background: var(--btn-bg);}
-.mini-product-thumb {width: 32px;height: 32px;border-radius: 8px;object-fit: cover;}
+.price {font-weight: 700;font-size: 1rem;color: white; padding: 0.313rem 0.875rem; background: var(--btn-bg); border-radius: 0.625rem;}
+.mini-product-thumb {width: 2rem;height: 2rem;border-radius: 0.5rem;object-fit: cover;}
 .meta-block {display: flex;align-items: center;gap: 6px;}
-.bell-icon {width: 18px;height: 18px;color: #888;}
+.bell-icon {width: 1.125rem;height: 1.125rem;color: #888;}
 .time {font-size: 1rem;color: #8E8C8C;}
 .empty-messages {text-align: center;padding: 4rem 1rem;background: #fff;border-radius: 1.25rem;margin-top: 2.5rem;}
 .empty-messages h3 {font-size: 1.0625rem;color: #888;font-weight: 500;}

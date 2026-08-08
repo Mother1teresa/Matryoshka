@@ -479,7 +479,7 @@ export const useAuthStore = defineStore("auth", {
                 const product = await this.getAdvertById(chat.productId);
                 if (product) {
                   chat.productName = product.title || chat.productName;
-                  chat.productImage = product.image || product.images?.[0] || '';
+                  chat.productImage = product.pictureUrls?.[0] || '';
                   chat.price = product.price || chat.price;
                 }
               } catch (e) {
@@ -594,7 +594,12 @@ export const useAuthStore = defineStore("auth", {
       }
       try {
         const res = await api.get('/adverts/my');
-        return Array.isArray(res.data) ? res.data : [];
+        const ads = Array.isArray(res.data) ? res.data : [];
+        return ads.map(ad => ({
+          ...ad,
+          videoId: ad.video?.id || null,
+          video: ad.video || null,
+        }));
       } catch (e) {
         console.error("Ошибка загрузки:", e.response?.status, e.response?.data);
         notify("Не удалось загрузить объявления", "error");
@@ -627,6 +632,9 @@ export const useAuthStore = defineStore("auth", {
       try {
         const res = await api.get(`/adverts/${id}`);
         const data = Array.isArray(res.data) ? res.data[0] : res.data;
+        if (data && data.video) {
+          data.videoId = data.video.id || null;
+        }
         return data;
       } catch (e) {
         console.error("Ошибка загрузки объявления:", e);

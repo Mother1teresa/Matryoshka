@@ -22,7 +22,7 @@
         <!-- Авторизованный: кликабельные карточки с видео-превью -->
         <template v-else>
           <router-link
-            v-for="video in videos.slice(0, 6)"
+            v-for="video in videos.slice(0, 8)"
             :key="video.id"
             :to="{ name: 'shorts', params: { id: video.id } }"
             class="mini-video-link"
