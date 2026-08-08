@@ -616,16 +616,18 @@ const formatPhone = (phone) => {
 
 // === ЗАГРУЗКА ТОВАРА ===
 const loadProduct = async (id) => {
-  console.log('[ProductPage] loadProduct called with id:', id, 'type:', typeof id);
-  console.log('[ProductPage] route.params:', route.params);
+  console.log('[ProductPage] id из route:', id, 'тип:', typeof id);
+  console.log('[ProductPage] route.params:', JSON.parse(JSON.stringify(route.params)));
+
   if (!id) {
+    console.warn('[ProductPage] id пустой!');
     product.value = null;
     isReady.value = true;
     return;
   }
 
-  // Не грузим повторно тот же товар
   if (String(product.value?.id) === String(id)) {
+    console.log('[ProductPage] товар уже загружен, пропускаем');
     isReady.value = true;
     return;
   }
@@ -667,7 +669,7 @@ const loadProduct = async (id) => {
       category: raw.category || 'tovary',
       section: raw.section || raw.subCategory || 'default',
       subcategory: raw.subCategory || raw.subcategory || '',
-      sellerId: raw.userId || raw.sellerId,
+      sellerId: raw.userId,
       images: pics,
       image: pics[0] || raw.thumbnailUrl || '',
       attributes: raw.attributes || {},
@@ -751,10 +753,10 @@ const loadSimilarProducts = async () => {
           id: ad.id,
           title: ad.title || 'Без названия',
           price: ad.price,
-          city: ad.city || '',
+          address: ad.address || '',
           category: ad.category,
           section: ad.section,
-          subcategory: ad.subcategory,
+          subcategory: ad.subCategory, 
           images: ad.images || ad.pictureUrls,
           image: ad.image || ad.pictureUrls?.[0] || ad.thumbnailUrl || '/src/assets/img/placeholder.png',
           description: ad.description || '',

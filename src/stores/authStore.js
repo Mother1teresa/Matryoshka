@@ -629,15 +629,20 @@ export const useAuthStore = defineStore("auth", {
       }
     },
     async getAdvertById(id) {
+      console.log('[API] Запрос /adverts/' + id);
       try {
         const res = await api.get(`/adverts/${id}`);
+        console.log('[API] Ответ статус:', res.status);
+        console.log('[API] Ответ data:', res.data);
         const data = Array.isArray(res.data) ? res.data[0] : res.data;
         if (data && data.video) {
           data.videoId = data.video.id || null;
         }
         return data;
       } catch (e) {
-        console.error("Ошибка загрузки объявления:", e);
+        console.error('[API] Ошибка загрузки объявления:', e);
+        console.error('[API] Статус:', e.response?.status);
+        console.error('[API] Данные ошибки:', e.response?.data);
         throw e;
       }
     },

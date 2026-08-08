@@ -181,7 +181,7 @@ const loadAdverts = async () => {
         stock: ad.stock || 0,
         daysLeft: ad.daysLeft || 30,
         description: ad.description || '',
-        city: ad.address || ad.city || '',
+        address: ad.address || '', 
         views: ad.viewsCount || ad.views || 0,
         likes: ad.likesCount || ad.likes || 0,
         comments: ad.commentsCount || ad.comments || 0,
