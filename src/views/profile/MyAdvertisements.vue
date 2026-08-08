@@ -47,7 +47,7 @@
                 <button class="delete-btn" @click="openConfirmDelete(ad)">Удалить</button>
               </div>
             </div>
-            <div class="ad-location"><img src="/src/assets/img/location_on.svg" />{{ ad.city }}</div>
+            <div class="ad-location"><img src="/src/assets/img/location_on.svg" />{{ ad.address }}</div>
             <p class="ad-description">{{ ad.description }}</p>
             <!-- <div v-if="activeTab === 'archive'" class="archive-reason">Продал / Другая причина</div> -->
             <div class="ad-price">{{ ad.price.toLocaleString() }} ₽</div>
