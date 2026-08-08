@@ -860,7 +860,11 @@ onUnmounted(() => {
   color: #000000;
   line-height: 1;
   margin: 0;
-  height: 2.875rem;
+  /* height: 2.875rem; */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
 }
 .video-stats-row {
   display: flex;

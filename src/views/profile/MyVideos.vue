@@ -289,7 +289,7 @@ const handleVideoCreated = (createdMedia) => {
   position: relative;
   aspect-ratio: 9/12;
   /* overflow: hidden; */
-  height: 22rem;
+  height: 20.5rem;
   width: 100%;
   border-radius: 1.25rem;
 }

@@ -241,8 +241,7 @@ const onPublish = async () => {
 .field-group label { display: flex; align-items: center; gap: 10px; font-weight: 400; margin-bottom: 12px; font-size: 1.5rem; }
 .field-group span { font-weight: 600; }
 .textarea-title, .textarea-description, .custom-select {width: 100%;background: #E8E8E8;border: 1px solid transparent;border-radius: 1.25rem;padding: 0.813rem 1rem;font-size: 1rem;resize: none;height: 10.938rem;}
-.textarea-description{font-size: 1rem;height: 20.688rem; display: inline-block;text-transform: lowercase;}
-.textarea-description textarea::first-letter { text-transform: uppercase;}
+.textarea-description{font-size: 1rem;height: 20.688rem;}
 .empty-stub { background: #fdf2f2; padding: 0.75rem; border-radius: 0.625rem; color: #b91c1c; font-size: 1rem; border: 1px solid #fee2e2; }
 .publish-btn { background: var(--btn-bg); color: white; width: 100%; height: 3.5rem; padding: 0.875rem 0; border-radius: 1.25rem; font-size: 1.5rem; border: none; cursor: pointer; text-align: center;}
 .publish-btn:disabled { background: #ccc; cursor: not-allowed; }
@@ -275,8 +274,8 @@ const onPublish = async () => {
 .product-select-card.is-selected {border-color: var(--btn-bg);box-shadow: 0 0 0 3px rgba(81, 142, 104, 0.15);}
 .psc-img { width: 100%; height: 7rem; object-fit: cover; transition: all .3s;}
 .psc-info {padding: 0.625rem;}
-.psc-title {font-size: 0.8125rem;font-weight: 600;color: #2d2d2d;margin: 0 0 0.25rem;display: -webkit-box;-webkit-line-clamp: 2;-webkit-box-orient: vertical;overflow: hidden;line-height: 1.2;}
-.psc-title{display: inline-block;text-transform: lowercase;}
+.psc-title {font-size: 0.8125rem;font-weight: 700;color: #2d2d2d;margin: 0 0 0.25rem;display: -webkit-box;-webkit-line-clamp: 2;-webkit-box-orient: vertical;overflow: hidden;line-height: 1.2;}
+.psc-title{text-transform: lowercase;}
 .psc-title::first-letter { text-transform: uppercase;}
 .psc-price {font-size: 0.875rem;font-weight: 700;color: var(--btn-bg);margin: 0 0 0.125rem;}
 .psc-city {font-size: 0.75rem;color: #858685;margin: 0;}

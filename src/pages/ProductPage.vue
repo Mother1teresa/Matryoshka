@@ -482,14 +482,21 @@ const sellerRating = computed(() => {
 // === УНИВЕРСАЛЬНАЯ НОРМАЛИЗАЦИЯ КООРДИНАТ ===
 const normalizeCoords = (coords) => {
   if (!coords) return null;
-  let [a, b] = Array.isArray(coords) ? coords : [coords.lat, coords.lng];
-  a = Number(a);
-  b = Number(b);
-  if (isNaN(a) || isNaN(b)) return null;
-  if (Math.abs(a) > 90) {
-    return [b, a];
+
+  let lat, lng;
+  if (Array.isArray(coords)) {
+    [lat, lng] = coords.map(Number);
+  } else {
+    lat = Number(coords.lat);
+    lng = Number(coords.lng);
   }
-  return [a, b];
+
+  if (isNaN(lat) || isNaN(lng)) return null;
+  if (Math.abs(lat) > 90 && Math.abs(lng) <= 90) {
+    [lat, lng] = [lng, lat];
+  }
+
+  return [lat, lng];
 };
 
 // === ГЕОКОДИРОВАНИЕ ===

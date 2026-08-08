@@ -1470,8 +1470,8 @@ margin-top: 2.438rem; border-radius: 1.875rem;}
 .photo-grid { 
   display: flex; 
   flex-wrap: wrap; 
-  gap: 12px; 
-  margin-top: 15px; 
+  gap: 0.35rem; 
+  margin-top: 0.938rem; 
 }
 .photo-box { 
   width: 11.688rem; 

@@ -162,7 +162,7 @@ onUnmounted(() => {
       <div class="chats-list">
         <div v-for="chat in chats" :key="chat.id" class="chat-card" @click="openChat(chat.id)">
           <div class="chat-left">
-            <img :src="chat.productImage || '/src/assets/img/product/foto-chat-prod.png'" alt="foto" class="user-foto">
+            <img :src="chat.productImage || '/img/products/foto-chat-prod.png'" alt="foto" class="user-foto">
           </div>
 
           <div class="chat-center">
@@ -237,7 +237,7 @@ onUnmounted(() => {
 .user-avatar {width: 2.813rem;height: 2.813rem;border-radius: 3.438rem;object-fit: cover;position: absolute;left: 30%;top: -1rem;}
 .user-foto{width: 6.563rem;height: 6.875rem;border-radius: 1.563rem;}
 .chat-center {flex: 1;min-width: 0;display: flex;flex-direction: column;gap: 3px;}
-.user-name {font-weight: 700;font-size: 1.5rem;margin-left: -.6rem;}
+.user-name {font-weight: 700;font-size: 1.5rem;}
 .product-title {font-size: 0.875rem;}
 .last-message {font-size: 1rem;color: #8E8C8C;white-space: nowrap;text-overflow: ellipsis;width: 34.5rem; line-height: 1.2;display: -webkit-box;-webkit-line-clamp: 2;-webkit-box-orient: vertical;overflow: hidden;}
 .last-message.unread {font-weight: 600;color: #111;}
