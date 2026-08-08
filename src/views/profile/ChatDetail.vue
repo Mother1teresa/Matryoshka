@@ -409,7 +409,7 @@ const isLoading = ref(false);
 const abortController = ref(null);
 
 const isOrderPlaced = ref(false);
-const showBotActions = ref(false);
+const showBotActions = ref(true);
 const showReviewLink = ref(false);
 const isReviewModalOpen = ref(false);
 const isTyping = ref(false);
@@ -606,8 +606,8 @@ const scrollToBottom = () => {
 const checkBotStatus = (msgs) => {
   const lastSellerMsg = [...msgs].reverse().find((m) => !m.isMine);
   if (lastSellerMsg) {
-    // const diffHours = (Date.now() - new Date(lastSellerMsg.createdAt)) / 3600000;
-    // if (diffHours >= 24) showBotActions.value = true;
+    const diffHours = (Date.now() - new Date(lastSellerMsg.createdAt)) / 3600000;
+    if (diffHours >= 24) showBotActions.value = true;
   }
 };
 
