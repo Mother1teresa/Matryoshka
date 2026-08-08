@@ -464,7 +464,7 @@ const playVideo = (video) => {
 .video-play-icon { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: white; opacity: 0.85; pointer-events: none; text-shadow: 0 2px 8px rgba(0,0,0,0.4);}
 .video-preview .video-thumb{ width: 100%; height: 100%; object-fit: cover; border-radius: 0.938rem;}
 .video-card { width: 100%; max-height: 28rem; background: white; border-radius: 1.25rem; padding: 0.625rem 0.625rem 0.938rem 0.625rem;}
-.video-title { font-size: 1rem; font-weight: 700; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; transition: all 0.3s; border-radius: 0;text-align: justify; display: inline-block;text-transform: lowercase; margin-bottom: 0.75rem;}
+.video-title { font-size: 1rem; font-weight: 700; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; transition: all 0.3s; border-radius: 0;text-align: justify;text-transform: lowercase; margin-bottom: 0.75rem;}
 .video-title::first-letter {text-transform: uppercase;}
 .duration{bottom: 0; right: 0;}
 .video-info{margin-top: 0.938rem;}
