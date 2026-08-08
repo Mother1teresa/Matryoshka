@@ -62,7 +62,7 @@ export const productLabels = {
   model: "Модель",
   year: "Год выпуска",
   yearOfManufacture: "Год выпуска",
-  bodyType: "Кузов",
+  vehicleBodyType: "Кузов",
   vehicleBodyType: "Тип кузова",
   transmission: "КПП",
   vehicleKpp: "КПП",
@@ -245,14 +245,14 @@ export const fieldGroups = {
         { key: "model", type: "text" },
         { key: "yearOfManufacture", type: "text", label: "Год выпуска" },
         { key: "milage", type: "text", suffix: "км" },
-        { key: "bodyType", type: "text", label: "Кузов" },
-        { key: "transmission", type: "text", label: "КПП" },
+        { key: "vehicleBodyType", type: "text", label: "Кузов" },
+        { key: "vehicleKpp", type: "text", label: "КПП" },
         { key: "engineType", type: "text", label: "Двигатель" },
         { key: "drive", type: "text", label: "Привод" },
         { key: "horsePower", type: "text", suffix: "л.с.", label: "Мощность" },
         { key: "engineCapacity", type: "text", suffix: "л", label: "Объём двигателя" },
         { key: "color", type: "text" },
-        { key: "isOnTheGo", type: "text", label: "На ходу" }
+        { key: "isOnTheGo", type: "text", label: "На ходу" },
       ]
     }
   ],
