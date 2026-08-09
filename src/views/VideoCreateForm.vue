@@ -280,7 +280,7 @@ const onPublish = async () => {
 .psc-title{text-transform: lowercase;}
 .psc-title::first-letter { text-transform: uppercase;}
 .psc-price {font-size: 0.875rem;font-weight: 700;color: var(--btn-bg);margin: 0 0 0.125rem;}
-.psc-city {font-size: 0.75rem;color: #858685;margin: 0;}
+.psc-city {font-size: 0.75rem;color: #858685;margin: 0; display: -webkit-box;-webkit-line-clamp: 1;-webkit-box-orient: vertical;overflow: hidden;}
 .btn-clear-select {margin-top: 0.75rem;background: transparent;color: #858685;border: 1px solid #ddd;padding: 0.5rem 1rem;margin-left: 0.5rem;border-radius: 0.75rem;font-size: 0.875rem;cursor: pointer;transition: all 0.2s;}
 .btn-clear-select:hover {border-color: #999;color: #555;}
 @media (max-width: 77rem){.upload-grid{ grid-template-columns: 1fr 1fr;}

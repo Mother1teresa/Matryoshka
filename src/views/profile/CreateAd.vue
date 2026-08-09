@@ -633,7 +633,7 @@ const canSubmit = computed(() => {
   if (config?.sections) {
     for (const section of config.sections) {
       for (const field of section.fields) {
-        if (field.required && field.key !== 'title' && field.key !== 'price' && field.key !== 'description') {
+        if (field.required && field.key !== 'title' && field.key !== 'price') {
           const value = form.attributes[field.key];
           
           if (Array.isArray(value)) {
@@ -1222,7 +1222,7 @@ const publishAd = async () => {
       category: form.mainCategory,
       title: form.title,
       price: String(form.price || 0),
-      description: form.description,
+      description: form.description || form.attributes?.description || '',
       address: form.address,
       contacts: form.phone.replace(/\D/g, ''),
       pictures: uploadedUrls,
