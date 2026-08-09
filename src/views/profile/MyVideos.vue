@@ -244,34 +244,40 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener("click", closeMenu);
 });
-const handleVideoCreated = async (createdMedia) => {
+const handleVideoCreated = async (payload) => {
   isCreating.value = false;
   
-  if (createdMedia && typeof createdMedia === 'object') {
-    const fallbackVideo = {
-      ...createdMedia,
-      id: createdMedia.id || Date.now(),
-      s3Key: createdMedia.s3Key || createdMedia.fileName,
-      thumbnail: createdMedia.cdnUrl || createdMedia.url,
-      description: createdMedia.description || 'Действующий ролик',
-      isArchived: false,
-      likesCount: "",
-      viewsCount: "",
-      commentsCount: "",
-      author: {
-        name: auth.user?.name || 'Пользователь',
-        avatar: auth.userAvatar
-      }
-    };
-    auth.addVideoLocally(fallbackVideo);
+  const { media, productId } = payload || {};
+  
+  if (!media?.id) {
+    console.error('[handleVideoCreated] Видео не создано — отсутствует id');
+    notify('Ошибка: видео не было создано', 'error');
+    return;
+  }
 
-    const advertId = createdMedia.productId || createdMedia.advertId;
-    if (advertId && fallbackVideo.id) {
-      try {
-        await auth.attachVideoToAdvert(advertId, fallbackVideo.id);
-      } catch (e) {
-        console.error('Не удалось привязать видео к товару:', e);
-      }
+  const fallbackVideo = {
+    ...media,
+    id: media.id,
+    s3Key: media.s3Key || media.fileName,
+    thumbnail: media.cdnUrl || media.url,
+    description: media.description || 'Действующий ролик',
+    isArchived: false,
+    likesCount: "",
+    viewsCount: "",
+    commentsCount: "",
+    author: {
+      name: auth.user?.name || 'Пользователь',
+      avatar: auth.userAvatar
+    }
+  };
+  auth.addVideoLocally(fallbackVideo);
+
+  if (productId) {
+    try {
+      await auth.attachVideoToAdvert(productId, media.id);
+    } catch (e) {
+      console.error('Не удалось привязать видео к товару:', e);
+      notify('Видео загружено, но не удалось привязать к объявлению', 'warning');
     }
   }
   

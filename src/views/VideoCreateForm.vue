@@ -116,7 +116,6 @@
 </template>
 <script setup>
 import { ref, reactive, onMounted, onBeforeUnmount } from 'vue';
-import { useRouter } from 'vue-router';
 import { api } from "/src/api/api.js";
 import { uploadToMediaService } from "/src/utils/uploadService.js";
 import { useAuthStore } from "/src/stores/authStore.js"; 
@@ -125,7 +124,6 @@ import { notify } from "/src/utils/notify";
 const emit = defineEmits(['back', 'success']);
 const auth = useAuthStore();
 const fileInput = ref(null);
-const router = useRouter();
 const videoPreview = ref(null);
 const status = ref('edit');
 const isFinishing = ref(false);
@@ -134,6 +132,7 @@ const uploadProgress = ref(0);
 const myProducts = ref([]);
 const isLoadingProducts = ref(false);
 const autoFinishTimeout = ref(null); 
+const lastUploadResult = ref(null);
 
 const form = reactive({
   title: '',
@@ -147,13 +146,15 @@ const finish = () => {
   if (isFinishing.value) return;
   isFinishing.value = true;
   if (autoFinishTimeout.value) clearTimeout(autoFinishTimeout.value);
-  emit('success'); 
+  // ← эмитим объект с медиа и выбранным товаром
+  emit('success', lastUploadResult.value); 
 };
 
 onBeforeUnmount(() => {
   if (videoPreview.value) URL.revokeObjectURL(videoPreview.value);
   if (autoFinishTimeout.value) clearTimeout(autoFinishTimeout.value);
 });
+
 onMounted(async () => {
   isLoadingProducts.value = true;
   try {
@@ -205,30 +206,23 @@ const onPublish = async () => {
         uploadProgress.value = progress; 
       }
     );
-    if (form.productId && createdMedia?.id) {
-      try {
-        await auth.updateAdvert({
-          id: form.productId,
-          videoId: createdMedia.id
-        });
-      } catch (patchErr) {
-        console.error("Ошибка привязки видео к объявлению:", patchErr);
-        notify("Видео загружено, но не удалось привязать к объявлению", "warning");
-      }
+    if (!createdMedia || !createdMedia.id) {
+      throw new Error('Медиа-сервис не вернул id созданного видео');
     }
+
+    lastUploadResult.value = {
+      media: createdMedia,
+      productId: form.productId
+    };
     status.value = 'success';
     autoFinishTimeout.value = setTimeout(() => {
       if (isFinishing.value) return;
       isFinishing.value = true;
-      emit('success', createdMedia); 
+      emit('success', lastUploadResult.value); 
     }, 250);
   } catch (e) {
     console.error("Ошибка при публикации:", e);
-    if (e.message === "Пользователь не авторизован") {
-      notify("Сессия истекла. Пожалуйста, войдите заново.");
-    } else {
-      notify("Ошибка загрузки видео");
-    }
+    notify(e.message || "Ошибка загрузки видео", "error");
     status.value = 'edit';
   }
 };
