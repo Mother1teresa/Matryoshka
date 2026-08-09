@@ -46,9 +46,10 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
     const originalRequest = error.config;
+    if (!originalRequest) return Promise.reject(error);
 
-    const { status, data } = error.response;
-    const url = originalRequest?.url || "";
+    const { status, data } = error.response || {};
+    const url = originalRequest.url || "";
     const errorMessage = data?.message || data?.error || "";
 
     if (status !== 401) return Promise.reject(error);
@@ -64,9 +65,12 @@ api.interceptors.response.use(
     }
 
     const { useAuthStore } = await import("/src/stores/authStore.js");
-    const auth = useAuthStore();    
-    if (!auth.isAuthenticated) return Promise.reject(error);
-
+    const auth = useAuthStore();
+    
+    if (!auth.isAuthenticated) {
+      doLogout(auth);
+      return Promise.reject(error);
+    }
     if (originalRequest._retry) {
       doLogout(auth, "Ошибка авторизации. Войдите заново.");
       return Promise.reject(error);
@@ -83,12 +87,10 @@ api.interceptors.response.use(
 
     try {
       const success = await auth.refreshToken();
-      
       if (!success) throw new Error("Refresh failed");
-      
+
       processQueue(null);
       return api(originalRequest);
-      
     } catch (refreshError) {
       processQueue(refreshError);
       doLogout(auth);

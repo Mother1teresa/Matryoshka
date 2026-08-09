@@ -153,7 +153,7 @@ onUnmounted(() => {
       <a href="/" class="matreshka-banner">
         <img src="/src/assets/img/form/mask-matr.svg" alt="Матрёшка" class="matreshka-avatar" />
         <div class="matreshka-text">
-          <div class="matreshka-name">"Поддержка Матрёшка</div>
+          <div class="matreshka-name">Поддержка Матрёшка</div>
           <div class="matreshka-desc">
             Привет, {{ auth.user?.name || 'Сергей' }}! Задайте вопрос — ответим в сообщениях сообщества ВКонтакте
           </div>

@@ -178,7 +178,6 @@ const handleFileSelect = (e) => {
     videoPreview.value = URL.createObjectURL(file);
   }
 };
-
 const onPublish = async () => {
   if (!form.file) {
     notify("Выберите видеофайл");
@@ -199,7 +198,6 @@ const onPublish = async () => {
       {
         title: form.title || 'Без названия',
         description: form.description.trim(),
-        productId: form.productId,
         commentsDisabled: form.allowComments,
         userId: auth.user?.id
       },
@@ -207,6 +205,17 @@ const onPublish = async () => {
         uploadProgress.value = progress; 
       }
     );
+    if (form.productId && createdMedia?.id) {
+      try {
+        await auth.updateAdvert({
+          id: form.productId,
+          videoId: createdMedia.id
+        });
+      } catch (patchErr) {
+        console.error("Ошибка привязки видео к объявлению:", patchErr);
+        notify("Видео загружено, но не удалось привязать к объявлению", "warning");
+      }
+    }
     status.value = 'success';
     autoFinishTimeout.value = setTimeout(() => {
       if (isFinishing.value) return;
