@@ -606,6 +606,29 @@ export const useAuthStore = defineStore("auth", {
         return [];
       }
     },
+    async waitForMediaStatus(videoId, interval = 2500, maxAttempts = 24) {
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          const res = await api.get(`/adverts/media/${videoId}/status`);
+          if (res.status === 200) {
+            console.log(`[waitForMediaStatus] ✅ Готово на попытке ${attempt}`);
+            return true;
+          }
+        } catch (e) {
+          const status = e.response?.status;
+          if (status === 404) {
+            console.log(`[waitForMediaStatus] Попытка ${attempt}: ещё в обработке`);
+          } else {
+            console.warn(`[waitForMediaStatus] Попытка ${attempt}, статус ${status}:`, e.message);
+          }
+        }
+
+        if (attempt < maxAttempts) {
+          await new Promise(r => setTimeout(r, interval));
+        }
+      }
+      throw new Error(`Медиа не готово после ${maxAttempts} попыток (${(maxAttempts * interval) / 1000}с)`);
+    },
     async updateAdvert(payload) {
       try {
         const res = await api.put('/adverts', payload);

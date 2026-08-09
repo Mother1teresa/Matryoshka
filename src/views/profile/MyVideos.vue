@@ -274,6 +274,7 @@ const handleVideoCreated = async (payload) => {
 
   if (productId) {
     try {
+      await auth.waitForMediaStatus(media.id);
       await auth.attachVideoToAdvert(productId, media.id);
     } catch (e) {
       console.error('Не удалось привязать видео к товару:', e);
