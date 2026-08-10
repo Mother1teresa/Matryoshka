@@ -1051,7 +1051,7 @@ onBeforeUnmount(() => {
 .fav-video-preview {width: 100%;height: 27.938rem; aspect-ratio: 9/16;flex-shrink: 0;position: relative;overflow: hidden;}
 .fav-video-preview img,.fav-video-preview video {width: 100%;height: 100%;border-radius: 1.25rem;object-fit: cover;}
 .author-avatar {width: 3.5rem !important;height: 3.5rem !important;border-radius: 0 3.125rem 0 1.25rem !important;position: absolute;bottom: -0.5rem;left: -0.5rem;object-fit: cover;border: 2px solid #fff;z-index: 2;}
-.video-overlay {position: absolute;bottom: 0.75rem;right: 0.75rem;background: rgba(0, 0, 0, 0.6);color: #fff;padding: 0.125rem 0.5rem;border-radius: 0.375rem;font-size: 0.75rem;font-weight: 500;z-index: 1;}
+.video-overlay {position: absolute;bottom: 0;right: 0;color: #fff;padding: 0.125rem 0.5rem;border-radius: 0.375rem;font-size: 0.75rem;font-weight: 500;z-index: 1;}
 .duration{bottom: 0; right: 0;}
 .fav-video-main {width: 100%;display: grid;margin-top: 1.25rem;}
 .video-title {font-size: 1rem;font-weight: 700;margin-bottom: 1.5rem;display: -webkit-box;-webkit-line-clamp: 3;-webkit-box-orient: vertical;overflow: hidden;text-transform: lowercase;line-height: 1;}
