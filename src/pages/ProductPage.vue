@@ -285,6 +285,7 @@ const callModalName = ref('');
 const linkedVideos = ref([]);
 const mapContainer = ref(null);
 const productVideoDetails = ref(null);
+const localVideoFavCache = ref(new Map());
 
 const loadProductVideoDetails = async () => {
   if (!product.value?.video?.id) {
@@ -309,9 +310,10 @@ const allProductVideos = computed(() => {
   const list = [];
   const productVideoId = productVideo.value?.id;
 
-  // Основное видео товара (с подгруженными лайками/просмотрами)
   if (productVideo.value) {
     const details = productVideoDetails.value;
+    const cached = localVideoFavCache.value.get(productVideo.value.id);
+    const isFav = cached !== undefined ? cached : (details?.isFavorite ?? false);
     list.push({
       id: productVideo.value.id,
       cdnUrl: productVideo.value.cdnUrl,
@@ -321,21 +323,23 @@ const allProductVideos = computed(() => {
       viewsCount: details?.views || 0,
       likes: details?.likes || 0,
       commentsCount: details?.commentsCount || 0,
-      isFavorite: details?.isFavorite || false,
+      isFavorite: isFav,
       isProductVideo: true,
     });
   }
 
-  // Остальные видео продавца, исключая дубль основного
   linkedVideos.value.forEach(v => {
     if (v.id !== productVideoId) {
-      list.push(v);
+      const cached = localVideoFavCache.value.get(v.id);
+      list.push({
+        ...v,
+        isFavorite: cached !== undefined ? cached : (v.isFavorite ?? false),
+      });
     }
   });
 
   return list;
 });
-
 
 const loadLinkedVideos = async () => {
   if (!product.value?.sellerId || !product.value?.id) return;
@@ -348,22 +352,40 @@ const loadLinkedVideos = async () => {
   }
 };
 const onVideoFavoriteClick = async (video, event) => {
-  event.stopPropagation(); // не даём перейти в shorts
+  event.stopPropagation();
   if (!authStore.isAuthenticated) {
     modal.openLogin();
     notify("Авторизуйтесь, чтобы добавить в избранное");
     return;
   }
+
+  const currentlyFav = video.isFavorite ?? false;
+  const nextFav = !currentlyFav;
+
+  localVideoFavCache.value.set(video.id, nextFav);
+  if (video.isProductVideo && productVideoDetails.value) {
+    productVideoDetails.value.isFavorite = nextFav;
+  } else {
+    const linked = linkedVideos.value.find(v => v.id === video.id);
+    if (linked) linked.isFavorite = nextFav;
+  }
+
   try {
-    const currentlyFav = video.isFavorite ?? false;
     if (currentlyFav) {
       await authStore.unmarkAsFavorite(video.id);
     } else {
       await authStore.markAsFavorite(video.id);
     }
-    video.isFavorite = !currentlyFav;
     notify(currentlyFav ? "Удалено из избранного" : "Добавлено в избранное");
+    localVideoFavCache.value.delete(video.id);
   } catch (e) {
+    localVideoFavCache.value.delete(video.id);
+    if (video.isProductVideo && productVideoDetails.value) {
+      productVideoDetails.value.isFavorite = currentlyFav;
+    } else {
+      const linked = linkedVideos.value.find(v => v.id === video.id);
+      if (linked) linked.isFavorite = currentlyFav;
+    }
     notify("Ошибка избранного", "error");
   }
 };
@@ -1042,7 +1064,7 @@ onBeforeUnmount(() => {
 .video-fav-btn:hover {transform: scale(1.1);background: #fff;}
 .video-fav-btn.is-favorite {background: #64A07A;}
 .video-fav-btn.is-favorite:hover {background: #64A07A;}
-.video-fav-icon {width: 2.5rem;height: 2.5rem;filter: brightness(0) saturate(100%) invert(100%) drop-shadow(0 1px 2px rgba(0,0,0,0.3));transition: filter 0.2s ease, transform 0.2s ease;}
+.video-fav-icon {width: 2rem;height: 2rem;filter: brightness(0) saturate(100%) invert(100%) drop-shadow(0 1px 2px rgba(0,0,0,0.3));transition: filter 0.2s ease, transform 0.2s ease;}
 .video-fav-btn:hover .video-fav-icon {filter: brightness(0) saturate(100%) invert(100%) drop-shadow(0 1px 4px rgba(0,0,0,0.4));}
 .video-fav-btn.is-favorite .video-fav-icon {filter: brightness(0) saturate(100%) invert(100%) drop-shadow(0 1px 2px rgba(0,0,0,0.25));}
 .video-fav-btn.is-favorite:hover .video-fav-icon {filter: brightness(0) saturate(100%) invert(100%) drop-shadow(0 1px 4px rgba(0,0,0,0.35));}
