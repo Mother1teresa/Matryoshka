@@ -1035,7 +1035,8 @@ onBeforeUnmount(() => {
 .video-title {font-size: 1rem;font-weight: 700;margin-bottom: 1.5rem;display: -webkit-box;-webkit-line-clamp: 3;-webkit-box-orient: vertical;overflow: hidden;text-transform: lowercase;line-height: 1;}
 .video-title::first-letter {text-transform: uppercase;}
 .video-stats {display: flex; justify-content: center;gap: 1.5rem;}
-.stat {display: flex;align-items: center;gap: 0.5rem;font-size: 1rem;}.stat img {width: 1.563rem;height: 1.375rem;}
+.stat {display: flex; align-items: flex-end;gap: 0.5rem;font-size: 1rem; font-weight: 700;}
+.stat img {width: 1.563rem;height: 1.375rem;}
 .video-fav-btn {position: absolute;top: 0;right: 0;width: 4rem;height: 4.5rem;background: #8E8C8C;border: none;border-radius: 0 0 0 1.25rem;display: flex;align-items: center;justify-content: center;cursor: pointer;z-index: 3;padding: 1rem 0.75rem;box-shadow: 0 2px 8px rgba(0,0,0,0.08);transition: transform 0.2s ease, background 0.2s ease;}
 .video-fav-btn:hover {transform: scale(1.1);background: #fff;}
 .video-fav-icon {width: 2.5rem;height: 2.5rem;filter: brightness(0) invert(1) drop-shadow(0 1px 2px rgba(0,0,0,0.25));transition: filter 0.2s ease;}
