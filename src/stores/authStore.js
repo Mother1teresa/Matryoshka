@@ -754,7 +754,7 @@ export const useAuthStore = defineStore("auth", {
           commentsCount: video.comments?.length ?? video.commentsCount ?? video.commentCount ?? "",
           createdAt: video.createdAt || '',
           publishedAt: video.publishedAt || '',
-          productId: video.productId || '',
+          advertId: video.productId || '',
           comments: (video.comments || []).map(c => ({
             id: c.id,
             text: c.text,
