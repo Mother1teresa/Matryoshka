@@ -607,28 +607,28 @@ export const useAuthStore = defineStore("auth", {
       }
     },
     async waitForMediaStatus(videoId, interval = 2500, maxAttempts = 24) {
-      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-        try {
-          const res = await api.get(`/adverts/media/${videoId}/status`);
-          if (res.status === 200) {
-            console.log(`[waitForMediaStatus] ✅ Готово на попытке ${attempt}`);
-            return true;
-          }
-        } catch (e) {
-          const status = e.response?.status;
-          if (status === 404) {
-            console.log(`[waitForMediaStatus] Попытка ${attempt}: ещё в обработке`);
-          } else {
-            console.warn(`[waitForMediaStatus] Попытка ${attempt}, статус ${status}:`, e.message);
-          }
-        }
-
-        if (attempt < maxAttempts) {
-          await new Promise(r => setTimeout(r, interval));
-        }
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const res = await api.get(`/adverts/media/${videoId}/status`);
+      // 200 по доке = { id, cdnUrl, type, mimeType, publishedAt } — значит готово
+      if (res.status === 200 && res.data?.id) {
+        console.log(`[waitForMediaStatus] ✅ Готово на попытке ${attempt}`);
+        return res.data;
       }
-      throw new Error(`Медиа не готово после ${maxAttempts} попыток (${(maxAttempts * interval) / 1000}с)`);
-    },
+    } catch (e) {
+      const status = e.response?.status;
+      if (status === 404) {
+        console.log(`[waitForMediaStatus] Попытка ${attempt}: ещё в обработке`);
+      } else {
+        console.warn(`[waitForMediaStatus] Попытка ${attempt}, статус ${status}:`, e.message);
+      }
+    }
+    if (attempt < maxAttempts) {
+      await new Promise(r => setTimeout(r, interval));
+    }
+  }
+  throw new Error(`Медиа не готово после ${maxAttempts} попыток`);
+},
     async updateAdvert(payload) {
       try {
         const res = await api.put('/adverts', payload);
@@ -642,7 +642,9 @@ export const useAuthStore = defineStore("auth", {
     },
     async attachVideoToAdvert(advertId, videoId) {
       try {
-        await api.patch('/adverts', { id: advertId, videoId });
+        await api.patch('/adverts', null, {
+          params: { id: advertId, videoId }
+        });
       } catch (e) {
         console.error("Ошибка прикрепления видео к объявлению:", e);
         throw e;
@@ -1203,8 +1205,11 @@ export const useAuthStore = defineStore("auth", {
           const base = {
             ...v,
             s3Key: v.s3Key || v.fileName || v.id,
-            thumbnail: v.thumbnailUrl || v.cdnUrl || v.url,
-            isArchived: v.isArchived || false,
+            thumbnail: v.thumbnailUrl || v.cdnUrl || '',   // ← по доке: thumbnailUrl
+            cdnUrl: v.cdnUrl || '',
+            isArchived: v.isArchived ?? false,
+            commentsDisabled: v.commentsDisabled ?? false,
+            duration: v.duration || '',
           };
           let feedData = null;
           try {
@@ -1222,12 +1227,10 @@ export const useAuthStore = defineStore("auth", {
               viewsCount: feedData.views ?? 0,
               commentsCount: feedData.commentsCount ?? 0,
               createdAt: feedData.createdAt || '',
-              author: feedData.author || {
-                name: 'Пользователь',
-                avatar: maskAvatar,
-              },
+              author: feedData.author || { name: 'Пользователь', avatar: maskAvatar },
               comments: feedData.comments || [],
-              commentsDisabled: v.commentsDisabled || false,
+              commentsDisabled: feedData.commentsDisabled ?? base.commentsDisabled,
+              duration: base.duration || feedData.duration || '',
             };
           }
           return {
@@ -1239,11 +1242,8 @@ export const useAuthStore = defineStore("auth", {
             viewsCount: v.viewsCount ?? v.views ?? 0,
             commentsCount: v.commentsCount ?? 0,
             createdAt: v.createdAt || '',
-            author: {
-              name: 'Пользователь',
-              avatar: maskAvatar,
-            },
-            commentsDisabled: v.commentsDisabled || false,
+            author: { name: 'Пользователь', avatar: maskAvatar },
+            commentsDisabled: v.commentsDisabled ?? false,
           };
         }));
         this.allVideos = enrichedVideos;
@@ -1256,22 +1256,20 @@ export const useAuthStore = defineStore("auth", {
     async fetchVideosByUser(userId) {
       this.isVideosLoading = true;
       try {
-        const res = await api.get('/media/videos', {
-          params: { userId }
-        });
+        const res = await api.get('/media/videos', { params: { userId } });
         const rawVideos = Array.isArray(res.data) ? res.data : [];
         return rawVideos.map(v => ({
           id: v.id,
           s3Key: v.s3Key || v.fileName || v.id,
-          thumbnail: v.thumbnailUrl || v.cdnUrl || v.url,
+          thumbnail: v.thumbnailUrl || v.cdnUrl || '',   // ← по доке
           cdnUrl: v.cdnUrl || '',
           description: v.description || 'Описание ролика временно недоступно',
-          isArchived: v.isArchived || false,
+          isArchived: v.isArchived ?? false,
           likes: v.likes || v.likesCount || 0,
           likesCount: v.likesCount || v.likes || 0,
           viewsCount: v.viewsCount || 0,
           commentsCount: v.commentsCount || 0,
-          commentsDisabled: v.commentsDisabled || false,
+          commentsDisabled: v.commentsDisabled ?? false,
           duration: v.duration || '',
           userId: v.userId
         }));
@@ -1288,7 +1286,7 @@ export const useAuthStore = defineStore("auth", {
         return [];
       }
       try {
-        const res = await api.get('/media/videos', { params: { userId } })
+        const res = await api.get('/media/videos', { params: { userId } });
         const rawVideos = Array.isArray(res.data) ? res.data : [];
         return rawVideos.map(v => ({
           id: v.id,

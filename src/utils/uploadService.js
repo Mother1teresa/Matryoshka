@@ -2,7 +2,6 @@ import axios from "axios";
 import { api } from "/src/api/api.js";
 
 const getFileInfo = (file, type) => {
-  // Новые enum-значения: VIDEOS, PHOTOS, REVIEW_PHOTOS, CHAT_MEDIA
   const isVideo = type === "VIDEOS";
   const fallbackExt = isVideo ? "mp4" : "jpg";
   const fallbackMime = isVideo ? "video/mp4" : "image/jpeg";
@@ -32,14 +31,13 @@ export const uploadToMediaService = async (file, type = "VIDEOS", metadata = {},
   try {
     const { mimeType, extension } = getFileInfo(file, type);
 
-    // Получаем presigned URL
     const { data: presignedData } = await api.post("/media/presigned", {
       fileName: file.name,
       contentType: mimeType
     });
     const { url, s3Key } = presignedData;
     const cleanUrl = new URL(url).origin + new URL(url).pathname;
-    // Загружаем файл напрямую в S3
+
     await axios.put(url, file, {
       headers: { 'Content-Type': mimeType },
       onUploadProgress: (progressEvent) => {
@@ -53,7 +51,6 @@ export const uploadToMediaService = async (file, type = "VIDEOS", metadata = {},
     const { useAuthStore } = await import("/src/stores/authStore.js");
     const auth = useAuthStore();
     if (!auth.isAuthenticated || !auth.user?.id) {
-      console.log('[uploadToMediaService] Пользователь разлогинен, пропускаем /media/create');
       throw new Error("Пользователь не авторизован");
     }
 
@@ -62,7 +59,7 @@ export const uploadToMediaService = async (file, type = "VIDEOS", metadata = {},
     
     const resolvedTitle = isImage ? "" : (metadata.title || file.name);
     
-    // Сохраняем метаданные в сервисе
+    // ── 1. Payload строго по MediaCreateDTO ──
     const payload = [{
       filename: file.name,
       s3Key: s3Key,
@@ -72,7 +69,7 @@ export const uploadToMediaService = async (file, type = "VIDEOS", metadata = {},
       title: resolvedTitle, 
       description: metadata.description || '',
       extension: extension,
-      productId: metadata.productId || '',
+      advertId: metadata.advertId || metadata.productId || '',
     }];
 
     console.log("Отправляем Payload в /media/create:", payload);
@@ -80,9 +77,11 @@ export const uploadToMediaService = async (file, type = "VIDEOS", metadata = {},
     
     const uploadedMedia = Array.isArray(createData) ? createData[0] : createData;
 
+    // ── 2. Return строго по MediaResponseDTO ──
     return {
       id: uploadedMedia?.id,
       fileName: uploadedMedia?.fileName || file.name,
+      title: uploadedMedia?.title || resolvedTitle, 
       description: uploadedMedia?.description || metadata.description || '',
       extension: uploadedMedia?.extension || extension,
       s3Key: uploadedMedia?.s3Key || s3Key,
@@ -91,7 +90,7 @@ export const uploadToMediaService = async (file, type = "VIDEOS", metadata = {},
       type: uploadedMedia?.type || type,
       mimeType: uploadedMedia?.mimeType || mimeType,
       userId: uploadedMedia?.userId || null,
-      productId: uploadedMedia?.productId || metadata.productId || null
+      advertId: uploadedMedia?.advertId || metadata.advertId || metadata.productId || null,
     };
   } catch (error) {
     console.error("Media Upload Error:", {

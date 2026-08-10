@@ -259,12 +259,13 @@ const handleVideoCreated = async (payload) => {
     ...media,
     id: media.id,
     s3Key: media.s3Key || media.fileName,
-    thumbnail: media.cdnUrl || media.url,
+    thumbnail: media.thumbnailUrl || media.cdnUrl,
     description: media.description || 'Действующий ролик',
     isArchived: false,
     likesCount: "",
     viewsCount: "",
     commentsCount: "",
+    duration: media.duration || '',
     author: {
       name: auth.user?.name || 'Пользователь',
       avatar: auth.userAvatar
@@ -273,10 +274,11 @@ const handleVideoCreated = async (payload) => {
   auth.addVideoLocally(fallbackVideo);
 
   if (productId) {
-    try {
-      await auth.waitForMediaStatus(media.id);
-      await auth.attachVideoToAdvert(productId, media.id);
-    } catch (e) {
+      if (media.advertId) {
+        await auth.waitForMediaStatus(media.id);
+        await auth.attachVideoToAdvert(media.advertId, media.id);
+      }
+    else {
       console.error('Не удалось привязать видео к товару:', e);
       notify('Видео загружено, но не удалось привязать к объявлению', 'warning');
     }

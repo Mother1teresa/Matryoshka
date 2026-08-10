@@ -199,12 +199,9 @@ const onPublish = async () => {
       {
         title: form.title || 'Без названия',
         description: form.description.trim(),
-        commentsDisabled: form.allowComments,
-        userId: auth.user?.id
+        advertId: form.productId || null
       },
-      (progress) => {
-        uploadProgress.value = progress; 
-      }
+      (progress) => { uploadProgress.value = progress; }
     );
     if (!createdMedia || !createdMedia.id) {
       throw new Error('Медиа-сервис не вернул id созданного видео');
