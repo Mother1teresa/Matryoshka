@@ -306,7 +306,7 @@ const handleVideoCreated = async (payload) => {
 .video-card {
   position: relative;
   aspect-ratio: 9/12;
-  /* overflow: hidden; */
+  overflow: hidden;
   height: 20.5rem;
   width: 100%;
   border-radius: 1.25rem;
