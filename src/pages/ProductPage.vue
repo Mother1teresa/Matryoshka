@@ -1061,7 +1061,6 @@ onBeforeUnmount(() => {
 .stat img {width: 1.563rem;height: 1.375rem;}
 /* Кнопка */
 .video-fav-btn {position: absolute;top: 0;right: 0;width: 4rem;height: 4.5rem;background: #8E8C8C;border: none;border-radius: 0 0 0 1.25rem;display: flex;align-items: center;justify-content: center;cursor: pointer;z-index: 3;padding: 1rem 0.75rem;box-shadow: 0 2px 8px rgba(0,0,0,0.08);transition: transform 0.2s ease, background 0.2s ease;}
-.video-fav-btn:hover {transform: scale(1.1);background: #fff;}
 .video-fav-btn.is-favorite {background: #64A07A;}
 .video-fav-btn.is-favorite:hover {background: #64A07A;}
 .video-fav-icon {width: 2rem;height: 2rem;filter: brightness(0) saturate(100%) invert(100%) drop-shadow(0 1px 2px rgba(0,0,0,0.3));transition: filter 0.2s ease, transform 0.2s ease;}
