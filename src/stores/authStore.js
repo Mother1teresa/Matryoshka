@@ -732,6 +732,7 @@ export const useAuthStore = defineStore("auth", {
       try {
         const response = await api.get(`/feed/video/${videoId}`);
         const video = response.data;
+        
         let author = video.author;
         if (author?.id) {
           const profile = await this.fetchProfileById(author.id);
@@ -745,16 +746,19 @@ export const useAuthStore = defineStore("auth", {
             };
           }
         }
+        
         return {
           id: video.id,
           cdnUrl: video.cdnUrl || '',
+          mimeType: video.mimeType || '', 
           description: video.description || '',
-          likes: video.likes ?? video.likesCount ?? "",
-          views: video.views ?? video.viewsCount ?? "",
-          commentsCount: video.comments?.length ?? video.commentsCount ?? video.commentCount ?? "",
+          likes: video.likes ?? 0,
+          views: video.views ?? 0,
+          commentsCount: video.comments?.length ?? 0,
           createdAt: video.createdAt || '',
           publishedAt: video.publishedAt || '',
-          advertId: video.productId || '',
+          advertId: video.advertId || '',
+          productId: video.advertId || '',
           comments: (video.comments || []).map(c => ({
             id: c.id,
             text: c.text,
@@ -767,8 +771,8 @@ export const useAuthStore = defineStore("auth", {
               avatar: '/img/users/mask-avatar.png'
             }
           })),
-          isLikedByMe: video.isLikedByMe ?? video.likedByMe ?? false,
           isFavorite: video.isFavorite ?? false,
+          isLikedByMe: video.isLikedByMe ?? false,
           author: author || {
             id: '',
             name: 'Пользователь',
