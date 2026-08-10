@@ -402,11 +402,14 @@ const buildCommentTree = (comments) => {
 const loadLinkedProducts = async () => {
   if (!videos.value?.length) return;
   await Promise.all(videos.value.map(async (video) => {
-    if (video.productId && !video.linkedProduct) {
+    const pid = video.productId || video.advertId;
+    if (pid && !video.linkedProduct) {
       try {
-        const product = await auth.getAdvertById(video.productId);
+        const product = await auth.getAdvertById(pid);
         if (product) video.linkedProduct = product;
-      } catch (e) { console.warn(`Не удалось загрузить товар для видео ${video.id}:`, e); }
+      } catch (e) {
+        console.warn(`Не удалось загрузить товар для видео ${video.id}:`, e);
+      }
     }
   }));
 };

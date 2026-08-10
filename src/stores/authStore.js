@@ -718,7 +718,8 @@ export const useAuthStore = defineStore("auth", {
           isVideoReady: false,
           isLikedByMe: v.isLikedByMe || v.likedByMe || false,
           isFavorite: false,
-          productId: v.productId || '',
+          advertId: v.advertId || '', 
+          productId: v.advertId || v.productId || '',
         }));
         return this.welcomeFeed;
       } catch (e) {
