@@ -274,12 +274,11 @@ const handleVideoCreated = async (payload) => {
   auth.addVideoLocally(fallbackVideo);
 
   if (productId) {
-      if (media.advertId) {
-        await auth.waitForMediaStatus(media.id);
-        await auth.attachVideoToAdvert(media.advertId, media.id);
-      }
-    else {
-      console.error('Не удалось привязать видео к товару:', e);
+    try {
+      await auth.attachVideoToAdvert(productId, media.id);
+      notify('Видео прикреплено к объявлению', 'success');
+    } catch (e) {
+      console.error('Не удалось привязать видео к объявлению:', e);
       notify('Видео загружено, но не удалось привязать к объявлению', 'warning');
     }
   }

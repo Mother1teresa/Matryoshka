@@ -606,29 +606,6 @@ export const useAuthStore = defineStore("auth", {
         return [];
       }
     },
-    async waitForMediaStatus(videoId, interval = 2500, maxAttempts = 24) {
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      const res = await api.get(`/adverts/media/${videoId}/status`);
-      // 200 по доке = { id, cdnUrl, type, mimeType, publishedAt } — значит готово
-      if (res.status === 200 && res.data?.id) {
-        console.log(`[waitForMediaStatus] ✅ Готово на попытке ${attempt}`);
-        return res.data;
-      }
-    } catch (e) {
-      const status = e.response?.status;
-      if (status === 404) {
-        console.log(`[waitForMediaStatus] Попытка ${attempt}: ещё в обработке`);
-      } else {
-        console.warn(`[waitForMediaStatus] Попытка ${attempt}, статус ${status}:`, e.message);
-      }
-    }
-    if (attempt < maxAttempts) {
-      await new Promise(r => setTimeout(r, interval));
-    }
-  }
-  throw new Error(`Медиа не готово после ${maxAttempts} попыток`);
-},
     async updateAdvert(payload) {
       try {
         const res = await api.put('/adverts', payload);
@@ -643,7 +620,12 @@ export const useAuthStore = defineStore("auth", {
     async attachVideoToAdvert(advertId, videoId) {
       try {
         await api.patch('/adverts', null, {
-          params: { id: advertId, videoId }
+          params: {
+            updateVideoInAdvertRequestDTO: JSON.stringify({
+              id: advertId,
+              videoId
+            })
+          }
         });
       } catch (e) {
         console.error("Ошибка прикрепления видео к объявлению:", e);
@@ -936,9 +918,9 @@ export const useAuthStore = defineStore("auth", {
         return 0;
       }
     },
-    async fetchFavorites(userId) {
+    async fetchFavorites() { 
       try {
-        const response = await api.get(`/feed/video/favorites/${userId}`);
+        const response = await api.get('/feed/video/favorites');
         const data = response.data || [];
         const favoritesData = Array.isArray(data) ? data[0] : data;
         if (favoritesData?.favoriteVideos?.length) {
@@ -954,10 +936,9 @@ export const useAuthStore = defineStore("auth", {
         return [];
       }
     },
-    async addComment({ userId, videoId, text, parentId }) {
+    async addComment({ videoId, text, parentId }) {
       try {
         const response = await api.post('/feed/comments', {
-          userId,
           videoId,
           text,
           parentId
@@ -1020,7 +1001,7 @@ export const useAuthStore = defineStore("auth", {
             );
           }
           await Promise.all([
-            this.fetchFavorites(this.user?.id).catch(() => {}),
+            this.fetchFavorites().catch(() => {}),
             useFavoritesStore().fetchAdvertFavorites().catch(() => {})
           ]);
           return true;
@@ -1043,7 +1024,7 @@ export const useAuthStore = defineStore("auth", {
           };
           this.login(userToLogin);
           await Promise.all([
-            this.fetchFavorites(this.user?.id).catch(() => {}),
+            this.fetchFavorites().catch(() => {}),
             useFavoritesStore().fetchAdvertFavorites().catch(() => {})
           ]);
         }
