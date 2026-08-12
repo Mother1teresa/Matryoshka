@@ -981,7 +981,7 @@ onBeforeUnmount(() => {
 .btn.secondary { background: #F5F5F5; width: 4.188rem; height: 3.438rem; display: flex; align-items: center; justify-content: center; border-radius: 1.25rem;}
 .seller-card {margin-top: 0.625rem; background-color: white; border-radius: 1.25rem; padding:1.25rem 1.25rem 1.25rem 1.875rem;}
 .seller { display: flex; gap: 1rem;}
-.avatar { width: 5.125rem; height: 5.125rem; border-radius: 50%; object-fit: cover;}
+.avatar { width: 5.125rem; height: 5.125rem; border-radius: 50%; object-fit: cover; image-rendering: auto; transform: translateZ(0); backface-visibility: hidden; -webkit-mask-image: -webkit-radial-gradient(white, black);}
 .name{font-size: 2rem; font-weight: 700; color: #242424; }
 .name p{font-size: 1rem; color: #858685; margin-top: 0.25rem;margin-bottom: 0.875rem; font-weight: 400;}
 .rating{ font-size: 1.25rem; font-weight: 700; margin-bottom: .5rem; transition: opacity .3s; display: flex;align-items: flex-start; gap: 0.25rem; color: #262626;}

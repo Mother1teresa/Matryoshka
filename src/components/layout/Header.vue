@@ -269,7 +269,7 @@ const handleCreateVideo = () => {
 .btn-category {background: white;color: var(--btn-bg);cursor: pointer;display: flex;align-items: center;gap: 0.25rem;font-weight: 700;transition: opacity 0.3s;}
 .btn-category img {width: 2.063rem;height: auto;}
 .profile {display: grid;align-items: center;gap: 0.313rem;cursor: pointer;background-color: var(--bg-profil);border-radius: 1rem;padding: 0.563rem 0.675rem 0.375rem 1.25rem;height: -webkit-fill-available;height: stretch;}
-.avatar {width: 3.75rem;height: 3.75rem;border-radius: 50%;object-fit: cover;}
+.avatar {width: 3.75rem;height: 3.75rem;border-radius: 50%;object-fit: cover; image-rendering: auto; transform: translateZ(0); backface-visibility: hidden; -webkit-mask-image: -webkit-radial-gradient(white, black);}
 .header__right-true {display: flex;gap: 1.188rem;}
 .header__right-icons {display: flex;justify-content: flex-end;gap: 0.5rem; justify-content: space-between;width: 100%;}
 .header__right-block {display: grid;gap: 0.75rem; justify-items: end;}

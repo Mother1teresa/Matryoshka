@@ -298,7 +298,7 @@ onBeforeUnmount(() => {clearTimeout(cityTimeout);});
 </script>
 
 <style scoped>
-.edit-modal {background: white;width: 100%;max-width: 41.625rem;border-radius: 2.5rem;position: relative;max-height: 90vh;overflow: hidden; display: flex;flex-direction: colum}
+.edit-modal {background: white;width: 100%;max-width: 41.625rem;border-radius: 2.5rem;position: relative;max-height: 90vh;overflow: hidden; display: flex;flex-direction: column}
 .modal-body {overflow-y: auto; scrollbar-width: thin;scrollbar-color: #76a87e transparent;padding: 1.875rem 3.125rem 3.25rem 3.125rem;border-radius: 2.5rem;}
 .type-toggle {display: flex;background: #F4F4F4;border-radius: 0.625rem;padding: 0.325rem;width: 26rem;height: 3.925rem;margin: 1.438rem auto 2.188rem auto;}
 .type-toggle button {flex: 1;padding: 0.833rem 0;width: 12.625rem;text-align: center;border: none;background: none;border-radius: 0.48rem;cursor: pointer;font-weight: 500;font-size: 1.3rem;color: #616161;}

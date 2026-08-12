@@ -1132,7 +1132,6 @@ onUnmounted(() => {
 .rating {font-size: 1.25rem;display: flex;gap: 0.563rem; color: var(--btn-bg); font-weight: 700;}
 .rating p {width: auto;text-align: center;}
 .nav-footer {margin-top: 1.313rem;font-size: 1.25rem;background: var(--btn-bg);width: fit-content;color: var(--bg-defort);padding: 1.125rem 1.688rem;border-radius: 1.875rem;position: relative;cursor: pointer;user-select: none;display: flex;}
-.user-avatar {width: 3.688rem;height: 3.938rem;border-radius: 3.438rem;}
 .collapse-btn {position: absolute;font-size: 2.35rem;top: .3rem;right: 5px;}
 .collapse-btn img {width: 1.375rem; height: 20px;transition: transform 0.3s ease; }
 .collapse-btn img.is-rotated {transform: rotate(180deg); }
