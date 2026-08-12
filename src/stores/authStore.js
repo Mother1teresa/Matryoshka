@@ -260,12 +260,7 @@ export const useAuthStore = defineStore("auth", {
       this.fcmToken = token;
       localStorage.setItem('fcm_token', token);
       try {
-        await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/notifications`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token })
-        });
+        await api.post('/notifications', { token });
         console.log('[FCM] Токен зарегистрирован на бэкенде');
       } catch (e) {
         console.error('[FCM] Ошибка регистрации на бэкенде:', e);
@@ -1324,16 +1319,24 @@ export const useAuthStore = defineStore("auth", {
       }
     },
     async deleteVideo(id, s3Key) {
-      if (!this.user?.id) return false;fetchUserMediaVideos
+      if (!this.user?.id) return false;
       try {
         await api.delete('/feed/video', {
           data: { id, s3Key }
         });
         this.allVideos = this.allVideos.filter(v => v.id !== id);
+        notify("Видео удалено", "success");
         return true;
       } catch (e) {
+        const status = e.response?.status;
+        const msg = e.response?.data?.message;
+        if (status === 403) {
+          notify(msg || "У вас нет прав на удаление данного видео", "error");
+        } else {
+          notify(msg || "Не удалось удалить видео", "error");
+        }
         console.error("Ошибка удаления:", e.response?.data || e.message);
-        throw e;
+        return false;
       }
     },
     addVideoLocally(video) {
