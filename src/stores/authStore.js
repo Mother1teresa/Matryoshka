@@ -1135,7 +1135,6 @@ export const useAuthStore = defineStore("auth", {
         }
       } catch (e) {
         console.error("Profile fetch error:", e);
-        if (e.response?.data?.code === "SESSION_EXPIRED") this.logout();
       }
     },
     async fetchProfileById(userId) {

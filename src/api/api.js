@@ -51,23 +51,19 @@ api.interceptors.response.use(
     const { status, data } = error.response || {};
     const url = originalRequest.url || "";
     const errorMessage = data?.message || data?.error || "";
-
     if (status !== 401) return Promise.reject(error);
     if (url.includes("/auth/")) return Promise.reject(error);
 
-    const isSessionExpired = data?.code === "SESSION_EXPIRED";
-    const isUserNotFound = errorMessage.includes("User not found") && url.includes("/profile");
-    
-    if (isSessionExpired || isUserNotFound) {
-      const { useAuthStore } = await import("/src/stores/authStore.js");
-      doLogout(useAuthStore());
-      return Promise.reject(error);
-    }
-
     const { useAuthStore } = await import("/src/stores/authStore.js");
     const auth = useAuthStore();
-    
+
+    // Не залогинен — сразу logout
     if (!auth.isAuthenticated) {
+      doLogout(auth);
+      return Promise.reject(error);
+    }
+    const isUserNotFound = errorMessage.includes("User not found") && url.includes("/profile");
+    if (isUserNotFound) {
       doLogout(auth);
       return Promise.reject(error);
     }
