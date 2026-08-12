@@ -11,7 +11,7 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const messaging = getMessaging(app);
+export const messaging = getMessaging(app);
 
 const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY;
 
@@ -33,23 +33,9 @@ export async function getFCMToken() {
       }
     }
 
-    // Проверяем, доступен ли SW файл
-    const swUrl = '/firebase-messaging-sw.js';
-    try {
-      const swCheck = await fetch(swUrl, { method: 'HEAD' });
-      const contentType = swCheck.headers.get('content-type');
-      if (!contentType?.includes('javascript')) {
-        console.error(`[FCM] ${swUrl} не найден или отдаёт ${contentType}. Убедитесь, что файл лежит в public/`);
-        return { token: null, status: 'sw-missing' };
-      }
-    } catch (e) {
-      console.error('[FCM] Не удалось проверить SW:', e);
-    }
-
-    const swRegistration = await navigator.serviceWorker.register(swUrl, {
+    const swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
       scope: '/',
     });
-    await navigator.serviceWorker.ready;
 
     const token = await getToken(messaging, {
       vapidKey: VAPID_KEY,

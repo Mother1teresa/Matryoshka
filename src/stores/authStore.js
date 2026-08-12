@@ -246,7 +246,6 @@ export const useAuthStore = defineStore("auth", {
     async initFCM() {
       if (!this.user?.id) return { token: null, status: 'no-user' };
 
-      // Пробуем восстановить из localStorage
       if (!this.fcmToken) {
         this.fcmToken = localStorage.getItem('fcm_token');
       }
@@ -261,9 +260,11 @@ export const useAuthStore = defineStore("auth", {
       this.fcmToken = token;
       localStorage.setItem('fcm_token', token);
       try {
-        await api.post('/notifications', {
-          userId: String(this.user.id),
-          token
+        await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/api/notifications`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token })
         });
         console.log('[FCM] Токен зарегистрирован на бэкенде');
       } catch (e) {
