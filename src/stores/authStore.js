@@ -1298,8 +1298,8 @@ export const useAuthStore = defineStore("auth", {
     async deleteVideo(id, s3Key) {
       if (!this.user?.id) return false;
       try {
-        await api.delete('/media', {
-          params: { id, s3Key }
+        await api.delete('/feed/video', {
+          data: { id, s3Key }
         });
         this.allVideos = this.allVideos.filter(v => v.id !== id);
         return true;

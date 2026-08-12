@@ -375,9 +375,9 @@ const loadSellerVideos = async (sellerId) => {
       thumbnailUrl: v.thumbnailUrl || '',
       description: v.description || 'Видео',
       duration: v.duration || '0:11',
-      viewsCount: v.viewsCount ?? 0,
-      likesCount: v.likesCount ?? 0,
-      commentsCount: v.commentsCount ?? 0,
+      viewsCount: v.viewsCount ?? "",
+      likesCount: v.likesCount ?? "",
+      commentsCount: v.commentsCount ?? "",
       author: {
         id: seller.value?.id,
         name: seller.value?.name || 'Пользователь',
@@ -466,7 +466,7 @@ const playVideo = (video) => {
 .video-card { width: 100%; max-height: 28rem; background: white; border-radius: 1.25rem; padding: 0.625rem 0.625rem 0.938rem 0.625rem;}
 .video-title { font-size: 1rem; font-weight: 700; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; transition: all 0.3s; border-radius: 0;text-align: justify;text-transform: lowercase; margin-bottom: 0.75rem;}
 .video-title::first-letter {text-transform: uppercase;}
-.duration{bottom: 0; right: 0;}
+.duration{bottom: -.1rem;right: -.1rem;}
 .video-info{margin-top: 0.938rem;}
 .video-date { color: #7c7c7c; font-size: 0.875rem;}
 .seller-card-main { background-color: white; margin-bottom: 1.25rem; padding: 1.438rem; border-radius: 1.25rem; position: relative;}
