@@ -194,13 +194,7 @@
 
         <!-- Кнопка отправки -->
         <div class="submit-section">
-          <button 
-            type="button" 
-            class="btn-submit" 
-            :class="{ 'btn-disabled': !canSubmit }" 
-            :disabled="isSubmitting" 
-            @click="publishAd"
-          >
+          <button type="button" class="btn-submit" :class="{ 'btn-disabled': !canSubmit || isSubmitting }" :disabled="!canSubmit || isSubmitting" @click="publishAd">
             {{ isSubmitting ? 'Сохранение...' : isEditMode ? 'Сохранить изменения' : 'Разместить объявление' }}
           </button>
           <p v-if="!canSubmit && v$.$dirty" class="validation-msg">Заполните все поля со звёздочкой *</p>
@@ -1184,6 +1178,7 @@ function buildWorkSchedule(days, timeRange) {
 // ═══════════════════════════════════════════════════════════
 
 const publishAd = async () => {
+  if (isSubmitting.value) return;
   await v$.value.$validate();
   
   if (!canSubmit.value) {
