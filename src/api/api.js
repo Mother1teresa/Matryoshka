@@ -51,13 +51,23 @@ api.interceptors.response.use(
     const { status, data } = error.response || {};
     const url = originalRequest.url || "";
     const errorMessage = data?.message || data?.error || "";
+    if (errorMessage.includes("SESSION_EXPIRED")) {
+      const { useAuthStore } = await import("/src/stores/authStore.js");
+      doLogout(useAuthStore(), "Сессия истекла. Войдите заново.");
+      return Promise.reject(error);
+    }
+    if (status === 403 && !url.includes("/auth/")) {
+      const { useAuthStore } = await import("/src/stores/authStore.js");
+      doLogout(useAuthStore(), "Доступ запрещён. Войдите заново.");
+      return Promise.reject(error);
+    }
+
     if (status !== 401) return Promise.reject(error);
     if (url.includes("/auth/")) return Promise.reject(error);
 
     const { useAuthStore } = await import("/src/stores/authStore.js");
     const auth = useAuthStore();
 
-    // Не залогинен — сразу logout
     if (!auth.isAuthenticated) {
       doLogout(auth);
       return Promise.reject(error);
@@ -71,6 +81,8 @@ api.interceptors.response.use(
       doLogout(auth, "Ошибка авторизации. Войдите заново.");
       return Promise.reject(error);
     }
+    originalRequest._retry = true;
+
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
         failedQueue.push({ resolve, reject });
@@ -78,7 +90,7 @@ api.interceptors.response.use(
         .then(() => api(originalRequest))
         .catch((err) => Promise.reject(err));
     }
-    originalRequest._retry = true;
+
     isRefreshing = true;
 
     try {
@@ -100,9 +112,7 @@ api.interceptors.response.use(
 authApi.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (handleServerUnavailable(error)) {
-      return Promise.reject(error);
-    }
+    handleServerUnavailable(error);
     return Promise.reject(error);
   }
 );
