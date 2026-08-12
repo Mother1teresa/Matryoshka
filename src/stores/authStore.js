@@ -1273,30 +1273,57 @@ export const useAuthStore = defineStore("auth", {
       try {
         const res = await api.get('/media/videos', { params: { userId } });
         const rawVideos = Array.isArray(res.data) ? res.data : [];
-        return rawVideos.map(v => ({
-          id: v.id,
-          fileName: v.fileName || '',
-          description: v.description || 'Описание ролика временно недоступно',
-          extension: v.extension || '',
-          s3Key: v.s3Key || v.fileName || v.id,
-          cdnUrl: v.cdnUrl || '',
-          thumbnailUrl: v.thumbnailUrl || '',
-          type: v.type || '',
-          mimeType: v.mimeType || '',
-          userId: v.userId,
-          likes: v.likes ?? v.likesCount ?? 0,
-          likesCount: v.likesCount ?? v.likes ?? 0,
-          viewsCount: v.viewsCount ?? v.views ?? 0,
-          commentsCount: v.commentsCount ?? 0,
-          duration: v.duration || '',
+
+        const enrichedVideos = await Promise.all(rawVideos.map(async (v) => {
+          const base = {
+            id: v.id,
+            fileName: v.fileName || '',
+            description: v.description || 'Описание ролика временно недоступно',
+            extension: v.extension || '',
+            s3Key: v.s3Key || v.fileName || v.id,
+            cdnUrl: v.cdnUrl || '',
+            thumbnailUrl: v.thumbnailUrl || '',
+            type: v.type || '',
+            mimeType: v.mimeType || '',
+            userId: v.userId,
+            duration: v.duration || '',
+          };
+
+          let feedData = null;
+          try {
+            feedData = await this.fetchVideo(v.id);
+          } catch (e) {
+            console.error(`[fetchUserMediaVideos] Не удалось обогатить видео ${v.id}:`, e);
+          }
+
+          if (feedData) {
+            return {
+              ...base,
+              description: feedData.description || base.description,
+              likes: feedData.likes ?? "",
+              likesCount: feedData.likes ?? "",
+              viewsCount: feedData.views ?? "",
+              commentsCount: feedData.commentsCount ?? "",
+            };
+          }
+
+          return {
+            ...base,
+            likes: v.likes ?? v.likesCount ?? "",
+            likesCount: v.likesCount ?? v.likes ?? "",
+            viewsCount: v.viewsCount ?? v.views ?? "",
+            commentsCount: v.commentsCount ?? "",
+          };
         }));
+
+        return enrichedVideos;
       } catch (e) {
         console.error("Ошибка загрузки медиа-видео пользователя:", e);
         return [];
       }
     },
     async deleteVideo(id, s3Key) {
-      if (!this.user?.id) return false;
+      if (!this.user?.id) return false;fetchUserMediaVideos
       try {
         await api.delete('/feed/video', {
           data: { id, s3Key }
