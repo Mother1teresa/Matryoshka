@@ -260,7 +260,7 @@ export const useAuthStore = defineStore("auth", {
       this.fcmToken = token;
       localStorage.setItem('fcm_token', token);
       try {
-        await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/api/notifications`, {
+        await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/notifications`, {
           method: 'POST',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
