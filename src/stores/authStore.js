@@ -256,10 +256,6 @@ export const useAuthStore = defineStore("auth", {
         console.error('[FCM] SW registration failed:', e);
         return { token: null, status: 'sw-error' };
       }
-
-      if (!this.fcmToken) {
-        this.fcmToken = localStorage.getItem('fcm_token');
-      }
       if (this.fcmToken) return { token: this.fcmToken, status: 'granted' };
 
       const { token, status } = await getFCMToken();
@@ -268,7 +264,6 @@ export const useAuthStore = defineStore("auth", {
         return { token: null, status };
       }
       this.fcmToken = token;
-      localStorage.setItem('fcm_token', token);
       try {
         await api.post('/notifications', { token });
         console.log('[FCM] Токен зарегистрирован на бэкенде');
@@ -1400,7 +1395,6 @@ export const useAuthStore = defineStore("auth", {
         } catch (e) {
           console.warn('[Logout] Не удалось инвалидировать FCM-токен:', e);
         }
-        localStorage.removeItem('fcm_token');
         this.fcmToken = null;
       }
       this.disconnectSocket();

@@ -2,11 +2,11 @@ import { createApp } from 'vue'
 import './style.css'
 import { createYmaps } from 'vue-yandex-maps';
 import App from './App.vue'
-import {router} from './router'
+import { router } from './router'
 import { createPinia } from "pinia"
 import VueTheMask from 'vue-the-mask'
 
-import { useAuthStore } from "./stores/authStore.js" 
+import { useAuthStore } from "./stores/authStore.js"
 
 const app = createApp(App)
 const pinia = createPinia()
