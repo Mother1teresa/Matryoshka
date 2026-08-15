@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getMessaging, getToken, onMessage, deleteToken } from 'firebase/messaging';
 import { notify } from '/src/utils/notify';
+let swRegistration = null;
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -15,14 +16,15 @@ const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);
 
 export async function registerServiceWorker() {
+  if (swRegistration) return swRegistration;
   if (!('serviceWorker' in navigator)) {
     throw new Error('Service Worker не поддерживается браузером');
   }
-  const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+  swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
     scope: '/',
   });
   await navigator.serviceWorker.ready;
-  return registration;
+  return swRegistration;
 }
 
 export async function getFCMToken() {
