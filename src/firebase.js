@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app';
-import { getMessaging, getToken, onMessage } from 'firebase/messaging';
+import { getMessaging, getToken, onMessage, deleteToken } from 'firebase/messaging';
+import { notify } from '/src/utils/notify';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -11,45 +12,39 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-export const messaging = getMessaging(app);
+const messaging = getMessaging(app);
 
-const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY;
+export async function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) {
+    throw new Error('Service Worker не поддерживается браузером');
+  }
+  const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+    scope: '/',
+  });
+  await navigator.serviceWorker.ready;
+  return registration;
+}
 
 export async function getFCMToken() {
   try {
-    if (!('Notification' in window)) {
-      return { token: null, status: 'unsupported' };
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      return { token: null, status: permission }; 
     }
 
-    const permission = Notification.permission;
-    if (permission === 'denied') {
-      return { token: null, status: 'denied' };
-    }
-
-    if (permission === 'default') {
-      const result = await Notification.requestPermission();
-      if (result !== 'granted') {
-        return { token: null, status: result };
-      }
-    }
-
-    const swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-      scope: '/',
-    });
-
+    const registration = await navigator.serviceWorker.ready;
     const token = await getToken(messaging, {
-      vapidKey: VAPID_KEY,
-      serviceWorkerRegistration: swRegistration,
+      vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
+      serviceWorkerRegistration: registration,
     });
 
     if (!token) {
       return { token: null, status: 'no-token' };
     }
-
     return { token, status: 'granted' };
   } catch (err) {
-    console.error('[FCM] Ошибка:', err);
-    return { token: null, status: 'error' };
+    console.error('[FCM] getToken error:', err);
+    return { token: null, status: 'error', error: err.message };
   }
 }
 
@@ -57,5 +52,16 @@ export function listenToMessages(callback) {
   return onMessage(messaging, (payload) => {
     console.log('[FCM] Foreground message:', payload);
     callback(payload);
+    const { title, body } = payload.notification || {};
+    if (title) notify(body || title, 'info');
   });
+}
+export async function removeFCMToken() {
+  try {
+    await deleteToken(messaging);
+    return true;
+  } catch (e) {
+    console.error('[FCM] deleteToken error:', e);
+    return false;
+  }
 }

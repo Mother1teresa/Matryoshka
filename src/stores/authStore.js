@@ -8,7 +8,7 @@ import { useFavoritesStore } from "/src/stores/favoritesStore.js";
 import maskAvatar from "/src/assets/img/mask-avatar.png";
 import { useRegionModalStore } from "/src/stores/regionModal.js";
 import { geocodeByQuery } from '/src/utils/geocode.js';
-import { getFCMToken, listenToMessages } from '/src/firebase.js';
+import { registerServiceWorker, getFCMToken, listenToMessages } from '/src/firebase.js';
 import { notify } from "/src/utils/notify";
 
 let stompClient = null;
@@ -38,6 +38,7 @@ export const useAuthStore = defineStore("auth", {
         _isFetchingChats: false,
         _activeRoomId: null,
         _activeRoomHandler: null,
+        notificationsError: null,
       };
     } catch (e){
       console.error("Auth parse error:", e);
@@ -246,19 +247,22 @@ export const useAuthStore = defineStore("auth", {
     async initFCM() {
       if (!this.user?.id) return { token: null, status: 'no-user' };
 
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        return { token: null, status: 'no-support' };
+      }
+      try {
+          await registerServiceWorker();
+        } catch (e) {
+          console.error('[FCM] SW registration failed:', e);
+          return { token: null, status: 'sw-error' };
+        }
+
       if (!this.fcmToken) {
         this.fcmToken = localStorage.getItem('fcm_token');
       }
       if (this.fcmToken) return { token: this.fcmToken, status: 'granted' };
 
       const { token, status } = await getFCMToken();
-      
-      if (!token) {
-        return { token: null, status };
-      }
-
-      this.fcmToken = token;
-      localStorage.setItem('fcm_token', token);
       try {
         await api.post('/notifications', { token });
         console.log('[FCM] Токен зарегистрирован на бэкенде');
@@ -1356,6 +1360,8 @@ export const useAuthStore = defineStore("auth", {
       if (!this.user?.id) return;
       
       this.isNotificationsLoading = true;
+      this.notificationsError = null; // сброс
+      
       try {
         const res = await api.get('/notifications');
         const list = (res.data || []).map(n => ({
@@ -1367,16 +1373,32 @@ export const useAuthStore = defineStore("auth", {
           (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
         );
       } catch (e) {
+        this.notificationsError = e.response?.data?.message 
+          || e.response?.data?.error 
+          || 'Не удалось загрузить уведомления. Попробуйте позже.';
         console.error('Ошибка загрузки уведомлений:', e);
       } finally {
         this.isNotificationsLoading = false;
       }
     },
     async logout() {
-      this.disconnectSocket();
+      if (this.fcmToken) {
+        try {
+          await api.delete('/notifications/token', { data: { token: this.fcmToken } });
+        } catch (e) {
+          console.warn('[Logout] Не удалось удалить токен с сервера:', e);
+        }
+        try {
+          const { removeFCMToken } = await import('/src/firebase.js');
+          await removeFCMToken();
+        } catch (e) {
+          console.warn('[Logout] Не удалось инвалидировать FCM-токен:', e);
+        }
+        localStorage.removeItem('fcm_token');
+        this.fcmToken = null;
+      }
+          this.disconnectSocket();
       this.stopFCM();
-      localStorage.removeItem('fcm_token');
-      this.fcmToken = null;
       this.stopAllPolling();
       this.isAuthenticated = false;
       this.user = null;

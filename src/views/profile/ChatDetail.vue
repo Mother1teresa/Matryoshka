@@ -409,7 +409,7 @@ const isLoading = ref(false);
 const abortController = ref(null);
 
 const isOrderPlaced = ref(false);
-const showBotActions = ref(true);
+const showBotActions = ref(false);
 const showReviewLink = ref(false);
 const isReviewModalOpen = ref(false);
 const isTyping = ref(false);

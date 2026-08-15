@@ -5,34 +5,45 @@ import { useAuthStore } from '/src/stores/authStore.js';
 const auth = useAuthStore();
 const notifications = computed(() => auth.allNotifications);
 const isLoading = computed(() => auth.isNotificationsLoading);
-const fcmMissing = computed(() => auth.isAuthenticated && !auth.fcmToken);
+const error = computed(() => auth.notificationsError);
 
-const permissionStatus = ref('');
+const browserPermission = ref('default');
 const isInitializing = ref(false);
 
-// При появлении пользователя — просто грузим уведомления
+const syncPermission = () => {
+  if (!('Notification' in window)) {
+    browserPermission.value = 'no-support';
+  } else {
+    browserPermission.value = Notification.permission;
+  }
+};
+
+onMounted(syncPermission);
+
 watch(
   () => auth.user?.id,
   (id) => {
-    if (id) auth.fetchUserNotifications();
-    else auth.allNotifications = [];
+    if (id) {
+      auth.fetchUserNotifications();
+      syncPermission();
+    } else {
+      auth.allNotifications = [];
+    }
   },
   { immediate: true }
 );
 
-// Кнопка "Включить уведомления"
 const enableNotifications = async () => {
   if (isInitializing.value) return;
   isInitializing.value = true;
   try {
     const result = await auth.initFCM();
-    permissionStatus.value = result?.status || 'granted';
-    if (auth.fcmToken) {
+    syncPermission();
+    if (result?.status === 'granted' && auth.fcmToken) {
       auth.fetchUserNotifications();
     }
   } catch (e) {
     console.error('[Notifications] FCM init error:', e);
-    permissionStatus.value = 'error';
   } finally {
     isInitializing.value = false;
   }
@@ -40,39 +51,53 @@ const enableNotifications = async () => {
 
 const formatDate = (iso) => {
   if (!iso) return '';
-  const d = new Date(iso);
-  return d.toLocaleDateString('ru-RU');
+  return new Date(iso).toLocaleDateString('ru-RU');
 };
 
 const formatTime = (iso) => {
   if (!iso) return '';
-  const d = new Date(iso);
-  return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  return new Date(iso).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 };
 </script>
 <template>
   <div class="general-container notifications-container">
     <h2 class="page-title">Уведомления</h2>
 
-    <div v-if="fcmMissing && !isInitializing" class="fcm-alert">
-      <p>Уведомления в браузере отключены.</p>
-      <button class="btn enable-btn" @click="enableNotifications">
-        Включить уведомления
+    <div v-if="browserPermission === 'no-support'" class="fcm-alert error">
+      <p>⚠️ Браузер не поддерживает push-уведомления.</p>
+    </div>
+    <div v-else-if="browserPermission === 'denied'" class="fcm-alert error">
+      <p>
+        ⚠️ Уведомления заблокированы в настройках браузера.<br />
+        Разблокируйте их для этого сайта и перезагрузите страницу.
+      </p>
+    </div>
+    <div v-else-if="browserPermission === 'default'" class="fcm-alert">
+      <p>Получайте мгновенные уведомления о сообщениях, заказах и ответах.</p>
+      <button class="btn enable-btn" @click="enableNotifications" :disabled="isInitializing">
+        {{ isInitializing ? 'Запрос разрешения…' : 'Включить уведомления' }}
       </button>
     </div>
 
-    <div v-else-if="permissionStatus === 'denied'" class="fcm-alert error">
-      <p>⚠️ Уведомления заблокированы в настройках браузера.</p>
+    <!-- Токен получен, всё ок -->
+    <div v-else-if="browserPermission === 'granted' && auth.fcmToken" class="fcm-alert success">
+      <p>✅ Уведомления включены.</p>
     </div>
 
-    <div v-else-if="permissionStatus === 'no-support'" class="fcm-alert error">
-      <p>⚠️ Браузер не поддерживает push-уведомления.</p>
+    <div v-if="error" class="fcm-alert error">
+      <p>⚠️ {{ error }}</p>
+      <button class="btn enable-btn" @click="auth.fetchUserNotifications()">Повторить</button>
     </div>
 
-    <div v-if="isInitializing" class="loading-state">Запрос разрешения...</div>
+    <div v-if="isLoading" class="loading-state">Загрузка уведомлений…</div>
 
     <div v-else class="notifications-list">
-      <div v-for="item in notifications" :key="item.id" class="notification-card">
+      <div
+        v-for="item in notifications"
+        :key="item.id"
+        class="notification-card"
+        :class="{ unread: !item.is_read }"
+      >
         <div class="notification-content">
           <p class="notification-text">{{ item.message }}</p>
         </div>

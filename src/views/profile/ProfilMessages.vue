@@ -167,7 +167,8 @@ onUnmounted(() => {
 
           <div class="chat-center">
             <div class="user-name">{{ chat.user?.name || 'Пользователь' }}</div>
-            <div class="product-title" v-if="chat.price">{{ chat.productName }} <span class="price">{{ chat.price.toLocaleString() }} ₽</span></div>
+            <div class="product-title" v-if="chat.price">
+              <span class="product-title_title">{{ chat.productName }}</span> <span class="price">{{ chat.price.toLocaleString() }} ₽</span></div>
             <div
               class="last-message"
               :class="{ unread: chat.unreadCount > 0 }"
@@ -233,6 +234,7 @@ onUnmounted(() => {
 .chat-center {flex: 1;min-width: 0;display: flex;flex-direction: column;}
 .user-name {font-weight: 700;font-size: 1.5rem; display: -webkit-box;-webkit-line-clamp: 1;-webkit-box-orient: vertical;overflow: hidden; }
 .product-title {font-size: 1.25rem; margin: 0.625rem 0 0 0; display: flex; gap: 1.75rem; align-items: center; color: #242424;}
+.product-title_title{  display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;overflow: hidden;}
 .last-message {font-size: 1rem;color: #8E8C8C;white-space: nowrap;text-overflow: ellipsis;width: 34.5rem; margin-top: 0.625rem; line-height: 1.2;display: -webkit-box;-webkit-line-clamp: 2;-webkit-box-orient: vertical;overflow: hidden;}
 .last-message.unread {font-weight: 600;color: #111;}
 .you-label {color: #2ecc71;font-weight: 500;}
