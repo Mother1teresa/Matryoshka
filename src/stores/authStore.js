@@ -8,7 +8,7 @@ import { useFavoritesStore } from "/src/stores/favoritesStore.js";
 import maskAvatar from "/src/assets/img/mask-avatar.png";
 import { useRegionModalStore } from "/src/stores/regionModal.js";
 import { geocodeByQuery } from '/src/utils/geocode.js';
-import { registerServiceWorker, getFCMToken, listenToMessages } from '/src/firebase.js';
+import { registerServiceWorker, getFCMToken, listenToMessages, removeFCMToken } from '/src/firebase.js';
 import { notify } from "/src/utils/notify";
 
 let stompClient = null;
@@ -251,11 +251,11 @@ export const useAuthStore = defineStore("auth", {
         return { token: null, status: 'no-support' };
       }
       try {
-          await registerServiceWorker();
-        } catch (e) {
-          console.error('[FCM] SW registration failed:', e);
-          return { token: null, status: 'sw-error' };
-        }
+        await registerServiceWorker();
+      } catch (e) {
+        console.error('[FCM] SW registration failed:', e);
+        return { token: null, status: 'sw-error' };
+      }
 
       if (!this.fcmToken) {
         this.fcmToken = localStorage.getItem('fcm_token');
@@ -263,6 +263,12 @@ export const useAuthStore = defineStore("auth", {
       if (this.fcmToken) return { token: this.fcmToken, status: 'granted' };
 
       const { token, status } = await getFCMToken();
+
+      if (!token) {
+        return { token: null, status };
+      }
+      this.fcmToken = token;
+      localStorage.setItem('fcm_token', token);
       try {
         await api.post('/notifications', { token });
         console.log('[FCM] Токен зарегистрирован на бэкенде');
@@ -276,7 +282,8 @@ export const useAuthStore = defineStore("auth", {
           this.allNotifications.unshift({
             id: payload.data?.notificationId || Date.now(),
             message: body || title || 'Новое уведомление',
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            is_read: false,
           });
         });
       }
@@ -1389,7 +1396,6 @@ export const useAuthStore = defineStore("auth", {
           console.warn('[Logout] Не удалось удалить токен с сервера:', e);
         }
         try {
-          const { removeFCMToken } = await import('/src/firebase.js');
           await removeFCMToken();
         } catch (e) {
           console.warn('[Logout] Не удалось инвалидировать FCM-токен:', e);
@@ -1397,7 +1403,7 @@ export const useAuthStore = defineStore("auth", {
         localStorage.removeItem('fcm_token');
         this.fcmToken = null;
       }
-          this.disconnectSocket();
+      this.disconnectSocket();
       this.stopFCM();
       this.stopAllPolling();
       this.isAuthenticated = false;
