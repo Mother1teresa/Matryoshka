@@ -27,18 +27,25 @@ export async function registerServiceWorker() {
   return swRegistration;
 }
 
-export async function getFCMToken() {
+export async function getFCMToken(registration) {
   try {
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') {
       return { token: null, status: permission }; 
     }
 
-    const registration = await navigator.serviceWorker.ready;
+    const swReg = registration || await navigator.serviceWorker.ready;
+    
+    console.log('[FCM] SW scope:', swReg.scope);
+    console.log('[FCM] SW state:', swReg.active?.state);
+    console.log('[FCM] VAPID key present:', !!import.meta.env.VITE_FIREBASE_VAPID_KEY);
+    console.log('[FCM] VAPID key length:', import.meta.env.VITE_FIREBASE_VAPID_KEY?.length);
+
     const token = await getToken(messaging, {
       vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
-      serviceWorkerRegistration: registration,
+      serviceWorkerRegistration: swReg,
     });
+    console.log('[FCM] getToken returned:', token ? 'token exists' : 'NULL');
 
     if (!token) {
       return { token: null, status: 'no-token' };

@@ -20,7 +20,7 @@ jobs:
 
       - name: Create .env file
         run: |
-          echo "VITE_FIREBASE_API_KEY=${{ secrets.VITE_FIREBASE_API_KEY }}" >> .env
+          echo "VITE_FIREBASE_API_KEY=${{ secrets.VITE_FIREBASE_API_KEY }}" > .env
           echo "VITE_FIREBASE_AUTH_DOMAIN=matreshka-28074.firebaseapp.com" >> .env
           echo "VITE_FIREBASE_PROJECT_ID=matreshka-28074" >> .env
           echo "VITE_FIREBASE_STORAGE_BUCKET=matreshka-28074.firebasestorage.app" >> .env

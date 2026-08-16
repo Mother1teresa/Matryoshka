@@ -246,21 +246,20 @@ export const useAuthStore = defineStore("auth", {
 
     async initFCM() {
       if (!this.user?.id) return { token: null, status: 'no-user' };
-
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
         return { token: null, status: 'no-support' };
       }
+      let registration;
       try {
-        await registerServiceWorker();
+        registration = await registerServiceWorker();
       } catch (e) {
         console.error('[FCM] SW registration failed:', e);
         return { token: null, status: 'sw-error' };
       }
       if (this.fcmToken) return { token: this.fcmToken, status: 'granted' };
-
-      const { token, status } = await getFCMToken();
-
+      const { token, status } = await getFCMToken(registration);
       if (!token) {
+        console.warn('[FCM] Token is null, status:', status);
         return { token: null, status };
       }
       this.fcmToken = token;
