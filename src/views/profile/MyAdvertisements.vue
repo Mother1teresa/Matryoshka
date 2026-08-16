@@ -122,7 +122,6 @@ const isConfirmOpen = ref(false);
 const selectedAdId = ref(null);
 const selectedAdS3Key = ref(null);
 
-
 const openConfirmDelete = (ad) => {
   selectedAdId.value = ad.id;
   selectedAdS3Key.value = ad.s3Key || null;
