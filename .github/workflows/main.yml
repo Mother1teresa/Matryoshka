@@ -29,7 +29,7 @@ jobs:
           echo "VITE_FIREBASE_VAPID_KEY=${{ secrets.VITE_FIREBASE_VAPID_KEY }}" >> .env
           echo "VITE_VK_APP_ID=${{ secrets.VITE_VK_APP_ID }}" >> .env
 
-      - name: Create firebase-messaging-sw.js
+            - name: Create firebase-messaging-sw.js
         run: |
           mkdir -p public
           cat > public/firebase-messaging-sw.js <<'EOF'
@@ -70,6 +70,8 @@ jobs:
               })
             );
           });
+          self.addEventListener('install', () => self.skipWaiting());
+          self.addEventListener('activate', (event) => event.waitUntil(clients.claim()));
           EOF
 
       - name: Install dependencies and Build
