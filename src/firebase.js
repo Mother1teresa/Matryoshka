@@ -58,17 +58,17 @@ export async function getFCMToken(registration) {
 // const app = initializeApp(firebaseConfig);
 // const messaging = getMessaging(app);
 
-// export async function registerServiceWorker() {
-//   if (swRegistration) return swRegistration;
-//   if (!('serviceWorker' in navigator)) {
-//     throw new Error('Service Worker не поддерживается браузером');
-//   }
-//   swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-//     scope: '/',
-//   });
-//   await navigator.serviceWorker.ready;
-//   return swRegistration;
-// }
+export async function registerServiceWorker() {
+  if (swRegistration) return swRegistration;
+  if (!('serviceWorker' in navigator)) {
+    throw new Error('Service Worker не поддерживается браузером');
+  }
+  swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+    scope: '/',
+  });
+  await navigator.serviceWorker.ready;
+  return swRegistration;
+}
 
 // export async function getFCMToken(registration) {
 //   try {
@@ -98,20 +98,20 @@ export async function getFCMToken(registration) {
 //   }
 // }
 
-// export function listenToMessages(callback) {
-//   return onMessage(messaging, (payload) => {
-//     console.log('[FCM] Foreground message:', payload);
-//     callback(payload);
-//     const { title, body } = payload.notification || {};
-//     if (title) notify(body || title, 'info');
-//   });
-// }
-// export async function removeFCMToken() {
-//   try {
-//     await deleteToken(messaging);
-//     return true;
-//   } catch (e) {
-//     console.error('[FCM] deleteToken error:', e);
-//     return false;
-//   }
-// }
+export function listenToMessages(callback) {
+  return onMessage(messaging, (payload) => {
+    console.log('[FCM] Foreground message:', payload);
+    callback(payload);
+    const { title, body } = payload.notification || {};
+    if (title) notify(body || title, 'info');
+  });
+}
+export async function removeFCMToken() {
+  try {
+    await deleteToken(messaging);
+    return true;
+  } catch (e) {
+    console.error('[FCM] deleteToken error:', e);
+    return false;
+  }
+}
