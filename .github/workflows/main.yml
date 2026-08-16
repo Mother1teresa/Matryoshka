@@ -29,6 +29,12 @@ jobs:
           echo "VITE_FIREBASE_VAPID_KEY=${{ secrets.VITE_FIREBASE_VAPID_KEY }}" >> .env
           echo "VITE_VK_APP_ID=${{ secrets.VITE_VK_APP_ID }}" >> .env
 
+      - name: Debug VAPID key
+        run: |
+          echo "=== Debug VAPID ==="
+          grep "VITE_FIREBASE_VAPID_KEY" .env | awk -F= '{print "VAPID length: " length($2)}'
+          echo "==================="
+
       - name: Create firebase-messaging-sw.js
         run: |
           mkdir -p public
@@ -72,6 +78,12 @@ jobs:
           self.addEventListener('install', () => self.skipWaiting());
           self.addEventListener('activate', (event) => event.waitUntil(clients.claim()));
           EOF
+
+      - name: Clean cache
+        run: |
+          npm cache clean --force
+          rm -rf node_modules/.cache
+          rm -rf dist
 
       - name: Install dependencies and Build
         run: |

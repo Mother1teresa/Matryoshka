@@ -58,11 +58,37 @@ const formatTime = (iso) => {
   if (!iso) return '';
   return new Date(iso).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 };
+const hardResetFCM = async () => {
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (sub) {
+      await sub.unsubscribe();
+      console.log('[Debug] Old subscription unsubscribed');
+    }
+    // Удалим старый SW
+    await reg.unregister();
+    console.log('[Debug] SW unregistered');
+  } catch (e) {
+    console.error('[Debug] Reset error:', e);
+  }
+  location.reload();
+};
 </script>
 <template>
   <div class="general-container notifications-container">
     <h2 class="page-title">Уведомления</h2>
 
+    <div class="fcm-alert" style="background:#fff3cd;border-color:#ffc107;">
+      <p style="margin:0 0 8px;font-size:12px;color:#856404;">
+        🧹 Временная кнопка для сброса старой подписки.<br>
+        Нажми, если после обновления VAPID-ключа токен всё ещё null.
+      </p>
+      <button class="btn" style="background:#ffc107;color:#000;" @click="hardResetFCM">
+        Сбросить FCM и перезагрузить
+      </button>
+    </div>
+    
     <div v-if="browserPermission === 'no-support'" class="fcm-alert error">
       <p>⚠️ Браузер не поддерживает push-уведомления.</p>
     </div>
