@@ -27,7 +27,7 @@ export async function getFCMToken(registration) {
     console.log('[FCM] SW state:', swReg.active?.state);
 
     // ⬇️ ХАРДКОД для теста
-    const vapidKey = "BLK0fPBbaxWUASW4VSNIWR9ziseyrncDvgd1VIEI9RdyMdEdzIY3IYUkfE-9EkkzGcy1i1gv-WI1h_4lsWdnkjE";
+    const vapidKey = "BLK0fPBbaxWUASW4VSNlWR9ziseyrncDvgd1VIEI9RdyMdEDzIY3lYUKfE-9EkkzGcy1i1gv-WI1h_4IsWdnkjE";
     console.log('[FCM] VAPID key length:', vapidKey.length);
 
     const token = await getToken(messaging, {
