@@ -302,7 +302,6 @@ export const useAuthStore = defineStore("auth", {
       const client = await this.waitForStompConnect();
       const subscription = client.subscribe(`/topic/room/${roomId}`, (message) => {
         const body = JSON.parse(message.body);
-        // ← расширенное логирование: текст сообщения, id, senderId
         console.log('[STOMP] 📨 Получено сообщение:', {
           id: body.id,
           senderId: body.senderId,
