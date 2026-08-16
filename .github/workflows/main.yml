@@ -57,7 +57,6 @@ jobs:
               requireInteraction: true
             });
           });
-
           self.addEventListener('notificationclick', (event) => {
             event.notification.close();
             const url = event.notification.data?.url || '/notifications';

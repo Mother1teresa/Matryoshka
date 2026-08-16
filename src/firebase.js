@@ -33,9 +33,7 @@ export async function getFCMToken(registration) {
     if (permission !== 'granted') {
       return { token: null, status: permission }; 
     }
-
     const swReg = registration || await navigator.serviceWorker.ready;
-    
     console.log('[FCM] SW scope:', swReg.scope);
     console.log('[FCM] SW state:', swReg.active?.state);
     console.log('[FCM] VAPID key present:', !!import.meta.env.VITE_FIREBASE_VAPID_KEY);
