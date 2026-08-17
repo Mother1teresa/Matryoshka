@@ -16,17 +16,27 @@ const syncPermission = async () => {
     return;
   }
   browserPermission.value = Notification.permission;
+  if (auth.fcmToken) {
+    isInitializing.value = false;
+    return;
+  }
   if (browserPermission.value === 'granted' && !auth.fcmToken && auth.user?.id) {
+    const timeout = setTimeout(() => {
+      console.warn('[FCM] Инициализация заняла слишком много времени, сброс плашки...');
+      isInitializing.value = false;
+    }, 5000);
     isInitializing.value = true;
     try {
       await auth.initFCM();
     } catch (e) {
       console.error('[Notifications] Auto-init FCM error:', e);
     } finally {
+      clearTimeout(timeout);
       isInitializing.value = false;
     }
   }
 };
+
 
 onMounted(syncPermission);
 
