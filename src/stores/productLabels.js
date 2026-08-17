@@ -148,6 +148,10 @@ export const productLabels = {
   // Парковка
   park_type: "Тип паркинга",
   places: "Кол-во машиномест",
+
+  // Услуги
+  services: "Услуги",
+  workSchedule: "График работы",
 };
 
 // ============================================
@@ -319,7 +323,18 @@ export const fieldGroups = {
       ]
     }
   ],
-  
+  // === Услуги ===
+  uslugi: [
+    {
+      title: "Об услуге",
+      fields: [
+        { key: "services", type: "chips", label: "Услуги" },
+        { key: "workExperience", type: "text", label: "Опыт работы", suffix: "лет" },
+        { key: "workSchedule", type: "text", label: "График работы" },
+        { key: "description", type: "text", label: "Описание" },
+      ]
+    },
+  ],
   // === Животные ===
   pets: [
     {
@@ -417,27 +432,157 @@ export function isChipActive(chip, key, rawValue) {
 }
 
 export function formatValue(value, type, suffix, key) {
-  if (value === undefined || value === null || value === "") return "—";
-  
+  if (
+    value === undefined ||
+    value === null ||
+    value === ""
+  ) {
+    return "—";
+  }
+
+  // На ходу
   if (key === "isOnTheGo") {
-    const isTrue = value === true || value === "true" || value === 1 || value === "1";
+    const isTrue =
+      value === true ||
+      value === "true" ||
+      value === 1 ||
+      value === "1";
+
     return isTrue ? "На ходу" : "Не на ходу";
   }
-  
+
+  // Услуги
+  if (key === "services") {
+    if (Array.isArray(value)) {
+      return [
+        ...new Set(
+          value
+            .map(item => {
+              if (typeof item === "string") return item;
+              return item?.text || item?.name || "";
+            })
+            .filter(Boolean)
+        )
+      ];
+    }
+
+    return String(value);
+  }
+
+  // График работы
+  if (key === "workSchedule") {
+    if (!Array.isArray(value)) {
+      return String(value);
+    }
+
+    return value.map(item => {
+      if (!item || typeof item !== "object") {
+        return String(item);
+      }
+
+      if (item.is24h) {
+        return "Круглосуточно";
+      }
+
+      const days = formatWorkDays(
+        item.fromDay,
+        item.toDay
+      );
+
+      const time =
+        item.fromTime && item.toTime
+          ? `${item.fromTime}–${item.toTime}`
+          : "";
+
+      return [days, time]
+        .filter(Boolean)
+        .join(", ");
+    });
+  }
+  if (key === "workExperience") {
+    const years = Number(value);
+
+    if (!Number.isNaN(years)) {
+      const lastTwo = years % 100;
+      const last = years % 10;
+
+      let word = "лет";
+
+      if (lastTwo < 11 || lastTwo > 14) {
+        if (last === 1) word = "год";
+        else if (last >= 2 && last <= 4) word = "года";
+      }
+
+      return `${years} ${word}`;
+    }
+  }
+  // Chips
   if (type === "chips") {
     if (Array.isArray(value) && value[0]?.name) {
       return value.map(item => item.name || item);
     }
-    if (Array.isArray(value)) return value;
-    if (typeof value === "string") return value.split(",").map(s => s.trim()).filter(Boolean);
+
+    if (Array.isArray(value)) {
+      return value;
+    }
+
+    if (typeof value === "string") {
+      return value
+        .split(",")
+        .map(s => s.trim())
+        .filter(Boolean);
+    }
+
     return [String(value)];
   }
-  
-  if (typeof value === "boolean") return value ? "Есть" : "Нет";
-  
-  if (suffix && (typeof value === "number" || !isNaN(Number(value)))) {
+  if (typeof value === "boolean") {
+    return value ? "Есть" : "Нет";
+  }
+  if (
+    suffix &&
+    (
+      typeof value === "number" ||
+      !isNaN(Number(value))
+    )
+  ) {
     return `${value} ${suffix}`;
   }
-  
+
   return String(value);
+}
+function formatWorkDays(fromDay, toDay) {
+  const days = {
+    1: "Пн",
+    2: "Вт",
+    3: "Ср",
+    4: "Чт",
+    5: "Пт",
+    6: "Сб",
+    7: "Вс",
+  };
+
+  if (!fromDay || !toDay) {
+    return "";
+  }
+
+  if (fromDay === toDay) {
+    return days[fromDay] || "";
+  }
+
+  // Пн–Пт
+  if (fromDay === 1 && toDay === 5) {
+    return "Пн–Пт";
+  }
+
+  // Пн–Сб
+  if (fromDay === 1 && toDay === 6) {
+    return "Пн–Сб";
+  }
+
+  // Пн–Вс
+  if (fromDay === 1 && toDay === 7) {
+    return "Пн–Вс";
+  }
+
+  return `${days[fromDay] || fromDay}–${days[toDay] || toDay}`;
 }
