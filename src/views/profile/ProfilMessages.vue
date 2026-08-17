@@ -168,7 +168,7 @@ onUnmounted(() => {
           <div class="chat-center">
             <div class="user-name">{{ chat.user?.name || 'Пользователь' }}</div>
             <div class="product-title" v-if="chat.price">
-              <span class="product-title_title">{{ chat.productName }}</span> <span class="price">{{ chat.price.toLocaleString() }} ₽</span></div>
+              <span class="product-title_title">{{ chat.productName }}</span><span class="price">{{ String(chat.price).replace(/\B(?=(\d{3})+(?!\d))/g, " ") }} ₽</span></div>
             <div
               class="last-message"
               :class="{ unread: chat.unreadCount > 0 }"
