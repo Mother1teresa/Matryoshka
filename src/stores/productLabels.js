@@ -328,10 +328,9 @@ export const fieldGroups = {
     {
       title: "Об услуге",
       fields: [
-        { key: "services", type: "chips", label: "Услуги" },
         { key: "workExperience", type: "text", label: "Опыт работы", suffix: "лет" },
         { key: "workSchedule", type: "text", label: "График работы" },
-        { key: "description", type: "text", label: "Описание" },
+        { key: "services", type: "text", label: "Услуги" },
       ]
     },
   ],

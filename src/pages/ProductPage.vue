@@ -48,7 +48,7 @@
               class="details-group"
             >
               <h3>{{ group.title }}</h3>
-              <div class="details-grid">
+              <div class="details-grid" :class="{ 'details-grid--two-cols': isTwoColumnGrid }">
                 <div v-for="field in group.fields" :key="field.key" :class="['detail-row', { 'full-width-row': field.type === 'chips' }]">
                   <span class="label">{{ getLabel(field.key, field.label) }}</span>
 
@@ -642,7 +642,11 @@ const fieldGroups = computed(() => {
   if (!product.value) return [];
   return getFieldGroups(productSection.value);
 });
+const TWO_COLUMN_SECTIONS = ['cars', 'moto', 'yachts'];
 
+const isTwoColumnGrid = computed(() =>
+  TWO_COLUMN_SECTIONS.includes(productSection.value)
+);
 // === ЗАГРУЗКА ПРОДАВЦА ===
 const loadSeller = async (sellerId) => {
   if (!sellerId) {
@@ -998,10 +1002,10 @@ onBeforeUnmount(() => {
 /* Детали */
 .product-details { margin-top: 2.188rem;}
 .product-details h3{ font-weight: 600; font-size: 1.5rem; margin-bottom: 0.625rem;}
-.details-grid { display: grid; grid-template-columns: repeat(2, 20.75rem); gap: 0.625rem; font-size: 1.25rem;}
-.detail-row { display: flex; gap: 0.625rem;}
-.label { color: #888; font-size: 1.35rem;}
-.value { font-weight: 500; font-size: 1.35rem;}
+/* .details-grid { display: grid; grid-template-columns: repeat(2, 20.75rem); gap: 0.625rem; font-size: 1.25rem;}
+.detail-row { display: flex; gap: 0.625rem;} */
+.label { color: #8E8C8C; font-size: 1.25rem;}
+.value { font-size: 1.25rem;}
 .product-description { margin-top: 2.188rem;}
 .product-description h3{ font-weight: 600; font-size: 1.5rem; margin-bottom: 1.5rem;}
 .product-description p{ font-size: 1.35rem;}
@@ -1033,14 +1037,16 @@ onBeforeUnmount(() => {
 .confirm-actions { display: flex; justify-content: center; gap: 1.25rem;}
 .btn-black { text-align: center; width: 10.375rem; height: 3.563rem; background: #000; color: #fff; border: none; border-radius: 1rem; font-weight:500; cursor: pointer; font-size: 1.25rem;}
 .btn-gray { width: 10.375rem; height: 3.563rem; text-align: center; background: #D8D8D8;  color: #000; border: none; border-radius: 1rem; font-weight: 500; cursor: pointer; font-size: 1.25rem;}
-.details-grid { display: grid; grid-template-columns: repeat(2, 1fr); column-gap: 3rem; row-gap: 1rem; margin-top: 1rem;}
-.detail-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e0e0e0; padding-bottom: 0.25rem;}
-.detail-row.full-width-row { grid-column: span 2; display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; border-bottom: none; padding-bottom: 0; margin-top: 0.5rem;}
+/* Детали */
+.details-grid { display: grid; grid-template-columns: 1fr; row-gap: 1rem; font-size: 1.25rem; }
+.details-grid--two-cols { grid-template-columns: repeat(2, 1fr); column-gap: 3rem; }
+.detail-row { display: flex; justify-content: space-between; align-items: center; gap: 0.625rem; padding: 0.5rem 0; border-bottom: 1px dashed #e0e0e0; }
+.detail-row.full-width-row { grid-column: 1 / -1; flex-direction: column; align-items: flex-start; gap: 0.75rem; border-bottom: none; }
 .details-chips-group {display: flex;flex-wrap: wrap;gap: 0.75rem;width: 100%;}
 @media (max-width: 77rem) { .product-left { width: 47.75rem; } .main-image{ width: 100%;} .gallery{ grid-template-columns: repeat(1, 29.8rem 12.375rem);}}
 .details-group { margin-bottom: 2rem;}
-.details-group h3 { font-weight: 600; font-size: 1.25rem; margin-bottom: 1rem; color: #333;}
-.details-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem 2rem;}
+.details-group h3 { font-weight: 400; font-size: 1.5rem; margin-bottom: 2.5rem;}
+/* .details-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem 2rem;} */
 .detail-row { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px dashed #e0e0e0;}
 .detail-row.full-width-row { grid-column: span 2; flex-direction: column; align-items: flex-start; gap: 0.75rem; border-bottom: none;}
 /* Чипсы */
@@ -1049,8 +1055,10 @@ onBeforeUnmount(() => {
   flex-wrap: wrap;
   gap: 0.5rem;
 } */
-.detail-chip-item { background-color: #e8e8e8; color: #666; padding: 0.4rem 1rem; border-radius: 0.5rem; font-size: 0.9rem; transition: all 0.2s;}
-.detail-chip-item.chip-active { background-color: #5b9279; color: white;}
+ /* background-color: #e8e8e8; color: #666; */
+.detail-chip-item {  background-color: #5b9279; color: white; padding: 0.875rem 1.375rem; min-width: 11.813rem; border-radius: 0.938rem; font-size: 1.25rem; transition: all 0.2s;}
+/* .chip-active */
+.detail-chip-item { background-color: #5b9279; color: white;}
 .product-address-section { margin-top: 2.188rem; padding: 1.5rem; background: white; border-radius: 1.25rem;}
 .product-address-section h3 { font-weight: 600; font-size: 1.5rem; margin-bottom: 1rem;}
 .address-text { font-size: 1.15rem; color: #333; margin-bottom: 1rem;}
