@@ -1038,17 +1038,15 @@ onBeforeUnmount(() => {
 .btn-black { text-align: center; width: 10.375rem; height: 3.563rem; background: #000; color: #fff; border: none; border-radius: 1rem; font-weight:500; cursor: pointer; font-size: 1.25rem;}
 .btn-gray { width: 10.375rem; height: 3.563rem; text-align: center; background: #D8D8D8;  color: #000; border: none; border-radius: 1rem; font-weight: 500; cursor: pointer; font-size: 1.25rem;}
 /* Детали */
-.details-grid { display: grid; grid-template-columns: 1fr; row-gap: 1rem; font-size: 1.25rem; }
+.details-grid { display: grid; grid-template-columns: 1fr; row-gap: 0.688rem; font-size: 1.25rem; }
 .details-grid--two-cols { grid-template-columns: repeat(2, 1fr); column-gap: 3rem; }
-.detail-row { display: flex; justify-content: space-between; align-items: center; gap: 0.625rem; padding: 0.5rem 0; border-bottom: 1px dashed #e0e0e0; }
+.detail-row { display: flex; align-items: center; gap: 0.688rem; }
 .detail-row.full-width-row { grid-column: 1 / -1; flex-direction: column; align-items: flex-start; gap: 0.75rem; border-bottom: none; }
 .details-chips-group {display: flex;flex-wrap: wrap;gap: 0.75rem;width: 100%;}
 @media (max-width: 77rem) { .product-left { width: 47.75rem; } .main-image{ width: 100%;} .gallery{ grid-template-columns: repeat(1, 29.8rem 12.375rem);}}
 .details-group { margin-bottom: 2rem;}
-.details-group h3 { font-weight: 400; font-size: 1.5rem; margin-bottom: 2.5rem;}
-/* .details-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem 2rem;} */
-.detail-row { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px dashed #e0e0e0;}
-.detail-row.full-width-row { grid-column: span 2; flex-direction: column; align-items: flex-start; gap: 0.75rem; border-bottom: none;}
+.details-group h3 { font-weight: 600; font-size: 1.5rem; margin-bottom: 2.5rem;}
+
 /* Чипсы */
 /* .details-chips-group {
   display: flex;

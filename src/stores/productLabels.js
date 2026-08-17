@@ -15,143 +15,143 @@ export const productLabels = {
   section: "Раздел",
   
   // Недвижимость
-  rooms: "Количество комнат",
-  area: "Площадь",
-  totalArea: "Общая площадь",
-  livingArea: "Жилая площадь",
-  kitchenArea: "Площадь кухни",
-  floor: "Этаж",
-  floors: "Кол-во этажей",
-  floorsInHouse: "Этажей в доме",
-  houseType: "Тип дома",
-  propertyType: "Тип недвижимости",
-  paymentForm: "Форма оплаты",
-  paymentType: "Форма оплаты",
-  balcony: "Балкон/Лоджия",
-  hasBalcony: "Балкон/Лоджия",
-  balconyAmount: "Кол-во балконов",
-  elevator: "Лифт",
-  hasElevator: "Лифт",
-  parking: "Парковка",
-  hasParking: "Парковка",
-  stationDistance: "До метро/остановок",
-  cityInfrastructure: "Инфраструктура",
-  cityInfrastructureDistance: "До инфраструктуры",
-  hasSecurity: "Охрана",
-  hasVideoSecurity: "Видеонаблюдение",
-  hasChildrenPlayground: "Детская площадка",
-  hasSportPlayground: "Спортивная площадка",
-  documents: "Документы",
-  hasDocuments: "Документы",
+  rooms: "Количество комнат:",
+  area: "Площадь:",
+  totalArea: "Общая площадь:",
+  livingArea: "Жилая площадь:",
+  kitchenArea: "Площадь кухни:",
+  floor: "Этаж:",
+  floors: "Кол-во этажей:",
+  floorsInHouse: "Этажей в доме:",
+  houseType: "Тип дома:",
+  propertyType: "Тип недвижимости:",
+  paymentForm: "Форма оплаты:",
+  paymentType: "Форма оплаты:",
+  balcony: "Балкон/Лоджия:",
+  hasBalcony: "Балкон/Лоджия:",
+  balconyAmount: "Кол-во балконов:",
+  elevator: "Лифт:",
+  hasElevator: "Лифт:",
+  parking: "Парковка:",
+  hasParking: "Парковка:",
+  stationDistance: "До метро/остановок:",
+  cityInfrastructure: "Инфраструктура:",
+  cityInfrastructureDistance: "До инфраструктуры:",
+  hasSecurity: "Охрана:",
+  hasVideoSecurity: "Видеонаблюдение:",
+  hasChildrenPlayground: "Детская площадка:",
+  hasSportPlayground: "Спортивная площадка:",
+  documents: "Документы:",
+  hasDocuments: "Документы:",
   
   // Участки
-  land_purpose: "Назначение земли",
-  status: "Состояние",
-  houseState: "Состояние",
-  dealType: "Тип сделки",
-  transactionScope: "Объём сделки",
+  land_purpose: "Назначение земли:",
+  status: "Состояние:",
+  houseState: "Состояние:",
+  dealType: "Тип сделки:",
+  transactionScope: "Объём сделки:",
   
   // Коммерческая
-  office_status: "Состояние офиса",
-  height: "Высота потолков",
-  voltage: "Напряжение",
-  truck_access: "Подъезд грузовика",
+  office_status: "Состояние офиса:",
+  height: "Высота потолков:",
+  voltage: "Напряжение:",
+  truck_access: "Подъезд грузовика:",
   
   // Авто
-  brand: "Марка",
-  model: "Модель",
-  year: "Год выпуска",
-  yearOfManufacture: "Год выпуска",
-  vehicleBodyType: "Кузов",
-  vehicleBodyType: "Тип кузова",
-  transmission: "КПП",
-  vehicleKpp: "КПП",
-  engine: "Двигатель",
-  engineType: "Тип двигателя",
-  mileage: "Пробег",
-  milage: "Пробег",
-  fuel: "Топливо",
-  drive: "Привод",
-  steering: "Руль",
-  steeringWheel: "Руль",
-  color: "Цвет",
-  pts: "Владельцев по ПТС",
-  ownersPts: "Владельцев по ПТС",
-  owners: "Владельцы",
-  condition: "Состояние",
-  isOnTheGo: "На ходу",
-  power: "Мощность",
-  horsePower: "Мощность",
-  engineCapacity: "Объём двигателя",
-  engineVol: "Объём двигателя",
-  country: "Страна производства",
-  motoType: "Тип техники",
-  specialType: "Тип техники",
-  cooling: "Охлаждение",
+  brand: "Марка:",
+  model: "Модель:",
+  year: "Год выпуска:",
+  yearOfManufacture: "Год выпуска:",
+  vehicleBodyType: "Кузов:",
+  vehicleBodyType: "Тип кузова:",
+  transmission: "КПП:",
+  vehicleKpp: "КПП:",
+  engine: "Двигатель:",
+  engineType: "Тип двигателя:",
+  mileage: "Пробег:",
+  milage: "Пробег:",
+  fuel: "Топливо:",
+  drive: "Привод:",
+  steering: "Руль:",
+  steeringWheel: "Руль:",
+  color: "Цвет:",
+  pts: "Владельцев по ПТС:",
+  ownersPts: "Владельцев по ПТС:",
+  owners: "Владельцы:",
+  condition: "Состояние:",
+  isOnTheGo: "На ходу:",
+  power: "Мощность:",
+  horsePower: "Мощность:",
+  engineCapacity: "Объём двигателя:",
+  engineVol: "Объём двигателя:",
+  country: "Страна производства:",
+  motoType: "Тип техники:",
+  specialType: "Тип техники:",
+  cooling: "Охлаждение:",
   
   // Водный транспорт
-  length: "Длина",
-  vesselLength: "Длина",
-  width: "Ширина",
-  vesselWidth: "Ширина",
-  draft: "Осадка",
-  vesselDraft: "Осадка",
-  hullMaterial: "Материал корпуса",
-  vesselBodyMaterial: "Материал корпуса",
-  material: "Материал",
-  passengers: "Пассажиров",
-  maxPassengers: "Макс. пассажиров",
-  vesselType: "Тип судна",
+  length: "Длина:",
+  vesselLength: "Длина:",
+  width: "Ширина:",
+  vesselWidth: "Ширина:",
+  draft: "Осадка:",
+  vesselDraft: "Осадка:",
+  hullMaterial: "Материал корпуса:",
+  vesselBodyMaterial: "Материал корпуса:",
+  material: "Материал:",
+  passengers: "Пассажиров:",
+  maxPassengers: "Макс. пассажиров:",
+  vesselType: "Тип судна:",
   
   // Работа
-  profession: "Профессия",
-  experience: "Опыт работы",
-  employment: "Занятость",
-  schedule: "График работы",
-  gender: "Пол",
-  sphere: "Сфера деятельности",
-  workExperience: "Опыт работы",
-  workFormat: "Формат работы",
-  advantages: "Преимущества",
+  profession: "Профессия:",
+  experience: "Опыт работы:",
+  employment: "Занятость:",
+  schedule: "График работы:",
+  gender: "Пол:",
+  sphere: "Сфера деятельности:",
+  workExperience: "Опыт работы:",
+  workFormat: "Формат работы:",
+  advantages: "Преимущества:",
   
   // Бизнес
-  dealGoal: "Цель сделки",
-  businessStatus: "Состояние бизнеса",
-  payback: "Срок окупаемости",
-  payBackPeriod: "Срок окупаемости",
-  businessAge: "Возраст бизнеса",
-  legalForm: "Правовая форма",
-  businessForm: "Форма бизнеса",
-  isProfitable: "Прибыльный",
+  dealGoal: "Цель сделки:",
+  businessStatus: "Состояние бизнеса:",
+  payback: "Срок окупаемости:",
+  payBackPeriod: "Срок окупаемости:",
+  businessAge: "Возраст бизнеса:",
+  legalForm: "Правовая форма:",
+  businessForm: "Форма бизнеса:",
+  isProfitable: "Прибыльный:",
   
   // Животные
-  age: "Возраст",
-  breed: "Порода",
-  petBreed: "Порода",
-  petName: "Кличка",
-  petColor: "Окрас",
-  animal_category: "Вид животного",
-  food_type: "Тип корма",
+  age: "Возраст:",
+  breed: "Порода:",
+  petBreed: "Порода:",
+  petName: "Кличка:",
+  petColor: "Окрас:",
+  animal_category: "Вид животного:",
+  food_type: "Тип корма:",
   
   // Путешествия
-  offerType: "Тип предложения",
-  priceFor: "Цена за",
+  offerType: "Тип предложения:",
+  priceFor: "Цена за:",
   
   // Дома
   attic: "Мансард",
-  houseArea: "Площадь дома",
-  landArea: "Площадь участка",
-  bathrooms: "Кол-во санузлов",
-  communications: "Коммуникации",
-  additional: "Дополнительно",
+  houseArea: "Площадь дома:",
+  landArea: "Площадь участка:",
+  bathrooms: "Кол-во санузлов:",
+  communications: "Коммуникации:",
+  additional: "Дополнительно:",
   
   // Парковка
-  park_type: "Тип паркинга",
-  places: "Кол-во машиномест",
+  park_type: "Тип паркинга:",
+  places: "Кол-во машиномест:",
 
   // Услуги
   services: "Услуги",
-  workSchedule: "График работы",
+  workSchedule: "График работы:",
 };
 
 // ============================================
@@ -195,12 +195,12 @@ export const fieldGroups = {
     {
       title: "Подробности",
       fields: [
-        { key: "office_status", type: "text", label: "Состояние офиса" },
+        { key: "office_status", type: "text", label: "Состояние офиса:" },
         { key: "area", type: "text", suffix: "м²" },
-        { key: "floors", type: "text", label: "Кол-во этажей" },
+        { key: "floors", type: "text", label: "Кол-во этажей:" },
         { key: "height", type: "text", suffix: "м" },
         { key: "parking", type: "text" },
-        { key: "truck_access", type: "text", label: "Подъездная дорога" },
+        { key: "truck_access", type: "text", label: "Подъездная дорога:" },
       ]
     },
     {
@@ -216,11 +216,11 @@ export const fieldGroups = {
     {
       title: "Подробности",
       fields: [
-        { key: "rooms", type: "text", label: "Количество комнат" },
+        { key: "rooms", type: "text", label: "Количество комнат:" },
         { key: "totalArea", type: "text", suffix: "м²" },
-        { key: "floor", type: "text", label: "Этаж" },
-        { key: "floorsInHouse", type: "text", label: "Этажей в доме" },
-        { key: "houseType", type: "text", label: "Тип дома" },
+        { key: "floor", type: "text", label: "Этаж:" },
+        { key: "floorsInHouse", type: "text", label: "Этажей в доме:" },
+        { key: "houseType", type: "text", label: "Тип дома:" },
         { key: "balcony", type: "text" },
         { key: "elevator", type: "text" },
         { key: "parking", type: "text" },
@@ -247,16 +247,16 @@ export const fieldGroups = {
       fields: [
         { key: "brand", type: "text" },
         { key: "model", type: "text" },
-        { key: "yearOfManufacture", type: "text", label: "Год выпуска" },
+        { key: "yearOfManufacture", type: "text", label: "Год выпуска:" },
         { key: "milage", type: "text", suffix: "км" },
-        { key: "vehicleBodyType", type: "text", label: "Кузов" },
-        { key: "vehicleKpp", type: "text", label: "КПП" },
-        { key: "engineType", type: "text", label: "Двигатель" },
-        { key: "drive", type: "text", label: "Привод" },
-        { key: "horsePower", type: "text", suffix: "л.с.", label: "Мощность" },
-        { key: "engineCapacity", type: "text", suffix: "л", label: "Объём двигателя" },
+        { key: "vehicleBodyType", type: "text", label: "Кузов:" },
+        { key: "vehicleKpp", type: "text", label: "КПП:" },
+        { key: "engineType", type: "text", label: "Двигатель:" },
+        { key: "drive", type: "text", label: "Привод:" },
+        { key: "horsePower", type: "text", suffix: "л.с.", label: "Мощность:" },
+        { key: "engineCapacity", type: "text", suffix: "л", label: "Объём двигателя:" },
         { key: "color", type: "text" },
-        { key: "isOnTheGo", type: "text", label: "На ходу" },
+        { key: "isOnTheGo", type: "text", label: "На ходу:" },
       ]
     }
   ],
@@ -265,15 +265,15 @@ export const fieldGroups = {
     {
       title: "Характеристики",
       fields: [
-        { key: "brand", type: "text", label: "Марка" },
-        { key: "model", type: "text", label: "Модель" },
-        { key: "yearOfManufacture", type: "text", label: "Год выпуска" },
-        { key: "milage", type: "text", suffix: "км", label: "Пробег" },
-        { key: "engineType", type: "text", label: "Двигатель" },
-        { key: "engineCapacity", type: "text", suffix: "см³", label: "Объём" },
-        { key: "horsePower", type: "text", suffix: "л.с.", label: "Мощность" },
-        { key: "color", type: "text", label: "Цвет" },
-        { key: "isOnTheGo", type: "text", label: "На ходу" },
+        { key: "brand", type: "text", label: "Марка:" },
+        { key: "model", type: "text", label: "Модель:" },
+        { key: "yearOfManufacture", type: "text", label: "Год выпуска:" },
+        { key: "milage", type: "text", suffix: "км", label: "Пробег:" },
+        { key: "engineType", type: "text", label: "Двигатель:" },
+        { key: "engineCapacity", type: "text", suffix: "см³", label: "Объём:" },
+        { key: "horsePower", type: "text", suffix: "л.с.", label: "Мощность:" },
+        { key: "color", type: "text", label: "Цвет:" },
+        { key: "isOnTheGo", type: "text", label: "На ходу:" },
       ]
     }
   ],
@@ -289,8 +289,8 @@ export const fieldGroups = {
         { key: "length", type: "text", suffix: "м" },
         { key: "width", type: "text", suffix: "м" },
         { key: "draft", type: "text", suffix: "м" },
-        { key: "passengers", type: "text", label: "Макс. пассажиров" },
-        { key: "hullMaterial", type: "text", label: "Материал корпуса" },
+        { key: "passengers", type: "text", label: "Макс. пассажиров:" },
+        { key: "hullMaterial", type: "text", label: "Материал корпуса:" },
       ]
     }
   ],
@@ -301,10 +301,10 @@ export const fieldGroups = {
       title: "О вакансии",
       fields: [
         { key: "profession", type: "text" },
-        { key: "sphere", type: "text", label: "Сфера" },
-        { key: "experience", type: "text", label: "Опыт работы" },
+        { key: "sphere", type: "text", label: "Сфера:" },
+        { key: "experience", type: "text", label: "Опыт работы:" },
         { key: "employment", type: "chips" },
-        { key: "schedule", type: "chips", label: "График" },
+        { key: "schedule", type: "chips", label: "График работы:" },
       ]
     }
   ],
@@ -315,11 +315,11 @@ export const fieldGroups = {
       title: "О кандидате",
       fields: [
         { key: "profession", type: "text" },
-        { key: "sphere", type: "text", label: "Сфера" },
+        { key: "sphere", type: "text", label: "Сфера:" },
         { key: "gender", type: "text" },
-        { key: "experience", type: "text", label: "Опыт работы" },
-        { key: "employment", type: "chips", label: "Желаемая занятость" },
-        { key: "schedule", type: "chips", label: "График" },
+        { key: "experience", type: "text", label: "Опыт работы:" },
+        { key: "employment", type: "chips", label: "Желаемая занятость:" },
+        { key: "schedule", type: "chips", label: "График работы:" },
       ]
     }
   ],
@@ -328,9 +328,9 @@ export const fieldGroups = {
     {
       title: "Об услуге",
       fields: [
-        { key: "workExperience", type: "text", label: "Опыт работы", suffix: "лет" },
-        { key: "workSchedule", type: "text", label: "График работы" },
-        { key: "services", type: "text", label: "Услуги" },
+        { key: "workExperience", type: "text", label: "Опыт работы:", suffix: "лет" },
+        { key: "workSchedule", type: "text", label: "График работы:" },
+        { key: "services", type: "text", label: "Услуги:" },
       ]
     },
   ],
@@ -339,10 +339,10 @@ export const fieldGroups = {
     {
       title: "О питомце",
       fields: [
-        { key: "breed", type: "text", label: "Порода" },
+        { key: "breed", type: "text", label: "Порода:" },
         { key: "gender", type: "text" },
         { key: "age", type: "text" },
-        { key: "color", type: "text", label: "Окрас" },
+        { key: "color", type: "text", label: "Окрас:" },
       ]
     }
   ],
@@ -352,11 +352,11 @@ export const fieldGroups = {
     {
       title: "О бизнесе",
       fields: [
-        { key: "dealGoal", type: "text", label: "Цель сделки" },
-        { key: "businessStatus", type: "text", label: "Состояние" },
-        { key: "payback", type: "text", label: "Срок окупаемости" },
-        { key: "businessAge", type: "text", label: "Возраст бизнеса" },
-        { key: "legalForm", type: "text", label: "Правовая форма" },
+        { key: "dealGoal", type: "text", label: "Цель сделки:" },
+        { key: "businessStatus", type: "text", label: "Состояние:" },
+        { key: "payback", type: "text", label: "Срок окупаемости:" },
+        { key: "businessAge", type: "text", label: "Возраст бизнеса:" },
+        { key: "legalForm", type: "text", label: "Правовая форма:" },
       ]
     }
   ],
@@ -366,8 +366,8 @@ export const fieldGroups = {
     {
       title: "О туре",
       fields: [
-        { key: "offerType", type: "text", label: "Тип предложения" },
-        { key: "priceFor", type: "text", label: "Цена за" },
+        { key: "offerType", type: "text", label: "Тип предложения:" },
+        { key: "priceFor", type: "text", label: "Цена за:" },
       ]
     }
   ],
@@ -462,7 +462,7 @@ export function formatValue(value, type, suffix, key) {
             })
             .filter(Boolean)
         )
-      ];
+      ].join(", ");
     }
 
     return String(value);
@@ -474,29 +474,27 @@ export function formatValue(value, type, suffix, key) {
       return String(value);
     }
 
-    return value.map(item => {
-      if (!item || typeof item !== "object") {
-        return String(item);
-      }
+    return value
+      .map(item => {
+        if (!item || typeof item !== "object") {
+          return String(item);
+        }
 
-      if (item.is24h) {
-        return "Круглосуточно";
-      }
+        if (item.is24h) {
+          return "Круглосуточно";
+        }
 
-      const days = formatWorkDays(
-        item.fromDay,
-        item.toDay
-      );
+        const days = formatWorkDays(item.fromDay, item.toDay);
 
-      const time =
-        item.fromTime && item.toTime
-          ? `${item.fromTime}–${item.toTime}`
-          : "";
+        const time =
+          item.fromTime && item.toTime
+            ? `${item.fromTime}–${item.toTime}`
+            : "";
 
-      return [days, time]
-        .filter(Boolean)
-        .join(", ");
-    });
+        return [days, time].filter(Boolean).join(", ");
+      })
+      .filter(Boolean)
+      .join("; ");
   }
   if (key === "workExperience") {
     const years = Number(value);
@@ -545,6 +543,12 @@ export function formatValue(value, type, suffix, key) {
     )
   ) {
     return `${value} ${suffix}`;
+  }
+  if (Array.isArray(value)) {
+    return value
+      .map(item => (typeof item === "object" ? item?.name || item?.text || "" : String(item)))
+      .filter(Boolean)
+      .join(", ");
   }
 
   return String(value);
