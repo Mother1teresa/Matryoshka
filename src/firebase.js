@@ -32,12 +32,17 @@ export async function getFCMToken(registration) {
     if (permission !== 'granted') {
       return { token: null, status: permission }; 
     }
-    const swReg = registration || await navigator.serviceWorker.ready;
-    
+    let swReg = registration || await navigator.serviceWorker.ready;
+    if (swReg.installing) {
+      await new Promise((resolve) => {
+        swReg.installing.addEventListener('statechange', (e) => {
+          if (e.target.state === 'activated') resolve();
+        });
+      });
+    }
     console.log('[FCM] SW scope:', swReg.scope);
     console.log('[FCM] SW state:', swReg.active?.state);
     console.log('[FCM] VAPID key present:', !!import.meta.env.VITE_FIREBASE_VAPID_KEY);
-    console.log('[FCM] VAPID key length:', import.meta.env.VITE_FIREBASE_VAPID_KEY?.length);
 
     const token = await getToken(messaging, {
       vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,

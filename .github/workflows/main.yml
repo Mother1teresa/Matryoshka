@@ -36,14 +36,16 @@ jobs:
           echo "==================="
 
       - name: Create firebase-messaging-sw.js
+        env:
+          FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
         run: |
           mkdir -p public
-          cat > public/firebase-messaging-sw.js <<'EOF'
+          cat > public/firebase-messaging-sw.js << EOF
           importScripts('https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js');
           importScripts('https://www.gstatic.com/firebasejs/10.13.0/firebase-messaging-compat.js');
 
           firebase.initializeApp({
-            apiKey: "${{ secrets.VITE_FIREBASE_API_KEY }}",
+            apiKey: "$FIREBASE_API_KEY",
             authDomain: "matreshka-28074.firebaseapp.com",
             projectId: "matreshka-28074",
             storageBucket: "matreshka-28074.firebasestorage.app",

@@ -104,7 +104,6 @@ provide('openMaintenance', () => {
   maintenanceRef.value?.open() ?? console.log("MaintenanceModal ещё не инициализирован");
 });
 
-// Наблюдатель за авторизацией
 watch(
   () => auth.isAuthenticated,
   async (isAuth) => {
@@ -121,6 +120,7 @@ watch(
       await auth.fetchProfile();
       if (!auth.user?.id) return;
       await auth.init();
+      await auth.initFCM();
       await favStore.fetchAdvertFavorites().catch(() => {});
       startGlobalPolling();
       await reviewStore.initUserReviews(auth.user.id);
@@ -154,6 +154,7 @@ onMounted(async () => {
         await auth.fetchProfile();
         if (auth.user?.id) {
           await auth.init();
+          await auth.initFCM();
           await favStore.fetchAdvertFavorites().catch(() => {});
           startGlobalPolling();
           await reviewStore.initUserReviews(auth.user.id);

@@ -10,11 +10,21 @@ const error = computed(() => auth.notificationsError);
 const browserPermission = ref('default');
 const isInitializing = ref(false);
 
-const syncPermission = () => {
+const syncPermission = async () => {
   if (!('Notification' in window)) {
     browserPermission.value = 'no-support';
-  } else {
-    browserPermission.value = Notification.permission;
+    return;
+  }
+  browserPermission.value = Notification.permission;
+  if (browserPermission.value === 'granted' && !auth.fcmToken && auth.user?.id) {
+    isInitializing.value = true;
+    try {
+      await auth.initFCM();
+    } catch (e) {
+      console.error('[Notifications] Auto-init FCM error:', e);
+    } finally {
+      isInitializing.value = false;
+    }
   }
 };
 
@@ -38,7 +48,7 @@ const enableNotifications = async () => {
   isInitializing.value = true;
   try {
     const result = await auth.initFCM();
-    syncPermission();
+    browserPermission.value = Notification.permission;
     if (result?.status === 'granted' && auth.fcmToken) {
       auth.fetchUserNotifications();
     }
@@ -71,16 +81,14 @@ const formatTime = (iso) => {
         Разблокируйте их для этого сайта и перезагрузите страницу.
       </p>
     </div>
-    <div v-else-if="browserPermission === 'default'" class="fcm-alert">
+    <div v-else-if="auth.fcmToken" class="fcm-alert success">
+      <p>✅ Уведомления включены.</p>
+    </div>
+    <div v-else class="fcm-alert">
       <p>Получайте мгновенные уведомления о сообщениях, заказах и ответах.</p>
       <button class="btn enable-btn" @click="enableNotifications" :disabled="isInitializing">
-        {{ isInitializing ? 'Запрос разрешения…' : 'Включить уведомления' }}
+        {{ isInitializing ? 'Инициализация пушей…' : 'Включить уведомления' }}
       </button>
-    </div>
-
-    <!-- Токен получен, всё ок -->
-    <div v-else-if="browserPermission === 'granted' && auth.fcmToken" class="fcm-alert success">
-      <p>✅ Уведомления включены.</p>
     </div>
 
     <div v-if="error" class="fcm-alert error">

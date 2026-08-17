@@ -256,18 +256,25 @@ export const useAuthStore = defineStore("auth", {
         console.error('[FCM] SW registration failed:', e);
         return { token: null, status: 'sw-error' };
       }
-      if (this.fcmToken) return { token: this.fcmToken, status: 'granted' };
+
       const { token, status } = await getFCMToken(registration);
       if (!token) {
         console.warn('[FCM] Token is null, status:', status);
         return { token: null, status };
       }
       this.fcmToken = token;
-      try {
-        await api.post('/notifications', { token });
-        console.log('[FCM] Токен зарегистрирован на бэкенде');
-      } catch (e) {
-        console.error('[FCM] Ошибка регистрации на бэкенде:', e);
+
+      const lastSentKey = `fcm_token_sent_${this.user.id}`;
+      const lastSentToken = localStorage.getItem(lastSentKey);
+
+      if (token !== lastSentToken) {
+        try {
+          await authApi.post('/notifications', { token });
+          localStorage.setItem(lastSentKey, token);
+          console.log('[FCM] Токен успешно зарегистрирован на бэкенде');
+        } catch (e) {
+          console.error('[FCM] Ошибка регистрации на бэкенде:', e);
+        }
       }
       if (!this._fcmUnsubscribe) {
         this._fcmUnsubscribe = listenToMessages((payload) => {
@@ -283,10 +290,13 @@ export const useAuthStore = defineStore("auth", {
       }
       return { token, status: 'granted' };
     },
-    stopFCM() {
+    async stopFCM() {
       if (this._fcmUnsubscribe) {
         this._fcmUnsubscribe();
         this._fcmUnsubscribe = null;
+      }
+      if (this.user?.id) {
+        localStorage.removeItem(`fcm_token_sent_${this.user.id}`);
       }
       this.fcmToken = null;
     },
@@ -1382,21 +1392,27 @@ export const useAuthStore = defineStore("auth", {
       }
     },
     async logout() {
-      if (this.fcmToken) {
+      console.log('[Logout] Начало процесса выхода...');
+      const userId = this.user?.id;
+      const lastSentKey = userId ? `fcm_token_sent_${userId}` : null;
+      const tokenToDelete = this.fcmToken || (lastSentKey ? localStorage.getItem(lastSentKey) : null);
+
+      if (tokenToDelete) {
         try {
-          await api.delete('/notifications/token', { data: { token: this.fcmToken } });
+          await authApi.delete('/notifications/token', { data: { token: tokenToDelete } });
+          console.log('[Logout] Токен успешно удален с сервера');
         } catch (e) {
           console.warn('[Logout] Не удалось удалить токен с сервера:', e);
         }
         try {
           await removeFCMToken();
+          console.log('[Logout] FCM-токен инвалидирован в браузере');
         } catch (e) {
-          console.warn('[Logout] Не удалось инвалидировать FCM-токен:', e);
+          console.warn('[Logout] Не удалось инвалидировать FCM-токен в браузере:', e);
         }
-        this.fcmToken = null;
       }
       this.disconnectSocket();
-      this.stopFCM();
+      await this.stopFCM();
       this.stopAllPolling();
       this.isAuthenticated = false;
       this.user = null;
@@ -1406,7 +1422,7 @@ export const useAuthStore = defineStore("auth", {
         coordinates: [37.6173, 55.7558],
       });
       ["auth", "region", "regionCoords", "products"].forEach((key) =>
-        localStorage.removeItem(key),
+        localStorage.removeItem(key)
       );
       const favStore = useFavoritesStore();
       favStore.clear();
