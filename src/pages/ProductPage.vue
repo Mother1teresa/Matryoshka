@@ -587,22 +587,55 @@ const resolveCoordinates = async () => {
 const productSection = computed(() => {
   const section = product.value?.section;
   const subcategory = product.value?.subcategory;
-  
+
   const subToSection = {
-    'uchastok': 'uchastok', 'land': 'uchastok',
-    'office': 'office', 'commercial': 'office',
-    'apartments': 'apartments', 'flat': 'apartments',
-    'house': 'house', 'cottage': 'house',
-    'cars': 'cars', 'auto': 'cars',
+    // Недвижимость
+    'uchastok': 'uchastok',
+    'land': 'uchastok',
+    'office': 'office',
+    'commercial': 'office',
+    'apartments': 'apartments',
+    'flat': 'apartments',
+    'house': 'house',
+    'cottage': 'house',
+
+    // Транспорт
+    'cars': 'cars',
+    'auto': 'cars',
     'moto': 'moto',
-    'yachts': 'yachts', 'boats': 'yachts',
-    'jobs': 'jobs', 'vacancy': 'jobs', 'resume': 'resume',
-    'pets': 'pets', 'animals': 'pets',
-    'ready_business': 'ready_business', 'business': 'ready_business',
-    'tours': 'tours', 'travel': 'tours',
+    'yachts': 'yachts',
+    'boats': 'yachts',
+
+    // Работа
+    'jobs': 'jobs',
+    'vacancy': 'jobs',
+    'resume': 'resume',
+
+    // Животные
+    'pets': 'pets',
+    'animals': 'pets',
+
+    // Бизнес
+    'ready_business': 'ready_business',
+    'business': 'ready_business',
+
+    // Туризм
+    'tours': 'tours',
+    'travel': 'tours',
+
+    // Услуги
+    'all_services': 'uslugi',
   };
-  
-  return subToSection[subcategory] || subToSection[section] || section || 'apartments';
+
+  // Если категория — услуги, сразу используем группу uslugi
+  if (product.value?.category === 'uslugi') {
+    return 'uslugi';
+  }
+
+  return subToSection[subcategory]
+    || subToSection[section]
+    || section
+    || 'apartments';
 });
 
 const fieldGroups = computed(() => {
