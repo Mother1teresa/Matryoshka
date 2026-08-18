@@ -1003,8 +1003,8 @@ onBeforeUnmount(() => {
 });
 </script>
 <style scoped>
-.detail-row--services {display: block;}
-.detail-row--services .label {display: block;margin-bottom: 0.25rem;}
+.detail-row--services {display: block !important;}
+.detail-row--services .label {display: block;margin-bottom: 0.65rem;}
 .detail-row--services .value {display: grid;gap: 0.25rem;}
 .service-item {margin-bottom: 0.25rem; display: block;}
 .product-layout { display: grid; gap: 3.125rem; grid-template-columns: repeat(2, 1fr);}
