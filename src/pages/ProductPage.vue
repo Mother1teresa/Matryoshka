@@ -1006,7 +1006,7 @@ onBeforeUnmount(() => {
 .detail-row--services {display: block !important;}
 .detail-row--services .label {display: block;margin-bottom: 1.15rem;}
 .detail-row--services .value {display: grid;gap: 0.65rem;}
-.service-item {margin-bottom: 0.25rem; display: block;}
+.service-item {display: block;}
 .product-layout { display: grid; gap: 3.125rem; grid-template-columns: repeat(2, 1fr);}
 .product-left { flex: 1; background-color: white; border-radius: 1.25rem; padding: 1.375rem 1.875rem; width: 54.75rem; position: relative;}
 .product-right { min-width: 20.813rem; height: fit-content;}
