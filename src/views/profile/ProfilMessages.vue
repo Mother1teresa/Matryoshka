@@ -150,7 +150,7 @@ onUnmounted(() => {
     <div v-if="isLoading" class="loading-state">Загрузка чатов...</div>
     
     <div v-else-if="chats.length > 0" class="chats-lists">
-      <a href="/" class="matreshka-banner">
+      <a href="https://vk.ru/im?sel=-240936929" target="_blank" rel="noopener noreferrer" class="matreshka-banner">
         <img src="/src/assets/img/form/mask-matr.svg" alt="Матрёшка" class="matreshka-avatar" />
         <div class="matreshka-text">
           <div class="matreshka-name">Поддержка Матрёшка</div>
