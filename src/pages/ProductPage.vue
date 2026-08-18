@@ -59,9 +59,7 @@
                     </span>
                   </div>
                   <!-- Обычное значение -->
-                  <span v-else class="value">
-                    {{ formatValue(product[field.key] ?? product.attributes?.[field.key], 'text', field.suffix, field.key) }}
-                  </span>
+                  <div v-else class="value">{{formatValue(product[field.key] ?? product.attributes?.[field.key],field.type,field.suffix,field.key)}}</div>
                 </div>
               </div>
             </div>

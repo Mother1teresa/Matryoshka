@@ -150,7 +150,7 @@ export const productLabels = {
   places: "Кол-во машиномест:",
 
   // Услуги
-  services: "Услуги",
+  services: "Виды предлагаемых услуг:",
   workSchedule: "График работы:",
 };
 
@@ -457,15 +457,26 @@ export function formatValue(value, type, suffix, key) {
         ...new Set(
           value
             .map(item => {
-              if (typeof item === "string") return item;
+              if (typeof item === "string") return item.trim();
               return item?.text || item?.name || "";
             })
             .filter(Boolean)
         )
-      ].join(", ");
+      ];
     }
 
-    return String(value);
+    if (typeof value === "string") {
+      return [
+        ...new Set(
+          value
+            .split(",")
+            .map(item => item.trim())
+            .filter(Boolean)
+        )
+      ];
+    }
+
+    return [String(value)];
   }
 
   // График работы
