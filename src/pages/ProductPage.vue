@@ -69,9 +69,8 @@
                           field.key
                         )"
                         :key="index"
-                        class="service-item"
-                      >
-                        {{ service }}
+                        class="service-item">
+                        — {{ service }}
                       </div>
                     </template>
 
