@@ -49,7 +49,7 @@
             >
               <h3>{{ group.title }}</h3>
               <div class="details-grid" :class="{ 'details-grid--two-cols': isTwoColumnGrid }">
-                <div v-for="field in group.fields" :key="field.key" :class="['detail-row', { 'full-width-row': field.type === 'chips' }]">
+                <div v-for="field in group.fields" :key="field.key" :class="['detail-row', { 'full-width-row': field.type === 'chips', 'detail-row--services': field.key === 'services' }]">
                   <span class="label">{{ getLabel(field.key, field.label) }}</span>
 
                   <!-- Чипсы -->
@@ -1004,16 +1004,16 @@ onBeforeUnmount(() => {
 });
 </script>
 <style scoped>
-.service-item {margin-bottom: 0.25rem;}
+.detail-row--services {display: block;}
+.detail-row--services .label {display: block;margin-bottom: 0.25rem;}
+.detail-row--services .value {display: grid;gap: 0.25rem;}
+.service-item {margin-bottom: 0.25rem; display: block;}
 .product-layout { display: grid; gap: 3.125rem; grid-template-columns: repeat(2, 1fr);}
 .product-left { flex: 1; background-color: white; border-radius: 1.25rem; padding: 1.375rem 1.875rem; width: 54.75rem; position: relative;}
 .product-right { min-width: 20.813rem; height: fit-content;}
 /* Заголовок */
 .product-title { margin-bottom: 1.563rem; font-weight: 700; display: flex; align-items: start; justify-content: space-between; }
-.product-title{
-  display: inline-block;
-  text-transform: lowercase;
-}
+.product-title{display: inline-block;text-transform: lowercase;}
 .product-title::first-letter { text-transform: uppercase;}
 .product-title .card-like{ width: 2.188rem; height: 1.938rem; z-index: 1;}
 /* Галерея */
