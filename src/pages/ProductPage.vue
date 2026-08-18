@@ -59,7 +59,31 @@
                     </span>
                   </div>
                   <!-- Обычное значение -->
-                  <div v-else class="value">{{formatValue(product[field.key] ?? product.attributes?.[field.key],field.type,field.suffix,field.key)}}</div>
+                  <div v-else class="value">
+                    <template v-if="field.key === 'services'">
+                      <div
+                        v-for="(service, index) in formatValue(
+                          product[field.key] ?? product.attributes?.[field.key],
+                          field.type,
+                          field.suffix,
+                          field.key
+                        )"
+                        :key="index"
+                        class="service-item"
+                      >
+                        {{ service }}
+                      </div>
+                    </template>
+
+                    <template v-else>
+                      {{ formatValue(
+                        product[field.key] ?? product.attributes?.[field.key],
+                        field.type,
+                        field.suffix,
+                        field.key
+                      ) }}
+                    </template>
+                  </div>
                 </div>
               </div>
             </div>
@@ -980,6 +1004,7 @@ onBeforeUnmount(() => {
 });
 </script>
 <style scoped>
+.service-item {margin-bottom: 0.25rem;}
 .product-layout { display: grid; gap: 3.125rem; grid-template-columns: repeat(2, 1fr);}
 .product-left { flex: 1; background-color: white; border-radius: 1.25rem; padding: 1.375rem 1.875rem; width: 54.75rem; position: relative;}
 .product-right { min-width: 20.813rem; height: fit-content;}
