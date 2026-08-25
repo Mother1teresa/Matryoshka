@@ -1044,20 +1044,39 @@ export const useAuthStore = defineStore("auth", {
         throw e;
       }
     },
-    async loginWithVK(vkData) {
+    async getVKAuthUrl() {
       try {
-        const res = await api.post('/auth/vk', {
-          accessToken: vkData.access_token,
-          userId: vkData.user_id,
-          email: vkData.email || null,
+        const res = await api.get('/oauth/vk-url');
+        // Бэкенд может вернуть либо строку, либо { url: "..." }
+        return typeof res.data === 'string' ? res.data : res.data.url;
+      } catch (e) {
+        console.error('Ошибка получения VK OAuth URL:', e.response?.data || e);
+        throw e;
+      }
+    },
+    async authenticateVKCallback({ code, deviceId, state }) {
+      try {
+        const res = await api.get('/oauth/vk-authenticate', {
+          params: { code, device_id: deviceId, state }
         });
         const userData = res.data;
         if (userData && userData.id) {
           this.login(userData);
+          if (userData.city) {
+            useRegionModalStore().setRegion(
+              userData.city,
+              userData.coordinates || [37.6173, 55.7558],
+            );
+          }
+          await Promise.all([
+            this.fetchFavorites().catch(() => {}),
+            useFavoritesStore().fetchAdvertFavorites().catch(() => {})
+          ]);
           return true;
         }
+        return false;
       } catch (e) {
-        console.error('VK login error:', e.response?.data || e);
+        console.error('VK authenticate error:', e.response?.data || e);
         throw e;
       }
     },
