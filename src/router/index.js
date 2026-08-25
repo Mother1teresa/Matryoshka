@@ -58,6 +58,12 @@ const routes = [
     component: () => import('../pages/ShortsPage.vue')
   },
   {
+    path: '/oauth2/callback/vk',
+    name: 'VKCallback',
+    meta: { title: 'Вход через ВКонтакте' },
+    component: () => import('../views/VKCallback.vue')
+  },
+  {
     path: "/:pathMatch(.*)*",
     name: "NotFound",
     meta: { title: 'Страница не найдена' },

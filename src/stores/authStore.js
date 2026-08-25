@@ -1059,22 +1059,54 @@ export const useAuthStore = defineStore("auth", {
         const res = await api.get('/oauth/vk-authenticate', {
           params: { code, device_id: deviceId, state }
         });
-        const userData = res.data;
-        if (userData && userData.id) {
-          this.login(userData);
-          if (userData.city) {
-            useRegionModalStore().setRegion(
-              userData.city,
-              userData.coordinates || [37.6173, 55.7558],
-            );
+        const data = res.data || {};
+
+        if (data.accessToken) {
+          localStorage.setItem('access_token', data.accessToken);
+          if (api.defaults?.headers) {
+            api.defaults.headers.common['Authorization'] = `Bearer ${data.accessToken}`;
           }
-          await Promise.all([
-            this.fetchFavorites().catch(() => {}),
-            useFavoritesStore().fetchAdvertFavorites().catch(() => {})
-          ]);
-          return true;
+          if (authApi.defaults?.headers) {
+            authApi.defaults.headers.common['Authorization'] = `Bearer ${data.accessToken}`;
+          }
         }
-        return false;
+
+        if (!data.id && data.accessToken) {
+          try {
+            const me = await api.get('/profile/me');
+            if (me.data?.id) Object.assign(data, me.data);
+          } catch (meErr) {
+            console.warn('[authenticateVKCallback] /profile/me недоступен:', meErr);
+          }
+        }
+
+        if (!data.id) {
+          throw new Error('VK авторизация не вернула id пользователя');
+        }
+
+        const userData = {
+          ...data,
+          id: data.id,
+          name: data.firstName || data.name || data.username || 'Пользователь',
+          email: data.email || '',
+          phone: data.phone || '',
+          role: data.role || 'PRIVATE_PERSON',
+        };
+
+        this.login(userData);
+
+        if (userData.city) {
+          useRegionModalStore().setRegion(
+            userData.city,
+            userData.coordinates || [37.6173, 55.7558],
+          );
+        }
+        await Promise.all([
+          this.fetchFavorites().catch(() => {}),
+          useFavoritesStore().fetchAdvertFavorites().catch(() => {})
+        ]);
+
+        return true;
       } catch (e) {
         console.error('VK authenticate error:', e.response?.data || e);
         throw e;

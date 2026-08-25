@@ -187,7 +187,7 @@ async function redirectToVK() {
   display: grid;
   justify-items: start;
   justify-content: start;
-  gap: 0.313rem;
+  gap: 0.613rem;
 }
 /* .form-using div {
   display: flex;

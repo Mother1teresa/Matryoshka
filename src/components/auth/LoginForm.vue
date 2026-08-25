@@ -150,7 +150,7 @@ async function redirectToVK() {
   display: grid;
   justify-items: start;
   justify-content: start;
-  gap: 0.313rem;
+  gap: 0.613rem;
 }
 .form-using__title {
   font-size: 0.9rem;
@@ -159,7 +159,7 @@ async function redirectToVK() {
 .vk-btn {
   display: flex;
   align-items: center;
-  gap: 0.625rem;
+  gap: 0.75rem;
   color: #fff;
   border: none;
   font-size: 1rem;
