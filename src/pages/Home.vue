@@ -15,5 +15,5 @@ import ProductSection from '../components/product/ProductSection.vue';
 </script>
 
 <style scoped>
-.home{ margin-top: 2.063rem; flex: 1 1 auto;}
+.home{ margin-top: 2.063rem; flex: 1 0 auto;}
 </style>
