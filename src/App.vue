@@ -16,7 +16,7 @@
   </div>
 
   <!-- Основной сайт -->
-  <div class="desktop-content">
+  <div class="desktop-content wrapper">
       <transition name="slide">
         <div v-if="showNotification" class="notification">
           {{ notificationText }}
@@ -210,6 +210,7 @@ onUnmounted(() => {
   margin-bottom: 0.313rem;
   font-size: 0.875rem;
 }
+.desktop-content{ min-height: 100%; overflow: hidden; display: flex; flex-direction: column;}
 .icon { display: flex; justify-content: center; margin-bottom: 0.313rem;}
 .icon img { width: 2.625rem; height: 1.688rem;}
 @media (max-width: 61.813rem) {

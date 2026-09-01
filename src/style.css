@@ -46,6 +46,9 @@ body {
   padding: 0;
 }
 
+html,body{ height: 100%; }
+
+
 input,
 textarea {
   -webkit-animation: bugfix infinite 1s;
@@ -56,17 +59,11 @@ textarea {
   color: inherit;
 }
 
-a {
-  color: unset;
-}
-a,
-a:hover {
-  text-decoration: none;
-}
-button,
-input,
-a,
-textarea {
+a { color: unset;}
+
+a,a:hover {text-decoration: none;}
+
+button, input, a, textarea {
   outline: none;
   cursor: pointer;
   font: inherit;
